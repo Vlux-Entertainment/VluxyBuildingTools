@@ -55,6 +55,7 @@ export type Controller = {
 
 local SETTINGS_KEY = "VluxBlockoutSettings_v2"
 local UPDATE_INTERVAL = 0.05
+local FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
 
@@ -1653,10 +1654,25 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		stop()
+
+		local previous = folder
+
 		folder = chosen
 		Geometry.SetScope(chosen)
 		redrawBoxes()
 		panel.Refresh()
+
+		if previous ~= chosen then
+			edit("Set working folder", function()
+				if previous and previous:IsDescendantOf(workspace) then
+					previous:SetAttribute(FOLDER_ATTRIBUTE, nil)
+				end
+
+				if chosen then
+					chosen:SetAttribute(FOLDER_ATTRIBUTE, true)
+				end
+			end)
+		end
 
 		if chosen then
 			if settings.AutoPastel and not colors.On then
@@ -2424,6 +2440,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 	end)
+
+	for _, object in workspace:GetDescendants() do
+		if object:IsA("Folder") and object:GetAttribute(FOLDER_ATTRIBUTE) == true then
+			setFolder(object)
+
+			break
+		end
+	end
 
 	return {
 		Stop = function()
