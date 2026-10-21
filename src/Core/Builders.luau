@@ -775,7 +775,7 @@ function Builders.Opening(
 	hit: RaycastResult?,
 	shape: string,
 	depth: number?
-): ({ Spec }, string, BasePart?)
+): ({ Spec }, string, BasePart?, { cf: CFrame, size: Vector3 }?)
 	local out: { Spec } = {}
 	local wall = hit and hit.Instance
 
@@ -978,7 +978,16 @@ function Builders.Opening(
 		end
 	end
 
-	return out, "Click to replace this wall with an opening. Undo restores the original wall.", p
+	local reach = if depth and depth < size.Z - 0.01 then depth else size.Z
+	local openHeight = if shape == "Circle" then math.min(w, h) else h
+	local openWidth = if shape == "Circle" then math.min(w, h) else w
+	local near = if localHit.Z >= 0 then 1 else -1
+	local cut = {
+		cf = cf * CFrame.new(x, bottom + openHeight / 2, near * (size.Z / 2 - reach / 2)),
+		size = Vector3.new(openWidth, openHeight, reach),
+	}
+
+	return out, "Click to replace this wall with an opening. Undo restores the original wall.", p, cut
 end
 
 --[=[

@@ -20,6 +20,7 @@ export type Overlay = {
 	_folder: Folder,
 	_planeGrid: WireframeHandleAdornment,
 	_previewWire: WireframeHandleAdornment,
+	_cut: BoxHandleAdornment?,
 	_measureLine: WireframeHandleAdornment,
 	_boxes: { [string]: WireframeHandleAdornment },
 	_fills: { [string]: BoxHandleAdornment },
@@ -33,6 +34,7 @@ export type Overlay = {
 }
 
 local ACCENT = Color3.fromRGB(255, 138, 36)
+local CUT_COLOR = Color3.fromRGB(255, 70, 70)
 local MAX_GHOSTS = 600
 local WEDGE_EDGES = { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 3, 4 }, { 3, 5 }, { 4, 6 }, { 5, 6 }, { 1, 5 }, { 2, 6 } }
 
@@ -75,7 +77,7 @@ local function wire(parent: Instance, name: string, color: Color3, thickness: nu
 	adornment.Adornee = workspace.Terrain
 	adornment.Color3 = color
 	adornment.Thickness = thickness
-	adornment.AlwaysOnTop = false
+	adornment.AlwaysOnTop = true
 	adornment.Parent = parent
 	tag(adornment)
 
@@ -265,6 +267,47 @@ function Overlay.ClearGhosts(self: Overlay)
 
 	self._planeGrid:Clear()
 	self._previewWire:Clear()
+	Overlay.DrawCut(self, nil)
+end
+
+--[=[
+	Shows the volume an opening removes from its wall as a red box drawn over everything, so the
+	depth of the cut can be seen while the mouse sets it.
+
+	@param self Overlay
+	@param cut { cf: CFrame, size: Vector3 }? -- nil hides it
+]=]
+function Overlay.DrawCut(self: Overlay, cut: { cf: CFrame, size: Vector3 }?)
+	local box = self._cut
+
+	if not cut then
+		if box then
+			box.Visible = false
+		end
+
+		return
+	end
+
+	if not box then
+		local created = Instance.new("BoxHandleAdornment")
+
+		created.Name = "CutDepth"
+		created.Adornee = workspace.Terrain
+		created.AlwaysOnTop = true
+		created.ZIndex = 2
+		created.Transparency = 0.45
+		created.Color3 = CUT_COLOR
+		created.Parent = self._folder
+		tag(created)
+		self._cut = created
+		box = created
+	end
+
+	local shown = box :: BoxHandleAdornment
+
+	shown.Size = cut.size + Vector3.new(0.04, 0.04, 0.04)
+	shown.CFrame = workspace.Terrain.CFrame:ToObjectSpace(cut.cf)
+	shown.Visible = true
 end
 
 --[=[
@@ -289,9 +332,9 @@ function Overlay.DrawGhosts(self: Overlay, specs: { Geometry.Spec })
 			ghost = Instance.new("BoxHandleAdornment")
 			ghost.Name = "Preview"
 			ghost.Adornee = workspace.Terrain
-			ghost.AlwaysOnTop = false
-			ghost.ZIndex = 0
-			ghost.Transparency = 0.55
+			ghost.AlwaysOnTop = true
+			ghost.ZIndex = 1
+			ghost.Transparency = 0.7
 			ghost.Color3 = ACCENT
 			ghost.Parent = self._folder
 			tag(ghost)
@@ -300,7 +343,7 @@ function Overlay.DrawGhosts(self: Overlay, specs: { Geometry.Spec })
 
 		local spec = specs[i]
 
-		ghost.Size = spec.size
+		ghost.Size = spec.size + Vector3.new(0.02, 0.02, 0.02)
 		ghost.CFrame = terrain:ToObjectSpace(spec.cf)
 		ghost.Visible = spec.class ~= "WedgePart"
 

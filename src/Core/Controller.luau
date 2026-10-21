@@ -491,6 +491,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		local out: { Spec } = {}
+		local cutVolume: { cf: CFrame, size: Vector3 }? = nil
 		local live = settings
 		local gridStep = gridNow()
 
@@ -548,7 +549,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				depth = cutDepthFrom(lockedHit)
 			end
 
-			out, message, openingTarget =
+			out, message, openingTarget, cutVolume =
 				Builders.Opening(live, opening, if locked then lockedHit else scopedHit(), shape, depth)
 
 			if locked and #out > 0 then
@@ -737,6 +738,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				or mode == "Place"
 			)
 		Overlay.DrawGhosts(overlay, out)
+		Overlay.DrawCut(overlay, cutVolume)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
 			Overlay.DrawAxisLine(overlay, heightEnd or first, lock.Axis)
