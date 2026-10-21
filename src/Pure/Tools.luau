@@ -168,6 +168,13 @@ Tools.List = {
 		Description = "Cut a triangular window into a plain wall, with the point at the top.",
 	},
 	{
+		Id = "CutShape",
+		Label = "Cut Shape",
+		Glyph = "✂",
+		Key = nil,
+		Description = "Click corners on a wall to outline any shape, then click the first corner again or press Enter to cut it out.",
+	},
+	{
 		Id = "Extend",
 		Label = "Face Extend",
 		Glyph = "⧉",
@@ -213,7 +220,7 @@ Tools.Grid = {
 		Glyph = "▯",
 		Key = "3",
 		Description = "Cut a doorway, a window or an archway into a wall. Pick which one in the options.",
-		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "Extend" },
+		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "CutShape", "Extend" },
 	},
 	{
 		Id = "Structures",

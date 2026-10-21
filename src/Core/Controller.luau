@@ -24,6 +24,7 @@ local Keymap = require("../Pure/Keymap")
 local NumericInput = require("../Pure/NumericInput")
 local Overlay = require("./Overlay")
 local Panel = require("../Ui/Panel")
+local Polygon = require("../Pure/Polygon")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
 local Snapper = require("./Snapper")
@@ -33,6 +34,15 @@ local Transform = require("./Transform")
 local Trove = require("../Packages/Trove")
 
 type Spec = Geometry.Spec
+
+type Face = {
+	part: BasePart,
+	origin: Vector3,
+	normal: Vector3,
+	u: Vector3,
+	v: Vector3,
+	thickness: number,
+}
 
 type ExtendDrag = { source: BasePart, normal: Vector3, length: number }
 
@@ -81,6 +91,7 @@ local INSTRUCTIONS: { [string]: string } = {
 	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
 	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
 	CircleWindow = "Click an undecorated rectangular wall. The round window is centered on the cursor; its size is the smaller of the window width and height.",
+	CutShape = "Click corners on a wall to outline a shape. Click the first corner again or press Enter to cut it out; Esc cancels.",
 	TriangleWindow = "Click an undecorated rectangular wall. The triangular window is centered on the cursor, point up.",
 	Window = "Click an undecorated rectangular wall. The window is centered on the cursor; its height above the floor is in the options.",
 	Extend = "Click a block to select it, then drag a green face handle OUTWARD. Release to add a connected block.",
@@ -152,6 +163,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local measurement: { a: Vector3, b: Vector3 }? = nil
 	local openingTarget: BasePart? = nil
 	local openingCuts: { Builders.Cutter }? = nil
+	local cutFace: Face? = nil
+	local cutPending: Face? = nil
+	local cutPoints: { Vector3 } = {}
+	local cutSpot: Vector3? = nil
 	local quiet = false
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
@@ -352,6 +367,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 	local function resetPoint()
 		first, current = nil, nil
+		cutFace, cutPending, cutPoints, cutSpot = nil, nil, {}, nil
 		lockedHit, cutDepth = nil, nil
 		prevWall = nil
 		startDoor = nil
@@ -446,6 +462,99 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local hit = hitSurface()
 
 		return if hit and Geometry.InScope(hit.Instance) then hit else nil
+	end
+
+	--[[
+		@param part BasePart
+		@param normal Vector3 -- the world normal of the face that was hit
+		@return Face -- the face of the part with two axes lying in it, for the Cut Shape tool
+	]]
+	local function faceOf(part: BasePart, normal: Vector3): Face
+		local axis, side = Builders.FaceAxis(part, normal)
+		local cf = part.CFrame
+		local axes = { cf.RightVector, cf.UpVector, cf.LookVector }
+		local sizes = { part.Size.X, part.Size.Y, part.Size.Z }
+		local along = axes[axis] * side
+		local others: { Vector3 } = {}
+
+		for index, vector in axes do
+			if index ~= axis then
+				table.insert(others, vector)
+			end
+		end
+
+		return {
+			part = part,
+			origin = cf.Position + along * (sizes[axis] / 2),
+			normal = along,
+			u = others[1],
+			v = others[2],
+			thickness = sizes[axis],
+		}
+	end
+
+	--[[
+		@param face Face
+		@param point Vector3 -- somewhere on the plane of the face
+		@return Vector3 -- the point moved to a part corner nearby, else to the grid inside the face
+	]]
+	local function faceSnap(face: Face, point: Vector3): Vector3
+		local target = point
+
+		if settings.SnapToParts then
+			local corner, found = Snapper.Vertex(point, math.max(settings.SnapRadius, 1.5))
+
+			if found then
+				target = corner
+			end
+		end
+
+		local offset = target - face.origin
+		local a, b = offset:Dot(face.u), offset:Dot(face.v)
+
+		if target == point then
+			a, b = snap(a), snap(b)
+		end
+
+		return face.origin + face.u * a + face.v * b
+	end
+
+	--[[
+		Cuts the outlined shape out of the wall as one undo step, then clears the outline.
+	]]
+	local function finishCut()
+		local face, points = cutFace, cutPoints
+
+		if not face or #points < 3 then
+			return say("Click at least three corners first.")
+		end
+
+		local flat: { Polygon.Point } = {}
+
+		for _, p in points do
+			local offset = p - face.origin
+
+			table.insert(flat, { offset:Dot(face.u), offset:Dot(face.v) })
+		end
+
+		local triangles = Polygon.Triangulate(flat)
+
+		if not triangles then
+			return say("The outline crosses itself or has no area. Press Esc and try again.")
+		end
+
+		local specs = Builders.CutShape(points, triangles, face.thickness + 0.5, -face.normal * (face.thickness / 2))
+		local part = face.part
+
+		edit("Cut shape", function()
+			assert(part.Parent, "Wall no longer exists")
+
+			if not Joints.CarveShape(part, specs) then
+				say("The wall could not be cut.")
+			end
+		end)
+		resetPoint()
+		say(INSTRUCTIONS.CutShape)
 	end
 
 	--[[
@@ -654,6 +763,67 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			return
+		elseif mode == "CutShape" then
+			local face = cutFace
+			local spot: Vector3? = nil
+
+			if face then
+				local ray = mouse.UnitRay
+				local denom = ray.Direction:Dot(face.normal)
+
+				if math.abs(denom) > 1e-4 then
+					local t = (face.origin - ray.Origin):Dot(face.normal) / denom
+
+					if t > 0 then
+						spot = ray.Origin + ray.Direction * t
+					end
+				end
+			else
+				local hit = scopedHit()
+
+				if hit and hit.Instance:IsA("BasePart") and not hit.Instance:IsA("Terrain") then
+					face = faceOf(hit.Instance, hit.Normal)
+					spot = hit.Position
+				end
+
+				cutPending = face
+			end
+
+			if spot and face then
+				spot = faceSnap(face, spot)
+			end
+
+			cutSpot = spot
+
+			local previous = cutPoints[#cutPoints]
+
+			for i = 2, #cutPoints do
+				local a, b = cutPoints[i - 1], cutPoints[i]
+
+				Geometry.Add(out, Vector3.new(0.2, 0.2, (b - a).Magnitude), CFrame.lookAt((a + b) * 0.5, b), "CutEdge")
+			end
+
+			if spot and previous then
+				Geometry.Add(
+					out,
+					Vector3.new(0.2, 0.2, (spot - previous).Magnitude),
+					CFrame.lookAt((spot + previous) * 0.5, spot),
+					"CutEdge"
+				)
+			end
+
+			if spot then
+				Geometry.Add(out, Vector3.new(0.4, 0.4, 0.4), CFrame.new(spot), "Start")
+				snapMark = spot
+			end
+
+			if #cutPoints == 0 then
+				message = "Click the first corner on the wall."
+			elseif #cutPoints < 3 then
+				message = "Click the next corner."
+			else
+				message = "Click the next corner. Click the first corner again or press Enter to cut the shape out."
+			end
 		elseif
 			mode == "Door"
 			or mode == "Window"
@@ -1420,7 +1590,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			elseif extrude then
 				cancelExtrude()
 				say("Extrude cancelled.")
-			elseif lockedHit then
+			elseif lockedHit or cutFace then
 				resetPoint()
 				say("Cut cancelled.")
 			elseif mode then
@@ -1432,6 +1602,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				finishSession(true)
 			elseif extrude then
 				confirmExtrude()
+			elseif mode == "CutShape" and cutFace then
+				finishCut()
 			elseif mode then
 				resetPoint()
 				say(INSTRUCTIONS[mode])
@@ -2005,6 +2177,32 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		if not ok then
 			return say(tostring(err))
+		end
+
+		if active == "CutShape" then
+			local spot = cutSpot
+
+			if not spot then
+				return
+			end
+
+			if not cutFace then
+				cutFace = cutPending
+			end
+
+			local points = cutPoints
+
+			if #points >= 3 and (spot - points[1]).Magnitude < 0.05 then
+				return finishCut()
+			end
+
+			local last = points[#points]
+
+			if not last or (spot - last).Magnitude > 0.05 then
+				table.insert(points, spot)
+			end
+
+			return
 		end
 
 		if

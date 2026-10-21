@@ -1361,6 +1361,26 @@ function Builders.Opening(
 end
 
 --[=[
+	The tool that cuts a polygon out of a wall: each triangle of the polygon is extruded through
+	the wall as a pair of wedges, to be subtracted from it.
+
+	@param corners { Vector3 } -- the polygon's corners, on the face of the wall
+	@param triangles { { number } } -- triples of indexes into corners
+	@param depth number -- how far the cut reaches, centred on the corners moved by `shift`
+	@param shift Vector3 -- where the corners move to, into the middle of the wall
+	@return { Spec }
+]=]
+function Builders.CutShape(corners: { Vector3 }, triangles: { { number } }, depth: number, shift: Vector3): { Spec }
+	local out: { Spec } = {}
+
+	for _, t in triangles do
+		trianglePrism(out, corners[t[1]] + shift, corners[t[2]] + shift, corners[t[3]] + shift, depth, "Cut")
+	end
+
+	return out
+end
+
+--[=[
 	Works out which local axis a face normal points along. Used to grow a block out of that face.
 
 	@param part BasePart
