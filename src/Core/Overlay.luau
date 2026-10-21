@@ -22,10 +22,14 @@ export type Overlay = {
 	_measureLine: WireframeHandleAdornment,
 	_hud: ScreenGui,
 	_label: TextLabel,
+	_bar: ScreenGui,
+	_barGlyph: TextLabel,
+	_barText: TextLabel,
+	_barHints: Frame,
 	_readoutPosition: Vector3?,
 }
 
-local ACCENT = Color3.fromRGB(115, 188, 171)
+local ACCENT = Color3.fromRGB(255, 138, 36)
 local MAX_GHOSTS = 600
 local WEDGE_EDGES = { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 3, 4 }, { 3, 5 }, { 4, 6 }, { 5, 6 }, { 1, 5 }, { 2, 6 } }
 
@@ -87,12 +91,12 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromOffset(210, 46)
 	label.AnchorPoint = Vector2.new(0.5, 1)
-	label.BackgroundColor3 = Color3.fromRGB(23, 36, 40)
+	label.BackgroundColor3 = Color3.fromRGB(28, 29, 33)
 	label.BackgroundTransparency = 0.08
 	label.BorderSizePixel = 0
-	label.TextColor3 = Color3.fromRGB(187, 244, 224)
-	label.TextSize = 16
-	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Color3.fromRGB(240, 241, 244)
+	label.TextSize = 15
+	label.Font = Enum.Font.GothamMedium
 	label.TextWrapped = true
 	label.Parent = hud
 
@@ -101,9 +105,76 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	corner.Parent = label
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = ACCENT
+	stroke.Color = Color3.fromRGB(96, 98, 106)
 	stroke.Thickness = 1
 	stroke.Parent = label
+
+	local bar = Instance.new("ScreenGui")
+	bar.Name = "VluxBlockout_StatusBar"
+	bar.IgnoreGuiInset = true
+	bar.ResetOnSpawn = false
+	bar.DisplayOrder = 999
+	bar.Enabled = false
+	bar.Parent = CoreGui
+	trove:Add(bar)
+
+	local strip = Instance.new("Frame")
+	strip.Size = UDim2.new(1, 0, 0, 46)
+	strip.AnchorPoint = Vector2.new(0, 1)
+	strip.Position = UDim2.fromScale(0, 1)
+	strip.BackgroundColor3 = Color3.fromRGB(24, 25, 28)
+	strip.BackgroundTransparency = 0.04
+	strip.BorderSizePixel = 0
+	strip.Parent = bar
+
+	local glyphBox = Instance.new("Frame")
+	glyphBox.Size = UDim2.fromOffset(34, 34)
+	glyphBox.Position = UDim2.fromOffset(12, 6)
+	glyphBox.BackgroundColor3 = Color3.fromRGB(34, 36, 41)
+	glyphBox.BorderSizePixel = 0
+	glyphBox.Parent = strip
+
+	local glyphCorner = Instance.new("UICorner")
+	glyphCorner.CornerRadius = UDim.new(0, 6)
+	glyphCorner.Parent = glyphBox
+
+	local glyphStroke = Instance.new("UIStroke")
+	glyphStroke.Color = Color3.fromRGB(70, 72, 80)
+	glyphStroke.Parent = glyphBox
+
+	local barGlyph = Instance.new("TextLabel")
+	barGlyph.Size = UDim2.fromScale(1, 1)
+	barGlyph.BackgroundTransparency = 1
+	barGlyph.TextColor3 = Color3.fromRGB(240, 241, 244)
+	barGlyph.Font = Enum.Font.GothamMedium
+	barGlyph.TextSize = 22
+	barGlyph.Parent = glyphBox
+
+	local barText = Instance.new("TextLabel")
+	barText.Size = UDim2.new(0.55, -60, 1, 0)
+	barText.Position = UDim2.fromOffset(56, 0)
+	barText.BackgroundTransparency = 1
+	barText.RichText = true
+	barText.TextColor3 = Color3.fromRGB(160, 163, 171)
+	barText.Font = Enum.Font.Gotham
+	barText.TextSize = 13
+	barText.TextXAlignment = Enum.TextXAlignment.Left
+	barText.TextTruncate = Enum.TextTruncate.AtEnd
+	barText.Parent = strip
+
+	local barHints = Instance.new("Frame")
+	barHints.Size = UDim2.new(0.45, -12, 1, 0)
+	barHints.AnchorPoint = Vector2.new(1, 0)
+	barHints.Position = UDim2.fromScale(1, 0)
+	barHints.BackgroundTransparency = 1
+	barHints.Parent = strip
+
+	local hintLayout = Instance.new("UIListLayout")
+	hintLayout.FillDirection = Enum.FillDirection.Horizontal
+	hintLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	hintLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	hintLayout.Padding = UDim.new(0, 14)
+	hintLayout.Parent = barHints
 
 	return {
 		FaceHandles = faceHandles,
@@ -114,6 +185,10 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		_measureLine = measureLine,
 		_hud = hud,
 		_label = label,
+		_bar = bar,
+		_barGlyph = barGlyph,
+		_barText = barText,
+		_barHints = barHints,
 		_readoutPosition = nil,
 	}
 end
@@ -323,6 +398,87 @@ function Overlay.PositionReadout(self: Overlay)
 
 	self._label.Visible = onScreen and point.Z > 0
 	self._label.Position = UDim2.fromOffset(point.X, point.Y - 16)
+end
+
+--[=[
+	Shows the bar along the bottom of the viewport: the active tool, what to do next, and the keys
+	that matter right now.
+
+	@param self Overlay
+	@param glyph string -- the tool's icon character
+	@param name string
+	@param message string
+	@param hints { { string } } -- pairs of { key, meaning }
+]=]
+function Overlay.SetBar(self: Overlay, glyph: string, name: string, message: string, hints: { { string } })
+	self._barGlyph.Text = glyph
+	self._barText.Text = '<font color="#F0F1F4"><b>' .. name .. "</b></font>   •   " .. message
+
+	for _, child in self._barHints:GetChildren() do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	for index, hint in hints do
+		local group = Instance.new("Frame")
+		group.AutomaticSize = Enum.AutomaticSize.X
+		group.Size = UDim2.fromOffset(0, 26)
+		group.BackgroundTransparency = 1
+		group.LayoutOrder = index
+		group.Parent = self._barHints
+
+		local layout = Instance.new("UIListLayout")
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.VerticalAlignment = Enum.VerticalAlignment.Center
+		layout.Padding = UDim.new(0, 6)
+		layout.Parent = group
+
+		local chip = Instance.new("TextLabel")
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.fromOffset(0, 24)
+		chip.BackgroundColor3 = Color3.fromRGB(34, 36, 41)
+		chip.BorderSizePixel = 0
+		chip.Text = hint[1]
+		chip.TextColor3 = Color3.fromRGB(240, 241, 244)
+		chip.Font = Enum.Font.GothamMedium
+		chip.TextSize = 12
+		chip.LayoutOrder = 1
+		chip.Parent = group
+
+		local chipCorner = Instance.new("UICorner")
+		chipCorner.CornerRadius = UDim.new(0, 5)
+		chipCorner.Parent = chip
+
+		local chipStroke = Instance.new("UIStroke")
+		chipStroke.Color = Color3.fromRGB(70, 72, 80)
+		chipStroke.Parent = chip
+
+		local chipPadding = Instance.new("UIPadding")
+		chipPadding.PaddingLeft = UDim.new(0, 8)
+		chipPadding.PaddingRight = UDim.new(0, 8)
+		chipPadding.Parent = chip
+
+		local meaning = Instance.new("TextLabel")
+		meaning.AutomaticSize = Enum.AutomaticSize.X
+		meaning.Size = UDim2.fromOffset(0, 24)
+		meaning.BackgroundTransparency = 1
+		meaning.Text = hint[2]
+		meaning.TextColor3 = Color3.fromRGB(160, 163, 171)
+		meaning.Font = Enum.Font.Gotham
+		meaning.TextSize = 12
+		meaning.LayoutOrder = 2
+		meaning.Parent = group
+	end
+
+	self._bar.Enabled = true
+end
+
+--[=[
+	@param self Overlay
+]=]
+function Overlay.HideBar(self: Overlay)
+	self._bar.Enabled = false
 end
 
 return Overlay

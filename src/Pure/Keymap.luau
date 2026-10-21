@@ -32,6 +32,10 @@ local PLAIN_KEYS: { [string]: Action } = {
 	KeypadEnter = "Confirm",
 	RightBracket = "HeightUp",
 	LeftBracket = "HeightDown",
+	Tab = "NextTab",
+	F1 = "ShowHotkeys",
+	P = "TogglePastel",
+	N = "TogglePanel",
 }
 
 local Keymap = {}
@@ -53,6 +57,11 @@ function Keymap.Describe(): { { string } }
 		{ "Enter / click", "Confirm" },
 		{ "Esc / right-click", "Cancel the action, or stop the tool" },
 		{ "[ and ]", "Lower or raise the active height by one snap step" },
+		{ "Tab / Shift+Tab", "Next or previous panel tab" },
+		{ "F1", "Open this Hotkeys tab" },
+		{ "P", "Pastel colors on or off" },
+		{ "Shift+P", "Surface grid on or off" },
+		{ "N", "Show or hide the panel" },
 	}
 end
 
@@ -75,7 +84,15 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 	end
 
 	if shift then
-		return if keyName == "D" then "Duplicate" else nil
+		if keyName == "D" then
+			return "Duplicate"
+		elseif keyName == "P" then
+			return "ToggleGrid"
+		elseif keyName == "Tab" then
+			return "PrevTab"
+		end
+
+		return nil
 	end
 
 	local tool = TOOL_KEYS[keyName]

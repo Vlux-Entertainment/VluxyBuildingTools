@@ -25,6 +25,7 @@ local Panel = require("../Ui/Panel")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
 local SurfaceGrid = require("./SurfaceGrid")
+local Tools = require("../Pure/Tools")
 local Transform = require("./Transform")
 local Trove = require("../Packages/Trove")
 
@@ -119,8 +120,38 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local colors: Colors.Colors
 	local stop: (keepActive: boolean?) -> ()
 
+	local function showBar(message: string)
+		local hints: { { string } }
+		local glyph, name = "◆", ""
+
+		if session then
+			glyph, name = "✥", session.Kind
+			hints = { { "X Y Z", "Axis" }, { "0-9", "Type value" }, { "Enter", "Confirm" }, { "Esc", "Cancel" } }
+		elseif extrude then
+			glyph, name = "⧉", "Extrude"
+			hints = { { "0-9", "Type length" }, { "Enter", "Confirm" }, { "Esc", "Cancel" } }
+		elseif mode then
+			local tool = Tools.Find(mode)
+
+			if tool then
+				glyph, name = tool.Glyph, tool.Label
+			end
+
+			hints = if DRAW_MODES[mode]
+				then { { "Shift", "Straight line" }, { "X Y Z", "Axis lock" }, { "Esc", "Exit tool" } }
+				else { { "Esc", "Exit tool" } }
+		else
+			Overlay.HideBar(overlay)
+
+			return
+		end
+
+		Overlay.SetBar(overlay, glyph, name, message, hints)
+	end
+
 	local function say(text: string)
 		panel.Say(text)
+		showBar(text)
 	end
 
 	local function save()
@@ -469,6 +500,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Overlay.HideReadout(overlay)
 
 		if not mode then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 	end
@@ -574,6 +606,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		say(string.format("Extruded %.2f studs. Press E again to keep going.", state.length))
 
 		if not mode then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 	end
@@ -606,6 +639,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Overlay.HideReadout(overlay)
 
 		if not mode then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 
@@ -728,7 +762,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
-		panel.Highlight(name)
 		panel.Refresh()
 		say(INSTRUCTIONS[name])
 	end
@@ -741,9 +774,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		overlay.FaceHandles.Adornee = nil
 		overlay.FaceHandles.Visible = false
 		resetPoint()
-		panel.Highlight(nil)
 
 		if not keepActive then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 
@@ -834,6 +867,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			startSession(action :: Transform.Kind, false)
 		elseif action == "Duplicate" then
 			startSession("Grab", true)
+		elseif action == "NextTab" or action == "PrevTab" then
+			panel.CycleTab(if action == "NextTab" then 1 else -1)
+		elseif action == "ShowHotkeys" then
+			panel.ShowTab("Hotkeys")
+		elseif action == "TogglePastel" then
+			Colors.Set(colors, not colors.On)
+		elseif action == "ToggleGrid" then
+			SurfaceGrid.SetOn(surfaceGrid, not surfaceGrid.On)
+			panel.Refresh()
+			say(if surfaceGrid.On then "Surface grid ON." else "Surface grid OFF.")
+		elseif action == "TogglePanel" then
+			widget.Enabled = not widget.Enabled
 		elseif action == "HeightUp" or action == "HeightDown" then
 			if mode then
 				changeHeight(if action == "HeightUp" then 1 else -1)
@@ -1146,6 +1191,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or action == "Rotate"
 			or action == "Scale"
 			or action == "Duplicate"
+			or action == "NextTab"
+			or action == "PrevTab"
+			or action == "ShowHotkeys"
+			or action == "TogglePastel"
+			or action == "ToggleGrid"
+			or action == "TogglePanel"
 			or string.sub(action, 1, 5) == "Tool:"
 
 		local turnsStamp = action == "Rotate" and mode == "Place"
@@ -1172,6 +1223,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end)
 
 	trove:Connect(plugin.Deactivation, function()
+		Overlay.HideBar(overlay)
 		finishSession(false)
 		cancelExtrude()
 		mode = nil
@@ -1180,7 +1232,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		overlay.FaceHandles.Visible = false
 		overlay.FaceHandles.Adornee = nil
 		resetPoint()
-		panel.Highlight(nil)
 		panel.Refresh()
 	end)
 

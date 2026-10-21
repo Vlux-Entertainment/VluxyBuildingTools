@@ -29,7 +29,16 @@ return {
 		expect.falsy(Keymap.Resolve("E", true, false, false, false))
 	end,
 
+	["panel navigation keys"] = function(expect)
+		expect.equal(Keymap.Resolve("Tab", false, false, false, false), "NextTab")
+		expect.equal(Keymap.Resolve("Tab", true, false, false, false), "PrevTab")
+		expect.equal(Keymap.Resolve("F1", false, false, false, false), "ShowHotkeys")
+		expect.equal(Keymap.Resolve("P", false, false, false, false), "TogglePastel")
+		expect.equal(Keymap.Resolve("P", true, false, false, false), "ToggleGrid")
+		expect.equal(Keymap.Resolve("N", false, false, false, false), "TogglePanel")
+	end,
+
 	["every binding is described"] = function(expect)
-		expect.truthy(#Keymap.Describe() >= 8)
+		expect.truthy(#Keymap.Describe() >= 12)
 	end,
 }
