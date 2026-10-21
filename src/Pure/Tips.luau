@@ -71,6 +71,9 @@ Tips.Entries = {
 	StandardDoorHeight = {
 		Text = "The doorway height every tool starts from. A tool can override it; its name then shows a *.",
 	},
+	["Join rooms and corridors"] = {
+		Text = "Rooms, corridors and arched corridors snap to the walls already built, and openings are cut through the walls where they meet. They are not merged into one union.",
+	},
 	CutDepth = {
 		Text = "After you click a spot, move the mouse to set how deep the cut goes. Past the far side of the wall it cuts all the way through.",
 	},

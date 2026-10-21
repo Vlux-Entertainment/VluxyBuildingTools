@@ -1124,6 +1124,14 @@ function Panel.new(deps: Deps): Panel
 		refresh()
 	end, body({ Room = true, Corridor = true }))
 
+	switch(scope, "Join rooms and corridors", function()
+		return settings.ConnectStructures
+	end, function(on)
+		settings.ConnectStructures = on
+		deps.Save()
+		refresh()
+	end, body({ Room = true, Corridor = true, ArchedCorridor = true }))
+
 	switch(scope, "Set cut depth with mouse", function()
 		return settings.CutDepth
 	end, function(on)

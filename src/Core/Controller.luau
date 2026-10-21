@@ -19,6 +19,7 @@ local Builders = require("./Builders")
 local Colors = require("./Colors")
 local Geometry = require("./Geometry")
 local Hidden = require("./Hidden")
+local Joints = require("./Joints")
 local Keymap = require("../Pure/Keymap")
 local NumericInput = require("../Pure/NumericInput")
 local Overlay = require("./Overlay")
@@ -375,6 +376,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		A floor drawn from this point sits on the object instead of sinking into it.
 	]]
 	local function floorPoint(): Vector3?
+		local joins = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor"
 		local raised = mode == "Room"
 			or mode == "Corridor"
 			or mode == "ArchedCorridor"
@@ -398,11 +400,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return nil
 		end
 
-		return Vector3.new(
+		local point = Vector3.new(
 			snap(hit.Position.X),
 			hit.Position.Y + (if raised then settings.Floor else 0),
 			snap(hit.Position.Z)
 		)
+
+		if settings.ConnectStructures and joins then
+			return Joints.Snap(point)
+		end
+
+		return point
 	end
 
 	--[[
@@ -1895,6 +1903,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 							if problem then
 								say(problem)
 							end
+						end
+
+						if
+							settings.ConnectStructures
+							and (active == "Room" or active == "Corridor" or active == "ArchedCorridor")
+						then
+							Joints.Connect(model)
 						end
 					end)
 				then
