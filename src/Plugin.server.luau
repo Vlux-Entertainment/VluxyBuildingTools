@@ -8,6 +8,7 @@
 local RunService = game:GetService("RunService")
 
 local Controller = require("./Core/Controller")
+local Icons = require("./Pure/Icons")
 local PluginInfo = require("./Pure/PluginInfo")
 local Trove = require("./Packages/Trove")
 
@@ -19,7 +20,7 @@ local WIDGET_ID = "VluxyBuildingTools_left"
 
 local trove = Trove.new()
 local toolbar = plugin:CreateToolbar(PluginInfo.Name)
-local button = toolbar:CreateButton(PluginInfo.Name, "Open " .. PluginInfo.Name, "", PluginInfo.Name)
+local button = toolbar:CreateButton(PluginInfo.Name, "Open " .. PluginInfo.Name, Icons.Toolbar.Main, PluginInfo.Name)
 
 button.ClickableWhenViewportHidden = true
 
@@ -42,8 +43,8 @@ trove:Connect(widget:GetPropertyChangedSignal("Enabled"), function()
 end)
 button:SetActive(widget.Enabled)
 
-local pastelButton = toolbar:CreateButton("PastelColors", "Pastel colors on or off (P)", "", "Pastel")
-local gridButton = toolbar:CreateButton("SurfaceGrid", "Surface grid on or off (L)", "", "Grid")
+local pastelButton = toolbar:CreateButton("PastelColors", "Pastel colors on or off (P)", Icons.Toolbar.Pastel, "Pastel")
+local gridButton = toolbar:CreateButton("SurfaceGrid", "Surface grid on or off (L)", Icons.Toolbar.Grid, "Grid")
 
 pastelButton.ClickableWhenViewportHidden = true
 gridButton.ClickableWhenViewportHidden = true
