@@ -2066,6 +2066,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						local model = Geometry.Materialize(specs, "Vlux_" .. active)
 
 						local previousModel = if prevWall then prevWall.model else nil
+						local archCut: { Builders.Cutter } = {}
+						local archBefore: Model? = nil
 
 						if active == "Wall" or active == "Corridor" or active == "ArchedCorridor" then
 							local before = prevWall
@@ -2107,7 +2109,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 								if active == "ArchedCorridor" then
 									local corner = Geometry.Materialize({}, "Vlux_BendArch")
 
-									for _, wedge in Builders.ArchedBend(settings, joint, before.dir, segment) do
+									for index, wedge in Builders.ArchedBend(settings, joint, before.dir, segment) do
 										Geometry.AddCut(
 											corner,
 											wedge.specs,
@@ -2115,7 +2117,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 											wedge.cutterSize,
 											"ArchedCeiling"
 										)
+										archCut[index] =
+											{ cf = wedge.cutter, size = wedge.cutterSize, cylinder = false }
 									end
+
+									archBefore = before.model
 								end
 							end
 
@@ -2144,6 +2150,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 							if problem then
 								say(problem)
+							end
+
+							if archBefore and #archCut == 2 then
+								for index, owner in { archBefore, model } do
+									for _, child in owner:GetChildren() do
+										if
+											child:IsA("BasePart")
+											and (child.Name == "Ceiling_Left" or child.Name == "Ceiling_Right")
+										then
+											Joints.Carve(child, { archCut[index] })
+										end
+									end
+								end
 							end
 						end
 
