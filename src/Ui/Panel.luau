@@ -183,15 +183,14 @@ function Panel.new(deps: Deps): Panel
 	local logo = make("TextLabel", {
 		Size = UDim2.fromOffset(32, 32),
 		Position = UDim2.fromOffset(2, 3),
-		BackgroundColor3 = BACKGROUND,
-		RichText = true,
-		Text = '<font color="#FF8A24" size="24">V</font><font color="#6CD0E0" size="11">BT</font>',
-		TextColor3 = TEXT,
+		BackgroundColor3 = ACCENT,
+		Text = "V",
+		TextColor3 = BACKGROUND,
 		Font = Enum.Font.GothamBlack,
 		TextSize = 20,
 	}, header)
 
-	style(logo, 7, ACCENT)
+	style(logo, 7)
 	make("TextLabel", {
 		Size = UDim2.new(1, -120, 1, 0),
 		Position = UDim2.fromOffset(44, 0),
