@@ -101,12 +101,12 @@ Tools.List = {
 
 Tools.Grid = {
 	{
-		Id = "Wall",
-		Label = "Walls",
+		Id = "Basic",
+		Label = "Basic",
 		Glyph = "▥",
 		Key = "1",
-		Description = "Draw walls by clicking a start and an end point. Keep clicking to chain walls. Press Y to drag the height.",
-		Modes = { "Wall" },
+		Description = "Draw walls, or cut doors and windows into them. Pick which one in the options. Press Y to drag a wall's height.",
+		Modes = { "Wall", "Opening" },
 	},
 	{
 		Id = "Structures",
@@ -141,18 +141,10 @@ Tools.Grid = {
 		Modes = { "Arch", "ArchOpening" },
 	},
 	{
-		Id = "Opening",
-		Label = "Door / Window",
-		Glyph = "▯",
-		Key = "6",
-		Description = "Cut a door or window into a plain wall.",
-		Modes = { "Opening" },
-	},
-	{
 		Id = "Extend",
 		Label = "Face Extend",
 		Glyph = "⧉",
-		Key = "7",
+		Key = "6",
 		Description = "Drag a green face handle to grow a connected block.",
 		Modes = { "Extend" },
 	},
@@ -160,7 +152,7 @@ Tools.Grid = {
 		Id = "Place",
 		Label = "Stamp Copies",
 		Glyph = "❐",
-		Key = "8",
+		Key = "7",
 		Description = "Stamp copies of the selection onto surfaces.",
 		Modes = { "Place" },
 	},

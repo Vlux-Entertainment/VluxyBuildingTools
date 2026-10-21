@@ -20,15 +20,15 @@ return {
 	end,
 
 	["Alt plus a digit picks the same tool"] = function(expect)
-		expect.equal(Keymap.Resolve("One", false, false, true, false), "Tool:Wall")
+		expect.equal(Keymap.Resolve("One", false, false, true, false), "Tool:Basic")
 		expect.equal(Keymap.Resolve("Zero", false, false, true, false), "Tool:Measure")
 		expect.falsy(Keymap.Resolve("Nine", false, false, true, false))
 	end,
 
 	["digits pick tools"] = function(expect)
-		expect.equal(Keymap.Resolve("One", false, false, false, false), "Tool:Wall")
+		expect.equal(Keymap.Resolve("One", false, false, false, false), "Tool:Basic")
 		expect.equal(Keymap.Resolve("Zero", false, false, false, false), "Tool:Measure")
-		expect.equal(Keymap.Resolve("Seven", false, false, false, false), "Tool:Extend")
+		expect.equal(Keymap.Resolve("Six", false, false, false, false), "Tool:Extend")
 	end,
 
 	["V duplicates, Shift is never used"] = function(expect)

@@ -12,14 +12,13 @@
 export type Action = string
 
 local TOOL_KEYS: { [string]: string } = {
-	One = "Wall",
+	One = "Basic",
 	Two = "Structures",
 	Three = "Block",
 	Four = "Stairs",
 	Five = "Arches",
-	Six = "Opening",
-	Seven = "Extend",
-	Eight = "Place",
+	Six = "Extend",
+	Seven = "Place",
 	Zero = "Measure",
 }
 
@@ -65,8 +64,8 @@ local Keymap = {}
 function Keymap.Describe(): { { string } }
 	return {
 		{
-			"1 … 8, 0 or Alt+1 … Alt+0",
-			"Pick a tool: Walls, Structures, Block, Stairs, Arches, Door / Window, Face Extend, Stamp, Measure (0). Press it again to turn it off",
+			"1 … 7, 0 or Alt+1 … Alt+0",
+			"Pick a tool: Basic (walls, doors, windows), Structures, Block, Stairs, Arches, Face Extend, Stamp, Measure (0). Press it again to turn it off",
 		},
 		{ "T", "Extrude the face under the cursor of the selected block" },
 		{ "G / R / C", "Grab, rotate or scale the selection" },
