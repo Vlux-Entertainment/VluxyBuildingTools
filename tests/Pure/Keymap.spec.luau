@@ -19,16 +19,16 @@ return {
 		expect.falsy(Keymap.Resolve("X", false, true, false, true))
 	end,
 
-	["Alt plus a digit picks the same tool"] = function(expect)
-		expect.equal(Keymap.Resolve("One", false, false, true, false), "Tool:Basic")
-		expect.equal(Keymap.Resolve("Zero", false, false, true, false), "Tool:Measure")
-		expect.falsy(Keymap.Resolve("Nine", false, false, true, false))
+	["Ctrl plus a digit picks the same tool"] = function(expect)
+		expect.equal(Keymap.Resolve("One", false, true, false, false), "Tool:Basic")
+		expect.equal(Keymap.Resolve("Zero", false, true, false, false), "Tool:Measure")
+		expect.falsy(Keymap.Resolve("Nine", false, true, false, false))
 	end,
 
-	["Ctrl plus a digit picks an option inside the tool"] = function(expect)
-		expect.equal(Keymap.Resolve("One", false, true, false, false), "Option:1")
-		expect.equal(Keymap.Resolve("Zero", false, true, false, false), "Option:10")
-		expect.falsy(Keymap.Resolve("One", true, true, false, false))
+	["Alt plus a digit picks an option inside the tool"] = function(expect)
+		expect.equal(Keymap.Resolve("One", false, false, true, false), "Option:1")
+		expect.equal(Keymap.Resolve("Zero", false, false, true, false), "Option:10")
+		expect.falsy(Keymap.Resolve("One", true, false, true, false))
 	end,
 
 	["digits pick tools"] = function(expect)

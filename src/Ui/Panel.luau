@@ -782,7 +782,7 @@ function Panel.new(deps: Deps): Panel
 		}, grid)
 
 		style(tile, 6)
-		attachTip(tile, { Text = tool.Description, Key = if tool.Key then "Alt+" .. tool.Key else nil })
+		attachTip(tile, { Text = tool.Description, Key = if tool.Key then "Ctrl+" .. tool.Key else nil })
 
 		local outline = make("UIStroke", {
 			Color = CARD_STROKE,
@@ -900,7 +900,7 @@ function Panel.new(deps: Deps): Panel
 				}, variantRow)
 
 				style(choice, 6, CARD_STROKE)
-				attachTip(choice, { Text = option.Description, Key = "Ctrl+" .. (if i == 10 then 0 else i) })
+				attachTip(choice, { Text = option.Description, Key = "Alt+" .. (if i == 10 then 0 else i) })
 				variantButtons[id] = choice
 				choice.MouseButton1Click:Connect(function()
 					actions.SetMode(id)

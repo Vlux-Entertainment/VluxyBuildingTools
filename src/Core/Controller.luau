@@ -1085,7 +1085,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local tile = if mode then Tools.TileOf(mode) else nil
 
 			if not tile then
-				return say("Pick a tool first, then Ctrl plus a number picks an option inside it.")
+				return say("Pick a tool first, then Alt plus a number picks an option inside it.")
 			end
 
 			local target = tile.Modes[tonumber(string.sub(action, 8)) :: number]

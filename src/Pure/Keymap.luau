@@ -2,7 +2,8 @@
 
 --[=[
 	The Blender-style hotkeys. `Resolve` turns a key press into an action name; the plugin decides
-	what the action does. Ctrl is only used for Ctrl+M and Alt for Alt+H and the plane locks, so Studio's
+	what the action does. Ctrl is only used for Ctrl+M and the Ctrl+number tool picks, and Alt for Alt+H, the plane locks and the
+	Alt+number options, so Studio's
 	own shortcuts keep working. W A S D Q E F and Shift are never taken: Studio uses them to fly the
 	camera, focus and multi-select.
 
@@ -76,11 +77,11 @@ local Keymap = {}
 function Keymap.Describe(): { { string } }
 	return {
 		{
-			"1 … 6, 0 or Alt+1 … Alt+0",
+			"Ctrl+1 … Ctrl+6, Ctrl+0 or 1 … 6, 0",
 			"Pick a tool: Basic (walls, doors, windows, arches), Structures, Block, Stairs, Face Extend, Stamp, Measure (0). Press it again to turn it off",
 		},
 		{
-			"Ctrl+1 … Ctrl+0",
+			"Alt+1 … Alt+0",
 			"Pick the 1st to 10th option inside the active tool, for example Walls, Door / Window, Archway in Basic",
 		},
 		{ "T", "Extrude the face under the cursor of the selected block" },
@@ -135,8 +136,8 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 		return "FlipArm"
 	end
 
-	if ctrl and not alt and not shift and OPTION_KEYS[keyName] then
-		return `Option:{OPTION_KEYS[keyName]}`
+	if ctrl and not alt and not shift and TOOL_KEYS[keyName] then
+		return `Tool:{TOOL_KEYS[keyName]}`
 	end
 
 	if shift or ctrl then
@@ -148,9 +149,9 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 	end
 
 	if alt then
-		local picked = TOOL_KEYS[keyName]
+		local option = OPTION_KEYS[keyName]
 
-		return if picked then `Tool:{picked}` else nil
+		return if option then `Option:{option}` else nil
 	end
 
 	local tool = TOOL_KEYS[keyName]
