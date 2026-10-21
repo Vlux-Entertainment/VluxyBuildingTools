@@ -76,6 +76,8 @@ local INSTRUCTIONS: { [string]: string } = {
 	ArchOpening = "Hover over a plain wall and click to cut an archway. Adjust width/height below.",
 	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
 	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
+	CircleWindow = "Click an undecorated rectangular wall. The round window is centered on the cursor; its size is the smaller of the window width and height.",
+	TriangleWindow = "Click an undecorated rectangular wall. The triangular window is centered on the cursor, point up.",
 	Window = "Click an undecorated rectangular wall. The window is centered on the cursor; its height above the floor is in the options.",
 	Extend = "Click a block to select it, then drag a green face handle OUTWARD. Release to add a connected block.",
 	Place = "Select an object first. Click surfaces to stamp copies. R rotates the preview 90 degrees.",
@@ -143,6 +145,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local previewValid = false
 	local measurement: { a: Vector3, b: Vector3 }? = nil
 	local openingTarget: BasePart? = nil
+	local lockedHit: RaycastResult? = nil
+	local cutDepth: number? = nil
 	local placementCF: CFrame? = nil
 	local extendDrag: ExtendDrag? = nil
 	local extendHover = false
@@ -272,6 +276,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 	local function resetPoint()
 		first, current = nil, nil
+		lockedHit, cutDepth = nil, nil
 		chained = false
 		previewSpecs, previewValid = {}, false
 		lock = nil
@@ -416,6 +421,38 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
 	end
 
+	--[[
+		@return number? -- how far into the locked wall the mouse points, in studs, measured along the wall's normal
+
+		It intersects the mouse ray with the vertical plane through the clicked spot that contains the
+		wall normal, and keeps the last value when the camera looks along that plane.
+	]]
+	local function cutDepthFrom(hit: RaycastResult): number?
+		local plane = hit.Normal:Cross(Vector3.yAxis)
+
+		if plane.Magnitude < 0.1 then
+			return cutDepth
+		end
+
+		plane = plane.Unit
+
+		local ray = mouse.UnitRay
+		local den = ray.Direction:Dot(plane)
+
+		if math.abs(den) < 0.05 then
+			return cutDepth
+		end
+
+		local t = (hit.Position - ray.Origin):Dot(plane) / den
+		local point = ray.Origin + ray.Direction * t
+		local step = math.max(0.05, settings.FineGrid)
+		local depth = Snap.Round((point - hit.Position):Dot(-hit.Normal), step)
+
+		cutDepth = math.max(step, depth)
+
+		return cutDepth
+	end
+
 	local function lookVector(): Vector3
 		local camera = workspace.CurrentCamera
 
@@ -469,17 +506,51 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			return
-		elseif mode == "Door" or mode == "Window" or mode == "ArchOpening" then
+		elseif
+			mode == "Door"
+			or mode == "Window"
+			or mode == "CircleWindow"
+			or mode == "TriangleWindow"
+			or mode == "ArchOpening"
+		then
 			local opening = if mode == "Door"
 				then { Width = settings.DoorWidth, Height = settings.DoorHeight, Sill = 0 }
-				elseif mode == "Window" then {
+				elseif mode == "Window" or mode == "TriangleWindow" then {
 					Width = settings.WindowWidth,
 					Height = settings.WindowHeight,
 					Sill = settings.WindowSill,
 				}
 				else { Width = settings.OpenWidth, Height = settings.OpenHeight, Sill = 0 }
 
-			out, message, openingTarget = Builders.Opening(live, opening, scopedHit(), mode == "ArchOpening")
+			if mode == "CircleWindow" then
+				local diameter = math.min(settings.WindowWidth, settings.WindowHeight)
+
+				opening = { Width = diameter, Height = diameter, Sill = settings.WindowSill }
+			end
+
+			local shape = if mode == "ArchOpening"
+				then "Arch"
+				elseif mode == "CircleWindow" then "Circle"
+				elseif mode == "TriangleWindow" then "Triangle"
+				else "Rect"
+			local locked = first ~= nil and lockedHit ~= nil
+			local depth: number? = nil
+
+			if locked and lockedHit then
+				depth = cutDepthFrom(lockedHit)
+			end
+
+			out, message, openingTarget =
+				Builders.Opening(live, opening, if locked then lockedHit else scopedHit(), shape, depth)
+
+			if locked and #out > 0 then
+				message = if depth
+					then string.format(
+						"Cut depth %.2f. Move the mouse to change it; past the far side it cuts all the way through. Click to confirm.",
+						depth
+					)
+					else "Move the mouse to set the cut depth. Click to confirm."
+			end
 		elseif mode == "Pillar" then
 			local hit = hitSurface()
 			local base: Vector3? = nil
@@ -651,6 +722,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				first ~= nil
 				or mode == "Door"
 				or mode == "Window"
+				or mode == "CircleWindow"
+				or mode == "TriangleWindow"
 				or mode == "ArchOpening"
 				or mode == "Pillar"
 				or mode == "Place"
@@ -1148,6 +1221,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			elseif extrude then
 				cancelExtrude()
 				say("Extrude cancelled.")
+			elseif lockedHit then
+				resetPoint()
+				say("Cut cancelled.")
 			elseif mode then
 				stop()
 				say("Tool stopped. Your completed builds stay in the map. Press Enter to bring it back.")
@@ -1683,8 +1759,27 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return say(tostring(err))
 		end
 
-		if active == "Door" or active == "Window" or active == "ArchOpening" then
+		if
+			active == "Door"
+			or active == "Window"
+			or active == "CircleWindow"
+			or active == "TriangleWindow"
+			or active == "ArchOpening"
+		then
 			if not previewValid then
+				return
+			end
+
+			if settings.CutDepth and not first then
+				local hit = scopedHit()
+
+				if hit then
+					lockedHit = hit
+					cutDepth = nil
+					first = hit.Position
+					say("Move the mouse to set the cut depth. Click to confirm.")
+				end
+
 				return
 			end
 
@@ -1703,6 +1798,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					holder.Parent = nil
 				end
 			end)
+			resetPoint()
 		elseif active == "Pillar" then
 			if not previewValid then
 				return

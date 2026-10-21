@@ -59,6 +59,9 @@ Tips.Entries = {
 	FoundationMargin = { Text = "How far the slab sticks out past the corners you click." },
 	RailHeight = { Text = "How tall the railing or half wall is." },
 	FenceHeight = { Text = "How tall the fence posts are." },
+	CutDepth = {
+		Text = "After you click a spot, move the mouse to set how deep the cut goes. Past the far side of the wall it cuts all the way through.",
+	},
 	FloorTransparency = { Text = "How see-through the floor is. 0 is solid, 1 is invisible." },
 	BalusterSpacing = { Text = "About how far apart the bars of an indoor railing are." },
 	FenceSpacing = { Text = "About how far apart the fence posts are." },

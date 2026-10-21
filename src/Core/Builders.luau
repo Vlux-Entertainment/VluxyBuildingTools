@@ -773,7 +773,8 @@ function Builders.Opening(
 	settings: Settings,
 	dims: { Width: number, Height: number, Sill: number },
 	hit: RaycastResult?,
-	arched: boolean
+	shape: string,
+	depth: number?
 ): ({ Spec }, string, BasePart?)
 	local out: { Spec } = {}
 	local wall = hit and hit.Instance
@@ -802,6 +803,7 @@ function Builders.Opening(
 		size = Vector3.new(size.Z, size.Y, size.X)
 	end
 
+	local arched = shape == "Arch"
 	local w, h = dims.Width, dims.Height
 	local sill = if arched then 0 else dims.Sill
 
@@ -834,7 +836,54 @@ function Builders.Opening(
 		p
 	)
 
-	if arched then
+	if shape == "Circle" then
+		local radius = math.min(w, h) / 2
+		local cy = bottom + radius
+		local count = math.max(8, math.floor(settings.ArchSegments) * 2)
+		local wallTop, wallBottom = size.Y / 2, -size.Y / 2
+
+		for i = 0, count - 1 do
+			local from = math.pi - i * math.pi / count
+			local to = math.pi - (i + 1) * math.pi / count
+
+			for _, side in { 1, -1 } do
+				local x1, y1 = x + radius * math.cos(from), cy + side * radius * math.sin(from)
+				local x2, y2 = x + radius * math.cos(to), cy + side * radius * math.sin(to)
+				local edge = if side == 1 then wallTop else wallBottom
+
+				quadPrism(
+					out,
+					cf:PointToWorldSpace(Vector3.new(x1, y1, 0)),
+					cf:PointToWorldSpace(Vector3.new(x2, y2, 0)),
+					cf:PointToWorldSpace(Vector3.new(x2, edge, 0)),
+					cf:PointToWorldSpace(Vector3.new(x1, edge, 0)),
+					size.Z,
+					"Circle_Frame",
+					p
+				)
+			end
+		end
+	elseif shape == "Triangle" then
+		local apex = Vector3.new(x, top, 0)
+		local wallTop = size.Y / 2
+
+		for _, side in { -1, 1 } do
+			local corner = Vector3.new(x + side * w / 2, bottom, 0)
+			local a = if side == -1 then corner else apex
+			local b = if side == -1 then apex else corner
+
+			quadPrism(
+				out,
+				cf:PointToWorldSpace(a),
+				cf:PointToWorldSpace(b),
+				cf:PointToWorldSpace(Vector3.new(b.X, wallTop, 0)),
+				cf:PointToWorldSpace(Vector3.new(a.X, wallTop, 0)),
+				size.Z,
+				"Triangle_Frame",
+				p
+			)
+		end
+	elseif arched then
 		local radius = w / 2
 		local spring = bottom + h - radius
 		local count = math.floor(settings.ArchSegments)
@@ -868,6 +917,65 @@ function Builders.Opening(
 
 	if sill > 0 then
 		add(out, Vector3.new(w, sill, size.Z), cf * CFrame.new(x, -size.Y / 2 + sill / 2, 0), "Opening_Sill", p)
+	end
+
+	if depth and depth < size.Z - 0.01 then
+		local back = size.Z - depth
+		local side = if localHit.Z >= 0 then -1 else 1
+		local z = side * (size.Z / 2 - back / 2)
+
+		local function at(px: number, py: number): Vector3
+			return cf:PointToWorldSpace(Vector3.new(px, py, z))
+		end
+
+		if shape == "Circle" then
+			local radius = math.min(w, h) / 2
+			local cy = bottom + radius
+			local count = math.max(8, math.floor(settings.ArchSegments) * 2)
+
+			for i = 0, count - 1 do
+				local from = math.pi - i * math.pi / count
+				local to = math.pi - (i + 1) * math.pi / count
+				local x1, x2 = x + radius * math.cos(from), x + radius * math.cos(to)
+				local s1, s2 = radius * math.sin(from), radius * math.sin(to)
+
+				quadPrism(
+					out,
+					at(x1, cy + s1),
+					at(x2, cy + s2),
+					at(x2, cy - s2),
+					at(x1, cy - s1),
+					back,
+					"Opening_Back",
+					p
+				)
+			end
+		elseif shape == "Triangle" then
+			trianglePrism(out, at(x - w / 2, bottom), at(x, top), at(x + w / 2, bottom), back, "Opening_Back", p)
+		elseif arched then
+			local radius = w / 2
+			local spring = bottom + h - radius
+			local count = math.floor(settings.ArchSegments)
+
+			add(
+				out,
+				Vector3.new(w, spring - bottom, back),
+				cf * CFrame.new(x, (bottom + spring) / 2, z),
+				"Opening_Back",
+				p
+			)
+
+			for i = 0, count - 1 do
+				local from = math.pi - i * math.pi / count
+				local to = math.pi - (i + 1) * math.pi / count
+				local x1, y1 = x + radius * math.cos(from), spring + radius * math.sin(from)
+				local x2, y2 = x + radius * math.cos(to), spring + radius * math.sin(to)
+
+				quadPrism(out, at(x1, y1), at(x2, y2), at(x2, spring), at(x1, spring), back, "Opening_Back", p)
+			end
+		else
+			add(out, Vector3.new(w, h, back), cf * CFrame.new(x, (bottom + top) / 2, z), "Opening_Back", p)
+		end
 	end
 
 	return out, "Click to replace this wall with an opening. Undo restores the original wall.", p

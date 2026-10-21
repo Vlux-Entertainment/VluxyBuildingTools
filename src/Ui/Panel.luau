@@ -992,9 +992,33 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "OpenHeight", "Archway height", 0.1, 1024, nil, body({ ArchOpening = true }))
 	numeric(scope, "DoorWidth", "Doorway width", 0.1, 1024, nil, body({ Door = true }))
 	numeric(scope, "DoorHeight", "Doorway height", 0.1, 1024, nil, body({ Door = true }))
-	numeric(scope, "WindowWidth", "Window width", 0.1, 1024, nil, body({ Window = true }))
-	numeric(scope, "WindowHeight", "Window height", 0.1, 1024, nil, body({ Window = true }))
-	numeric(scope, "WindowSill", "Bottom above floor", 0, 1024, nil, body({ Window = true }))
+	numeric(
+		scope,
+		"WindowWidth",
+		"Window width",
+		0.1,
+		1024,
+		nil,
+		body({ Window = true, CircleWindow = true, TriangleWindow = true })
+	)
+	numeric(
+		scope,
+		"WindowHeight",
+		"Window height",
+		0.1,
+		1024,
+		nil,
+		body({ Window = true, CircleWindow = true, TriangleWindow = true })
+	)
+	numeric(
+		scope,
+		"WindowSill",
+		"Bottom above floor",
+		0,
+		1024,
+		nil,
+		body({ Window = true, CircleWindow = true, TriangleWindow = true })
+	)
 	numeric(scope, "PillarWidth", "Pillar width", 0.1, 256, nil, body({ Pillar = true, PillaredWall = true }))
 
 	do
@@ -1076,6 +1100,14 @@ function Panel.new(deps: Deps): Panel
 		deps.Save()
 		refresh()
 	end, body({ Room = true, Corridor = true }))
+
+	switch(scope, "Set cut depth with mouse", function()
+		return settings.CutDepth
+	end, function(on)
+		settings.CutDepth = on
+		deps.Save()
+		refresh()
+	end, body({ Door = true, Window = true, CircleWindow = true, TriangleWindow = true, ArchOpening = true }))
 
 	local advancedRow = newRow(scope, 30)
 	local advancedButton = make("TextButton", {

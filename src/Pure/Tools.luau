@@ -154,6 +154,20 @@ Tools.List = {
 		Description = "Cut a window into a plain wall, a few studs above the bottom.",
 	},
 	{
+		Id = "CircleWindow",
+		Label = "Circle Window",
+		Glyph = "○",
+		Key = nil,
+		Description = "Cut a round window into a plain wall. Its size is the smaller of the window width and height.",
+	},
+	{
+		Id = "TriangleWindow",
+		Label = "Triangle Window",
+		Glyph = "△",
+		Key = nil,
+		Description = "Cut a triangular window into a plain wall, with the point at the top.",
+	},
+	{
 		Id = "Extend",
 		Label = "Face Extend",
 		Glyph = "⧉",
@@ -199,7 +213,7 @@ Tools.Grid = {
 		Glyph = "▯",
 		Key = "3",
 		Description = "Cut a doorway, a window or an archway into a wall. Pick which one in the options.",
-		Modes = { "Door", "Window", "ArchOpening" },
+		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening" },
 	},
 	{
 		Id = "Railings",
