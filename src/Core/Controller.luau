@@ -1322,6 +1322,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	-- Clicks
 	--
 
+	trove:Connect(widget:GetPropertyChangedSignal("Enabled"), function()
+		if not widget.Enabled and picking then
+			cancelPicking()
+		end
+	end)
+
 	trove:Connect(Selection.SelectionChanged, function()
 		if not picking then
 			return
@@ -1616,8 +1622,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if boxClock >= 1 then
 			boxClock = 0
 
-			if folder or pendingFolder then
+			if folder or pendingFolder or hoverFolder then
 				redrawBoxes()
+			else
+				Overlay.ClearBox(overlay, "Working")
+				Overlay.ClearBox(overlay, "Pending")
+				Overlay.ClearBox(overlay, "Hover")
 			end
 		end
 

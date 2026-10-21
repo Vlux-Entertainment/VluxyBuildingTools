@@ -8,6 +8,7 @@
 	@class Overlay
 ]=]
 
+local CollectionService = game:GetService("CollectionService")
 local CoreGui = game:GetService("CoreGui")
 
 local Geometry = require("./Geometry")
@@ -35,7 +36,30 @@ local ACCENT = Color3.fromRGB(255, 138, 36)
 local MAX_GHOSTS = 600
 local WEDGE_EDGES = { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 3, 4 }, { 3, 5 }, { 4, 6 }, { 5, 6 }, { 1, 5 }, { 2, 6 } }
 
+local TAG = "VluxyBuildingTools_Overlay"
+
 local Overlay = {}
+
+--[[
+	@param instance Instance
+
+	@return Instance -- the same instance, tagged so Sweep can always find and destroy it
+]]
+local function tag(instance: Instance): Instance
+	CollectionService:AddTag(instance, TAG)
+
+	return instance
+end
+
+--[=[
+	Destroys everything the overlay ever drew, found by its tag, so a leftover from an earlier load,
+	a reload or a crash cannot stay in the viewport.
+]=]
+function Overlay.Sweep()
+	for _, instance in CollectionService:GetTagged(TAG) do
+		instance:Destroy()
+	end
+end
 
 --[[
 	@param parent Instance
@@ -53,6 +77,7 @@ local function wire(parent: Instance, name: string, color: Color3, thickness: nu
 	adornment.Thickness = thickness
 	adornment.AlwaysOnTop = false
 	adornment.Parent = parent
+	tag(adornment)
 
 	return adornment
 end
@@ -62,10 +87,14 @@ end
 	@return Overlay
 ]=]
 function Overlay.new(trove: Trove.Trove): Overlay
+	Overlay.Sweep()
+
 	local folder = Instance.new("Folder")
 	folder.Name = "VluxBlockout_LocalPreview"
 	folder.Parent = CoreGui
+	tag(folder)
 	trove:Add(folder)
+	trove:Add(Overlay.Sweep)
 
 	local faceHandles = Instance.new("Handles")
 	faceHandles.Name = "DragToExtend"
@@ -73,6 +102,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	faceHandles.Color3 = Color3.fromRGB(115, 220, 190)
 	faceHandles.Visible = false
 	faceHandles.Parent = folder
+	tag(faceHandles)
 
 	local planeGrid = wire(folder, "ConstructionGrid", Color3.fromRGB(145, 165, 185), 1)
 	planeGrid.Transparency = 0.65
@@ -101,6 +131,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		fill.ZIndex = 0
 		fill.Visible = false
 		fill.Parent = folder
+		tag(fill)
 		fills[name] = fill
 	end
 
@@ -111,6 +142,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	hud.DisplayOrder = 1000
 	hud.Enabled = false
 	hud.Parent = CoreGui
+	tag(hud)
 	trove:Add(hud)
 
 	local label = Instance.new("TextLabel")
@@ -141,6 +173,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	bar.DisplayOrder = 999
 	bar.Enabled = false
 	bar.Parent = CoreGui
+	tag(bar)
 	trove:Add(bar)
 
 	local strip = Instance.new("Frame")
@@ -261,6 +294,7 @@ function Overlay.DrawGhosts(self: Overlay, specs: { Geometry.Spec })
 			ghost.Transparency = 0.55
 			ghost.Color3 = ACCENT
 			ghost.Parent = self._folder
+			tag(ghost)
 			self._ghosts[i] = ghost
 		end
 
