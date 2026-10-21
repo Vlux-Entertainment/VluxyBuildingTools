@@ -143,7 +143,7 @@ function SurfaceGrid.new(
 			local scope = self._scope()
 
 			if self.On then
-				if scope and object:IsDescendantOf(scope) then
+				if scope and object:IsDescendantOf(scope) and not object:FindFirstChild(TEXTURE_NAME) then
 					apply(object, self._size())
 				end
 			else
@@ -161,6 +161,20 @@ function SurfaceGrid.new(
 	trove:Connect(ChangeHistoryService.OnRedo, sync)
 
 	return self
+end
+
+--[=[
+	Puts the grid on a part that was just built, now, so it belongs to the same undo step as the part.
+
+	@param self SurfaceGrid
+	@param part BasePart
+]=]
+function SurfaceGrid.Adopt(self: SurfaceGrid, part: BasePart)
+	local scope = self._scope()
+
+	if self.On and scope and eligible(part) and part:IsDescendantOf(scope) then
+		apply(part, self._size())
+	end
 end
 
 --[=[

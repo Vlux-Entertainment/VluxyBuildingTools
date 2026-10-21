@@ -254,7 +254,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return false
 		end
 
+		local added: { BasePart } = {}
+		local watch = workspace.DescendantAdded:Connect(function(object)
+			if object:IsA("BasePart") then
+				table.insert(added, object)
+			end
+		end)
 		local ok, err = pcall(callback :: any)
+
+		watch:Disconnect()
+
+		for _, part in added do
+			if part:IsDescendantOf(workspace) then
+				SurfaceGrid.Adopt(surfaceGrid, part)
+				Colors.Adopt(colors, part)
+			end
+		end
 
 		ChangeHistoryService:FinishRecording(
 			id,
