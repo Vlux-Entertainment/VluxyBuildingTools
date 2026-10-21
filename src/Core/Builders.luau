@@ -764,8 +764,10 @@ function Builders.Opening(
 
 	local p = wall :: Part
 
-	if #p:GetChildren() > 0 then
-		return out, "Use an undecorated wall. Openings replace the wall with new Parts.", nil
+	for _, child in p:GetChildren() do
+		if not (child:IsA("Texture") and child.Name == "VluxGridTexture") then
+			return out, "Use an undecorated wall. Openings replace the wall with new Parts.", nil
+		end
 	end
 
 	if p.Locked then

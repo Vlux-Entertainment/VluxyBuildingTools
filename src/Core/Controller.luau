@@ -1746,8 +1746,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					edit("Build " .. active, function()
 						local model = Geometry.Materialize(specs, "Vlux_" .. active)
 
-						if active == "Arch" then
-							local problem = Geometry.UnionArchHalves(model)
+						if active == "Arch" or active == "Stairs" or active == "Ramp" then
+							local problem = if active == "Arch"
+								then Geometry.UnionArchHalves(model)
+								else Geometry.UnionAll(model, active)
 
 							if problem then
 								say(problem)
