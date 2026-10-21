@@ -2419,13 +2419,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 									local corner = Geometry.Materialize({}, "Vlux_BendArch")
 
 									for index, wedge in Builders.ArchedBend(settings, joint, before.dir, segment) do
-										Geometry.AddCut(
-											corner,
-											wedge.specs,
-											wedge.cutter,
-											wedge.cutterSize,
-											"ArchedCeiling"
-										)
+										if
+											not Geometry.AddCut(
+												corner,
+												wedge.specs,
+												wedge.cutter,
+												wedge.cutterSize,
+												"ArchedCeiling"
+											)
+										then
+											say("Part of the arched corner roof could not be built.")
+										end
+
 										archCut[index] =
 											{ cf = wedge.cutter, size = wedge.cutterSize, cylinder = false }
 									end

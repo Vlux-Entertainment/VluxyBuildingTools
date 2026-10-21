@@ -364,7 +364,7 @@ function Builders.ArchedBend(settings: Settings, joint: Vector3, prevDir: Vector
 
 		table.insert(wedges, {
 			specs = specs,
-			cutter = CFrame.lookAt(joint + away * (big / 2), joint + away * big),
+			cutter = CFrame.lookAt(joint + away * (big / 2 + 0.02), joint + away * (big + 0.02)),
 			cutterSize = Vector3.new(big, big, big),
 		})
 	end
