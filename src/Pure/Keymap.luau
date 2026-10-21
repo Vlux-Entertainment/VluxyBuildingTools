@@ -1,0 +1,90 @@
+--!strict
+
+--[=[
+	The Blender-style hotkeys. `Resolve` turns a key press into an action name; the plugin decides
+	what the action does. Ctrl and Alt are never taken, so Studio's own shortcuts keep working.
+
+	@class Keymap
+]=]
+
+export type Action = string
+
+local TOOL_KEYS: { [string]: string } = {
+	One = "Wall",
+	Two = "Corridor",
+	Three = "Room",
+	Four = "Block",
+	Five = "Stairs",
+	Six = "Ramp",
+	Seven = "Arch",
+	Eight = "Opening",
+	Nine = "Place",
+	Zero = "Measure",
+}
+
+local PLAIN_KEYS: { [string]: Action } = {
+	E = "Extrude",
+	G = "Grab",
+	R = "Rotate",
+	S = "Scale",
+	Escape = "Cancel",
+	Return = "Confirm",
+	KeypadEnter = "Confirm",
+	RightBracket = "HeightUp",
+	LeftBracket = "HeightDown",
+}
+
+local Keymap = {}
+
+--[=[
+	Every binding with its plain-language meaning, for the Help tab.
+
+	@return { { string } } -- pairs of { keys, meaning }
+]=]
+function Keymap.Describe(): { { string } }
+	return {
+		{ "1 … 9, 0", "Pick a tool: Wall, Corridor, Room, Block, Stairs, Ramp, Arch, Door, Stamp, Measure" },
+		{ "E", "Extrude the face under the cursor of the selected block" },
+		{ "G / R / S", "Grab, rotate or scale the selection" },
+		{ "Shift+D", "Duplicate the selection and grab the copy" },
+		{ "X / Y / Z", "While drawing or in a modal action: lock to that world axis. Press again to unlock" },
+		{ "Shift+X / Y / Z", "Lock to the plane the axis is perpendicular to" },
+		{ "0-9 and .", "While drawing or in a modal action: type an exact length, angle or factor" },
+		{ "Enter / click", "Confirm" },
+		{ "Esc / right-click", "Cancel the action, or stop the tool" },
+		{ "[ and ]", "Lower or raise the active height by one snap step" },
+	}
+end
+
+--[=[
+	@param keyName string -- `Enum.KeyCode.Name`
+	@param shift boolean
+	@param ctrl boolean
+	@param alt boolean
+	@param axisKeys boolean -- true while drawing or in a modal action, so X, Y and Z mean a lock
+	@return Action? -- nil when the key is not a hotkey here. Tool picks are `Tool:<Name>`, locks
+		are `Lock:X`, `Lock:Y`, `Lock:Z` and `Plane:X`, `Plane:Y`, `Plane:Z`.
+]=]
+function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boolean, axisKeys: boolean): Action?
+	if ctrl or alt then
+		return nil
+	end
+
+	if axisKeys and (keyName == "X" or keyName == "Y" or keyName == "Z") then
+		return `{if shift then "Plane" else "Lock"}:{keyName}`
+	end
+
+	if shift then
+		return if keyName == "D" then "Duplicate" else nil
+	end
+
+	local tool = TOOL_KEYS[keyName]
+
+	if tool then
+		return `Tool:{tool}`
+	end
+
+	return PLAIN_KEYS[keyName]
+end
+
+return Keymap
