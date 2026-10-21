@@ -29,9 +29,9 @@ Usage runs out fast, so keep it low. This section loads every turn; keep it shor
 
 ## Non-negotiables
 
-1. **`main` changes only through a pull request** the user merges. Work on branches; never force-push.
+1. **`main` changes only through a pull request.** Claude may open and merge its own PRs once `npm run verify` is green. Work on branches; never force-push; never commit to `main` directly.
 2. **`npm run verify` before every commit.** Green means well-formed, not working.
-3. **Never open or merge a pull request, and never start a Studio play-test, unless the user asks.**
+3. **Never start a Studio play-test unless the user asks.**
 4. **Pure means pure.** Nothing under `src/Pure/` touches a Roblox API; it is tested under Lune.
 5. **Never hand-edit generated files:** `Packages/`, `sourcemap.json`.
 6. **Clean up every connection.** A plugin that leaks signals or widgets leaks them on every reload;
