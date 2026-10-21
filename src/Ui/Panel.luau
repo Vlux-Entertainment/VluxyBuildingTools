@@ -11,6 +11,7 @@
 local Colors = require("../Core/Colors")
 local Hidden = require("../Core/Hidden")
 local Keymap = require("../Pure/Keymap")
+local PluginInfo = require("../Pure/PluginInfo")
 local Settings = require("../Pure/Settings")
 local SurfaceGrid = require("../Core/SurfaceGrid")
 local Tools = require("../Pure/Tools")
@@ -194,10 +195,10 @@ function Panel.new(deps: Deps): Panel
 		Size = UDim2.new(1, -120, 1, 0),
 		Position = UDim2.fromOffset(44, 0),
 		BackgroundTransparency = 1,
-		Text = "VLUX BLOCKOUT",
+		Text = PluginInfo.Name,
 		TextColor3 = TEXT,
 		Font = Enum.Font.GothamBlack,
-		TextSize = 17,
+		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	}, header)
 	make("TextLabel", {
@@ -205,7 +206,7 @@ function Panel.new(deps: Deps): Panel
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.fromScale(1, 0),
 		BackgroundTransparency = 1,
-		Text = "2.1",
+		Text = PluginInfo.Version,
 		TextColor3 = MUTED,
 		Font = Enum.Font.GothamMedium,
 		TextSize = 13,

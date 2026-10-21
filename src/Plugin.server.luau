@@ -8,6 +8,7 @@
 local RunService = game:GetService("RunService")
 
 local Controller = require("./Core/Controller")
+local PluginInfo = require("./Pure/PluginInfo")
 local Trove = require("./Packages/Trove")
 
 if not RunService:IsStudio() then
@@ -17,15 +18,15 @@ end
 local WIDGET_ID = "VluxBlockoutTools_v2"
 
 local trove = Trove.new()
-local toolbar = plugin:CreateToolbar("Vlux Blockout")
-local button = toolbar:CreateButton("Blockout Tools", "Vlux Blockout Tools", "", "Blockout Tools")
+local toolbar = plugin:CreateToolbar(PluginInfo.Name)
+local button = toolbar:CreateButton(PluginInfo.Name, "Open " .. PluginInfo.Name, "", PluginInfo.Name)
 
 button.ClickableWhenViewportHidden = true
 
 local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 360, 740, 320, 420)
 local widget = plugin:CreateDockWidgetPluginGuiAsync(WIDGET_ID, info)
 
-widget.Title = "VLUX | Blockout Tools"
+widget.Title = PluginInfo.Name
 
 local controller = Controller.new(plugin, widget, trove :: any)
 

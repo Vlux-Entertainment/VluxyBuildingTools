@@ -212,7 +212,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		if not ok then
 			say("Action cancelled: " .. tostring(err))
-			warn("Vlux Blockout: " .. tostring(err))
+			warn("VluxyBuildingTools: " .. tostring(err))
 		end
 
 		return ok
