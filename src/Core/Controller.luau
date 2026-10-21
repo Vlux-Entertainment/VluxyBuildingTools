@@ -329,6 +329,26 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return if hit and Geometry.InScope(hit.Instance) then hit else nil
 	end
 
+	--[[
+		@return Vector3? -- for rooms and corridors, the snapped spot on the top of whatever the cursor
+			is over, raised by the floor thickness so the floor rests on top of it
+
+		A floor drawn from this point sits on the object instead of sinking into it.
+	]]
+	local function floorPoint(): Vector3?
+		if mode ~= "Room" and mode ~= "Corridor" then
+			return nil
+		end
+
+		local hit = hitSurface()
+
+		if not hit or hit.Normal.Y < 0.7 then
+			return nil
+		end
+
+		return Vector3.new(snap(hit.Position.X), hit.Position.Y + settings.Floor, snap(hit.Position.Z))
+	end
+
 	local function lookVector(): Vector3
 		local camera = workspace.CurrentCamera
 
@@ -404,8 +424,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				current = heightEnd
 			elseif origin and lock then
 				current = lockedPoint(origin, lock)
+			elseif origin then
+				current = horizontalPoint(origin.Y)
 			else
-				current = horizontalPoint(if origin then origin.Y else settings.Elevation)
+				current = floorPoint() or horizontalPoint(settings.Elevation)
 			end
 
 			local point = current
@@ -795,6 +817,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--
 
 	local function activate(name: string)
+		if mode == name then
+			stop()
+
+			return say("Tool off.")
+		end
+
 		stop(true)
 
 		if not requireFolder() then
