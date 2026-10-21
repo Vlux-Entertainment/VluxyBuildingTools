@@ -8,7 +8,7 @@ return {
 		for _, tile in Tools.Grid do
 			if tile.Key then
 				local names = { "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" }
-				local name = names[tonumber(tile.Key) :: number]
+				local name = if tile.Key == "0" then "Zero" else names[tonumber(tile.Key) :: number]
 
 				expect.equal(Keymap.Resolve(name, false, false, false, false), `Tool:{tile.Id}`, tile.Id)
 			end

@@ -18,8 +18,9 @@ local TOOL_KEYS: { [string]: string } = {
 	Four = "Stairs",
 	Five = "Arches",
 	Six = "Opening",
-	Seven = "Place",
-	Eight = "Measure",
+	Seven = "Extend",
+	Eight = "Place",
+	Zero = "Measure",
 }
 
 local RESERVED: { [string]: boolean } = {
@@ -64,8 +65,8 @@ local Keymap = {}
 function Keymap.Describe(): { { string } }
 	return {
 		{
-			"1 … 8 or Alt+1 … Alt+8",
-			"Pick a tool: Walls, Structures, Block, Stairs, Arches, Door / Window, Stamp, Measure. Press it again to turn it off",
+			"1 … 8, 0 or Alt+1 … Alt+0",
+			"Pick a tool: Walls, Structures, Block, Stairs, Arches, Door / Window, Face Extend, Stamp, Measure (0). Press it again to turn it off",
 		},
 		{ "T", "Extrude the face under the cursor of the selected block" },
 		{ "G / R / C", "Grab, rotate or scale the selection" },
