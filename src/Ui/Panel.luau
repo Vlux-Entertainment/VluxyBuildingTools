@@ -26,7 +26,6 @@ export type Actions = {
 	ResetPoint: () -> (),
 	UseSelectedFloor: () -> (),
 	RepeatCopies: () -> (),
-	MirrorCopy: () -> (),
 	SnapSelection: () -> (),
 	ShowDimensions: () -> (),
 	AnchorSelection: () -> (),
@@ -1461,17 +1460,6 @@ function Panel.new(deps: Deps): Panel
 	numeric(repeatCard, "DY", "Y spacing", -2048, 2048)
 	numeric(repeatCard, "DZ", "Z spacing", -2048, 2048)
 	button(repeatCard, "Make repeated copies", actions.RepeatCopies, true)
-
-	local mirrorCard = card("MIRROR SELECTED LAYOUT", "Arrange")
-	local axisButton: TextButton
-
-	text(mirrorCard, "Reflects positions across world X=0, Y=0, or Z=0. Mesh geometry keeps its original shape.", MUTED)
-	axisButton = button(mirrorCard, "Axis: " .. settings.Axis, function()
-		settings.Axis = if settings.Axis == "X" then "Y" elseif settings.Axis == "Y" then "Z" else "X"
-		axisButton.Text = "Axis: " .. settings.Axis
-		deps.Save()
-	end, false)
-	button(mirrorCard, "Make mirror copy", actions.MirrorCopy, true)
 
 	local quickCard = card("QUICK ACTIONS", "Arrange")
 

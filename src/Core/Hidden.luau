@@ -15,6 +15,7 @@ export type Hidden = {
 	_parts: { [BasePart]: boolean },
 }
 
+local LOCK_ATTRIBUTE = "VluxyBT_HiddenLock"
 local INVISIBLE = 1
 local GHOST = 0.82
 
@@ -68,26 +69,60 @@ end
 ]=]
 function Hidden.Hide(self: Hidden, parts: { BasePart })
 	for _, part in parts do
+		if part:GetAttribute(LOCK_ATTRIBUTE) == nil then
+			part:SetAttribute(LOCK_ATTRIBUTE, part.Locked)
+		end
+
+		part.Locked = true
 		self._parts[part] = true
 		apply(self, part)
 	end
 end
 
+--[[
+	@param part BasePart
+
+	Makes the part visible and gives it back the Locked state it had before it was hidden.
+]]
+local function reveal(part: BasePart)
+	setLocal(part, 0)
+
+	local was = part:GetAttribute(LOCK_ATTRIBUTE)
+
+	if type(was) == "boolean" then
+		part.Locked = was
+	end
+
+	part:SetAttribute(LOCK_ATTRIBUTE, nil)
+end
+
 --[=[
-	Brings back every part this plugin hid.
+	Brings back every part this plugin hid, including parts hidden in an earlier session or replaced
+	by a union since, which are found by the attribute that remembers their lock.
 
 	@param self Hidden
 	@return number -- how many were hidden
 ]=]
 function Hidden.UnhideAll(self: Hidden): number
-	local count = 0
+	local seen: { [BasePart]: boolean } = {}
 
 	for part in self._parts do
-		count += 1
-
 		if part.Parent then
-			setLocal(part, 0)
+			seen[part] = true
 		end
+	end
+
+	for _, object in workspace:GetDescendants() do
+		if object:IsA("BasePart") and object:GetAttribute(LOCK_ATTRIBUTE) ~= nil then
+			seen[object] = true
+		end
+	end
+
+	local count = 0
+
+	for part in seen do
+		count += 1
+		reveal(part)
 	end
 
 	self._parts = {}

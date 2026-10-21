@@ -1374,7 +1374,17 @@ function Builders.CutShape(corners: { Vector3 }, triangles: { { number } }, dept
 	local out: { Spec } = {}
 
 	for _, t in triangles do
-		trianglePrism(out, corners[t[1]] + shift, corners[t[2]] + shift, corners[t[3]] + shift, depth, "Cut")
+		local a, b, c = corners[t[1]] + shift, corners[t[2]] + shift, corners[t[3]] + shift
+		local middle = (a + b + c) / 3
+
+		--[[ Each triangle is a hair bigger so neighbours overlap and no sliver is left between them. ]]
+		local function grow(p: Vector3): Vector3
+			local away = p - middle
+
+			return if away.Magnitude > 0.001 then p + away.Unit * 0.03 else p
+		end
+
+		trianglePrism(out, grow(a), grow(b), grow(c), depth, "Cut")
 	end
 
 	return out

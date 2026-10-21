@@ -295,7 +295,14 @@ function Joints.CarveShape(part: BasePart, specs: { Geometry.Spec }): boolean
 	end
 
 	local ok, result = pcall(function()
-		return part:SubtractAsync(tools)
+		local base = tools[1]
+		local rest = table.clone(tools)
+
+		table.remove(rest, 1)
+
+		local cutter = if #rest > 0 then base:UnionAsync(rest) else base
+
+		return part:SubtractAsync({ cutter })
 	end)
 
 	for _, tool in tools do

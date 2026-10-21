@@ -71,8 +71,8 @@ local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
 
 local INSTRUCTIONS: { [string]: string } = {
-	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc exits.",
-	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
+	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc removes the point, Esc again exits.",
+	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc removes the point, Esc again exits. X / Y / Z locks the drag.",
 	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the total height at the centre, arch included.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
 	Floor = "Click two opposite corners for a flat floor. Its transparency is in the options.",
@@ -970,6 +970,24 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					current = b
 				end
 
+				if chained and prevWall and (mode == "Corridor" or mode == "ArchedCorridor") then
+					local straight = prevWall.dir
+					local sideways = straight:Cross(Vector3.yAxis)
+					local flat = Vector3.new(b.X - origin.X, 0, b.Z - origin.Z)
+					local best, bestDot = straight, -math.huge
+
+					for _, option in { straight, sideways, -sideways } do
+						local dot = flat:Dot(option)
+
+						if dot > bestDot then
+							best, bestDot = option, dot
+						end
+					end
+
+					b = origin + best * math.max(0, snap(bestDot)) + Vector3.new(0, b.Y - origin.Y, 0)
+					current = b
+				end
+
 				local drawn = live
 
 				if height then
@@ -1593,6 +1611,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			elseif lockedHit or cutFace then
 				resetPoint()
 				say("Cut cancelled.")
+			elseif mode and (first ~= nil or chained or measurement ~= nil) then
+				resetPoint()
+				say("Point removed. Click to start again, or press Esc again to leave the tool.")
 			elseif mode then
 				stop()
 				say("Tool stopped. Your completed builds stay in the map. Press Enter to bring it back.")
@@ -1980,7 +2001,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			ResetPoint = resetPoint,
 			UseSelectedFloor = guarded(arrange.UseSelectedFloor),
 			RepeatCopies = guarded(arrange.RepeatCopies),
-			MirrorCopy = guarded(arrange.MirrorCopy),
 			SnapSelection = guarded(arrange.SnapSelection),
 			ShowDimensions = guarded(arrange.ShowDimensions),
 			AnchorSelection = guarded(arrange.AnchorSelection),
