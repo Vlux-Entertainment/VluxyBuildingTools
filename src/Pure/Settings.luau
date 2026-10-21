@@ -7,7 +7,9 @@
 ]=]
 
 export type Settings = {
+	Version: number,
 	Grid: number,
+	FineGrid: number,
 	Elevation: number,
 	Height: number,
 	Thickness: number,
@@ -18,13 +20,18 @@ export type Settings = {
 	Extend: number,
 	OpenWidth: number,
 	OpenHeight: number,
-	Sill: number,
+	PillarWidth: number,
+	DoorWidth: number,
+	DoorHeight: number,
+	WindowWidth: number,
+	WindowHeight: number,
+	WindowSill: number,
 	Offset: number,
 	Copies: number,
 	ArchHeight: number,
 	ArchDepth: number,
 	ArchSegments: number,
-	SurfaceGridSize: number,
+	GridTextureSize: number,
 	StairHeight: number,
 	RampHeight: number,
 	DX: number,
@@ -32,6 +39,29 @@ export type Settings = {
 	DZ: number,
 	Yaw: number,
 	Roof: boolean,
+	PillaredWalls: boolean,
+	FloorTransparency: number,
+	CutDepth: boolean,
+	ConnectStructures: boolean,
+	StandardHeight: number,
+	StandardThickness: number,
+	StandardDoorWidth: number,
+	StandardDoorHeight: number,
+	HeightOverride: boolean,
+	ThicknessOverride: boolean,
+	DoorWidthOverride: boolean,
+	DoorHeightOverride: boolean,
+	RoofStyle: string,
+	RoofRise: number,
+	RoofOverhang: number,
+	RoofThickness: number,
+	FoundationHeight: number,
+	FoundationMargin: number,
+	PorchRailing: boolean,
+	RailHeight: number,
+	FenceHeight: number,
+	FenceSpacing: number,
+	BalusterSpacing: number,
 	Pastel: boolean,
 	Align: boolean,
 	ShowGrid: boolean,
@@ -46,7 +76,9 @@ local Settings = {}
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Grid = 1,
+		Version = 2,
+		Grid = 4,
+		FineGrid = 1,
 		Elevation = 0,
 		Height = 12,
 		Thickness = 1,
@@ -57,13 +89,18 @@ function Settings.Defaults(): Settings
 		Extend = 8,
 		OpenWidth = 6,
 		OpenHeight = 10,
-		Sill = 0,
+		PillarWidth = 2,
+		DoorWidth = 4,
+		DoorHeight = 8,
+		WindowWidth = 5,
+		WindowHeight = 4,
+		WindowSill = 3,
 		Offset = 0,
 		Copies = 3,
 		ArchHeight = 10,
 		ArchDepth = 2,
 		ArchSegments = 16,
-		SurfaceGridSize = 4,
+		GridTextureSize = 13,
 		StairHeight = 6,
 		RampHeight = 6,
 		DX = 12,
@@ -71,6 +108,29 @@ function Settings.Defaults(): Settings
 		DZ = 0,
 		Yaw = 0,
 		Roof = false,
+		PillaredWalls = false,
+		FloorTransparency = 0,
+		CutDepth = true,
+		ConnectStructures = true,
+		StandardHeight = 12,
+		StandardThickness = 1,
+		StandardDoorWidth = 4,
+		StandardDoorHeight = 8,
+		HeightOverride = false,
+		ThicknessOverride = false,
+		DoorWidthOverride = false,
+		DoorHeightOverride = false,
+		RoofStyle = "Gable",
+		RoofRise = 5,
+		RoofOverhang = 1,
+		RoofThickness = 0.5,
+		FoundationHeight = 2,
+		FoundationMargin = 1,
+		PorchRailing = true,
+		RailHeight = 3,
+		FenceHeight = 4,
+		FenceSpacing = 4,
+		BalusterSpacing = 1.2,
 		Pastel = false,
 		Align = false,
 		ShowGrid = true,
@@ -86,6 +146,41 @@ end
 	@param saved any -- whatever the plugin settings store returned
 	@return Settings
 ]=]
+--[=[
+	The values a tool field can override, as { field, standard, override flag }.
+
+	@prop Standards { { string } }
+	@within Settings
+]=]
+Settings.Standards = {
+	{ "Height", "StandardHeight", "HeightOverride" },
+	{ "Thickness", "StandardThickness", "ThicknessOverride" },
+	{ "DoorWidth", "StandardDoorWidth", "DoorWidthOverride" },
+	{ "DoorHeight", "StandardDoorHeight", "DoorHeightOverride" },
+}
+
+--[=[
+	Gives every field that is not overridden the standard value, and clears an override that now
+	matches its standard.
+
+	@param settings Settings
+]=]
+function Settings.Sync(settings: Settings)
+	local target = settings :: any
+
+	for _, row in Settings.Standards do
+		local field, standard, flag = row[1], row[2], row[3]
+
+		if target[field] == target[standard] then
+			target[flag] = false
+		end
+
+		if not target[flag] then
+			target[field] = target[standard]
+		end
+	end
+end
+
 function Settings.Load(saved: any): Settings
 	local settings = Settings.Defaults()
 
@@ -101,6 +196,23 @@ function Settings.Load(saved: any): Settings
 			target[key] = source[key]
 		end
 	end
+
+	for _, row in Settings.Standards do
+		local field, standard, flag = row[1], row[2], row[3]
+
+		if source[flag] == nil and type(source[field]) == "number" and source[field] ~= target[standard] then
+			target[flag] = true
+		end
+	end
+
+	-- The snap steps changed in version 2, so a save from before it takes the new ones.
+	if source.Version ~= settings.Version then
+		local fresh = Settings.Defaults()
+
+		settings.Grid, settings.FineGrid = fresh.Grid, fresh.FineGrid
+	end
+
+	Settings.Sync(settings)
 
 	return settings
 end

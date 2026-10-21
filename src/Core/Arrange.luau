@@ -27,6 +27,44 @@ export type Deps = {
 
 local MAX_COPIED_PARTS = 10000
 
+export type Actions = {
+	RepeatCopies: () -> (),
+	MirrorCopy: () -> (),
+	SnapSelection: () -> (),
+	ShowDimensions: () -> (),
+	AnchorSelection: () -> (),
+	UseSelectedFloor: () -> (),
+	Flip: (axis: string) -> (),
+	RotateBy: (axis: string, degrees: number) -> (),
+}
+
+--[[
+	@param axis string -- "X", "Y" or "Z"
+	@param v Vector3
+
+	@return Vector3 -- v reflected across the plane perpendicular to the axis
+]]
+local function reflectVector(axis: string, v: Vector3): Vector3
+	return Vector3.new(
+		if axis == "X" then -v.X else v.X,
+		if axis == "Y" then -v.Y else v.Y,
+		if axis == "Z" then -v.Z else v.Z
+	)
+end
+
+--[[
+	@param axis string
+	@param cf CFrame
+
+	@return CFrame -- the mirrored frame, kept as a proper rotation
+]]
+local function reflectFrame(axis: string, cf: CFrame): CFrame
+	local up = reflectVector(axis, cf.UpVector)
+	local back = reflectVector(axis, -cf.LookVector)
+
+	return CFrame.fromMatrix(reflectVector(axis, cf.Position), up:Cross(back), up, back)
+end
+
 local Arrange = {}
 
 --[=[
@@ -71,7 +109,7 @@ end
 	@param deps Deps
 	@return { [string]: () -> () } -- RepeatCopies, MirrorCopy, SnapSelection, ShowDimensions, AnchorSelection, UseSelectedFloor
 ]=]
-function Arrange.new(deps: Deps): { [string]: () -> () }
+function Arrange.new(deps: Deps): Actions
 	local settings, say = deps.Settings, deps.Say
 
 	local function selection(): ({ Instance }, { BasePart })
@@ -240,7 +278,60 @@ function Arrange.new(deps: Deps): { [string]: () -> () }
 		say("Drawing floor is now Y = " .. settings.Elevation .. ".")
 	end
 
+	local function flip(axis: string)
+		deps.Stop()
+
+		local _, parts = selection()
+
+		if #parts == 0 then
+			return say("Select Parts or Models inside the working folder first.")
+		end
+
+		local center = Geometry.Bounds(parts).Position
+
+		local made = deps.Edit("Flip objects", function()
+			for _, part in parts do
+				local cf = part.CFrame
+				local offset = reflectVector(axis, cf.Position - center)
+
+				part.CFrame = CFrame.new(center + offset) * reflectFrame(axis, cf.Rotation)
+			end
+		end)
+
+		if made then
+			say("Flipped across " .. axis .. " around the selection's centre.")
+		end
+	end
+
+	local function rotateBy(axis: string, degrees: number)
+		deps.Stop()
+
+		local _, parts = selection()
+
+		if #parts == 0 then
+			return say("Select Parts or Models inside the working folder first.")
+		end
+
+		local center = Geometry.Bounds(parts).Position
+		local unit = if axis == "X" then Vector3.xAxis elseif axis == "Y" then Vector3.yAxis else Vector3.zAxis
+		local turn = CFrame.fromAxisAngle(unit, math.rad(degrees))
+
+		local made = deps.Edit("Rotate objects", function()
+			for _, part in parts do
+				local cf = part.CFrame
+
+				part.CFrame = CFrame.new(center + turn:VectorToWorldSpace(cf.Position - center)) * turn * cf.Rotation
+			end
+		end)
+
+		if made then
+			say(string.format("Rotated %d° about %s.", degrees, axis))
+		end
+	end
+
 	return {
+		Flip = flip,
+		RotateBy = rotateBy,
 		RepeatCopies = repeatCopies,
 		MirrorCopy = mirrorCopy,
 		SnapSelection = snapSelection,

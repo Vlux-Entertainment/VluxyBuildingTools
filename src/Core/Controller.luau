@@ -18,6 +18,8 @@ local AxisLock = require("../Pure/AxisLock")
 local Builders = require("./Builders")
 local Colors = require("./Colors")
 local Geometry = require("./Geometry")
+local Hidden = require("./Hidden")
+local Joints = require("./Joints")
 local Keymap = require("../Pure/Keymap")
 local NumericInput = require("../Pure/NumericInput")
 local Overlay = require("./Overlay")
@@ -25,6 +27,7 @@ local Panel = require("../Ui/Panel")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
 local SurfaceGrid = require("./SurfaceGrid")
+local Tools = require("../Pure/Tools")
 local Transform = require("./Transform")
 local Trove = require("../Packages/Trove")
 
@@ -42,6 +45,10 @@ type Extrude = {
 
 export type Controller = {
 	Stop: () -> (),
+	TogglePastel: () -> (),
+	ToggleGrid: () -> (),
+	PastelOn: () -> boolean,
+	GridOn: () -> boolean,
 	Destroy: () -> (),
 }
 
@@ -51,28 +58,57 @@ local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
 
 local INSTRUCTIONS: { [string]: string } = {
+	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc exits.",
 	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
+	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the wall height under the curve.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
+	Floor = "Click two opposite corners for a flat floor. Its transparency is in the options.",
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
+	Foundation = "Click two opposite corners. The slab is a little bigger than the corners and stands on the surface you click.",
+	Porch = "Click two opposite corners for the porch floor. Corner posts and a railing are added.",
+	Railing = "Click the start and the end of the railing. Click points on stairs and it follows the slope. Pillars cap both ends.",
+	HalfWall = "Click the start and the end of the half wall. Click points on stairs and it follows the slope.",
+	Fence = "Click points to draw a fence. Keep clicking to connect it. Enter starts a new chain.",
+	Roof = "Click two opposite corners over the top of the walls. Pick the roof style in the options.",
 	Block = "Click two opposite footprint corners. Press Y to drag it up, or X / Z to drag it along that axis; type a number for an exact size.",
 	Stairs = "Click the first step and the end of the stair run. Length is drawn; Height sets the total rise.",
 	Ramp = "Click the bottom and top footprint point. Drag distance sets length; Height sets the rise.",
 	Arch = "Click the two inner edges at ground level. Height is the arch clearance; Depth is the frame depth.",
-	ArchOpening = "Hover over a plain wall and click to cut an arched doorway. Adjust width/height below.",
-	Opening = "Click an undecorated rectangular wall. Opening is centered on the cursor horizontally; sill sets its height.",
+	ArchOpening = "Hover over a plain wall and click to cut an archway. Adjust width/height below.",
+	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
+	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
+	CircleWindow = "Click an undecorated rectangular wall. The round window is centered on the cursor; its size is the smaller of the window width and height.",
+	TriangleWindow = "Click an undecorated rectangular wall. The triangular window is centered on the cursor, point up.",
+	Window = "Click an undecorated rectangular wall. The window is centered on the cursor; its height above the floor is in the options.",
 	Extend = "Click a block to select it, then drag a green face handle OUTWARD. Release to add a connected block.",
 	Place = "Select an object first. Click surfaces to stamp copies. R rotates the preview 90 degrees.",
 	Measure = "Click two surface points. A distance label stays in the viewport. Esc clears it.",
 }
 
+local HEIGHT_MODES: { [string]: boolean } = {
+	Wall = true,
+	PillaredWall = true,
+	Corridor = true,
+	Room = true,
+}
+
 local DRAW_MODES: { [string]: boolean } = {
 	Wall = true,
+	Floor = true,
+	PillaredWall = true,
 	Corridor = true,
+	ArchedCorridor = true,
 	Room = true,
 	Block = true,
 	Stairs = true,
 	Ramp = true,
 	Arch = true,
+	Foundation = true,
+	Porch = true,
+	Fence = true,
+	Roof = true,
+	Railing = true,
+	HalfWall = true,
 }
 
 -- Hotkeys that keep working when Blender hotkeys are switched off, as they did before.
@@ -95,11 +131,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	))
 	local mouse = plugin:GetMouse()
 	local overlay = Overlay.new(trove)
-	local surfaceGrid = SurfaceGrid.new(trove)
+	local surfaceGrid: SurfaceGrid.SurfaceGrid
 
 	local mode: string? = nil
 	local first: Vector3? = nil
+	local chained = false
 	local current: Vector3? = nil
+	local heightEnd: Vector3? = nil
 	local lock: AxisLock.Lock? = nil
 	local numeric = NumericInput.new()
 	local source: Builders.Source? = nil
@@ -108,19 +146,77 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local previewValid = false
 	local measurement: { a: Vector3, b: Vector3 }? = nil
 	local openingTarget: BasePart? = nil
+	local lockedHit: RaycastResult? = nil
+	local cutDepth: number? = nil
 	local placementCF: CFrame? = nil
 	local extendDrag: ExtendDrag? = nil
 	local extendHover = false
 	local extrude: Extrude? = nil
 	local session: Transform.Session? = nil
 	local sessionRecording: string? = nil
+	local armed: string? = nil
+	local folder: Instance? = nil
+	local pendingFolder: Instance? = nil
+	local picking = false
+	local cancelPicking: () -> ()
+	local hoverFolder: Instance? = nil
+	local boxClock = 0
+	local hidden = Hidden.new(trove)
+	local arrange: Arrange.Actions
 
 	local panel: Panel.Panel
 	local colors: Colors.Colors
 	local stop: (keepActive: boolean?) -> ()
 
+	local function showBar(message: string)
+		local hints: { { string } }
+		local glyph, name = "◆", ""
+
+		if session then
+			glyph, name = "✥", session.Kind
+			hints = { { "X Y Z", "Axis" }, { "0-9", "Type value" }, { "Enter", "Confirm" }, { "Esc", "Cancel" } }
+
+			if session.Kind == "Rotate" then
+				table.insert(hints, 2, { "←↑↓→", "±90°" })
+			end
+		elseif extrude then
+			glyph, name = "⧉", "Extrude"
+			hints = { { "0-9", "Type length" }, { "Enter", "Confirm" }, { "Esc", "Cancel" } }
+		elseif mode then
+			local tool = Tools.Find(mode)
+
+			if tool then
+				glyph, name = tool.Glyph, tool.Label
+			end
+
+			hints = if DRAW_MODES[mode]
+				then { { "Alt", "Straight line" }, { "X Y Z", "Axis lock" }, { "Esc", "Exit tool" } }
+				else { { "Esc", "Exit tool" } }
+		else
+			Overlay.HideBar(overlay)
+
+			return
+		end
+
+		Overlay.SetBar(overlay, glyph, name, message, hints)
+	end
+
 	local function say(text: string)
 		panel.Say(text)
+		showBar(text)
+	end
+
+	--[[
+		@return boolean -- true when a working folder is set and still in the place; says so when not
+	]]
+	local function requireFolder(): boolean
+		if folder and folder:IsDescendantOf(workspace) then
+			return true
+		end
+
+		say("Pick a working folder in the panel first. The plugin only works inside it.")
+
+		return false
 	end
 
 	local function save()
@@ -159,20 +255,33 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		if not ok then
 			say("Action cancelled: " .. tostring(err))
-			warn("Vlux Blockout: " .. tostring(err))
+			warn("VluxyBuildingTools: " .. tostring(err))
 		end
 
 		return ok
 	end
 
+	--[[
+		@return number -- the snap step in force: the fine step while Shift is held, else the normal one
+	]]
+	local function gridNow(): number
+		local fine = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+
+		return if fine then settings.FineGrid else settings.Grid
+	end
+
 	local function snap(value: number): number
-		return Snap.Round(value, settings.Grid)
+		return Snap.Round(value, gridNow())
 	end
 
 	local function resetPoint()
 		first, current = nil, nil
+		lockedHit, cutDepth = nil, nil
+		chained = false
 		previewSpecs, previewValid = {}, false
 		lock = nil
+		heightEnd = nil
 		measurement = nil
 		NumericInput.Clear(numeric)
 		Overlay.ClearGhosts(overlay)
@@ -251,6 +360,107 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return workspace:Raycast(ray.Origin, ray.Direction * 100000, params)
 	end
 
+	--[[
+		@return RaycastResult? -- what the cursor is over, only when it is inside the working folder
+	]]
+	local function scopedHit(): RaycastResult?
+		local hit = hitSurface()
+
+		return if hit and Geometry.InScope(hit.Instance) then hit else nil
+	end
+
+	--[[
+		@return Vector3? -- for rooms and corridors, the snapped spot on the top of whatever the cursor
+			is over, raised by the floor thickness so the floor rests on top of it
+
+		A floor drawn from this point sits on the object instead of sinking into it.
+	]]
+	local function floorPoint(): Vector3?
+		local joins = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor"
+		local raised = mode == "Room"
+			or mode == "Corridor"
+			or mode == "ArchedCorridor"
+			or mode == "Porch"
+			or mode == "Floor"
+
+		if
+			not raised
+			and mode ~= "Foundation"
+			and mode ~= "Roof"
+			and mode ~= "Fence"
+			and mode ~= "Railing"
+			and mode ~= "HalfWall"
+		then
+			return nil
+		end
+
+		local hit = hitSurface()
+
+		if not hit or hit.Normal.Y < 0.7 then
+			return nil
+		end
+
+		local point = Vector3.new(
+			snap(hit.Position.X),
+			hit.Position.Y + (if raised then settings.Floor else 0),
+			snap(hit.Position.Z)
+		)
+
+		if settings.ConnectStructures and joins then
+			return Joints.Snap(point)
+		end
+
+		return point
+	end
+
+	--[[
+		@return Vector3? -- the snapped spot on the top of whatever the cursor is over, height included,
+			so a railing can be placed on the steps of a stair
+
+		The height is not snapped, so the point stays on the surface.
+	]]
+	local function surfaceTop(): Vector3?
+		local hit = hitSurface()
+
+		if not hit or hit.Normal.Y < 0.7 then
+			return nil
+		end
+
+		return Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
+	end
+
+	--[[
+		@return number? -- how far into the locked wall the mouse points, in studs, measured along the wall's normal
+
+		It intersects the mouse ray with the vertical plane through the clicked spot that contains the
+		wall normal, and keeps the last value when the camera looks along that plane.
+	]]
+	local function cutDepthFrom(hit: RaycastResult): number?
+		local plane = hit.Normal:Cross(Vector3.yAxis)
+
+		if plane.Magnitude < 0.1 then
+			return cutDepth
+		end
+
+		plane = plane.Unit
+
+		local ray = mouse.UnitRay
+		local den = ray.Direction:Dot(plane)
+
+		if math.abs(den) < 0.05 then
+			return cutDepth
+		end
+
+		local t = (hit.Position - ray.Origin):Dot(plane) / den
+		local point = ray.Origin + ray.Direction * t
+		local step = math.max(0.05, settings.FineGrid)
+		local depth = Snap.Round((point - hit.Position):Dot(-hit.Normal), step)
+
+		cutDepth = math.max(step, depth)
+
+		return cutDepth
+	end
+
 	local function lookVector(): Vector3
 		local camera = workspace.CurrentCamera
 
@@ -281,6 +491,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		local out: { Spec } = {}
+		local cutVolume: { cf: CFrame, size: Vector3 }? = nil
+		local live = settings
+		local gridStep = gridNow()
+
+		if gridStep ~= settings.Grid then
+			live = table.clone(settings)
+			live.Grid = gridStep
+		end
 		local message: string? = nil
 
 		Overlay.ClearPlaneGrid(overlay)
@@ -297,8 +515,65 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			return
-		elseif mode == "Opening" or mode == "ArchOpening" then
-			out, message, openingTarget = Builders.Opening(settings, hitSurface(), mode == "ArchOpening")
+		elseif
+			mode == "Door"
+			or mode == "Window"
+			or mode == "CircleWindow"
+			or mode == "TriangleWindow"
+			or mode == "ArchOpening"
+		then
+			local opening = if mode == "Door"
+				then { Width = settings.DoorWidth, Height = settings.DoorHeight, Sill = 0 }
+				elseif mode == "Window" or mode == "TriangleWindow" then {
+					Width = settings.WindowWidth,
+					Height = settings.WindowHeight,
+					Sill = settings.WindowSill,
+				}
+				else { Width = settings.OpenWidth, Height = settings.OpenHeight, Sill = 0 }
+
+			if mode == "CircleWindow" then
+				local diameter = math.min(settings.WindowWidth, settings.WindowHeight)
+
+				opening = { Width = diameter, Height = diameter, Sill = settings.WindowSill }
+			end
+
+			local shape = if mode == "ArchOpening"
+				then "Arch"
+				elseif mode == "CircleWindow" then "Circle"
+				elseif mode == "TriangleWindow" then "Triangle"
+				else "Rect"
+			local locked = first ~= nil and lockedHit ~= nil
+			local depth: number? = nil
+
+			if locked and lockedHit then
+				depth = cutDepthFrom(lockedHit)
+			end
+
+			out, message, openingTarget, cutVolume =
+				Builders.Opening(live, opening, if locked then lockedHit else scopedHit(), shape, depth)
+
+			if locked and #out > 0 then
+				message = if depth
+					then string.format(
+						"Cut depth %.2f. Move the mouse to change it; past the far side it cuts all the way through. Click to confirm.",
+						depth
+					)
+					else "Move the mouse to set the cut depth. Click to confirm."
+			end
+		elseif mode == "Pillar" then
+			local hit = hitSurface()
+			local base: Vector3? = nil
+
+			if hit and hit.Normal.Y >= 0.7 then
+				base = Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
+			else
+				base = horizontalPoint(settings.Elevation)
+			end
+
+			if base then
+				out = Builders.Pillar(settings, base)
+				message = "Click to place the pillar."
+			end
 		elseif mode == "Place" then
 			out, message, placementCF = Builders.Place(settings, hitSurface(), source)
 		elseif mode == "Measure" then
@@ -314,11 +589,26 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		else
 			local origin = first
+			local height: number? = nil
 
-			if origin and lock then
+			if origin and lock and heightEnd and lock.Axis == "Y" and not lock.Plane then
+				local top = lockedPoint(heightEnd, lock)
+
+				if top then
+					height = math.max(gridNow(), math.abs(top.Y - origin.Y))
+				end
+
+				current = heightEnd
+			elseif origin and lock then
 				current = lockedPoint(origin, lock)
+			elseif origin then
+				if mode == "Railing" or mode == "HalfWall" then
+					current = surfaceTop() or horizontalPoint(origin.Y)
+				else
+					current = horizontalPoint(origin.Y)
+				end
 			else
-				current = horizontalPoint(if origin then origin.Y else settings.Elevation)
+				current = floorPoint() or horizontalPoint(settings.Elevation)
 			end
 
 			local point = current
@@ -327,7 +617,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				Overlay.DrawPlaneGrid(
 					overlay,
 					Vector3.new(snap(point.X), point.Y, snap(point.Z)),
-					math.max(0.05, settings.Grid)
+					math.max(0.05, gridNow())
 				)
 			end
 
@@ -337,8 +627,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				if
 					not lock
 					and (
-						UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
-						or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+						UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt)
+						or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt)
 					)
 				then
 					local d = b - origin
@@ -349,12 +639,38 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					current = b
 				end
 
+				local drawn = live
+
+				if height then
+					drawn = table.clone(live)
+					drawn.Height = height
+				end
+
 				if mode == "Room" then
-					out = Builders.Room(settings, origin, b)
+					out = Builders.Room(drawn, origin, b)
 				elseif mode == "Block" then
 					out = Builders.Block(settings, origin, b, lock)
-				elseif mode == "Wall" or mode == "Corridor" then
-					out = Builders.Path(settings, origin, b, mode == "Corridor")
+				elseif mode == "Floor" then
+					out = Builders.Floor(drawn, origin, b)
+				elseif mode == "Foundation" then
+					out = Builders.Foundation(drawn, origin, b)
+				elseif mode == "Porch" then
+					out = Builders.Porch(drawn, origin, b)
+				elseif mode == "Roof" then
+					out = Builders.Roof(drawn, origin, b)
+				elseif mode == "Railing" then
+					out = Builders.Railing(drawn, origin, b)
+				elseif mode == "HalfWall" then
+					out = Builders.HalfWall(drawn, origin, b)
+				elseif mode == "Fence" then
+					out = Builders.Fence(drawn, origin, b, not chained)
+				elseif mode == "ArchedCorridor" then
+					out = Builders.ArchedCorridor(drawn, origin, b)
+				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Corridor" then
+					local path = table.clone(drawn)
+
+					path.PillaredWalls = mode == "PillaredWall"
+					out = Builders.Path(path, origin, b, mode == "Corridor", not chained)
 				elseif mode == "Stairs" or mode == "Ramp" then
 					out = Builders.Stairs(settings, origin, b, mode == "Ramp")
 				elseif mode == "Arch" then
@@ -367,7 +683,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					message =
 						"Arch height must be at least half the drawn span. Increase clearance height or draw a narrower arch."
 				else
-					message = "Click to build. Hold Shift for a straight direction; Esc cancels."
+					message = "Click to build. Hold Alt for a straight direction; Esc cancels."
 
 					local text
 
@@ -380,12 +696,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 								out[1].size.Z
 							)
 							else string.format("%.1f × %.1f studs", math.abs(d.X), math.abs(d.Z))
+					elseif mode == "Floor" or mode == "Foundation" or mode == "Porch" or mode == "Roof" then
+						text = string.format("%.1f × %.1f studs", math.abs(d.X), math.abs(d.Z))
 					elseif mode == "Arch" then
 						text = string.format("Span %.1f  |  Height %.1f", d.Magnitude, settings.ArchHeight)
 					elseif mode == "Stairs" then
 						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, settings.StairHeight)
 					elseif mode == "Ramp" then
 						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, settings.RampHeight)
+					elseif height then
+						text = string.format("%.1f studs  |  Height %.1f", d.Magnitude, height)
 					else
 						text = string.format("%.1f studs", d.Magnitude)
 					end
@@ -406,11 +726,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		previewSpecs = out
-		previewValid = #out > 0 and (first ~= nil or mode == "Opening" or mode == "ArchOpening" or mode == "Place")
+		previewValid = #out > 0
+			and (
+				first ~= nil
+				or mode == "Door"
+				or mode == "Window"
+				or mode == "CircleWindow"
+				or mode == "TriangleWindow"
+				or mode == "ArchOpening"
+				or mode == "Pillar"
+				or mode == "Place"
+			)
 		Overlay.DrawGhosts(overlay, out)
+		Overlay.DrawCut(overlay, cutVolume)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
-			Overlay.DrawAxisLine(overlay, first, lock.Axis)
+			Overlay.DrawAxisLine(overlay, heightEnd or first, lock.Axis)
 		end
 
 		if message then
@@ -419,7 +750,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--
-	-- Extrude (E)
+	-- Extrude (T)
 	--
 
 	--[[
@@ -429,14 +760,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function pickFace(): (BasePart?, Vector3)
 		local hit = hitSurface()
 
-		if hit and Geometry.IsPlainBlock(hit.Instance) then
+		if hit and Geometry.IsPlainBlock(hit.Instance) and Geometry.InScope(hit.Instance) then
 			return hit.Instance :: BasePart, hit.Normal
 		end
 
 		local selected = Selection:Get()
 		local chosen = selected[1]
 
-		if #selected == 1 and Geometry.IsPlainBlock(chosen) then
+		if #selected == 1 and chosen and Geometry.IsPlainBlock(chosen) and Geometry.InScope(chosen) then
 			-- Nothing under the cursor, so grow from the face that looks most toward the camera.
 			local part = chosen :: BasePart
 			local toward = -lookVector()
@@ -469,6 +800,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Overlay.HideReadout(overlay)
 
 		if not mode then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 	end
@@ -480,10 +812,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		stop(true)
 
+		if not requireFolder() then
+			return
+		end
+
 		local part, normal = pickFace()
 
 		if not part then
-			return say("Point at a rectangular block, or select one, then press E to extrude a face.")
+			return say("Point at a rectangular block, or select one, then press T to extrude a face.")
 		end
 
 		local axis, side = Builders.FaceAxis(part, normal)
@@ -571,15 +907,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		Overlay.ClearGhosts(overlay)
 		Overlay.HideReadout(overlay)
-		say(string.format("Extruded %.2f studs. Press E again to keep going.", state.length))
+		say(string.format("Extruded %.2f studs. Press T again to keep going.", state.length))
 
 		if not mode then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 	end
 
 	--
-	-- Grab, rotate, scale (G, R, S, Shift+D)
+	-- Grab, rotate, scale (G, R, C, V)
 	--
 
 	local function finishSession(commit: boolean)
@@ -606,6 +943,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Overlay.HideReadout(overlay)
 
 		if not mode then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 
@@ -618,6 +956,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		stop(true)
+
+		if not requireFolder() then
+			return
+		end
 
 		local roots = Geometry.SelectedRoots()
 		local parts = Geometry.PartsOf(roots)
@@ -659,7 +1001,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		sessionRecording = id
 		say(
 			(if duplicate then "Duplicate, then move. " else "")
-				.. `{kind}: move the mouse. X / Y / Z locks an axis, Shift+X / Y / Z a plane; type a number for an exact value. Click or Enter confirms; Esc cancels.`
+				.. `{kind}: move the mouse. X / Y / Z locks an axis, Alt+X / Y / Z a plane; type a number for an exact value. Click or Enter confirms; Esc cancels.`
 		)
 	end
 
@@ -678,7 +1020,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
-		local text, position = Transform.Update(active, settings.Grid, mouseLocation(), mouse.UnitRay, lookVector())
+		local text, position = Transform.Update(active, gridNow(), mouseLocation(), mouse.UnitRay, lookVector())
 
 		Overlay.Readout(overlay, position, text)
 	end
@@ -687,8 +1029,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	-- Tools
 	--
 
-	local function activate(name: string)
+	local function activateMode(name: string)
 		stop(true)
+
+		if not requireFolder() then
+			return
+		end
 
 		if not RunService:IsEdit() then
 			return say("Stop the playtest before using tools.")
@@ -722,15 +1068,61 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if name == "Extend" then
 			local chosen = Selection:Get()
 
-			if #chosen == 1 and Geometry.IsPlainBlock(chosen[1]) then
+			if #chosen == 1 and Geometry.IsPlainBlock(chosen[1]) and Geometry.InScope(chosen[1]) then
 				overlay.FaceHandles.Adornee = chosen[1] :: BasePart
 				overlay.FaceHandles.Visible = true
 			end
 		end
 
-		panel.Highlight(name)
 		panel.Refresh()
 		say(INSTRUCTIONS[name])
+	end
+
+	local lastVariant: { [string]: string } = {}
+	local lastMode: string? = nil
+
+	--[[
+		@param name string -- a mode of a tile, such as Room
+
+		Switches to that mode and remembers it as the one its tile starts with.
+	]]
+	local function setMode(name: string)
+		if mode == name then
+			return
+		end
+
+		activateMode(name)
+
+		local tile = Tools.TileOf(name)
+
+		if tile and mode == name then
+			lastVariant[tile.Id] = name
+		end
+
+		if mode == name then
+			lastMode = name
+		end
+	end
+
+	--[[
+		@param id string -- a tile id
+
+		Picking a tile starts the mode it used last. Picking the tile that is already active turns it off.
+	]]
+	local function activate(id: string)
+		local tile = Tools.FindTile(id)
+
+		if not tile then
+			return setMode(id)
+		end
+
+		if mode and table.find(tile.Modes, mode) then
+			stop()
+
+			return say("Tool off.")
+		end
+
+		setMode(lastVariant[tile.Id] or tile.Modes[1])
 	end
 
 	stop = function(keepActive: boolean?)
@@ -741,9 +1133,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		overlay.FaceHandles.Adornee = nil
 		overlay.FaceHandles.Visible = false
 		resetPoint()
-		panel.Highlight(nil)
 
 		if not keepActive then
+			Overlay.HideBar(overlay)
 			plugin:Deactivate()
 		end
 
@@ -763,11 +1155,33 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return say("Extrude follows the face direction. Type a number for an exact length.")
 		end
 
-		if not active and mode and DRAW_MODES[mode] and axis == "Y" and not plane and mode ~= "Block" then
-			return say("Y lock drags a Block up or down. For this tool use X or Z, or Shift+Y to stay on the floor.")
+		if
+			not active
+			and mode
+			and DRAW_MODES[mode]
+			and axis == "Y"
+			and not plane
+			and mode ~= "Block"
+			and not HEIGHT_MODES[mode]
+		then
+			return say(
+				"Y sets the height of walls, corridors, rooms and blocks. For this tool use X or Z, or Alt+Y to stay on the floor."
+			)
 		end
 
 		local updated = AxisLock.Toggle(if active then active.Lock else lock, axis, plane)
+
+		if not active then
+			if updated and updated.Axis == "Y" and not updated.Plane and mode and HEIGHT_MODES[mode] then
+				if not first or not current then
+					return say("Click the start point first, then press Y to drag the height.")
+				end
+
+				heightEnd = current
+			else
+				heightEnd = nil
+			end
+		end
 
 		if active then
 			Transform.SetLock(active, updated, mouse.UnitRay, lookVector())
@@ -780,7 +1194,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		say(
 			if updated
 				then `Locked to the {if updated.Plane then "plane without " else ""}{updated.Axis} axis. Press {if plane
-					then "Shift+"
+					then "Alt+"
 					else ""}{axis} again to unlock.`
 				else "Axis lock off."
 		)
@@ -806,14 +1220,23 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function perform(action: Keymap.Action)
 		if action == "Cancel" then
-			if session then
+			if picking then
+				cancelPicking()
+				say("Folder pick cancelled.")
+			elseif armed then
+				armed = nil
+				say("Cancelled.")
+			elseif session then
 				finishSession(false)
 			elseif extrude then
 				cancelExtrude()
 				say("Extrude cancelled.")
+			elseif lockedHit then
+				resetPoint()
+				say("Cut cancelled.")
 			elseif mode then
 				stop()
-				say("Tool stopped. Your completed builds stay in the map.")
+				say("Tool stopped. Your completed builds stay in the map. Press Enter to bring it back.")
 			end
 		elseif action == "Confirm" then
 			if session then
@@ -834,16 +1257,86 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			startSession(action :: Transform.Kind, false)
 		elseif action == "Duplicate" then
 			startSession("Grab", true)
+		elseif action == "Hide" then
+			local parts = Geometry.PartsOf(Geometry.SelectedRoots(true))
+
+			if #parts == 0 then
+				say("Select something to hide first.")
+			else
+				Hidden.Hide(hidden, parts)
+				Selection:Set({})
+				panel.Refresh()
+				say(`Hid {#parts} part(s). Alt+H unhides them, I shows them as ghosts.`)
+			end
+		elseif action == "Unhide" then
+			local count = Hidden.UnhideAll(hidden)
+
+			panel.Refresh()
+			say(if count > 0 then `Unhid {count} part(s).` else "Nothing was hidden.")
+		elseif action == "ToggleHiddenView" then
+			Hidden.ToggleView(hidden)
+			panel.Refresh()
+			say(if hidden.View then "Hidden parts are shown as ghosts." else "Hidden parts are fully hidden.")
+		elseif action == "FlipArm" then
+			if requireFolder() then
+				stop(true)
+				armed = "Flip"
+				say("Flip: press X, Y or Z to mirror the selection across that axis. Esc cancels.")
+			end
+		elseif action == "Rotate90Arm" then
+			if requireFolder() then
+				stop(true)
+				armed = "Rotate90"
+				say("Rotate 90°: press X, Y or Z (hold Alt for -90°). Esc cancels.")
+			end
+		elseif action == "NextTab" or action == "PrevTab" then
+			panel.CycleTab(if action == "NextTab" then 1 else -1)
+		elseif action == "ShowHotkeys" then
+			panel.ShowTab("Hotkeys")
+		elseif action == "TogglePastel" then
+			Colors.Set(colors, not colors.On)
+		elseif action == "ToggleGrid" then
+			SurfaceGrid.Set(surfaceGrid, not surfaceGrid.On)
+		elseif action == "TogglePanel" then
+			widget.Enabled = not widget.Enabled
 		elseif action == "HeightUp" or action == "HeightDown" then
 			if mode then
 				changeHeight(if action == "HeightUp" then 1 else -1)
 			end
 		elseif string.sub(action, 1, 5) == "Tool:" then
 			activate(string.sub(action, 6))
+		elseif string.sub(action, 1, 7) == "Option:" then
+			local tile = if mode then Tools.TileOf(mode) else nil
+
+			if not tile then
+				return say("Pick a tool first, then Alt plus a number picks an option inside it.")
+			end
+
+			local target = tile.Modes[tonumber(string.sub(action, 8)) :: number]
+
+			if #tile.Modes < 2 then
+				say(`{tile.Label} has no options.`)
+			elseif target then
+				setMode(target)
+			else
+				say(`{tile.Label} only has {#tile.Modes} options.`)
+			end
 		else
 			local kind, axis = string.match(action, "^(%a+):([XYZ])$")
 
-			if kind == "Lock" or kind == "Plane" then
+			if (kind == "Lock" or kind == "Plane") and armed then
+				local pending = armed
+
+				armed = nil
+
+				if requireFolder() then
+					if pending == "Flip" then
+						arrange.Flip(axis :: string)
+					else
+						arrange.RotateBy(axis :: string, if kind == "Plane" then -90 else 90)
+					end
+				end
+			elseif kind == "Lock" or kind == "Plane" then
 				setLock(axis :: AxisLock.Axis, kind == "Plane")
 			end
 		end
@@ -854,6 +1347,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--
 
 	colors = Colors.new({
+		GetScope = function()
+			return folder
+		end,
 		Edit = edit,
 		Say = say,
 		Refresh = function()
@@ -864,7 +1360,180 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end,
 	}, trove)
 
-	local arrange = Arrange.new({
+	--[[
+		@param instance Instance?
+
+		@return Instance? -- the closest Folder above the instance, if it is inside Workspace
+	]]
+	local function folderOf(instance: Instance?): Instance?
+		local ancestor = instance
+
+		while ancestor and ancestor ~= workspace do
+			if ancestor:IsA("Folder") then
+				return ancestor
+			end
+
+			ancestor = ancestor.Parent
+		end
+
+		return nil
+	end
+
+	--[[
+		@param which string -- Working, Pending or Hover
+		@param target Instance?
+
+		Outlines every Part inside the folder, or clears the outline when there is none to draw.
+	]]
+	local function drawBox(which: string, target: Instance?)
+		local parts: { BasePart } = {}
+
+		if target and target:IsDescendantOf(workspace) then
+			for _, object in target:GetDescendants() do
+				if object:IsA("BasePart") then
+					table.insert(parts, object)
+				end
+			end
+		end
+
+		if #parts == 0 then
+			return Overlay.ClearBox(overlay, which)
+		end
+
+		local cframe, size = Geometry.Bounds(parts)
+
+		Overlay.DrawBox(overlay, which, cframe, size)
+	end
+
+	--[[
+		Redraws the outlines of the working folder (only while it is selected), the folder waiting for a
+		yes, and the one under the cursor.
+	]]
+	local function redrawBoxes()
+		local selectedNow = Selection:Get()
+
+		drawBox("Working", if folder and table.find(selectedNow, folder) then folder else nil)
+		drawBox("Pending", pendingFolder)
+		drawBox(
+			"Hover",
+			if picking and hoverFolder ~= pendingFolder and hoverFolder ~= folder then hoverFolder else nil
+		)
+	end
+
+	--[[
+		@param target Instance
+
+		Marks the folder as the one to confirm.
+	]]
+	local function proposeFolder(target: Instance)
+		pendingFolder = target
+		redrawBoxes()
+		panel.Refresh()
+		say(`Picked "{target:GetFullName()}". Press Yes to confirm, or click another Folder.`)
+	end
+
+	--[[
+		Starts picking a folder. A Folder in Workspace that is already selected becomes the pick right
+		away; otherwise click one in the viewport or select one now.
+	]]
+	local function startPicking()
+		stop()
+		picking = true
+		pendingFolder = nil
+		hoverFolder = nil
+
+		local selected = Selection:Get()
+		local only = if #selected == 1 then selected[1] else nil
+
+		if only and only:IsA("Folder") and only:IsDescendantOf(workspace) then
+			return proposeFolder(only)
+		end
+
+		redrawBoxes()
+		panel.Refresh()
+		say("Click a Folder in the viewport, or select one in the Explorer.")
+	end
+
+	--[[
+		Gives up picking and clears the outlines that picking drew.
+	]]
+	cancelPicking = function()
+		picking = false
+		pendingFolder = nil
+		hoverFolder = nil
+		redrawBoxes()
+		panel.Refresh()
+	end
+
+	--[[
+		@param chosen Instance? -- the confirmed folder
+
+		Makes the folder the only place the plugin works in. Pastel colors is switched off first so
+		the old folder is not left recolored.
+	]]
+	local function setFolder(chosen: Instance?)
+		if colors.On and chosen ~= folder then
+			Colors.Set(colors, false)
+		end
+
+		stop()
+		folder = chosen
+		Geometry.SetScope(chosen)
+		redrawBoxes()
+		panel.Refresh()
+
+		if chosen then
+			say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
+		end
+	end
+
+	--[[
+		Makes the picked folder the working folder.
+	]]
+	local function confirmPicking()
+		local chosen = pendingFolder
+
+		if not chosen then
+			return say("Click a Folder in the viewport first.")
+		end
+
+		picking = false
+		pendingFolder = nil
+		hoverFolder = nil
+		setFolder(chosen)
+	end
+
+	--[[
+		@param run () -> ()
+
+		@return () -> () -- the same action, but it only runs once a working folder is set
+	]]
+	local function guarded(run: () -> ()): () -> ()
+		return function()
+			if requireFolder() then
+				run()
+			end
+		end
+	end
+
+	surfaceGrid = SurfaceGrid.new({
+		GetScope = function()
+			return folder
+		end,
+		GetSize = function()
+			return settings.GridTextureSize
+		end,
+		Edit = edit,
+		Say = say,
+		Refresh = function()
+			panel.Refresh()
+		end,
+		Stop = function()
+			stop()
+		end,
+	}, trove)
+
+	arrange = Arrange.new({
 		Settings = settings,
 		Save = save,
 		Edit = edit,
@@ -887,21 +1556,51 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Save = save,
 		Colors = colors,
 		SurfaceGrid = surfaceGrid,
+		Hidden = hidden,
+		GetFolder = function()
+			return folder
+		end,
+		GetPending = function()
+			return pendingFolder
+		end,
+		GetPicking = function()
+			return picking
+		end,
 		GetMode = function()
 			return mode
 		end,
 		Actions = {
 			Activate = activate,
+			SetMode = setMode,
 			Stop = function()
 				stop()
 			end,
 			ResetPoint = resetPoint,
-			UseSelectedFloor = arrange.UseSelectedFloor,
-			RepeatCopies = arrange.RepeatCopies,
-			MirrorCopy = arrange.MirrorCopy,
-			SnapSelection = arrange.SnapSelection,
-			ShowDimensions = arrange.ShowDimensions,
-			AnchorSelection = arrange.AnchorSelection,
+			UseSelectedFloor = guarded(arrange.UseSelectedFloor),
+			RepeatCopies = guarded(arrange.RepeatCopies),
+			MirrorCopy = guarded(arrange.MirrorCopy),
+			SnapSelection = guarded(arrange.SnapSelection),
+			ShowDimensions = guarded(arrange.ShowDimensions),
+			AnchorSelection = guarded(arrange.AnchorSelection),
+			Flip = function(axis)
+				if requireFolder() then
+					arrange.Flip(axis :: string)
+				end
+			end,
+			RotateBy = function(axis, degrees)
+				if requireFolder() then
+					arrange.RotateBy(axis, degrees)
+				end
+			end,
+			StartPick = startPicking,
+			CancelPick = cancelPicking,
+			ConfirmPick = confirmPicking,
+			UnhideAll = function()
+				perform("Unhide")
+			end,
+			ToggleHiddenView = function()
+				perform("ToggleHiddenView")
+			end,
 			Instruction = function(active)
 				return (active and INSTRUCTIONS[active]) or "Choose a drawing tool first."
 			end,
@@ -991,7 +1690,56 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	-- Clicks
 	--
 
+	trove:Connect(widget:GetPropertyChangedSignal("Enabled"), function()
+		if not widget.Enabled and picking then
+			cancelPicking()
+		end
+	end)
+
+	trove:Connect(Selection.SelectionChanged, function()
+		if not picking then
+			if folder then
+				redrawBoxes()
+			end
+
+			return
+		end
+
+		local selected = Selection:Get()
+		local candidate = selected[1]
+
+		if #selected == 1 and candidate and candidate:IsA("Folder") and candidate:IsDescendantOf(workspace) then
+			return proposeFolder(candidate)
+		end
+
+		for _, object in selected do
+			if object:IsDescendantOf(workspace) then
+				return
+			end
+		end
+
+		if #selected > 0 and pendingFolder then
+			pendingFolder = nil
+			redrawBoxes()
+			panel.Refresh()
+			say("That is not a Folder inside Workspace. Click or select a Folder in Workspace.")
+		end
+	end)
+
 	trove:Connect(mouse.Button1Down, function()
+		if picking then
+			local hit = hitSurface()
+			local target = if hit then folderOf(hit.Instance) else nil
+
+			if target then
+				proposeFolder(target)
+			else
+				say("That is not inside a Folder. Click a Part that sits in a Folder.")
+			end
+
+			return
+		end
+
 		if session then
 			return finishSession(true)
 		elseif extrude then
@@ -1007,7 +1755,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if active == "Extend" then
 			local hit = hitSurface()
 
-			if hit and Geometry.IsPlainBlock(hit.Instance) and not hit.Instance.Locked then
+			if
+				hit
+				and Geometry.IsPlainBlock(hit.Instance)
+				and not hit.Instance.Locked
+				and Geometry.InScope(hit.Instance)
+			then
 				overlay.FaceHandles.Adornee = hit.Instance :: BasePart
 				overlay.FaceHandles.Visible = true
 				say("Drag a green face handle outward. Release to add the new block.")
@@ -1024,18 +1777,64 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return say(tostring(err))
 		end
 
-		if active == "Opening" or active == "ArchOpening" then
+		if
+			active == "Door"
+			or active == "Window"
+			or active == "CircleWindow"
+			or active == "TriangleWindow"
+			or active == "ArchOpening"
+		then
 			if not previewValid then
+				return
+			end
+
+			if settings.CutDepth and not first then
+				local hit = scopedHit()
+
+				if hit then
+					lockedHit = hit
+					cutDepth = nil
+					first = hit.Position
+					say("Move the mouse to set the cut depth. Click to confirm.")
+				end
+
 				return
 			end
 
 			local target = openingTarget
 			local specs = previewSpecs
 
-			edit(if active == "ArchOpening" then "Create arched doorway" else "Create opening", function()
-				Geometry.Materialize(specs, if active == "ArchOpening" then "Arched_Doorway" else "Wall_Opening")
+			edit(if active == "ArchOpening" then "Create archway" else "Create " .. string.lower(active), function()
+				local model =
+					Geometry.Materialize(specs, if active == "ArchOpening" then "Archway" else "Wall_" .. active)
+
+				if active == "ArchOpening" then
+					local problem = Geometry.UnionSides(model, "Arch_Header", "Arch")
+
+					if problem then
+						say(problem)
+					end
+				end
 				assert(target and target.Parent, "Wall no longer exists")
-				target:Destroy()
+
+				local holder = target.Parent
+
+				target.Parent = nil
+
+				if holder and holder:IsA("Model") and #holder:GetChildren() == 0 then
+					holder.Parent = nil
+				end
+			end)
+			resetPoint()
+		elseif active == "Pillar" then
+			if not previewValid then
+				return
+			end
+
+			local specs = previewSpecs
+
+			edit("Build pillar", function()
+				Geometry.Materialize(specs, "Vlux_Pillar")
 			end)
 		elseif active == "Place" then
 			local target = placementCF
@@ -1073,15 +1872,53 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				NumericInput.Clear(numeric)
 				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
 			elseif previewValid then
-				local chain = active == "Wall" or active == "Corridor"
+				local chain = active == "Wall"
+					or active == "PillaredWall"
+					or active == "Corridor"
+					or active == "Fence"
+					or active == "ArchedCorridor"
 				local nextPoint = current
 				local specs = previewSpecs
 
-				if edit("Build " .. active, function()
-					Geometry.Materialize(specs, "Vlux_" .. active)
-				end) then
+				if
+					edit("Build " .. active, function()
+						local model = Geometry.Materialize(specs, "Vlux_" .. active)
+
+						if active == "Floor" and settings.FloorTransparency > 0 then
+							for _, child in model:GetChildren() do
+								if child:IsA("BasePart") then
+									child.Transparency = math.clamp(settings.FloorTransparency, 0, 1)
+								end
+							end
+						end
+
+						if active == "Arch" or active == "ArchedCorridor" or active == "Stairs" or active == "Ramp" then
+							local problem = if active == "Arch"
+								then Geometry.UnionArchHalves(model)
+								elseif active == "ArchedCorridor" then Geometry.UnionSides(
+									model,
+									"ArchedCeiling",
+									"Ceiling"
+								)
+								else Geometry.UnionAll(model, active)
+
+							if problem then
+								say(problem)
+							end
+						end
+
+						if
+							settings.ConnectStructures
+							and (active == "Room" or active == "Corridor" or active == "ArchedCorridor")
+						then
+							Joints.Connect(model)
+						end
+					end)
+				then
 					first = if chain then nextPoint else nil
+					chained = chain
 					lock = nil
+					heightEnd = nil
 					NumericInput.Clear(numeric)
 					Overlay.ClearGhosts(overlay)
 					Overlay.HideReadout(overlay)
@@ -1116,8 +1953,24 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return
 		end
 
+		if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+			return
+		end
+
 		local key = input.KeyCode.Name
 		local modal = session ~= nil or extrude ~= nil
+
+		if session and session.Kind == "Rotate" then
+			local step = if key == "Up" or key == "Right" then 90 elseif key == "Down" or key == "Left" then -90 else 0
+
+			if step ~= 0 then
+				local typed = NumericInput.Value(session.Numeric) or 0
+
+				session.Numeric.Text = tostring(typed + step)
+
+				return
+			end
+		end
 
 		-- Typed numbers: while a modal action runs, or while a draw tool has its first point.
 		if (modal or (mode ~= nil and first ~= nil)) and settings.Hotkeys then
@@ -1135,7 +1988,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or UserInputService:IsKeyDown(Enum.KeyCode.LeftMeta)
 		local alt = UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt)
 			or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt)
-		local action: string? = Keymap.Resolve(key, shift, ctrl, alt, modal or mode ~= nil)
+		local action: string? = Keymap.Resolve(key, shift, ctrl, alt, modal or mode ~= nil or armed ~= nil)
 
 		if not action then
 			return
@@ -1146,19 +1999,45 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or action == "Rotate"
 			or action == "Scale"
 			or action == "Duplicate"
+			or action == "NextTab"
+			or action == "PrevTab"
+			or action == "ShowHotkeys"
+			or action == "TogglePastel"
+			or action == "ToggleGrid"
+			or action == "TogglePanel"
+			or action == "Hide"
+			or action == "Unhide"
+			or action == "ToggleHiddenView"
+			or action == "FlipArm"
+			or action == "Rotate90Arm"
 			or string.sub(action, 1, 5) == "Tool:"
+			or string.sub(action, 1, 7) == "Option:"
 
 		local turnsStamp = action == "Rotate" and mode == "Place"
 
 		if starts and (processed or modal) and not turnsStamp then
+			if string.sub(action, 1, 5) == "Tool:" then
+				say(
+					`Key {key} is {action}, but it was ignored: Studio took the key = {processed}, a tool action is running = {modal}.`
+				)
+			end
+
 			return
 		end
 
 		if not settings.Hotkeys and not ALWAYS_ON[action] and not turnsStamp then
+			if string.sub(action, 1, 5) == "Tool:" then
+				say(`Key {key} is {action}, but Blender hotkeys are switched off in Settings.`)
+			end
+
 			return
 		end
 
-		if not modal and not mode and (action == "Cancel" or action == "Confirm") then
+		if not modal and not mode and not armed and not picking and (action == "Cancel" or action == "Confirm") then
+			if action == "Confirm" and lastMode and not processed then
+				setMode(lastMode)
+			end
+
 			return
 		end
 
@@ -1172,6 +2051,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end)
 
 	trove:Connect(plugin.Deactivation, function()
+		Overlay.HideBar(overlay)
 		finishSession(false)
 		cancelExtrude()
 		mode = nil
@@ -1180,7 +2060,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		overlay.FaceHandles.Visible = false
 		overlay.FaceHandles.Adornee = nil
 		resetPoint()
-		panel.Highlight(nil)
 		panel.Refresh()
 	end)
 
@@ -1199,6 +2078,30 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
+		if picking then
+			local hit = hitSurface()
+			local target = if hit then folderOf(hit.Instance) else nil
+
+			if target ~= hoverFolder then
+				hoverFolder = target
+				redrawBoxes()
+			end
+		end
+
+		boxClock += dt
+
+		if boxClock >= 1 then
+			boxClock = 0
+
+			if folder or pendingFolder or hoverFolder then
+				redrawBoxes()
+			else
+				Overlay.ClearBox(overlay, "Working")
+				Overlay.ClearBox(overlay, "Pending")
+				Overlay.ClearBox(overlay, "Hover")
+			end
+		end
+
 		elapsed += dt
 
 		if elapsed < UPDATE_INTERVAL then
@@ -1207,12 +2110,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		elapsed = 0
 
+		if folder and not folder:IsDescendantOf(workspace) then
+			folder = nil
+			Geometry.SetScope(nil)
+			stop()
+			redrawBoxes()
+			panel.Refresh()
+			say("The working folder is gone. Pick another one to keep working.")
+		end
+
 		if not RunService:IsEdit() then
 			if mode or session or extrude then
 				stop()
 			end
-
-			SurfaceGrid.Clear(surfaceGrid)
 
 			return
 		end
@@ -1226,23 +2136,28 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				warn(err)
 			end
 		end
-
-		local ok, err = pcall(SurfaceGrid.Update :: any, surfaceGrid, settings.SurfaceGridSize)
-
-		if not ok then
-			SurfaceGrid.SetOn(surfaceGrid, false)
-			panel.Refresh()
-			say("Surface grid stopped: " .. tostring(err))
-		end
 	end)
 
 	return {
 		Stop = function()
 			stop()
 		end,
+		TogglePastel = function()
+			perform("TogglePastel")
+		end,
+		ToggleGrid = function()
+			perform("ToggleGrid")
+		end,
+		PastelOn = function()
+			return colors.On
+		end,
+		GridOn = function()
+			return surfaceGrid.On
+		end,
 		Destroy = function()
 			stop()
 			save()
+			Hidden.UnhideAll(hidden)
 			Colors.RestoreOnUnload(colors)
 		end,
 	}

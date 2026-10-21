@@ -8,24 +8,25 @@
 local RunService = game:GetService("RunService")
 
 local Controller = require("./Core/Controller")
+local PluginInfo = require("./Pure/PluginInfo")
 local Trove = require("./Packages/Trove")
 
 if not RunService:IsStudio() then
 	return
 end
 
-local WIDGET_ID = "VluxBlockoutTools_v2"
+local WIDGET_ID = "VluxyBuildingTools_left"
 
 local trove = Trove.new()
-local toolbar = plugin:CreateToolbar("Vlux Blockout")
-local button = toolbar:CreateButton("Blockout Tools", "Vlux Blockout Tools", "", "Blockout Tools")
+local toolbar = plugin:CreateToolbar(PluginInfo.Name)
+local button = toolbar:CreateButton(PluginInfo.Name, "Open " .. PluginInfo.Name, "", PluginInfo.Name)
 
 button.ClickableWhenViewportHidden = true
 
-local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 360, 740, 320, 420)
+local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Left, false, false, 360, 740, 320, 420)
 local widget = plugin:CreateDockWidgetPluginGuiAsync(WIDGET_ID, info)
 
-widget.Title = "VLUX | Blockout Tools"
+widget.Title = PluginInfo.Name
 
 local controller = Controller.new(plugin, widget, trove :: any)
 
@@ -40,6 +41,28 @@ trove:Connect(widget:GetPropertyChangedSignal("Enabled"), function()
 	end
 end)
 button:SetActive(widget.Enabled)
+
+local pastelButton = toolbar:CreateButton("PastelColors", "Pastel colors on or off (P)", "", "Pastel")
+local gridButton = toolbar:CreateButton("SurfaceGrid", "Surface grid on or off (L)", "", "Grid")
+
+pastelButton.ClickableWhenViewportHidden = true
+gridButton.ClickableWhenViewportHidden = true
+trove:Connect(pastelButton.Click, controller.TogglePastel)
+trove:Connect(gridButton.Click, controller.ToggleGrid)
+
+local sinceSync = 0
+
+trove:Connect(RunService.Heartbeat, function(dt)
+	sinceSync += dt
+
+	if sinceSync < 0.25 then
+		return
+	end
+
+	sinceSync = 0
+	pastelButton:SetActive(controller.PastelOn())
+	gridButton:SetActive(controller.GridOn())
+end)
 
 trove:Connect(plugin.Unloading, function()
 	controller.Destroy()

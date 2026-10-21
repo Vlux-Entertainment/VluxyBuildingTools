@@ -22,7 +22,7 @@ local AxisLock = {}
 
 	@param current Lock? -- the lock in force, if any
 	@param axis Axis -- the key pressed
-	@param plane boolean -- true when Shift was held
+	@param plane boolean -- true when Alt was held
 	@return Lock?
 ]=]
 function AxisLock.Toggle(current: Lock?, axis: Axis, plane: boolean): Lock?

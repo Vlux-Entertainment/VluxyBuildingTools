@@ -8,6 +8,7 @@
 	@class Overlay
 ]=]
 
+local CollectionService = game:GetService("CollectionService")
 local CoreGui = game:GetService("CoreGui")
 
 local Geometry = require("./Geometry")
@@ -19,17 +20,48 @@ export type Overlay = {
 	_folder: Folder,
 	_planeGrid: WireframeHandleAdornment,
 	_previewWire: WireframeHandleAdornment,
+	_cut: BoxHandleAdornment?,
 	_measureLine: WireframeHandleAdornment,
+	_boxes: { [string]: WireframeHandleAdornment },
+	_fills: { [string]: BoxHandleAdornment },
 	_hud: ScreenGui,
 	_label: TextLabel,
+	_bar: ScreenGui,
+	_barGlyph: TextLabel,
+	_barText: TextLabel,
+	_barHints: Frame,
 	_readoutPosition: Vector3?,
 }
 
-local ACCENT = Color3.fromRGB(115, 188, 171)
+local ACCENT = Color3.fromRGB(255, 138, 36)
+local CUT_COLOR = Color3.fromRGB(255, 70, 70)
 local MAX_GHOSTS = 600
 local WEDGE_EDGES = { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 3, 4 }, { 3, 5 }, { 4, 6 }, { 5, 6 }, { 1, 5 }, { 2, 6 } }
 
+local TAG = "VluxyBuildingTools_Overlay"
+
 local Overlay = {}
+
+--[[
+	@param instance Instance
+
+	@return Instance -- the same instance, tagged so Sweep can always find and destroy it
+]]
+local function tag(instance: Instance): Instance
+	CollectionService:AddTag(instance, TAG)
+
+	return instance
+end
+
+--[=[
+	Destroys everything the overlay ever drew, found by its tag, so a leftover from an earlier load,
+	a reload or a crash cannot stay in the viewport.
+]=]
+function Overlay.Sweep()
+	for _, instance in CollectionService:GetTagged(TAG) do
+		instance:Destroy()
+	end
+end
 
 --[[
 	@param parent Instance
@@ -45,8 +77,9 @@ local function wire(parent: Instance, name: string, color: Color3, thickness: nu
 	adornment.Adornee = workspace.Terrain
 	adornment.Color3 = color
 	adornment.Thickness = thickness
-	adornment.AlwaysOnTop = false
+	adornment.AlwaysOnTop = true
 	adornment.Parent = parent
+	tag(adornment)
 
 	return adornment
 end
@@ -56,10 +89,14 @@ end
 	@return Overlay
 ]=]
 function Overlay.new(trove: Trove.Trove): Overlay
+	Overlay.Sweep()
+
 	local folder = Instance.new("Folder")
 	folder.Name = "VluxBlockout_LocalPreview"
 	folder.Parent = CoreGui
+	tag(folder)
 	trove:Add(folder)
+	trove:Add(Overlay.Sweep)
 
 	local faceHandles = Instance.new("Handles")
 	faceHandles.Name = "DragToExtend"
@@ -67,6 +104,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	faceHandles.Color3 = Color3.fromRGB(115, 220, 190)
 	faceHandles.Visible = false
 	faceHandles.Parent = folder
+	tag(faceHandles)
 
 	local planeGrid = wire(folder, "ConstructionGrid", Color3.fromRGB(145, 165, 185), 1)
 	planeGrid.Transparency = 0.65
@@ -75,6 +113,30 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	local measureLine = wire(folder, "Measurement", ACCENT, 2)
 	measureLine.AlwaysOnTop = true
 
+	local boxes: { [string]: WireframeHandleAdornment } = {
+		Working = wire(folder, "WorkingFolderBox", ACCENT, 4),
+		Pending = wire(folder, "PendingFolderBox", ACCENT, 4),
+		Hover = wire(folder, "HoverFolderBox", Color3.fromRGB(110, 215, 235), 3),
+	}
+
+	local fills: { [string]: BoxHandleAdornment } = {}
+
+	for name, box in boxes do
+		local fill = Instance.new("BoxHandleAdornment")
+
+		box.AlwaysOnTop = true
+		fill.Name = name .. "Fill"
+		fill.Adornee = workspace.Terrain
+		fill.Color3 = box.Color3
+		fill.Transparency = if name == "Pending" then 0.75 elseif name == "Working" then 0.88 else 0.85
+		fill.AlwaysOnTop = false
+		fill.ZIndex = 0
+		fill.Visible = false
+		fill.Parent = folder
+		tag(fill)
+		fills[name] = fill
+	end
+
 	local hud = Instance.new("ScreenGui")
 	hud.Name = "VluxBlockout_Readout"
 	hud.IgnoreGuiInset = true
@@ -82,17 +144,18 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	hud.DisplayOrder = 1000
 	hud.Enabled = false
 	hud.Parent = CoreGui
+	tag(hud)
 	trove:Add(hud)
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromOffset(210, 46)
 	label.AnchorPoint = Vector2.new(0.5, 1)
-	label.BackgroundColor3 = Color3.fromRGB(23, 36, 40)
+	label.BackgroundColor3 = Color3.fromRGB(28, 29, 33)
 	label.BackgroundTransparency = 0.08
 	label.BorderSizePixel = 0
-	label.TextColor3 = Color3.fromRGB(187, 244, 224)
-	label.TextSize = 16
-	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Color3.fromRGB(240, 241, 244)
+	label.TextSize = 15
+	label.Font = Enum.Font.GothamMedium
 	label.TextWrapped = true
 	label.Parent = hud
 
@@ -101,9 +164,77 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	corner.Parent = label
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = ACCENT
+	stroke.Color = Color3.fromRGB(96, 98, 106)
 	stroke.Thickness = 1
 	stroke.Parent = label
+
+	local bar = Instance.new("ScreenGui")
+	bar.Name = "VluxBlockout_StatusBar"
+	bar.IgnoreGuiInset = true
+	bar.ResetOnSpawn = false
+	bar.DisplayOrder = 999
+	bar.Enabled = false
+	bar.Parent = CoreGui
+	tag(bar)
+	trove:Add(bar)
+
+	local strip = Instance.new("Frame")
+	strip.Size = UDim2.new(1, 0, 0, 46)
+	strip.AnchorPoint = Vector2.new(0, 1)
+	strip.Position = UDim2.fromScale(0, 1)
+	strip.BackgroundColor3 = Color3.fromRGB(24, 25, 28)
+	strip.BackgroundTransparency = 0.04
+	strip.BorderSizePixel = 0
+	strip.Parent = bar
+
+	local glyphBox = Instance.new("Frame")
+	glyphBox.Size = UDim2.fromOffset(34, 34)
+	glyphBox.Position = UDim2.fromOffset(12, 6)
+	glyphBox.BackgroundColor3 = Color3.fromRGB(34, 36, 41)
+	glyphBox.BorderSizePixel = 0
+	glyphBox.Parent = strip
+
+	local glyphCorner = Instance.new("UICorner")
+	glyphCorner.CornerRadius = UDim.new(0, 6)
+	glyphCorner.Parent = glyphBox
+
+	local glyphStroke = Instance.new("UIStroke")
+	glyphStroke.Color = Color3.fromRGB(70, 72, 80)
+	glyphStroke.Parent = glyphBox
+
+	local barGlyph = Instance.new("TextLabel")
+	barGlyph.Size = UDim2.fromScale(1, 1)
+	barGlyph.BackgroundTransparency = 1
+	barGlyph.TextColor3 = Color3.fromRGB(240, 241, 244)
+	barGlyph.Font = Enum.Font.GothamMedium
+	barGlyph.TextSize = 22
+	barGlyph.Parent = glyphBox
+
+	local barText = Instance.new("TextLabel")
+	barText.Size = UDim2.new(0.55, -60, 1, 0)
+	barText.Position = UDim2.fromOffset(56, 0)
+	barText.BackgroundTransparency = 1
+	barText.RichText = true
+	barText.TextColor3 = Color3.fromRGB(160, 163, 171)
+	barText.Font = Enum.Font.Gotham
+	barText.TextSize = 13
+	barText.TextXAlignment = Enum.TextXAlignment.Left
+	barText.TextTruncate = Enum.TextTruncate.AtEnd
+	barText.Parent = strip
+
+	local barHints = Instance.new("Frame")
+	barHints.Size = UDim2.new(0.45, -12, 1, 0)
+	barHints.AnchorPoint = Vector2.new(1, 0)
+	barHints.Position = UDim2.fromScale(1, 0)
+	barHints.BackgroundTransparency = 1
+	barHints.Parent = strip
+
+	local hintLayout = Instance.new("UIListLayout")
+	hintLayout.FillDirection = Enum.FillDirection.Horizontal
+	hintLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	hintLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	hintLayout.Padding = UDim.new(0, 14)
+	hintLayout.Parent = barHints
 
 	return {
 		FaceHandles = faceHandles,
@@ -112,8 +243,14 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		_planeGrid = planeGrid,
 		_previewWire = previewWire,
 		_measureLine = measureLine,
+		_boxes = boxes,
+		_fills = fills,
 		_hud = hud,
 		_label = label,
+		_bar = bar,
+		_barGlyph = barGlyph,
+		_barText = barText,
+		_barHints = barHints,
 		_readoutPosition = nil,
 	}
 end
@@ -130,6 +267,47 @@ function Overlay.ClearGhosts(self: Overlay)
 
 	self._planeGrid:Clear()
 	self._previewWire:Clear()
+	Overlay.DrawCut(self, nil)
+end
+
+--[=[
+	Shows the volume an opening removes from its wall as a red box drawn over everything, so the
+	depth of the cut can be seen while the mouse sets it.
+
+	@param self Overlay
+	@param cut { cf: CFrame, size: Vector3 }? -- nil hides it
+]=]
+function Overlay.DrawCut(self: Overlay, cut: { cf: CFrame, size: Vector3 }?)
+	local box = self._cut
+
+	if not cut then
+		if box then
+			box.Visible = false
+		end
+
+		return
+	end
+
+	if not box then
+		local created = Instance.new("BoxHandleAdornment")
+
+		created.Name = "CutDepth"
+		created.Adornee = workspace.Terrain
+		created.AlwaysOnTop = true
+		created.ZIndex = 2
+		created.Transparency = 0.45
+		created.Color3 = CUT_COLOR
+		created.Parent = self._folder
+		tag(created)
+		self._cut = created
+		box = created
+	end
+
+	local shown = box :: BoxHandleAdornment
+
+	shown.Size = cut.size + Vector3.new(0.04, 0.04, 0.04)
+	shown.CFrame = workspace.Terrain.CFrame:ToObjectSpace(cut.cf)
+	shown.Visible = true
 end
 
 --[=[
@@ -154,17 +332,18 @@ function Overlay.DrawGhosts(self: Overlay, specs: { Geometry.Spec })
 			ghost = Instance.new("BoxHandleAdornment")
 			ghost.Name = "Preview"
 			ghost.Adornee = workspace.Terrain
-			ghost.AlwaysOnTop = false
-			ghost.ZIndex = 0
-			ghost.Transparency = 0.55
+			ghost.AlwaysOnTop = true
+			ghost.ZIndex = 1
+			ghost.Transparency = 0.7
 			ghost.Color3 = ACCENT
 			ghost.Parent = self._folder
+			tag(ghost)
 			self._ghosts[i] = ghost
 		end
 
 		local spec = specs[i]
 
-		ghost.Size = spec.size
+		ghost.Size = spec.size + Vector3.new(0.02, 0.02, 0.02)
 		ghost.CFrame = terrain:ToObjectSpace(spec.cf)
 		ghost.Visible = spec.class ~= "WedgePart"
 
@@ -323,6 +502,146 @@ function Overlay.PositionReadout(self: Overlay)
 
 	self._label.Visible = onScreen and point.Z > 0
 	self._label.Position = UDim2.fromOffset(point.X, point.Y - 16)
+end
+
+--[=[
+	Shows the bar along the bottom of the viewport: the active tool, what to do next, and the keys
+	that matter right now.
+
+	@param self Overlay
+	@param glyph string -- the tool's icon character
+	@param name string
+	@param message string
+	@param hints { { string } } -- pairs of { key, meaning }
+]=]
+function Overlay.SetBar(self: Overlay, glyph: string, name: string, message: string, hints: { { string } })
+	self._barGlyph.Text = glyph
+	self._barText.Text = '<font color="#F0F1F4"><b>' .. name .. "</b></font>   •   " .. message
+
+	for _, child in self._barHints:GetChildren() do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	for index, hint in hints do
+		local group = Instance.new("Frame")
+		group.AutomaticSize = Enum.AutomaticSize.X
+		group.Size = UDim2.fromOffset(0, 26)
+		group.BackgroundTransparency = 1
+		group.LayoutOrder = index
+		group.Parent = self._barHints
+
+		local layout = Instance.new("UIListLayout")
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.VerticalAlignment = Enum.VerticalAlignment.Center
+		layout.Padding = UDim.new(0, 6)
+		layout.Parent = group
+
+		local chip = Instance.new("TextLabel")
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.fromOffset(0, 24)
+		chip.BackgroundColor3 = Color3.fromRGB(34, 36, 41)
+		chip.BorderSizePixel = 0
+		chip.Text = hint[1]
+		chip.TextColor3 = Color3.fromRGB(240, 241, 244)
+		chip.Font = Enum.Font.GothamMedium
+		chip.TextSize = 12
+		chip.LayoutOrder = 1
+		chip.Parent = group
+
+		local chipCorner = Instance.new("UICorner")
+		chipCorner.CornerRadius = UDim.new(0, 5)
+		chipCorner.Parent = chip
+
+		local chipStroke = Instance.new("UIStroke")
+		chipStroke.Color = Color3.fromRGB(70, 72, 80)
+		chipStroke.Parent = chip
+
+		local chipPadding = Instance.new("UIPadding")
+		chipPadding.PaddingLeft = UDim.new(0, 8)
+		chipPadding.PaddingRight = UDim.new(0, 8)
+		chipPadding.Parent = chip
+
+		local meaning = Instance.new("TextLabel")
+		meaning.AutomaticSize = Enum.AutomaticSize.X
+		meaning.Size = UDim2.fromOffset(0, 24)
+		meaning.BackgroundTransparency = 1
+		meaning.Text = hint[2]
+		meaning.TextColor3 = Color3.fromRGB(160, 163, 171)
+		meaning.Font = Enum.Font.Gotham
+		meaning.TextSize = 12
+		meaning.LayoutOrder = 2
+		meaning.Parent = group
+	end
+
+	self._bar.Enabled = true
+end
+
+--[=[
+	@param self Overlay
+]=]
+function Overlay.HideBar(self: Overlay)
+	self._bar.Enabled = false
+end
+
+local BOX_EDGES = {
+	{ 1, 2 },
+	{ 3, 4 },
+	{ 5, 6 },
+	{ 7, 8 },
+	{ 1, 3 },
+	{ 2, 4 },
+	{ 5, 7 },
+	{ 6, 8 },
+	{ 1, 5 },
+	{ 2, 6 },
+	{ 3, 7 },
+	{ 4, 8 },
+}
+
+--[=[
+	Outlines and softly fills a world-aligned box in one of the folder colours: Working and Pending
+	(orange) or Hover (cyan). It replaces whatever that slot drew before.
+
+	@param self Overlay
+	@param which "Working" | "Pending" | "Hover"
+	@param cframe CFrame -- the centre of the box
+	@param size Vector3
+]=]
+function Overlay.DrawBox(self: Overlay, which: string, cframe: CFrame, size: Vector3)
+	local adornment = self._boxes[which]
+
+	local fill = self._fills[which]
+
+	adornment:Clear()
+	fill.CFrame = cframe
+	fill.Size = size + Vector3.one * 0.4
+	fill.Visible = true
+
+	local half = (size + Vector3.one * 0.4) * 0.5
+	local corners: { Vector3 } = {}
+
+	for x = -1, 1, 2 do
+		for y = -1, 1, 2 do
+			for z = -1, 1, 2 do
+				table.insert(corners, cframe:PointToWorldSpace(half * Vector3.new(x, y, z)))
+			end
+		end
+	end
+
+	for _, edge in BOX_EDGES do
+		adornment:AddLine(corners[edge[1]], corners[edge[2]])
+	end
+end
+
+--[=[
+	@param self Overlay
+	@param which "Working" | "Pending" | "Hover"
+]=]
+function Overlay.ClearBox(self: Overlay, which: string)
+	self._boxes[which]:Clear()
+	self._fills[which].Visible = false
 end
 
 return Overlay

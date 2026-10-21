@@ -21,6 +21,7 @@ export type Colors = {
 	_say: (string) -> (),
 	_refresh: () -> (),
 	_stop: () -> (),
+	_scope: () -> Instance?,
 }
 
 local ORIGINAL = "VluxGreybox_OriginalColor_v1"
@@ -93,7 +94,13 @@ end
 	@return Colors
 ]=]
 function Colors.new(
-	deps: { Edit: (string, () -> ()) -> boolean, Say: (string) -> (), Refresh: () -> (), Stop: () -> () },
+	deps: {
+		Edit: (string, () -> ()) -> boolean,
+		Say: (string) -> (),
+		Refresh: () -> (),
+		Stop: () -> (),
+		GetScope: () -> Instance?,
+	},
 	trove: Trove.Trove
 ): Colors
 	local self: Colors = {
@@ -104,6 +111,7 @@ function Colors.new(
 		_say = deps.Say,
 		_refresh = deps.Refresh,
 		_stop = deps.Stop,
+		_scope = deps.GetScope,
 	}
 
 	for _, part in workspace:GetDescendants() do
@@ -127,8 +135,12 @@ function Colors.new(
 				return
 			end
 
+			local scope = self._scope()
+
 			if self.On then
-				apply(self, object)
+				if scope and object:IsDescendantOf(scope) then
+					apply(self, object)
+				end
 			else
 				restore(object)
 			end
@@ -163,13 +175,19 @@ end
 	@param value boolean
 ]=]
 function Colors.Set(self: Colors, value: boolean)
+	local scope = self._scope()
+
+	if value and not scope then
+		return self._say("Pick a working folder first. Pastel colors only recolors Parts inside it.")
+	end
+
 	self._stop()
 
 	local ok = self._edit(if value then "Show pastel colors" else "Restore original colors", function()
 		if value then
 			workspace:SetAttribute(ACTIVE, true)
 
-			for _, part in workspace:GetDescendants() do
+			for _, part in (scope :: Instance):GetDescendants() do
 				if part:IsA("BasePart") then
 					apply(self, part)
 				end

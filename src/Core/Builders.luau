@@ -55,6 +55,15 @@ local function segment(out: { Spec }, a: Vector3, b: Vector3, width: number, hei
 end
 
 --[[
+	Adds a square pillar standing on the floor at base, turned to match a wall that runs along dir.
+]]
+local function pillar(out: { Spec }, base: Vector3, dir: Vector3, width: number, height: number)
+	local center = base + Vector3.new(0, height * 0.5, 0)
+
+	add(out, Vector3.new(width, height, width), CFrame.lookAt(center, center + dir), "Pillar")
+end
+
+--[[
 	Extrudes a planar triangle into two exact triangular WedgeParts. The corners may be given in any
 	order; the longest side becomes the wedges' shared base.
 ]]
@@ -129,6 +138,45 @@ local function quadPrism(
 end
 
 --[[
+	Adds fence posts and two rails from a to b. The end posts can be left out when a neighbour has them.
+]]
+local function fenceRun(
+	out: { Spec },
+	a: Vector3,
+	b: Vector3,
+	height: number,
+	spacing: number,
+	startPost: boolean,
+	endPost: boolean
+)
+	local d = b - a
+	local length = d.Magnitude
+
+	if length < 0.05 then
+		return
+	end
+
+	local dir = d.Unit
+	local count = math.max(1, math.round(length / math.max(0.5, spacing)))
+
+	for i = 0, count do
+		if (i > 0 or startPost) and (i < count or endPost) then
+			local center = a + dir * (length * i / count) + Vector3.new(0, height * 0.5, 0)
+
+			add(out, Vector3.new(0.5, height, 0.5), CFrame.lookAt(center, center + dir), "FencePost")
+		end
+	end
+
+	local middle = (a + b) * 0.5
+
+	for _, fraction in { 0.85, 0.45 } do
+		local center = middle + Vector3.new(0, height * fraction, 0)
+
+		add(out, Vector3.new(0.3, 0.4, length), CFrame.lookAt(center, center + dir), "FenceRail")
+	end
+end
+
+--[[
 	@param a Vector3 -- the start point
 	@param b Vector3 -- the end point
 
@@ -145,6 +193,306 @@ local function directionCF(a: Vector3, b: Vector3): CFrame?
 end
 
 local Builders = {}
+
+--[=[
+	A corridor with a rounded ceiling: a floor, two straight side walls as tall as the panel height, and
+	a half-circle vault above them that spans the clear width.
+
+	@param settings Settings
+	@param a Vector3 -- the start
+	@param b Vector3 -- the end
+	@return { Spec }
+]=]
+function Builders.ArchedCorridor(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local d = b - a
+	local length = d.Magnitude
+	local flat = Vector3.new(d.X, 0, d.Z)
+
+	if length < 0.05 or flat.Magnitude < 0.05 then
+		return out
+	end
+
+	local up = Vector3.yAxis
+	local across = flat.Unit:Cross(up).Unit
+	local middle = (a + b) * 0.5
+	local cf = CFrame.fromMatrix(middle, across, up, across:Cross(up))
+	local w, t, h, f = settings.Width, settings.Thickness, settings.Height, settings.Floor
+	local radius = w / 2
+
+	add(out, Vector3.new(w + 2 * t, f, length), cf * CFrame.new(0, -f / 2, 0), "Floor")
+
+	for _, sign in { -1, 1 } do
+		add(out, Vector3.new(t, h, length), cf * CFrame.new(sign * (w + t) / 2, h / 2, 0), "CorridorWall")
+	end
+
+	local count = math.max(2, math.floor(settings.ArchSegments))
+
+	local function point(r: number, angle: number): Vector3
+		return cf:PointToWorldSpace(Vector3.new(r * math.cos(angle), h + r * math.sin(angle), 0))
+	end
+
+	for i = 0, count - 1 do
+		local x = i * math.pi / count
+		local y = (i + 1) * math.pi / count
+
+		quadPrism(
+			out,
+			point(radius, x),
+			point(radius + t, x),
+			point(radius + t, y),
+			point(radius, y),
+			length,
+			"ArchedCeiling"
+		)
+	end
+
+	return out
+end
+
+--[=[
+	@param settings Settings
+	@param a Vector3 -- one corner, at the height of the top of the floor
+	@param b Vector3 -- the opposite corner
+	@return { Spec } -- one flat slab as thick as the panel's floor thickness
+]=]
+function Builders.Floor(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+	local f = settings.Floor
+
+	if hi.X - lo.X < 0.05 or hi.Z - lo.Z < 0.05 then
+		return out
+	end
+
+	add(out, Vector3.new(hi.X - lo.X, f, hi.Z - lo.Z), CFrame.new(c - Vector3.new(0, f / 2, 0)), "Floor")
+
+	return out
+end
+
+--[=[
+	@param settings Settings
+	@param a Vector3 -- one corner
+	@param b Vector3 -- the opposite corner
+	@return { Spec } -- one thick slab, a margin wider than the corners, standing on a's level
+]=]
+function Builders.Foundation(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+	local m, h = settings.FoundationMargin, settings.FoundationHeight
+	local w, d = hi.X - lo.X + 2 * m, hi.Z - lo.Z + 2 * m
+
+	if hi.X - lo.X < 0.05 or hi.Z - lo.Z < 0.05 then
+		return out
+	end
+
+	add(out, Vector3.new(w, h, d), CFrame.new(c + Vector3.new(0, h / 2, 0)), "Foundation")
+
+	return out
+end
+
+--[=[
+	@param settings Settings
+	@param a Vector3 -- one corner
+	@param b Vector3 -- the opposite corner
+	@return { Spec } -- a floor, four corner posts and, when switched on, a railing between the posts
+]=]
+function Builders.Porch(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+	local w, d = hi.X - lo.X, hi.Z - lo.Z
+	local f, h = settings.Floor, settings.Height
+	local post = 0.8
+
+	if w < 2 * post or d < 2 * post then
+		return out
+	end
+
+	add(out, Vector3.new(w, f, d), CFrame.new(c - Vector3.new(0, f / 2, 0)), "Floor")
+
+	local inset = post / 2
+	local x0, x1, z0, z1 = lo.X + inset, hi.X - inset, lo.Z + inset, hi.Z - inset
+	local corners = {
+		Vector3.new(x0, a.Y, z0),
+		Vector3.new(x1, a.Y, z0),
+		Vector3.new(x1, a.Y, z1),
+		Vector3.new(x0, a.Y, z1),
+	}
+
+	for _, corner in corners do
+		add(out, Vector3.new(post, h, post), CFrame.new(corner + Vector3.new(0, h / 2, 0)), "PorchPost")
+	end
+
+	if settings.PorchRailing then
+		for i = 1, 4 do
+			fenceRun(out, corners[i], corners[i % 4 + 1], settings.RailHeight, settings.FenceSpacing, false, false)
+		end
+	end
+
+	return out
+end
+
+--[[
+	Adds a square pillar standing at base, turned to face along dir (flat). The top is `top` above base.
+]]
+local function newel(out: { Spec }, base: Vector3, flatDir: Vector3, top: number, name: string)
+	local center = base + Vector3.new(0, top * 0.5, 0)
+
+	add(out, Vector3.new(0.7, top, 0.7), CFrame.lookAt(center, center + flatDir), name)
+end
+
+--[=[
+	A straight indoor railing from a to b: a handrail on top, thin bars between, a low bottom rail and
+	a pillar at each end. When a and b are at different heights it follows the slope, so it fits stairs.
+
+	@param settings Settings
+	@param a Vector3 -- the start, on the floor or a stair
+	@param b Vector3 -- the end, on the floor or a stair
+	@return { Spec }
+]=]
+function Builders.Railing(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local d = b - a
+	local length = d.Magnitude
+	local flat = Vector3.new(d.X, 0, d.Z)
+
+	if length < 0.5 or flat.Magnitude < 0.05 then
+		return out
+	end
+
+	local dir = d.Unit
+	local flatDir = flat.Unit
+	local height = settings.RailHeight
+	local up = Vector3.new(0, 1, 0)
+
+	newel(out, a, flatDir, height + 0.3, "RailingPillar")
+	newel(out, b, flatDir, height + 0.3, "RailingPillar")
+
+	local middle = (a + b) * 0.5
+
+	add(out, Vector3.new(0.4, 0.3, length), CFrame.lookAt(middle + up * height, middle + up * height + dir), "Handrail")
+	add(out, Vector3.new(0.3, 0.2, length), CFrame.lookAt(middle + up * 0.3, middle + up * 0.3 + dir), "BottomRail")
+
+	local count = math.max(1, math.round(flat.Magnitude / math.max(0.3, settings.BalusterSpacing)))
+
+	for i = 1, count - 1 do
+		local base = a + d * (i / count)
+		local center = base + up * (height * 0.5)
+
+		add(out, Vector3.new(0.2, height, 0.2), CFrame.lookAt(center, center + flatDir), "Baluster")
+	end
+
+	return out
+end
+
+--[=[
+	A solid low wall from a to b with a pillar at each end, following the slope when a and b are at
+	different heights.
+
+	@param settings Settings
+	@param a Vector3
+	@param b Vector3
+	@return { Spec }
+]=]
+function Builders.HalfWall(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local d = b - a
+	local flat = Vector3.new(d.X, 0, d.Z)
+
+	if d.Magnitude < 0.5 or flat.Magnitude < 0.05 then
+		return out
+	end
+
+	local flatDir = flat.Unit
+	local height = settings.RailHeight
+	local up = Vector3.new(0, height, 0)
+
+	newel(out, a, flatDir, height + 0.3, "HalfWallPillar")
+	newel(out, b, flatDir, height + 0.3, "HalfWallPillar")
+	quadPrism(out, a, b, b + up, a + up, 0.5, "HalfWall")
+
+	return out
+end
+
+--[=[
+	@param settings Settings
+	@param a Vector3 -- the start point
+	@param b Vector3 -- the end point
+	@param postAtStart boolean? -- false when the fence before this one already has a post there
+	@return { Spec } -- posts and rails running from a to b
+]=]
+function Builders.Fence(settings: Settings, a: Vector3, b: Vector3, postAtStart: boolean?): { Spec }
+	local out: { Spec } = {}
+
+	fenceRun(out, a, b, settings.FenceHeight, settings.FenceSpacing, postAtStart ~= false, true)
+
+	return out
+end
+
+--[=[
+	Builds a roof over the rectangle between two corners, bigger by the overhang on every side. Gable
+	and shed roofs are solid; hip and pyramid roofs are made of sheets; flat is a single slab.
+
+	@param settings Settings
+	@param a Vector3 -- one corner, at the height of the top of the walls
+	@param b Vector3 -- the opposite corner
+	@return { Spec }
+]=]
+function Builders.Roof(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+
+	if hi.X - lo.X < 0.5 or hi.Z - lo.Z < 0.5 then
+		return out
+	end
+
+	local o, rise, t, y = settings.RoofOverhang, settings.RoofRise, settings.RoofThickness, a.Y
+	local x0, x1, z0, z1 = lo.X - o, hi.X + o, lo.Z - o, hi.Z + o
+	local w, d = x1 - x0, z1 - z0
+	local style = settings.RoofStyle
+
+	if style == "Flat" then
+		add(out, Vector3.new(w, t, d), CFrame.new(c.X, y + t / 2, c.Z), "Roof")
+	elseif style == "Shed" then
+		trianglePrism(out, Vector3.new(x0, y, c.Z), Vector3.new(x1, y, c.Z), Vector3.new(x1, y + rise, c.Z), d, "Roof")
+	elseif style == "Pyramid" then
+		local apex = Vector3.new(c.X, y + rise, c.Z)
+		local p00, p10 = Vector3.new(x0, y, z0), Vector3.new(x1, y, z0)
+		local p11, p01 = Vector3.new(x1, y, z1), Vector3.new(x0, y, z1)
+
+		trianglePrism(out, p00, p10, apex, t, "Roof")
+		trianglePrism(out, p10, p11, apex, t, "Roof")
+		trianglePrism(out, p11, p01, apex, t, "Roof")
+		trianglePrism(out, p01, p00, apex, t, "Roof")
+	elseif style == "Hip" then
+		local p00, p10 = Vector3.new(x0, y, z0), Vector3.new(x1, y, z0)
+		local p11, p01 = Vector3.new(x1, y, z1), Vector3.new(x0, y, z1)
+
+		if w >= d then
+			local r0 = Vector3.new(x0 + d / 2, y + rise, c.Z)
+			local r1 = Vector3.new(x1 - d / 2, y + rise, c.Z)
+
+			quadPrism(out, p00, p10, r1, r0, t, "Roof")
+			quadPrism(out, p01, p11, r1, r0, t, "Roof")
+			trianglePrism(out, p00, p01, r0, t, "Roof")
+			trianglePrism(out, p10, p11, r1, t, "Roof")
+		else
+			local r0 = Vector3.new(c.X, y + rise, z0 + w / 2)
+			local r1 = Vector3.new(c.X, y + rise, z1 - w / 2)
+
+			quadPrism(out, p00, p01, r1, r0, t, "Roof")
+			quadPrism(out, p10, p11, r1, r0, t, "Roof")
+			trianglePrism(out, p00, p10, r0, t, "Roof")
+			trianglePrism(out, p01, p11, r1, t, "Roof")
+		end
+	elseif w >= d then
+		trianglePrism(out, Vector3.new(c.X, y, z0), Vector3.new(c.X, y, z1), Vector3.new(c.X, y + rise, c.Z), w, "Roof")
+	else
+		trianglePrism(out, Vector3.new(x0, y, c.Z), Vector3.new(x1, y, c.Z), Vector3.new(c.X, y + rise, c.Z), d, "Roof")
+	end
+
+	return out
+end
 
 --[=[
 	@param settings Settings
@@ -180,9 +528,10 @@ end
 	@param a Vector3
 	@param b Vector3
 	@param corridor boolean -- true for a floored corridor, false for a single wall
+	@param pillarAtStart boolean? -- false when the start already has a pillar from the wall before it
 	@return { Spec }
 ]=]
-function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boolean): { Spec }
+function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boolean, pillarAtStart: boolean?): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local length = d.Magnitude
@@ -192,7 +541,24 @@ function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boo
 	end
 
 	if not corridor then
-		segment(out, a, b, settings.Thickness, settings.Height, "Wall")
+		if not settings.PillaredWalls then
+			segment(out, a, b, settings.Thickness, settings.Height, "Wall")
+
+			return out
+		end
+
+		local dir = d.Unit
+		local width = math.max(settings.PillarWidth, settings.Thickness)
+
+		if pillarAtStart ~= false then
+			pillar(out, a, dir, width, settings.Height)
+		end
+
+		pillar(out, b, dir, width, settings.Height)
+
+		if length > width + 0.05 then
+			segment(out, a + dir * (width / 2), b - dir * (width / 2), settings.Thickness, settings.Height, "Wall")
+		end
 
 		return out
 	end
@@ -322,6 +688,20 @@ end
 
 --[=[
 	@param settings Settings
+	@param base Vector3 -- the point the pillar stands on
+	@return { Spec } -- one square pillar as tall as the panel height
+]=]
+function Builders.Pillar(settings: Settings, base: Vector3): { Spec }
+	local out: { Spec } = {}
+	local w, h = settings.PillarWidth, settings.Height
+
+	add(out, Vector3.new(w, h, w), CFrame.new(base + Vector3.new(0, h / 2, 0)), "Pillar")
+
+	return out
+end
+
+--[=[
+	@param settings Settings
 	@param a Vector3 -- one inner edge, at ground level
 	@param b Vector3 -- the other inner edge
 	@return { Spec } -- two posts and a curved header; empty when the span is too wide for the height
@@ -382,13 +762,20 @@ end
 	wall as separate Parts around the hole.
 
 	@param settings Settings
+	@param dims { Width: number, Height: number, Sill: number } -- the opening to cut
 	@param hit RaycastResult? -- what the cursor is over
 	@param arched boolean
 	@return { Spec }
 	@return string -- what to tell the user
 	@return BasePart? -- the wall to delete when the opening is built
 ]=]
-function Builders.Opening(settings: Settings, hit: RaycastResult?, arched: boolean): ({ Spec }, string, BasePart?)
+function Builders.Opening(
+	settings: Settings,
+	dims: { Width: number, Height: number, Sill: number },
+	hit: RaycastResult?,
+	shape: string,
+	depth: number?
+): ({ Spec }, string, BasePart?, { cf: CFrame, size: Vector3 }?)
 	local out: { Spec } = {}
 	local wall = hit and hit.Instance
 
@@ -398,8 +785,10 @@ function Builders.Opening(settings: Settings, hit: RaycastResult?, arched: boole
 
 	local p = wall :: Part
 
-	if #p:GetChildren() > 0 then
-		return out, "Use an undecorated wall. Openings replace the wall with new Parts.", nil
+	for _, child in p:GetChildren() do
+		if not (child:IsA("Texture") and child.Name == "VluxGridTexture") then
+			return out, "Use an undecorated wall. Openings replace the wall with new Parts.", nil
+		end
 	end
 
 	if p.Locked then
@@ -414,8 +803,9 @@ function Builders.Opening(settings: Settings, hit: RaycastResult?, arched: boole
 		size = Vector3.new(size.Z, size.Y, size.X)
 	end
 
-	local w, h = settings.OpenWidth, settings.OpenHeight
-	local sill = if arched then 0 else settings.Sill
+	local arched = shape == "Arch"
+	local w, h = dims.Width, dims.Height
+	local sill = if arched then 0 else dims.Sill
 
 	if arched and h < w / 2 then
 		return out, "Arch height must be at least half the opening width.", nil
@@ -446,7 +836,54 @@ function Builders.Opening(settings: Settings, hit: RaycastResult?, arched: boole
 		p
 	)
 
-	if arched then
+	if shape == "Circle" then
+		local radius = math.min(w, h) / 2
+		local cy = bottom + radius
+		local count = math.max(8, math.floor(settings.ArchSegments) * 2)
+		local wallTop, wallBottom = size.Y / 2, -size.Y / 2
+
+		for i = 0, count - 1 do
+			local from = math.pi - i * math.pi / count
+			local to = math.pi - (i + 1) * math.pi / count
+
+			for _, side in { 1, -1 } do
+				local x1, y1 = x + radius * math.cos(from), cy + side * radius * math.sin(from)
+				local x2, y2 = x + radius * math.cos(to), cy + side * radius * math.sin(to)
+				local edge = if side == 1 then wallTop else wallBottom
+
+				quadPrism(
+					out,
+					cf:PointToWorldSpace(Vector3.new(x1, y1, 0)),
+					cf:PointToWorldSpace(Vector3.new(x2, y2, 0)),
+					cf:PointToWorldSpace(Vector3.new(x2, edge, 0)),
+					cf:PointToWorldSpace(Vector3.new(x1, edge, 0)),
+					size.Z,
+					"Circle_Frame",
+					p
+				)
+			end
+		end
+	elseif shape == "Triangle" then
+		local apex = Vector3.new(x, top, 0)
+		local wallTop = size.Y / 2
+
+		for _, side in { -1, 1 } do
+			local corner = Vector3.new(x + side * w / 2, bottom, 0)
+			local a = if side == -1 then corner else apex
+			local b = if side == -1 then apex else corner
+
+			quadPrism(
+				out,
+				cf:PointToWorldSpace(a),
+				cf:PointToWorldSpace(b),
+				cf:PointToWorldSpace(Vector3.new(b.X, wallTop, 0)),
+				cf:PointToWorldSpace(Vector3.new(a.X, wallTop, 0)),
+				size.Z,
+				"Triangle_Frame",
+				p
+			)
+		end
+	elseif arched then
 		local radius = w / 2
 		local spring = bottom + h - radius
 		local count = math.floor(settings.ArchSegments)
@@ -482,7 +919,75 @@ function Builders.Opening(settings: Settings, hit: RaycastResult?, arched: boole
 		add(out, Vector3.new(w, sill, size.Z), cf * CFrame.new(x, -size.Y / 2 + sill / 2, 0), "Opening_Sill", p)
 	end
 
-	return out, "Click to replace this wall with an opening. Undo restores the original wall.", p
+	if depth and depth < size.Z - 0.01 then
+		local back = size.Z - depth
+		local side = if localHit.Z >= 0 then -1 else 1
+		local z = side * (size.Z / 2 - back / 2)
+
+		local function at(px: number, py: number): Vector3
+			return cf:PointToWorldSpace(Vector3.new(px, py, z))
+		end
+
+		if shape == "Circle" then
+			local radius = math.min(w, h) / 2
+			local cy = bottom + radius
+			local count = math.max(8, math.floor(settings.ArchSegments) * 2)
+
+			for i = 0, count - 1 do
+				local from = math.pi - i * math.pi / count
+				local to = math.pi - (i + 1) * math.pi / count
+				local x1, x2 = x + radius * math.cos(from), x + radius * math.cos(to)
+				local s1, s2 = radius * math.sin(from), radius * math.sin(to)
+
+				quadPrism(
+					out,
+					at(x1, cy + s1),
+					at(x2, cy + s2),
+					at(x2, cy - s2),
+					at(x1, cy - s1),
+					back,
+					"Opening_Back",
+					p
+				)
+			end
+		elseif shape == "Triangle" then
+			trianglePrism(out, at(x - w / 2, bottom), at(x, top), at(x + w / 2, bottom), back, "Opening_Back", p)
+		elseif arched then
+			local radius = w / 2
+			local spring = bottom + h - radius
+			local count = math.floor(settings.ArchSegments)
+
+			add(
+				out,
+				Vector3.new(w, spring - bottom, back),
+				cf * CFrame.new(x, (bottom + spring) / 2, z),
+				"Opening_Back",
+				p
+			)
+
+			for i = 0, count - 1 do
+				local from = math.pi - i * math.pi / count
+				local to = math.pi - (i + 1) * math.pi / count
+				local x1, y1 = x + radius * math.cos(from), spring + radius * math.sin(from)
+				local x2, y2 = x + radius * math.cos(to), spring + radius * math.sin(to)
+
+				quadPrism(out, at(x1, y1), at(x2, y2), at(x2, spring), at(x1, spring), back, "Opening_Back", p)
+			end
+		else
+			add(out, Vector3.new(w, h, back), cf * CFrame.new(x, (bottom + top) / 2, z), "Opening_Back", p)
+		end
+	end
+
+	local reach = if depth and depth < size.Z - 0.01 then depth else size.Z
+	local openHeight = if shape == "Circle" then math.min(w, h) else h
+	local openWidth = if shape == "Circle" then math.min(w, h) else w
+	local near = if localHit.Z >= 0 then 1 else -1
+	local cut = {
+		cf = cf * CFrame.new(x, bottom + openHeight / 2, near * (size.Z / 2 - reach / 2)),
+		size = Vector3.new(openWidth, openHeight, reach),
+	}
+
+	return out, "Click to replace this wall with an opening. Undo restores the original wall.", p, cut
 end
 
 --[=[
