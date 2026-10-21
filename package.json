@@ -1,5 +1,6 @@
 {
   "name": "vluxybuildingtools",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "verify": "node Commands/Verify.mjs",
