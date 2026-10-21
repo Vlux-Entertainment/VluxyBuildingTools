@@ -84,7 +84,7 @@ local MUTED = Color3.fromRGB(139, 142, 150)
 local ACCENT = Color3.fromRGB(255, 138, 36)
 local ACCENT_DIM = Color3.fromRGB(62, 40, 22)
 local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
-local TABS = { "Build", "Arrange", "Display", "Settings", "Hotkeys" }
+local TABS = { "Build", "Arrange", "Display", "Hotkeys", "Settings" }
 local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Display = true }
 
 local Panel = {}
@@ -1041,7 +1041,7 @@ function Panel.new(deps: Deps): Panel
 		},
 	})
 
-	local rotateCard = card("ROTATE 90°  (Shift+R, then X / Y / Z)", "Arrange")
+	local rotateCard = card("ROTATE 90°  (O, then X / Y / Z)", "Arrange")
 
 	buttonRow(rotateCard, {
 		{

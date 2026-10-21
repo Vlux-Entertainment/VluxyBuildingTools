@@ -2,8 +2,9 @@
 
 --[=[
 	The Blender-style hotkeys. `Resolve` turns a key press into an action name; the plugin decides
-	what the action does. Ctrl and Alt are never taken, so Studio's own shortcuts keep working, and
-	neither are W A S D Q E F (with or without Shift), which Studio uses to fly the camera and focus.
+	what the action does. Ctrl is only used for Ctrl+M and Alt for Alt+H and the plane locks, so Studio's
+	own shortcuts keep working. W A S D Q E F and Shift are never taken: Studio uses them to fly the
+	camera, focus and multi-select.
 
 	@class Keymap
 ]=]
@@ -46,6 +47,11 @@ local PLAIN_KEYS: { [string]: Action } = {
 	Tab = "NextTab",
 	F1 = "ShowHotkeys",
 	P = "TogglePastel",
+	L = "ToggleGrid",
+	V = "Duplicate",
+	O = "Rotate90Arm",
+	I = "ToggleHiddenView",
+	Backquote = "PrevTab",
 	N = "TogglePanel",
 	H = "Hide",
 }
@@ -62,31 +68,31 @@ function Keymap.Describe(): { { string } }
 		{ "1 … 9, 0", "Pick a tool: Wall, Corridor, Room, Block, Stairs, Ramp, Arch, Door, Stamp, Measure" },
 		{ "T", "Extrude the face under the cursor of the selected block" },
 		{ "G / R / C", "Grab, rotate or scale the selection" },
-		{ "Shift+G", "Duplicate the selection and grab the copy" },
+		{ "V", "Duplicate the selection and grab the copy" },
 		{
-			"W A S D Q E F",
-			"Never taken: Studio uses them to fly the camera and focus. Hotkeys are also ignored while the right mouse button is held",
+			"W A S D Q E F, Shift",
+			"Never taken: Studio uses them to fly the camera, focus and multi-select. Hotkeys are also ignored while the right mouse button is held",
 		},
 		{ "X / Y / Z", "While drawing or in a modal action: lock to that world axis. Press again to unlock" },
-		{ "Shift+X / Y / Z", "Lock to the plane the axis is perpendicular to" },
+		{ "Alt+X / Y / Z", "Lock to the plane the axis is perpendicular to" },
 		{ "0-9 and .", "While drawing or in a modal action: type an exact length, angle or factor" },
 		{ "Enter / click", "Confirm" },
 		{ "Esc / right-click", "Cancel the action, or stop the tool" },
 		{ "[ and ]", "Lower or raise the active height by one snap step" },
-		{ "Tab / Shift+Tab", "Next or previous panel tab" },
+		{ "Tab / `", "Next or previous panel tab" },
 		{ "F1", "Open this Hotkeys tab" },
 		{ "P", "Pastel colors on or off" },
-		{ "Shift+P", "Surface grid on or off" },
+		{ "L", "Surface grid on or off" },
 		{ "N", "Show or hide the panel" },
 		{ "Ctrl+M, then X / Y / Z", "Flip (mirror) the selection in place across that axis" },
 		{
-			"Shift+R, then X / Y / Z",
-			"Rotate the selection 90 degrees about that axis. Hold Shift on the axis key for -90",
+			"O, then X / Y / Z",
+			"Rotate the selection 90 degrees about that axis. Hold Alt on the axis key for -90",
 		},
 		{ "Arrow keys in Rotate", "While rotating with R, step the angle by 90 degrees" },
 		{ "H", "Hide the selected parts (local to you, nothing is saved)" },
 		{ "Alt+H", "Unhide everything you hid" },
-		{ "Shift+H", "Show hidden parts as faint ghosts, or hide them completely again" },
+		{ "I", "Show hidden parts as faint ghosts, or hide them completely again" },
 	}
 end
 
@@ -112,27 +118,15 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 		return "FlipArm"
 	end
 
-	if ctrl or alt then
+	if shift or ctrl then
 		return nil
 	end
 
 	if axisKeys and (keyName == "X" or keyName == "Y" or keyName == "Z") then
-		return `{if shift then "Plane" else "Lock"}:{keyName}`
+		return `{if alt then "Plane" else "Lock"}:{keyName}`
 	end
 
-	if shift then
-		if keyName == "G" then
-			return "Duplicate"
-		elseif keyName == "P" then
-			return "ToggleGrid"
-		elseif keyName == "Tab" then
-			return "PrevTab"
-		elseif keyName == "R" then
-			return "Rotate90Arm"
-		elseif keyName == "H" then
-			return "ToggleHiddenView"
-		end
-
+	if alt then
 		return nil
 	end
 

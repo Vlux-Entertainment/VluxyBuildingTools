@@ -151,7 +151,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			hints = if DRAW_MODES[mode]
-				then { { "Shift", "Straight line" }, { "X Y Z", "Axis lock" }, { "Esc", "Exit tool" } }
+				then { { "Alt", "Straight line" }, { "X Y Z", "Axis lock" }, { "Esc", "Exit tool" } }
 				else { { "Esc", "Exit tool" } }
 		else
 			Overlay.HideBar(overlay)
@@ -403,8 +403,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				if
 					not lock
 					and (
-						UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
-						or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+						UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt)
+						or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt)
 					)
 				then
 					local d = b - origin
@@ -433,7 +433,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					message =
 						"Arch height must be at least half the drawn span. Increase clearance height or draw a narrower arch."
 				else
-					message = "Click to build. Hold Shift for a straight direction; Esc cancels."
+					message = "Click to build. Hold Alt for a straight direction; Esc cancels."
 
 					local text
 
@@ -651,7 +651,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--
-	-- Grab, rotate, scale (G, R, C, Shift+G)
+	-- Grab, rotate, scale (G, R, C, V)
 	--
 
 	local function finishSession(commit: boolean)
@@ -736,7 +736,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		sessionRecording = id
 		say(
 			(if duplicate then "Duplicate, then move. " else "")
-				.. `{kind}: move the mouse. X / Y / Z locks an axis, Shift+X / Y / Z a plane; type a number for an exact value. Click or Enter confirms; Esc cancels.`
+				.. `{kind}: move the mouse. X / Y / Z locks an axis, Alt+X / Y / Z a plane; type a number for an exact value. Click or Enter confirms; Esc cancels.`
 		)
 	end
 
@@ -844,7 +844,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		if not active and mode and DRAW_MODES[mode] and axis == "Y" and not plane and mode ~= "Block" then
-			return say("Y lock drags a Block up or down. For this tool use X or Z, or Shift+Y to stay on the floor.")
+			return say("Y lock drags a Block up or down. For this tool use X or Z, or Alt+Y to stay on the floor.")
 		end
 
 		local updated = AxisLock.Toggle(if active then active.Lock else lock, axis, plane)
@@ -860,7 +860,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		say(
 			if updated
 				then `Locked to the {if updated.Plane then "plane without " else ""}{updated.Axis} axis. Press {if plane
-					then "Shift+"
+					then "Alt+"
 					else ""}{axis} again to unlock.`
 				else "Axis lock off."
 		)
@@ -926,7 +926,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				Hidden.Hide(hidden, parts)
 				Selection:Set({})
 				panel.Refresh()
-				say(`Hid {#parts} part(s). Alt+H unhides them, Shift+H shows them as ghosts.`)
+				say(`Hid {#parts} part(s). Alt+H unhides them, I shows them as ghosts.`)
 			end
 		elseif action == "Unhide" then
 			local count = Hidden.UnhideAll(hidden)
@@ -947,7 +947,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			if requireFolder() then
 				stop(true)
 				armed = "Rotate90"
-				say("Rotate 90°: press X, Y or Z (hold Shift for -90°). Esc cancels.")
+				say("Rotate 90°: press X, Y or Z (hold Alt for -90°). Esc cancels.")
 			end
 		elseif action == "NextTab" or action == "PrevTab" then
 			panel.CycleTab(if action == "NextTab" then 1 else -1)

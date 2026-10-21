@@ -9,7 +9,7 @@ return {
 
 	["axis keys lock only while a drag is live"] = function(expect)
 		expect.equal(Keymap.Resolve("Y", false, false, false, true), "Lock:Y")
-		expect.equal(Keymap.Resolve("Y", true, false, false, true), "Plane:Y")
+		expect.equal(Keymap.Resolve("Y", false, false, true, true), "Plane:Y")
 		expect.falsy(Keymap.Resolve("Y", false, false, false, false))
 	end,
 
@@ -24,9 +24,10 @@ return {
 		expect.equal(Keymap.Resolve("Zero", false, false, false, false), "Tool:Measure")
 	end,
 
-	["Shift+G duplicates, other Shift keys do nothing"] = function(expect)
-		expect.equal(Keymap.Resolve("G", true, false, false, false), "Duplicate")
-		expect.falsy(Keymap.Resolve("T", true, false, false, false))
+	["V duplicates, Shift is never used"] = function(expect)
+		expect.equal(Keymap.Resolve("V", false, false, false, false), "Duplicate")
+		expect.falsy(Keymap.Resolve("V", true, false, false, false))
+		expect.falsy(Keymap.Resolve("X", true, false, false, true))
 	end,
 
 	["W A S D Q E F are never taken, with or without Shift"] = function(expect)
@@ -39,19 +40,19 @@ return {
 
 	["panel navigation keys"] = function(expect)
 		expect.equal(Keymap.Resolve("Tab", false, false, false, false), "NextTab")
-		expect.equal(Keymap.Resolve("Tab", true, false, false, false), "PrevTab")
+		expect.equal(Keymap.Resolve("Backquote", false, false, false, false), "PrevTab")
 		expect.equal(Keymap.Resolve("F1", false, false, false, false), "ShowHotkeys")
 		expect.equal(Keymap.Resolve("P", false, false, false, false), "TogglePastel")
-		expect.equal(Keymap.Resolve("P", true, false, false, false), "ToggleGrid")
+		expect.equal(Keymap.Resolve("L", false, false, false, false), "ToggleGrid")
 		expect.equal(Keymap.Resolve("N", false, false, false, false), "TogglePanel")
 	end,
 
 	["hide, flip and quick-rotate keys"] = function(expect)
 		expect.equal(Keymap.Resolve("H", false, false, false, false), "Hide")
 		expect.equal(Keymap.Resolve("H", false, false, true, false), "Unhide")
-		expect.equal(Keymap.Resolve("H", true, false, false, false), "ToggleHiddenView")
+		expect.equal(Keymap.Resolve("I", false, false, false, false), "ToggleHiddenView")
 		expect.equal(Keymap.Resolve("M", false, true, false, false), "FlipArm")
-		expect.equal(Keymap.Resolve("R", true, false, false, false), "Rotate90Arm")
+		expect.equal(Keymap.Resolve("O", false, false, false, false), "Rotate90Arm")
 		expect.falsy(Keymap.Resolve("M", false, false, false, false))
 		expect.falsy(Keymap.Resolve("H", false, true, true, false))
 	end,
