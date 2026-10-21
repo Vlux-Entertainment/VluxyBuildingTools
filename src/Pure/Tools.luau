@@ -70,6 +70,13 @@ Tools.List = {
 		Description = "Cut an arched doorway into a plain wall.",
 	},
 	{
+		Id = "Pillar",
+		Label = "Pillar",
+		Glyph = "▮",
+		Key = nil,
+		Description = "Click to place a square pillar. The height and width are in the options.",
+	},
+	{
 		Id = "Door",
 		Label = "Door",
 		Glyph = "▯",
@@ -112,8 +119,8 @@ Tools.Grid = {
 		Label = "Basic",
 		Glyph = "▥",
 		Key = "1",
-		Description = "Draw walls and blocks, cut doors and windows into walls, or make arches. Pick which one in the options. Press Y to drag a wall's height.",
-		Modes = { "Wall", "Block", "Door", "Window", "Arch", "ArchOpening" },
+		Description = "Draw walls, blocks and pillars, cut doors and windows into walls, or make arches. Pick which one in the options. Press Y to drag a wall's height.",
+		Modes = { "Wall", "Block", "Pillar", "Door", "Window", "Arch", "ArchOpening" },
 	},
 	{
 		Id = "Structures",

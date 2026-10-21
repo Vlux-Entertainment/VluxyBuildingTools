@@ -930,9 +930,17 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	local hint = text(settingsCard, "", MUTED, body(nil))
-	local drawModes =
-		{ Wall = true, Corridor = true, Room = true, Block = true, Stairs = true, Ramp = true, Arch = true }
-	local heightModes = { Wall = true, Corridor = true, Room = true, Block = true }
+	local drawModes = {
+		Wall = true,
+		Corridor = true,
+		Room = true,
+		Block = true,
+		Stairs = true,
+		Ramp = true,
+		Arch = true,
+		Pillar = true,
+	}
+	local heightModes = { Wall = true, Corridor = true, Room = true, Block = true, Pillar = true }
 	local scope = settingsCard
 
 	numeric(scope, "Grid", "Snap increment", 0.05, 128, 0.5, body(drawModes))
@@ -960,6 +968,7 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "WindowWidth", "Window width", 0.1, 1024, nil, body({ Window = true }))
 	numeric(scope, "WindowHeight", "Window height", 0.1, 1024, nil, body({ Window = true }))
 	numeric(scope, "WindowSill", "Bottom above floor", 0, 1024, nil, body({ Window = true }))
+	numeric(scope, "PillarWidth", "Pillar width", 0.1, 256, nil, body({ Pillar = true }))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 
 	button(scope, "Start new chain", function()

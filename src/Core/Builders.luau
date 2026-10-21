@@ -322,6 +322,20 @@ end
 
 --[=[
 	@param settings Settings
+	@param base Vector3 -- the point the pillar stands on
+	@return { Spec } -- one square pillar as tall as the panel height
+]=]
+function Builders.Pillar(settings: Settings, base: Vector3): { Spec }
+	local out: { Spec } = {}
+	local w, h = settings.PillarWidth, settings.Height
+
+	add(out, Vector3.new(w, h, w), CFrame.new(base + Vector3.new(0, h / 2, 0)), "Pillar")
+
+	return out
+end
+
+--[=[
+	@param settings Settings
 	@param a Vector3 -- one inner edge, at ground level
 	@param b Vector3 -- the other inner edge
 	@return { Spec } -- two posts and a curved header; empty when the span is too wide for the height

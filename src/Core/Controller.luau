@@ -65,6 +65,7 @@ local INSTRUCTIONS: { [string]: string } = {
 	Ramp = "Click the bottom and top footprint point. Drag distance sets length; Height sets the rise.",
 	Arch = "Click the two inner edges at ground level. Height is the arch clearance; Depth is the frame depth.",
 	ArchOpening = "Hover over a plain wall and click to cut an arched doorway. Adjust width/height below.",
+	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
 	Door = "Click an undecorated rectangular wall. The door is centered on the cursor and starts at the bottom of the wall.",
 	Window = "Click an undecorated rectangular wall. The window is centered on the cursor; its height above the floor is in the options.",
 	Extend = "Click a block to select it, then drag a green face handle OUTWARD. Release to add a connected block.",
@@ -407,6 +408,20 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				else { Width = settings.OpenWidth, Height = settings.OpenHeight, Sill = 0 }
 
 			out, message, openingTarget = Builders.Opening(settings, opening, scopedHit(), mode == "ArchOpening")
+		elseif mode == "Pillar" then
+			local hit = hitSurface()
+			local base: Vector3? = nil
+
+			if hit and hit.Normal.Y >= 0.7 then
+				base = Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
+			else
+				base = horizontalPoint(settings.Elevation)
+			end
+
+			if base then
+				out = Builders.Pillar(settings, base)
+				message = "Click to place the pillar."
+			end
 		elseif mode == "Place" then
 			out, message, placementCF = Builders.Place(settings, hitSurface(), source)
 		elseif mode == "Measure" then
@@ -535,7 +550,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		previewSpecs = out
 		previewValid = #out > 0
-			and (first ~= nil or mode == "Door" or mode == "Window" or mode == "ArchOpening" or mode == "Place")
+			and (
+				first ~= nil
+				or mode == "Door"
+				or mode == "Window"
+				or mode == "ArchOpening"
+				or mode == "Pillar"
+				or mode == "Place"
+			)
 		Overlay.DrawGhosts(overlay, out)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
@@ -1572,6 +1594,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					target:Destroy()
 				end
 			)
+		elseif active == "Pillar" then
+			if not previewValid then
+				return
+			end
+
+			local specs = previewSpecs
+
+			edit("Build pillar", function()
+				Geometry.Materialize(specs, "Vlux_Pillar")
+			end)
 		elseif active == "Place" then
 			local target = placementCF
 			local pivot = source and source.Pivot

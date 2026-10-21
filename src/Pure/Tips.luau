@@ -85,6 +85,7 @@ Tips.Entries = {
 	ArchDepth = { Text = "How deep the arch frame is." },
 	OpenWidth = { Text = "How wide the arched door is." },
 	OpenHeight = { Text = "How tall the arched door is." },
+	PillarWidth = { Text = "How wide the pillar is on each side." },
 	DoorWidth = { Text = "How wide the door is." },
 	DoorHeight = { Text = "How tall the door is." },
 	WindowWidth = { Text = "How wide the window is." },
