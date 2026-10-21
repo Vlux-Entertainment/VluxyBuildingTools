@@ -55,7 +55,8 @@ export type Controller = {
 
 local SETTINGS_KEY = "VluxBlockoutSettings_v2"
 local UPDATE_INTERVAL = 0.05
-local FOLDER_ATTRIBUTE = "VluxWorkingFolder"
+local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
+local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
 
@@ -1666,6 +1667,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			edit("Set working folder", function()
 				if previous and previous:IsDescendantOf(workspace) then
 					previous:SetAttribute(FOLDER_ATTRIBUTE, nil)
+					previous:SetAttribute(OLD_FOLDER_ATTRIBUTE, nil)
 				end
 
 				if chosen then
@@ -2442,7 +2444,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end)
 
 	for _, object in workspace:GetDescendants() do
-		if object:IsA("Folder") and object:GetAttribute(FOLDER_ATTRIBUTE) == true then
+		if
+			object:IsA("Folder")
+			and (object:GetAttribute(FOLDER_ATTRIBUTE) == true or object:GetAttribute(OLD_FOLDER_ATTRIBUTE) == true)
+		then
 			setFolder(object)
 
 			break

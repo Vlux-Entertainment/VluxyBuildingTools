@@ -30,6 +30,21 @@ local CUT_PARTS: { [string]: boolean } = {
 
 type Cutter = { cf: CFrame, size: Vector3, cylinder: boolean, thickness: number? }
 
+local PREFIX = "VluxyBT_"
+
+--[[
+	@return any -- the attribute under the plugin's prefix, else under the name older builds saved it as
+]]
+local function attribute(model: Instance, name: string): any
+	local value = model:GetAttribute(PREFIX .. name)
+
+	if value == nil then
+		value = model:GetAttribute(name)
+	end
+
+	return value
+end
+
 local Joints = {}
 
 --[[
@@ -127,17 +142,17 @@ end
 local function stored(model: Instance): { Cutter }
 	local out: { Cutter } = {}
 
-	for index = 1, (model:GetAttribute("Cuts") :: number?) or 0 do
-		local cf = model:GetAttribute("Cut" .. index .. "_CF")
-		local size = model:GetAttribute("Cut" .. index .. "_Size")
+	for index = 1, (attribute(model, "Cuts") :: number?) or 0 do
+		local cf = attribute(model, "Cut" .. index .. "_CF")
+		local size = attribute(model, "Cut" .. index .. "_Size")
 
 		if typeof(cf) == "CFrame" and typeof(size) == "Vector3" then
-			local wall = model:GetAttribute("Cut" .. index .. "_Thickness")
+			local wall = attribute(model, "Cut" .. index .. "_Thickness")
 
 			table.insert(out, {
 				cf = cf,
 				size = size,
-				cylinder = model:GetAttribute("Cut" .. index .. "_Cylinder") == true,
+				cylinder = attribute(model, "Cut" .. index .. "_Cylinder") == true,
 				thickness = if type(wall) == "number" then wall else nil,
 			})
 		end
@@ -569,13 +584,13 @@ function Joints.Connect(model: Model, roomJoin: string, skip: Instance?): number
 	local mine = measure(model)
 
 	for index, cutter in mine do
-		model:SetAttribute("Cut" .. index .. "_CF", cutter.cf)
-		model:SetAttribute("Cut" .. index .. "_Size", cutter.size)
-		model:SetAttribute("Cut" .. index .. "_Cylinder", cutter.cylinder)
-		model:SetAttribute("Cut" .. index .. "_Thickness", cutter.thickness)
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_CF", cutter.cf)
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Size", cutter.size)
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Cylinder", cutter.cylinder)
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Thickness", cutter.thickness)
 	end
 
-	model:SetAttribute("Cuts", #mine)
+	model:SetAttribute(PREFIX .. "Cuts", #mine)
 
 	if #mine == 0 then
 		return 0

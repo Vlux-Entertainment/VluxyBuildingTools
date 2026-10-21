@@ -59,6 +59,7 @@ Only the skeleton exists: the entry script adds a toolbar button and nothing els
 
 - Folders PascalCase. Locals camelCase, constants PascalCase, never-changing constants UPPER_SNAKE.
   Exported functions PascalCase, local ones camelCase, private `_camelCase`.
+- Attributes the plugin writes into the place are named `VluxyBT_<Purpose>`. Older names stay readable.
 - Name a cleanup method `Destroy` so Trove picks it up.
 - Every function gets a block comment: `--[[ ]]` for locals, Moonwave `--[=[ ]=]` with `@class` for
   exported modules. Three sentences or fewer. No trailing `--` comments.
