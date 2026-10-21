@@ -23,6 +23,7 @@ export type SurfaceGrid = {
 	_stop: () -> (),
 	_scope: () -> Instance?,
 	_size: () -> number,
+	_color: () -> Color3,
 }
 
 local TEXTURE_NAME = "VluxGridTexture"
@@ -57,7 +58,7 @@ end
 
 	Gives each face of the part a grid Texture, reusing any it already has.
 ]]
-local function apply(part: BasePart, studs: number)
+local function apply(part: BasePart, studs: number, color: Color3)
 	for _, face in FACES do
 		local texture: Texture? = nil
 
@@ -76,6 +77,7 @@ local function apply(part: BasePart, studs: number)
 		grid.Texture = ASSET
 		grid.StudsPerTileU = studs
 		grid.StudsPerTileV = studs
+		grid.Color3 = color
 		grid.Parent = part
 	end
 end
@@ -108,6 +110,7 @@ function SurfaceGrid.new(
 		Stop: () -> (),
 		GetScope: () -> Instance?,
 		GetSize: () -> number,
+		GetColor: () -> Color3,
 		Remember: ((boolean) -> ())?,
 	},
 	trove: Trove.Trove
@@ -121,6 +124,7 @@ function SurfaceGrid.new(
 		_stop = deps.Stop,
 		_scope = deps.GetScope,
 		_size = deps.GetSize,
+		_color = deps.GetColor,
 	}
 
 	if not self.On then
@@ -147,7 +151,7 @@ function SurfaceGrid.new(
 
 			if self.On then
 				if scope and object:IsDescendantOf(scope) and not object:FindFirstChild(TEXTURE_NAME) then
-					apply(object, self._size())
+					apply(object, self._size(), self._color())
 				end
 			else
 				strip(object)
@@ -176,7 +180,7 @@ function SurfaceGrid.Adopt(self: SurfaceGrid, part: BasePart)
 	local scope = self._scope()
 
 	if self.On and scope and eligible(part) and part:IsDescendantOf(scope) then
-		apply(part, self._size())
+		apply(part, self._size(), self._color())
 	end
 end
 
@@ -202,7 +206,7 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 
 			for _, object in (scope :: Instance):GetDescendants() do
 				if object:IsA("BasePart") and eligible(object) then
-					apply(object, self._size())
+					apply(object, self._size(), self._color())
 				end
 			end
 		else
@@ -233,6 +237,27 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 end
 
 --[=[
+	Tints every grid Texture already placed with the grid colour.
+
+	@param self SurfaceGrid
+]=]
+function SurfaceGrid.Recolor(self: SurfaceGrid)
+	if not self.On then
+		return
+	end
+
+	local color = self._color()
+
+	self._edit("Color surface grid", function()
+		for _, object in workspace:GetDescendants() do
+			if object:IsA("Texture") and object.Name == TEXTURE_NAME then
+				object.Color3 = color
+			end
+		end
+	end)
+end
+
+--[=[
 	Re-sizes the tiles of every grid Texture already placed.
 
 	@param self SurfaceGrid
@@ -252,6 +277,24 @@ function SurfaceGrid.Resize(self: SurfaceGrid)
 			end
 		end
 	end)
+end
+
+--[=[
+	Reads a six digit hex string such as "FF8A24" into a colour, white when it is not one.
+
+	@param hex string
+	@return Color3
+]=]
+function SurfaceGrid.ColorOf(hex: string): Color3
+	local digits = string.match(hex, "^#?(%x%x%x%x%x%x)$")
+
+	if not digits then
+		return Color3.new(1, 1, 1)
+	end
+
+	local value = tonumber(digits, 16) :: number
+
+	return Color3.fromRGB(bit32.rshift(value, 16), bit32.band(bit32.rshift(value, 8), 255), bit32.band(value, 255))
 end
 
 return SurfaceGrid

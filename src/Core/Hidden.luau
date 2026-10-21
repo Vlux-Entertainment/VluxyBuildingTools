@@ -21,13 +21,29 @@ local GHOST = 0.82
 local Hidden = {}
 
 --[[
+	@param part BasePart
+	@param value number
+
+	Sets the local transparency of the part and of the grid textures and decals drawn on it.
+]]
+local function setLocal(part: BasePart, value: number)
+	part.LocalTransparencyModifier = value
+
+	for _, child in part:GetChildren() do
+		if child:IsA("Decal") then
+			child.LocalTransparencyModifier = value
+		end
+	end
+end
+
+--[[
 	@param self Hidden
 	@param part BasePart
 
 	Shows or ghosts the part, depending on whether hidden parts are being viewed.
 ]]
 local function apply(self: Hidden, part: BasePart)
-	part.LocalTransparencyModifier = if self.View then GHOST else INVISIBLE
+	setLocal(part, if self.View then GHOST else INVISIBLE)
 end
 
 --[=[
@@ -70,7 +86,7 @@ function Hidden.UnhideAll(self: Hidden): number
 		count += 1
 
 		if part.Parent then
-			part.LocalTransparencyModifier = 0
+			setLocal(part, 0)
 		end
 	end
 

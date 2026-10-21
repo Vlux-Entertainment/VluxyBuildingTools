@@ -1741,6 +1741,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		GetSize = function()
 			return settings.GridTextureSize
 		end,
+		GetColor = function()
+			return SurfaceGrid.ColorOf(settings.GridColor)
+		end,
 		Edit = edit,
 		Say = say,
 		Refresh = function()

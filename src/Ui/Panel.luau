@@ -1286,6 +1286,63 @@ function Panel.new(deps: Deps): Panel
 				return deps.SurfaceGrid.On
 			end,
 		})
+
+		do
+			local swatches = { "FFFFFF", "FF8A24", "6CD0E0", "FFB3BA", "BAFFC9", "BAE1FF", "9AA0AA", "000000" }
+			local colorRow = newRow(parent, 30)
+			local hexBox = make("TextBox", {
+				Size = UDim2.new(0, 70, 1, -2),
+				Position = UDim2.new(1, -70, 0, 0),
+				BackgroundColor3 = FIELD,
+				BorderSizePixel = 0,
+				Text = settings.GridColor,
+				PlaceholderText = "RRGGBB",
+				TextColor3 = TEXT,
+				Font = Enum.Font.Gotham,
+				TextSize = 12,
+				ClearTextOnFocus = false,
+			}, colorRow)
+
+			style(hexBox, 6, CARD_STROKE)
+			register(colorRow, {
+				Condition = function()
+					return deps.SurfaceGrid.On
+				end,
+			})
+
+			local function setColor(hex: string)
+				if not string.match(hex, "^#?%x%x%x%x%x%x$") then
+					hexBox.Text = settings.GridColor
+
+					return
+				end
+
+				settings.GridColor = string.upper(string.gsub(hex, "^#", ""))
+				hexBox.Text = settings.GridColor
+				deps.Save()
+				SurfaceGrid.Recolor(deps.SurfaceGrid)
+			end
+
+			for i, hex in swatches do
+				local swatch = make("TextButton", {
+					Size = UDim2.fromOffset(24, 24),
+					Position = UDim2.fromOffset((i - 1) * 28, 2),
+					BackgroundColor3 = SurfaceGrid.ColorOf(hex),
+					BorderSizePixel = 0,
+					Text = "",
+				}, colorRow)
+
+				style(swatch, 6, CARD_STROKE)
+				attachTip(swatch, { Text = "Grid color #" .. hex })
+				swatch.MouseButton1Click:Connect(function()
+					setColor(hex)
+				end)
+			end
+
+			hexBox.FocusLost:Connect(function()
+				setColor(hexBox.Text)
+			end)
+		end
 	end
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
