@@ -36,6 +36,7 @@ local PLAIN_KEYS: { [string]: Action } = {
 	F1 = "ShowHotkeys",
 	P = "TogglePastel",
 	N = "TogglePanel",
+	H = "Hide",
 }
 
 local Keymap = {}
@@ -62,6 +63,15 @@ function Keymap.Describe(): { { string } }
 		{ "P", "Pastel colors on or off" },
 		{ "Shift+P", "Surface grid on or off" },
 		{ "N", "Show or hide the panel" },
+		{ "Ctrl+M, then X / Y / Z", "Flip (mirror) the selection in place across that axis" },
+		{
+			"Shift+R, then X / Y / Z",
+			"Rotate the selection 90 degrees about that axis. Hold Shift on the axis key for -90",
+		},
+		{ "Arrow keys in Rotate", "While rotating with R, step the angle by 90 degrees" },
+		{ "H", "Hide the selected parts (local to you, nothing is saved)" },
+		{ "Alt+H", "Unhide everything you hid" },
+		{ "Shift+H", "Show hidden parts as faint ghosts, or hide them completely again" },
 	}
 end
 
@@ -75,6 +85,14 @@ end
 		are `Lock:X`, `Lock:Y`, `Lock:Z` and `Plane:X`, `Plane:Y`, `Plane:Z`.
 ]=]
 function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boolean, axisKeys: boolean): Action?
+	if alt and not ctrl and not shift and keyName == "H" then
+		return "Unhide"
+	end
+
+	if ctrl and not alt and not shift and keyName == "M" then
+		return "FlipArm"
+	end
+
 	if ctrl or alt then
 		return nil
 	end
@@ -90,6 +108,10 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 			return "ToggleGrid"
 		elseif keyName == "Tab" then
 			return "PrevTab"
+		elseif keyName == "R" then
+			return "Rotate90Arm"
+		elseif keyName == "H" then
+			return "ToggleHiddenView"
 		end
 
 		return nil

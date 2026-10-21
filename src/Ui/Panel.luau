@@ -9,6 +9,7 @@
 ]=]
 
 local Colors = require("../Core/Colors")
+local Hidden = require("../Core/Hidden")
 local Keymap = require("../Pure/Keymap")
 local Settings = require("../Pure/Settings")
 local SurfaceGrid = require("../Core/SurfaceGrid")
@@ -27,6 +28,12 @@ export type Actions = {
 	ShowDimensions: () -> (),
 	AnchorSelection: () -> (),
 	Instruction: (mode: string?) -> string,
+	Flip: (axis: string) -> (),
+	RotateBy: (axis: string, degrees: number) -> (),
+	PickFolder: () -> Instance?,
+	SetFolder: (folder: Instance?) -> (),
+	UnhideAll: () -> (),
+	ToggleHiddenView: () -> (),
 }
 
 export type Deps = {
@@ -37,6 +44,8 @@ export type Deps = {
 	SurfaceGrid: SurfaceGrid.SurfaceGrid,
 	Actions: Actions,
 	GetMode: () -> string?,
+	GetFolder: () -> Instance?,
+	Hidden: Hidden.Hidden,
 }
 
 export type Panel = {
@@ -71,6 +80,7 @@ local ACCENT = Color3.fromRGB(255, 138, 36)
 local ACCENT_DIM = Color3.fromRGB(62, 40, 22)
 local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
 local TABS = { "Build", "Arrange", "Display", "Settings", "Hotkeys" }
+local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Display = true }
 
 local Panel = {}
 
@@ -246,7 +256,7 @@ function Panel.new(deps: Deps): Panel
 			BackgroundColor3 = CARD,
 			BorderSizePixel = 0,
 			LayoutOrder = nextOrder(),
-		}, pages[pageName])
+		}, if pageName == "Root" then root else pages[pageName])
 
 		style(frame, 8, CARD_STROKE)
 		make("UIPadding", {
@@ -540,6 +550,63 @@ function Panel.new(deps: Deps): Panel
 	-- Build page
 	--
 
+	--
+	-- Working folder
+	--
+
+	local pending: Instance? = nil
+	local folderCard = card("WORKING FOLDER", "Root")
+	local folderText = text(folderCard, "", MUTED)
+	local pickButton = button(
+		folderCard,
+		"Use selected folder",
+		function()
+			pending = actions.PickFolder()
+			refresh()
+		end,
+		true,
+		{
+			Condition = function()
+				return pending == nil
+			end,
+		}
+	)
+
+	buttonRow(folderCard, {
+		{
+			Text = "Yes, work in it",
+			Run = function()
+				local chosen = pending
+
+				pending = nil
+				actions.SetFolder(chosen)
+				refresh()
+			end,
+		},
+		{
+			Text = "Cancel",
+			Run = function()
+				pending = nil
+				refresh()
+			end,
+		},
+	}, {
+		Condition = function()
+			return pending ~= nil
+		end,
+	})
+
+	local lockedNote = text(root, "Pick a working folder above to start using the tools.", ACCENT)
+
+	folderCard.LayoutOrder = 2
+	tabBar.LayoutOrder = 3
+	status.LayoutOrder = 4
+	lockedNote.LayoutOrder = 5
+
+	--
+	-- Build page
+	--
+
 	local toolCard = card("BUILD TOOLS", "Build")
 	local grid = make("Frame", {
 		Size = UDim2.fromScale(1, 0),
@@ -822,6 +889,95 @@ function Panel.new(deps: Deps): Panel
 	-- Arrange page
 	--
 
+	local hiddenCard = card("HIDDEN PARTS", "Display")
+	local hiddenCount = text(hiddenCard, "", TEXT)
+
+	switch(hiddenCard, "Show hidden parts (ghosted)", function()
+		return deps.Hidden.View
+	end, function()
+		actions.ToggleHiddenView()
+	end)
+	button(hiddenCard, "Unhide all (Alt+H)", actions.UnhideAll, false)
+	text(
+		hiddenCard,
+		"Select parts and press H to hide them. Hiding is local to you: nothing in the place changes and nothing is saved.",
+		MUTED
+	)
+	table.insert(refreshers, function()
+		hiddenCount.Text = Hidden.Count(deps.Hidden) .. " hidden part(s)"
+	end)
+
+	--
+	-- Arrange page
+	--
+
+	local flipCard = card("FLIP SELECTION  (Ctrl+M, then X / Y / Z)", "Arrange")
+
+	text(flipCard, "Mirrors the selection in place, around its own centre.", MUTED)
+	buttonRow(flipCard, {
+		{
+			Text = "Flip X",
+			Run = function()
+				actions.Flip("X")
+			end,
+		},
+		{
+			Text = "Flip Y",
+			Run = function()
+				actions.Flip("Y")
+			end,
+		},
+		{
+			Text = "Flip Z",
+			Run = function()
+				actions.Flip("Z")
+			end,
+		},
+	})
+
+	local rotateCard = card("ROTATE 90°  (Shift+R, then X / Y / Z)", "Arrange")
+
+	buttonRow(rotateCard, {
+		{
+			Text = "+90° X",
+			Run = function()
+				actions.RotateBy("X", 90)
+			end,
+		},
+		{
+			Text = "+90° Y",
+			Run = function()
+				actions.RotateBy("Y", 90)
+			end,
+		},
+		{
+			Text = "+90° Z",
+			Run = function()
+				actions.RotateBy("Z", 90)
+			end,
+		},
+	})
+	buttonRow(rotateCard, {
+		{
+			Text = "−90° X",
+			Run = function()
+				actions.RotateBy("X", -90)
+			end,
+		},
+		{
+			Text = "−90° Y",
+			Run = function()
+				actions.RotateBy("Y", -90)
+			end,
+		},
+		{
+			Text = "−90° Z",
+			Run = function()
+				actions.RotateBy("Z", -90)
+			end,
+		},
+	})
+
 	local repeatCard = card("REPEAT SELECTED OBJECTS", "Arrange")
 
 	numeric(repeatCard, "Copies", "Extra copies", 1, 100, 1)
@@ -971,9 +1127,19 @@ function Panel.new(deps: Deps): Panel
 			entry.Frame.Visible = visible
 		end
 
+		local locked = deps.GetFolder() == nil
+		local workingFolder = deps.GetFolder()
+
 		for name, frame in pages do
-			frame.Visible = name == page
+			frame.Visible = name == page and not (locked and LOCKED[name] == true)
 		end
+
+		lockedNote.Visible = locked and LOCKED[page] == true
+		folderText.Text = if pending
+			then `Are you sure you want to alter "{pending:GetFullName()}"? The plugin will build, move, rotate, recolor and delete parts inside it. Nothing outside it is changed.`
+			elseif workingFolder then `Working in: {workingFolder:GetFullName()}`
+			else "Select a Folder inside Workspace in the Explorer, then press the button. The plugin only works inside the folder you choose."
+		pickButton.Text = if workingFolder then "Change working folder" else "Use selected folder"
 
 		for name, tab in tabButtons do
 			local active = name == page

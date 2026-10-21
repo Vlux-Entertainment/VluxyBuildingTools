@@ -35,7 +35,33 @@ local COPIED_PROPERTIES = {
 	"Locked",
 }
 
+local scope: Instance? = nil
+
 local Geometry = {}
+
+--[=[
+	Sets the working folder. Selection helpers only return things inside it, and new builds go in it.
+
+	@param folder Instance? -- nil clears the scope
+]=]
+function Geometry.SetScope(folder: Instance?)
+	scope = folder
+end
+
+--[=[
+	@return Instance? -- the working folder, if one is set
+]=]
+function Geometry.GetScope(): Instance?
+	return scope
+end
+
+--[=[
+	@param object Instance
+	@return boolean -- true when the working folder is set and holds the object
+]=]
+function Geometry.InScope(object: Instance): boolean
+	return scope ~= nil and object:IsDescendantOf(scope)
+end
 
 --[[
 	@param out { Spec } -- added to
@@ -65,7 +91,7 @@ end
 function Geometry.Materialize(specs: { Spec }, title: string): Model
 	local model = Instance.new("Model")
 	model.Name = title
-	model.Parent = workspace
+	model.Parent = scope or workspace
 
 	for _, spec in specs do
 		local part = Instance.new(spec.class) :: BasePart
@@ -105,14 +131,17 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 end
 
 --[=[
-	@return { Instance } -- the selected Parts and Models in Workspace, leaving out any whose ancestor is also selected
+	@param anywhere boolean? -- true to ignore the working folder
+	@return { Instance } -- the selected Parts and Models in the working folder, leaving out any whose ancestor is also selected
 ]=]
-function Geometry.SelectedRoots(): { Instance }
+function Geometry.SelectedRoots(anywhere: boolean?): { Instance }
 	local all = Selection:Get()
 	local result = {}
 
 	for _, object in all do
-		if (object:IsA("BasePart") or object:IsA("Model")) and object:IsDescendantOf(workspace) then
+		local allowed = object:IsDescendantOf(workspace) and (anywhere == true or Geometry.InScope(object))
+
+		if (object:IsA("BasePart") or object:IsA("Model")) and allowed then
 			local nested = false
 
 			for _, other in all do

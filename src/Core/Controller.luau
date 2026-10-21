@@ -18,6 +18,7 @@ local AxisLock = require("../Pure/AxisLock")
 local Builders = require("./Builders")
 local Colors = require("./Colors")
 local Geometry = require("./Geometry")
+local Hidden = require("./Hidden")
 local Keymap = require("../Pure/Keymap")
 local NumericInput = require("../Pure/NumericInput")
 local Overlay = require("./Overlay")
@@ -115,6 +116,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local extrude: Extrude? = nil
 	local session: Transform.Session? = nil
 	local sessionRecording: string? = nil
+	local armed: string? = nil
+	local folder: Instance? = nil
+	local hidden = Hidden.new(trove)
+	local arrange: Arrange.Actions
 
 	local panel: Panel.Panel
 	local colors: Colors.Colors
@@ -127,6 +132,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if session then
 			glyph, name = "✥", session.Kind
 			hints = { { "X Y Z", "Axis" }, { "0-9", "Type value" }, { "Enter", "Confirm" }, { "Esc", "Cancel" } }
+
+			if session.Kind == "Rotate" then
+				table.insert(hints, 2, { "←↑↓→", "±90°" })
+			end
 		elseif extrude then
 			glyph, name = "⧉", "Extrude"
 			hints = { { "0-9", "Type length" }, { "Enter", "Confirm" }, { "Esc", "Cancel" } }
@@ -152,6 +161,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function say(text: string)
 		panel.Say(text)
 		showBar(text)
+	end
+
+	--[[
+		@return boolean -- true when a working folder is set and still in the place; says so when not
+	]]
+	local function requireFolder(): boolean
+		if folder and folder:IsDescendantOf(workspace) then
+			return true
+		end
+
+		say("Pick a working folder in the panel first. The plugin only works inside it.")
+
+		return false
 	end
 
 	local function save()
@@ -282,6 +304,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return workspace:Raycast(ray.Origin, ray.Direction * 100000, params)
 	end
 
+	--[[
+		@return RaycastResult? -- what the cursor is over, only when it is inside the working folder
+	]]
+	local function scopedHit(): RaycastResult?
+		local hit = hitSurface()
+
+		return if hit and Geometry.InScope(hit.Instance) then hit else nil
+	end
+
 	local function lookVector(): Vector3
 		local camera = workspace.CurrentCamera
 
@@ -329,7 +360,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 			return
 		elseif mode == "Opening" or mode == "ArchOpening" then
-			out, message, openingTarget = Builders.Opening(settings, hitSurface(), mode == "ArchOpening")
+			out, message, openingTarget = Builders.Opening(settings, scopedHit(), mode == "ArchOpening")
 		elseif mode == "Place" then
 			out, message, placementCF = Builders.Place(settings, hitSurface(), source)
 		elseif mode == "Measure" then
@@ -460,14 +491,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function pickFace(): (BasePart?, Vector3)
 		local hit = hitSurface()
 
-		if hit and Geometry.IsPlainBlock(hit.Instance) then
+		if hit and Geometry.IsPlainBlock(hit.Instance) and Geometry.InScope(hit.Instance) then
 			return hit.Instance :: BasePart, hit.Normal
 		end
 
 		local selected = Selection:Get()
 		local chosen = selected[1]
 
-		if #selected == 1 and Geometry.IsPlainBlock(chosen) then
+		if #selected == 1 and chosen and Geometry.IsPlainBlock(chosen) and Geometry.InScope(chosen) then
 			-- Nothing under the cursor, so grow from the face that looks most toward the camera.
 			local part = chosen :: BasePart
 			local toward = -lookVector()
@@ -511,6 +542,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		stop(true)
+
+		if not requireFolder() then
+			return
+		end
 
 		local part, normal = pickFace()
 
@@ -653,6 +688,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		stop(true)
 
+		if not requireFolder() then
+			return
+		end
+
 		local roots = Geometry.SelectedRoots()
 		local parts = Geometry.PartsOf(roots)
 
@@ -724,6 +763,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function activate(name: string)
 		stop(true)
 
+		if not requireFolder() then
+			return
+		end
+
 		if not RunService:IsEdit() then
 			return say("Stop the playtest before using tools.")
 		end
@@ -756,7 +799,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if name == "Extend" then
 			local chosen = Selection:Get()
 
-			if #chosen == 1 and Geometry.IsPlainBlock(chosen[1]) then
+			if #chosen == 1 and Geometry.IsPlainBlock(chosen[1]) and Geometry.InScope(chosen[1]) then
 				overlay.FaceHandles.Adornee = chosen[1] :: BasePart
 				overlay.FaceHandles.Visible = true
 			end
@@ -839,7 +882,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function perform(action: Keymap.Action)
 		if action == "Cancel" then
-			if session then
+			if armed then
+				armed = nil
+				say("Cancelled.")
+			elseif session then
 				finishSession(false)
 			elseif extrude then
 				cancelExtrude()
@@ -867,6 +913,38 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			startSession(action :: Transform.Kind, false)
 		elseif action == "Duplicate" then
 			startSession("Grab", true)
+		elseif action == "Hide" then
+			local parts = Geometry.PartsOf(Geometry.SelectedRoots(true))
+
+			if #parts == 0 then
+				say("Select something to hide first.")
+			else
+				Hidden.Hide(hidden, parts)
+				Selection:Set({})
+				panel.Refresh()
+				say(`Hid {#parts} part(s). Alt+H unhides them, Shift+H shows them as ghosts.`)
+			end
+		elseif action == "Unhide" then
+			local count = Hidden.UnhideAll(hidden)
+
+			panel.Refresh()
+			say(if count > 0 then `Unhid {count} part(s).` else "Nothing was hidden.")
+		elseif action == "ToggleHiddenView" then
+			Hidden.ToggleView(hidden)
+			panel.Refresh()
+			say(if hidden.View then "Hidden parts are shown as ghosts." else "Hidden parts are fully hidden.")
+		elseif action == "FlipArm" then
+			if requireFolder() then
+				stop(true)
+				armed = "Flip"
+				say("Flip: press X, Y or Z to mirror the selection across that axis. Esc cancels.")
+			end
+		elseif action == "Rotate90Arm" then
+			if requireFolder() then
+				stop(true)
+				armed = "Rotate90"
+				say("Rotate 90°: press X, Y or Z (hold Shift for -90°). Esc cancels.")
+			end
 		elseif action == "NextTab" or action == "PrevTab" then
 			panel.CycleTab(if action == "NextTab" then 1 else -1)
 		elseif action == "ShowHotkeys" then
@@ -888,7 +966,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		else
 			local kind, axis = string.match(action, "^(%a+):([XYZ])$")
 
-			if kind == "Lock" or kind == "Plane" then
+			if (kind == "Lock" or kind == "Plane") and armed then
+				local pending = armed
+
+				armed = nil
+
+				if requireFolder() then
+					if pending == "Flip" then
+						arrange.Flip(axis :: string)
+					else
+						arrange.RotateBy(axis :: string, if kind == "Plane" then -90 else 90)
+					end
+				end
+			elseif kind == "Lock" or kind == "Plane" then
 				setLock(axis :: AxisLock.Axis, kind == "Plane")
 			end
 		end
@@ -899,6 +989,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--
 
 	colors = Colors.new({
+		GetScope = function()
+			return folder
+		end,
 		Edit = edit,
 		Say = say,
 		Refresh = function()
@@ -909,7 +1002,62 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end,
 	}, trove)
 
-	local arrange = Arrange.new({
+	--[[
+		@return Instance? -- the Folder inside Workspace that is selected, or nil with a message
+	]]
+	local function pickFolder(): Instance?
+		local selected = Selection:Get()
+		local candidate = selected[1]
+
+		if
+			#selected ~= 1
+			or not candidate
+			or not candidate:IsA("Folder")
+			or not candidate:IsDescendantOf(workspace)
+		then
+			say("Select exactly one Folder inside Workspace in the Explorer, then press the button.")
+
+			return nil
+		end
+
+		return candidate
+	end
+
+	--[[
+		@param chosen Instance? -- the confirmed folder
+
+		Makes the folder the only place the plugin works in. Pastel colors is switched off first so
+		the old folder is not left recolored.
+	]]
+	local function setFolder(chosen: Instance?)
+		if colors.On and chosen ~= folder then
+			Colors.Set(colors, false)
+		end
+
+		stop()
+		folder = chosen
+		Geometry.SetScope(chosen)
+		panel.Refresh()
+
+		if chosen then
+			say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
+		end
+	end
+
+	--[[
+		@param run () -> ()
+
+		@return () -> () -- the same action, but it only runs once a working folder is set
+	]]
+	local function guarded(run: () -> ()): () -> ()
+		return function()
+			if requireFolder() then
+				run()
+			end
+		end
+	end
+
+	arrange = Arrange.new({
 		Settings = settings,
 		Save = save,
 		Edit = edit,
@@ -932,6 +1080,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Save = save,
 		Colors = colors,
 		SurfaceGrid = surfaceGrid,
+		Hidden = hidden,
+		GetFolder = function()
+			return folder
+		end,
 		GetMode = function()
 			return mode
 		end,
@@ -941,12 +1093,30 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				stop()
 			end,
 			ResetPoint = resetPoint,
-			UseSelectedFloor = arrange.UseSelectedFloor,
-			RepeatCopies = arrange.RepeatCopies,
-			MirrorCopy = arrange.MirrorCopy,
-			SnapSelection = arrange.SnapSelection,
-			ShowDimensions = arrange.ShowDimensions,
-			AnchorSelection = arrange.AnchorSelection,
+			UseSelectedFloor = guarded(arrange.UseSelectedFloor),
+			RepeatCopies = guarded(arrange.RepeatCopies),
+			MirrorCopy = guarded(arrange.MirrorCopy),
+			SnapSelection = guarded(arrange.SnapSelection),
+			ShowDimensions = guarded(arrange.ShowDimensions),
+			AnchorSelection = guarded(arrange.AnchorSelection),
+			Flip = function(axis)
+				if requireFolder() then
+					arrange.Flip(axis :: string)
+				end
+			end,
+			RotateBy = function(axis, degrees)
+				if requireFolder() then
+					arrange.RotateBy(axis, degrees)
+				end
+			end,
+			PickFolder = pickFolder,
+			SetFolder = setFolder,
+			UnhideAll = function()
+				perform("Unhide")
+			end,
+			ToggleHiddenView = function()
+				perform("ToggleHiddenView")
+			end,
 			Instruction = function(active)
 				return (active and INSTRUCTIONS[active]) or "Choose a drawing tool first."
 			end,
@@ -1052,7 +1222,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if active == "Extend" then
 			local hit = hitSurface()
 
-			if hit and Geometry.IsPlainBlock(hit.Instance) and not hit.Instance.Locked then
+			if
+				hit
+				and Geometry.IsPlainBlock(hit.Instance)
+				and not hit.Instance.Locked
+				and Geometry.InScope(hit.Instance)
+			then
 				overlay.FaceHandles.Adornee = hit.Instance :: BasePart
 				overlay.FaceHandles.Visible = true
 				say("Drag a green face handle outward. Release to add the new block.")
@@ -1164,6 +1339,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local key = input.KeyCode.Name
 		local modal = session ~= nil or extrude ~= nil
 
+		if session and session.Kind == "Rotate" then
+			local step = if key == "Up" or key == "Right" then 90 elseif key == "Down" or key == "Left" then -90 else 0
+
+			if step ~= 0 then
+				local typed = NumericInput.Value(session.Numeric) or 0
+
+				session.Numeric.Text = tostring(typed + step)
+
+				return
+			end
+		end
+
 		-- Typed numbers: while a modal action runs, or while a draw tool has its first point.
 		if (modal or (mode ~= nil and first ~= nil)) and settings.Hotkeys then
 			local entry = if session then session.Numeric elseif extrude then extrude.numeric else numeric
@@ -1180,7 +1367,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or UserInputService:IsKeyDown(Enum.KeyCode.LeftMeta)
 		local alt = UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt)
 			or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt)
-		local action: string? = Keymap.Resolve(key, shift, ctrl, alt, modal or mode ~= nil)
+		local action: string? = Keymap.Resolve(key, shift, ctrl, alt, modal or mode ~= nil or armed ~= nil)
 
 		if not action then
 			return
@@ -1197,6 +1384,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or action == "TogglePastel"
 			or action == "ToggleGrid"
 			or action == "TogglePanel"
+			or action == "Hide"
+			or action == "Unhide"
+			or action == "ToggleHiddenView"
+			or action == "FlipArm"
+			or action == "Rotate90Arm"
 			or string.sub(action, 1, 5) == "Tool:"
 
 		local turnsStamp = action == "Rotate" and mode == "Place"
@@ -1209,7 +1401,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return
 		end
 
-		if not modal and not mode and (action == "Cancel" or action == "Confirm") then
+		if not modal and not mode and not armed and (action == "Cancel" or action == "Confirm") then
 			return
 		end
 
@@ -1258,6 +1450,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		elapsed = 0
 
+		if folder and not folder:IsDescendantOf(workspace) then
+			folder = nil
+			Geometry.SetScope(nil)
+			stop()
+			panel.Refresh()
+			say("The working folder is gone. Pick another one to keep working.")
+		end
+
 		if not RunService:IsEdit() then
 			if mode or session or extrude then
 				stop()
@@ -1294,6 +1494,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Destroy = function()
 			stop()
 			save()
+			Hidden.UnhideAll(hidden)
 			Colors.RestoreOnUnload(colors)
 		end,
 	}

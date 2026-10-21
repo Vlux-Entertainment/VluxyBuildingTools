@@ -38,6 +38,16 @@ return {
 		expect.equal(Keymap.Resolve("N", false, false, false, false), "TogglePanel")
 	end,
 
+	["hide, flip and quick-rotate keys"] = function(expect)
+		expect.equal(Keymap.Resolve("H", false, false, false, false), "Hide")
+		expect.equal(Keymap.Resolve("H", false, false, true, false), "Unhide")
+		expect.equal(Keymap.Resolve("H", true, false, false, false), "ToggleHiddenView")
+		expect.equal(Keymap.Resolve("M", false, true, false, false), "FlipArm")
+		expect.equal(Keymap.Resolve("R", true, false, false, false), "Rotate90Arm")
+		expect.falsy(Keymap.Resolve("M", false, false, false, false))
+		expect.falsy(Keymap.Resolve("H", false, true, true, false))
+	end,
+
 	["every binding is described"] = function(expect)
 		expect.truthy(#Keymap.Describe() >= 12)
 	end,
