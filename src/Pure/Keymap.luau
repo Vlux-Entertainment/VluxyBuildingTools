@@ -95,7 +95,7 @@ function Keymap.Describe(): { { string } }
 		{ "Alt+X / Y / Z", "Lock to the plane the axis is perpendicular to" },
 		{ "0-9 and .", "While drawing or in a modal action: type an exact length, angle or factor" },
 		{ "Enter / click", "Confirm" },
-		{ "Esc / right-click", "Cancel the action, or stop the tool" },
+		{ "Esc / right-click", "Cancel the action, or stop the tool. Enter then brings the last tool back" },
 		{ "[ and ]", "Lower or raise the active height by one snap step" },
 		{ "Tab / `", "Next or previous panel tab" },
 		{ "F1", "Open this Hotkeys tab" },

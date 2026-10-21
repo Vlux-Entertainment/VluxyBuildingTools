@@ -142,6 +142,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local folder: Instance? = nil
 	local pendingFolder: Instance? = nil
 	local picking = false
+	local cancelPicking: () -> ()
 	local hoverFolder: Instance? = nil
 	local boxClock = 0
 	local hidden = Hidden.new(trove)
@@ -925,6 +926,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	local lastVariant: { [string]: string } = {}
+	local lastMode: string? = nil
 
 	--[[
 		@param name string -- a mode of a tile, such as Room
@@ -942,6 +944,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		if tile and mode == name then
 			lastVariant[tile.Id] = name
+		end
+
+		if mode == name then
+			lastMode = name
 		end
 	end
 
@@ -1061,7 +1067,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function perform(action: Keymap.Action)
 		if action == "Cancel" then
-			if armed then
+			if picking then
+				cancelPicking()
+				say("Folder pick cancelled.")
+			elseif armed then
 				armed = nil
 				say("Cancelled.")
 			elseif session then
@@ -1071,7 +1080,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				say("Extrude cancelled.")
 			elseif mode then
 				stop()
-				say("Tool stopped. Your completed builds stay in the map.")
+				say("Tool stopped. Your completed builds stay in the map. Press Enter to bring it back.")
 			end
 		elseif action == "Confirm" then
 			if session then
@@ -1284,7 +1293,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--[[
 		Gives up picking and clears the outlines that picking drew.
 	]]
-	local function cancelPicking()
+	cancelPicking = function()
 		picking = false
 		pendingFolder = nil
 		hoverFolder = nil
@@ -1805,7 +1814,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return
 		end
 
-		if not modal and not mode and not armed and (action == "Cancel" or action == "Confirm") then
+		if not modal and not mode and not armed and not picking and (action == "Cancel" or action == "Confirm") then
+			if action == "Confirm" and lastMode and not processed then
+				setMode(lastMode)
+			end
+
 			return
 		end
 
