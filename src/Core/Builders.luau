@@ -524,14 +524,56 @@ function Builders.Room(settings: Settings, a: Vector3, b: Vector3): { Spec }
 end
 
 --[=[
+	How two chained walls meet at a corner without a notch or a coplanar overlap. At about 90
+	degrees the earlier wall grows by half a thickness and the new one starts half a thickness late,
+	so it butts against the side of the earlier one. At shallower turns the earlier wall grows to
+	the outer corner of the miter and the new one starts the same distance early.
+
+	@param thickness number
+	@param prevDir Vector3 -- the direction of the earlier wall
+	@param dir Vector3 -- the direction of the new wall
+	@return number -- how far the end of the earlier wall grows
+	@return number -- how far the start of the new wall moves along its direction, negative when it starts early
+]=]
+function Builders.JoinOffsets(thickness: number, prevDir: Vector3, dir: Vector3): (number, number)
+	local u = Vector3.new(prevDir.X, 0, prevDir.Z)
+	local v = Vector3.new(dir.X, 0, dir.Z)
+
+	if u.Magnitude < 0.001 or v.Magnitude < 0.001 then
+		return 0, 0
+	end
+
+	local turn = math.acos(math.clamp(u.Unit:Dot(v.Unit), -1, 1))
+	local half = thickness / 2
+
+	if turn < math.rad(2) then
+		return 0, 0
+	elseif turn >= math.rad(89) then
+		return half, half
+	end
+
+	local reach = half * math.tan(turn / 2)
+
+	return reach, -reach
+end
+
+--[=[
 	@param settings Settings
 	@param a Vector3
 	@param b Vector3
 	@param corridor boolean -- true for a floored corridor, false for a single wall
 	@param pillarAtStart boolean? -- false when the start already has a pillar from the wall before it
+	@param joinDir Vector3? -- the direction of the wall this one continues, so the corner closes without a notch
 	@return { Spec }
 ]=]
-function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boolean, pillarAtStart: boolean?): { Spec }
+function Builders.Path(
+	settings: Settings,
+	a: Vector3,
+	b: Vector3,
+	corridor: boolean,
+	pillarAtStart: boolean?,
+	joinDir: Vector3?
+): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local length = d.Magnitude
@@ -542,7 +584,15 @@ function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boo
 
 	if not corridor then
 		if not settings.PillaredWalls then
-			segment(out, a, b, settings.Thickness, settings.Height, "Wall")
+			local start = a
+
+			if joinDir then
+				local _, shift = Builders.JoinOffsets(settings.Thickness, joinDir, d)
+
+				start = a + d.Unit * shift
+			end
+
+			segment(out, start, b, settings.Thickness, settings.Height, "Wall")
 
 			return out
 		end

@@ -150,6 +150,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
 	local snapMark: Vector3? = nil
+	local prevWall: { part: BasePart, dir: Vector3 }? = nil
 	local placementCF: CFrame? = nil
 	local extendDrag: ExtendDrag? = nil
 	local extendHover = false
@@ -301,6 +302,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function resetPoint()
 		first, current = nil, nil
 		lockedHit, cutDepth = nil, nil
+		prevWall = nil
 		chained = false
 		previewSpecs, previewValid = {}, false
 		lock = nil
@@ -690,7 +692,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					local path = table.clone(drawn)
 
 					path.PillaredWalls = mode == "PillaredWall"
-					out = Builders.Path(path, origin, b, mode == "Corridor", not chained)
+					local joinDir = if chained and mode == "Wall" and prevWall then prevWall.dir else nil
+
+					out = Builders.Path(path, origin, b, mode == "Corridor", not chained, joinDir)
 				elseif mode == "Stairs" or mode == "Ramp" then
 					out = Builders.Stairs(settings, origin, b, mode == "Ramp")
 				elseif mode == "Arch" then
@@ -1900,10 +1904,31 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					or active == "ArchedCorridor"
 				local nextPoint = current
 				local specs = previewSpecs
+				local segment = Vector3.new(current.X - first.X, 0, current.Z - first.Z)
 
 				if
 					edit("Build " .. active, function()
 						local model = Geometry.Materialize(specs, "Vlux_" .. active)
+
+						if active == "Wall" then
+							local wall = model:FindFirstChild("Wall")
+							local before = prevWall
+
+							if before and before.part.Parent and segment.Magnitude > 0.001 then
+								local extend = Builders.JoinOffsets(settings.Thickness, before.dir, segment)
+
+								if extend > 0 then
+									before.part.Size += Vector3.new(0, 0, extend)
+									before.part.CFrame *= CFrame.new(0, 0, -extend / 2)
+								end
+							end
+
+							prevWall = if wall
+									and wall:IsA("BasePart")
+									and segment.Magnitude > 0.001
+								then { part = wall, dir = segment.Unit }
+								else nil
+						end
 
 						if active == "Floor" and settings.FloorTransparency > 0 then
 							for _, child in model:GetChildren() do
