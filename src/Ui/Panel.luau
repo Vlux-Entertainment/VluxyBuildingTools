@@ -77,8 +77,8 @@ local TILE = Color3.fromRGB(24, 25, 29)
 local FIELD = Color3.fromRGB(21, 22, 26)
 local TEXT = Color3.fromRGB(236, 237, 240)
 local MUTED = Color3.fromRGB(139, 142, 150)
-local ACCENT = Color3.fromRGB(255, 138, 36)
-local ACCENT_DIM = Color3.fromRGB(62, 40, 22)
+local ACCENT = Color3.fromRGB(60, 214, 120)
+local ACCENT_DIM = Color3.fromRGB(24, 62, 40)
 local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
 local TABS = { "Build", "Arrange", "Display", "Settings", "Hotkeys" }
 local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Display = true }
