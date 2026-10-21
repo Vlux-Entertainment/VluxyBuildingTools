@@ -2081,7 +2081,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 							settings.ConnectStructures
 							and (active == "Room" or active == "Corridor" or active == "ArchedCorridor")
 						then
-							Joints.Connect(model, settings.RoomJoin, previousModel)
+							local failed = Joints.Connect(model, settings.RoomJoin, previousModel)
+
+							if failed > 0 then
+								say(string.format("%d wall(s) could not be cut where the structures meet.", failed))
+							end
 						end
 					end)
 				then

@@ -168,10 +168,34 @@ local function overlaps(cfA: CFrame, sizeA: Vector3, cfB: CFrame, sizeB: Vector3
 end
 
 --[[
+	@return boolean -- whether the cutter's box contains every corner of the part
+]]
+local function swallows(cutter: Cutter, part: BasePart): boolean
+	local half = cutter.size / 2 + Vector3.new(0.02, 0.02, 0.02)
+	local reach = part.Size / 2
+
+	for _, sx in { -1, 1 } do
+		for _, sy in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				local corner = cutter.cf:PointToObjectSpace(
+					part.CFrame:PointToWorldSpace(Vector3.new(sx * reach.X, sy * reach.Y, sz * reach.Z))
+				)
+
+				if math.abs(corner.X) > half.X or math.abs(corner.Y) > half.Y or math.abs(corner.Z) > half.Z then
+					return false
+				end
+			end
+		end
+	end
+
+	return true
+end
+
+--[[
 	Replaces the part with a copy that has the cutters taken out of it. The part leaves the model
 	with its Parent set to nil, not destroyed, so undo can bring it back.
 ]]
-local function carve(part: BasePart, cutters: { Cutter })
+local function carve(part: BasePart, cutters: { Cutter }): boolean
 	local tools: { BasePart } = {}
 
 	for _, cutter in cutters do
@@ -186,7 +210,7 @@ local function carve(part: BasePart, cutters: { Cutter })
 	end
 
 	if #tools == 0 then
-		return
+		return true
 	end
 
 	local ok, result = pcall(function()
@@ -198,7 +222,16 @@ local function carve(part: BasePart, cutters: { Cutter })
 	end
 
 	if not ok or not result then
-		return
+		-- Subtracting leaves nothing when the cutter swallows the whole part, so the part just goes.
+		for _, cutter in cutters do
+			if swallows(cutter, part) then
+				part.Parent = nil
+
+				return true
+			end
+		end
+
+		return false
 	end
 
 	local holder = part.Parent
@@ -207,6 +240,8 @@ local function carve(part: BasePart, cutters: { Cutter })
 	result.Anchored = true
 	result.Parent = holder
 	part.Parent = nil
+
+	return true
 end
 
 --[[
@@ -215,12 +250,16 @@ end
 
 	Cuts every cuttable wall in the model that the cutters pass through.
 ]]
-local function carveModel(model: Instance, cutters: { Cutter })
+local function carveModel(model: Instance, cutters: { Cutter }): number
+	local failed = 0
+
 	for _, child in model:GetChildren() do
-		if child:IsA("BasePart") and CUT_PARTS[child.Name] then
-			carve(child, cutters)
+		if child:IsA("BasePart") and CUT_PARTS[child.Name] and not carve(child, cutters) then
+			failed += 1
 		end
 	end
+
+	return failed
 end
 
 --[[
@@ -294,31 +333,17 @@ local function between(a: Cutter, b: Cutter): Cutter?
 		return nil
 	end
 
-	local lo = Vector3.new(math.min(x0, x1) - 0.05, low, math.min(z0, z1) - 0.05)
-	local hi = Vector3.new(math.max(x0, x1) + 0.05, high, math.max(z0, z1) + 0.05)
+	local lo = Vector3.new(math.min(x0, x1) - 0.05, math.min(aLo.Y, bLo.Y) - 0.05, math.min(z0, z1) - 0.05)
+	local hi = Vector3.new(math.max(x0, x1) + 0.05, math.max(aHi.Y, bHi.Y) + 0.05, math.max(z0, z1) + 0.05)
 
 	return { cf = CFrame.new((lo + hi) / 2), size = hi - lo, cylinder = false }
 end
 
 --[[
-	@return { Cutter } -- every wall of the model as a box, for cutting a neighbour where it overlaps them
+	@return { Cutter } -- the cutters applied to the room beside it
+	@return { Cutter } -- the cutters applied to the new room. Open cuts both; Shared cuts only the existing room's wall and keeps the new room's
 ]]
-local function wallBoxes(model: Instance): { Cutter }
-	local out: { Cutter } = {}
-
-	for _, child in model:GetChildren() do
-		if child:IsA("BasePart") and CUT_PARTS[child.Name] and child.Name ~= "Ceiling" then
-			table.insert(out, { cf = child.CFrame, size = child.Size, cylinder = false })
-		end
-	end
-
-	return out
-end
-
---[[
-	@return { Cutter } -- what a new room cuts out of itself and out of the room beside it, as `mine` cut from the neighbour and `own` cut from the new room
-]]
-local function roomCuts(mine: Cutter, theirs: Cutter, other: Instance, join: string): ({ Cutter }, { Cutter })
+local function roomCuts(mine: Cutter, theirs: Cutter, join: string): ({ Cutter }, { Cutter })
 	if join == "Open" then
 		local gap = between(mine, theirs)
 
@@ -326,7 +351,11 @@ local function roomCuts(mine: Cutter, theirs: Cutter, other: Instance, join: str
 			return { gap }, { gap }
 		end
 	elseif join == "Shared" then
-		return {}, wallBoxes(other)
+		local gap = between(mine, theirs)
+
+		if gap then
+			return { gap }, {}
+		end
 	end
 
 	return {}, {}
@@ -370,7 +399,7 @@ function Joints.Preview(
 			local fromTheirs: { Cutter } = theirs
 
 			if name == "Vlux_Room" and other.Name == "Vlux_Room" and mine[1] and theirs[1] then
-				fromMine, fromTheirs = roomCuts(mine[1], theirs[1], other, roomJoin)
+				fromMine, fromTheirs = roomCuts(mine[1], theirs[1], roomJoin)
 			end
 
 			for _, child in other:GetChildren() do
@@ -433,8 +462,9 @@ end
 	@param model Model -- a Vlux_Room, Vlux_Corridor or Vlux_ArchedCorridor
 	@param roomJoin string -- Open, Shared or Separate, for a room built beside another room
 	@param skip Instance? -- a structure to leave alone, such as the previous one in a chain
+	@return number -- how many walls could not be cut
 ]=]
-function Joints.Connect(model: Model, roomJoin: string, skip: Instance?)
+function Joints.Connect(model: Model, roomJoin: string, skip: Instance?): number
 	local mine = measure(model)
 
 	for index, cutter in mine do
@@ -447,24 +477,28 @@ function Joints.Connect(model: Model, roomJoin: string, skip: Instance?)
 	model:SetAttribute("Cuts", #mine)
 
 	if #mine == 0 then
-		return
+		return 0
 	end
+
+	local failed = 0
 
 	for _, other in structures() do
 		if other ~= model and other ~= skip then
 			local theirs = stored(other)
 
 			if model.Name == "Vlux_Room" and other.Name == "Vlux_Room" and mine[1] and theirs[1] then
-				local fromMine, fromTheirs = roomCuts(mine[1], theirs[1], other, roomJoin)
+				local fromMine, fromTheirs = roomCuts(mine[1], theirs[1], roomJoin)
 
-				carveModel(other, fromMine)
-				carveModel(model, fromTheirs)
+				failed += carveModel(other, fromMine)
+				failed += carveModel(model, fromTheirs)
 			else
-				carveModel(other, mine)
-				carveModel(model, theirs)
+				failed += carveModel(other, mine)
+				failed += carveModel(model, theirs)
 			end
 		end
 	end
+
+	return failed
 end
 
 return Joints
