@@ -382,13 +382,19 @@ end
 	wall as separate Parts around the hole.
 
 	@param settings Settings
+	@param dims { Width: number, Height: number, Sill: number } -- the opening to cut
 	@param hit RaycastResult? -- what the cursor is over
 	@param arched boolean
 	@return { Spec }
 	@return string -- what to tell the user
 	@return BasePart? -- the wall to delete when the opening is built
 ]=]
-function Builders.Opening(settings: Settings, hit: RaycastResult?, arched: boolean): ({ Spec }, string, BasePart?)
+function Builders.Opening(
+	settings: Settings,
+	dims: { Width: number, Height: number, Sill: number },
+	hit: RaycastResult?,
+	arched: boolean
+): ({ Spec }, string, BasePart?)
 	local out: { Spec } = {}
 	local wall = hit and hit.Instance
 
@@ -414,8 +420,8 @@ function Builders.Opening(settings: Settings, hit: RaycastResult?, arched: boole
 		size = Vector3.new(size.Z, size.Y, size.X)
 	end
 
-	local w, h = settings.OpenWidth, settings.OpenHeight
-	local sill = if arched then 0 else settings.Sill
+	local w, h = dims.Width, dims.Height
+	local sill = if arched then 0 else dims.Sill
 
 	if arched and h < w / 2 then
 		return out, "Arch height must be at least half the opening width.", nil

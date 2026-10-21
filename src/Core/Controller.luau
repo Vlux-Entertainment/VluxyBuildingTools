@@ -65,7 +65,8 @@ local INSTRUCTIONS: { [string]: string } = {
 	Ramp = "Click the bottom and top footprint point. Drag distance sets length; Height sets the rise.",
 	Arch = "Click the two inner edges at ground level. Height is the arch clearance; Depth is the frame depth.",
 	ArchOpening = "Hover over a plain wall and click to cut an arched doorway. Adjust width/height below.",
-	Opening = "Click an undecorated rectangular wall. Opening is centered on the cursor horizontally; sill sets its height.",
+	Door = "Click an undecorated rectangular wall. The door is centered on the cursor and starts at the bottom of the wall.",
+	Window = "Click an undecorated rectangular wall. The window is centered on the cursor; its height above the floor is in the options.",
 	Extend = "Click a block to select it, then drag a green face handle OUTWARD. Release to add a connected block.",
 	Place = "Select an object first. Click surfaces to stamp copies. R rotates the preview 90 degrees.",
 	Measure = "Click two surface points. A distance label stays in the viewport. Esc clears it.",
@@ -395,8 +396,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			return
-		elseif mode == "Opening" or mode == "ArchOpening" then
-			out, message, openingTarget = Builders.Opening(settings, scopedHit(), mode == "ArchOpening")
+		elseif mode == "Door" or mode == "Window" or mode == "ArchOpening" then
+			local opening = if mode == "Door"
+				then { Width = settings.DoorWidth, Height = settings.DoorHeight, Sill = 0 }
+				elseif mode == "Window" then {
+					Width = settings.WindowWidth,
+					Height = settings.WindowHeight,
+					Sill = settings.WindowSill,
+				}
+				else { Width = settings.OpenWidth, Height = settings.OpenHeight, Sill = 0 }
+
+			out, message, openingTarget = Builders.Opening(settings, opening, scopedHit(), mode == "ArchOpening")
 		elseif mode == "Place" then
 			out, message, placementCF = Builders.Place(settings, hitSurface(), source)
 		elseif mode == "Measure" then
@@ -524,7 +534,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		previewSpecs = out
-		previewValid = #out > 0 and (first ~= nil or mode == "Opening" or mode == "ArchOpening" or mode == "Place")
+		previewValid = #out > 0
+			and (first ~= nil or mode == "Door" or mode == "Window" or mode == "ArchOpening" or mode == "Place")
 		Overlay.DrawGhosts(overlay, out)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
@@ -1545,7 +1556,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return say(tostring(err))
 		end
 
-		if active == "Opening" or active == "ArchOpening" then
+		if active == "Door" or active == "Window" or active == "ArchOpening" then
 			if not previewValid then
 				return
 			end
@@ -1553,11 +1564,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local target = openingTarget
 			local specs = previewSpecs
 
-			edit(if active == "ArchOpening" then "Create arched doorway" else "Create opening", function()
-				Geometry.Materialize(specs, if active == "ArchOpening" then "Arched_Doorway" else "Wall_Opening")
-				assert(target and target.Parent, "Wall no longer exists")
-				target:Destroy()
-			end)
+			edit(
+				if active == "ArchOpening" then "Create arched doorway" else "Create " .. string.lower(active),
+				function()
+					Geometry.Materialize(specs, if active == "ArchOpening" then "Arched_Doorway" else "Wall_" .. active)
+					assert(target and target.Parent, "Wall no longer exists")
+					target:Destroy()
+				end
+			)
 		elseif active == "Place" then
 			local target = placementCF
 			local pivot = source and source.Pivot

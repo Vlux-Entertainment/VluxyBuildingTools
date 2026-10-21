@@ -953,36 +953,15 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "RampHeight", "Ramp rise", 0.1, 1024, nil, body({ Ramp = true }))
 	numeric(scope, "ArchHeight", "Clear height", 0.1, 1024, nil, body({ Arch = true }))
 	numeric(scope, "ArchDepth", "Frame depth", 0.1, 256, nil, body({ Arch = true }))
-	numeric(scope, "OpenWidth", "Opening width", 0.1, 1024, nil, body({ Opening = true, ArchOpening = true }))
-	numeric(scope, "OpenHeight", "Opening height", 0.1, 1024, nil, body({ Opening = true, ArchOpening = true }))
-	numeric(scope, "Sill", "Bottom above floor", 0, 1024, nil, body({ Opening = true }))
+	numeric(scope, "OpenWidth", "Door width", 0.1, 1024, nil, body({ ArchOpening = true }))
+	numeric(scope, "OpenHeight", "Door height", 0.1, 1024, nil, body({ ArchOpening = true }))
+	numeric(scope, "DoorWidth", "Door width", 0.1, 1024, nil, body({ Door = true }))
+	numeric(scope, "DoorHeight", "Door height", 0.1, 1024, nil, body({ Door = true }))
+	numeric(scope, "WindowWidth", "Window width", 0.1, 1024, nil, body({ Window = true }))
+	numeric(scope, "WindowHeight", "Window height", 0.1, 1024, nil, body({ Window = true }))
+	numeric(scope, "WindowSill", "Bottom above floor", 0, 1024, nil, body({ Window = true }))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 
-	local function preset(width: number, height: number, sill: number, message: string)
-		settings.OpenWidth, settings.OpenHeight, settings.Sill = width, height, sill
-
-		for _, key in { "OpenWidth", "OpenHeight", "Sill" } do
-			fieldBoxes[key].Text = tostring(values[key])
-		end
-
-		deps.Save()
-		say(message)
-	end
-
-	buttonRow(scope, {
-		{
-			Text = "Door preset",
-			Run = function()
-				preset(4, 8, 0, "Door: 4 studs wide, 8 high, starts at the wall bottom.")
-			end,
-		},
-		{
-			Text = "Window preset",
-			Run = function()
-				preset(5, 4, 3, "Window: 5 studs wide, 4 high, 3 studs above the wall bottom.")
-			end,
-		},
-	}, body({ Opening = true }))
 	button(scope, "Start new chain", function()
 		actions.ResetPoint()
 		say(actions.Instruction(deps.GetMode()))
