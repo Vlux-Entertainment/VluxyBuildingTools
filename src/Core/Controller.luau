@@ -118,6 +118,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local sessionRecording: string? = nil
 	local armed: string? = nil
 	local folder: Instance? = nil
+	local pendingFolder: Instance? = nil
+	local picking = false
+	local hoverFolder: Instance? = nil
+	local boxClock = 0
 	local hidden = Hidden.new(trove)
 	local arrange: Arrange.Actions
 
@@ -481,7 +485,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--
-	-- Extrude (E)
+	-- Extrude (T)
 	--
 
 	--[[
@@ -550,7 +554,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local part, normal = pickFace()
 
 		if not part then
-			return say("Point at a rectangular block, or select one, then press E to extrude a face.")
+			return say("Point at a rectangular block, or select one, then press T to extrude a face.")
 		end
 
 		local axis, side = Builders.FaceAxis(part, normal)
@@ -638,7 +642,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		Overlay.ClearGhosts(overlay)
 		Overlay.HideReadout(overlay)
-		say(string.format("Extruded %.2f studs. Press E again to keep going.", state.length))
+		say(string.format("Extruded %.2f studs. Press T again to keep going.", state.length))
 
 		if not mode then
 			Overlay.HideBar(overlay)
@@ -647,7 +651,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--
-	-- Grab, rotate, scale (G, R, S, Shift+D)
+	-- Grab, rotate, scale (G, R, C, Shift+G)
 	--
 
 	local function finishSession(commit: boolean)
@@ -1001,24 +1005,104 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	}, trove)
 
 	--[[
-		@return Instance? -- the Folder inside Workspace that is selected, or nil with a message
+		@param instance Instance?
+
+		@return Instance? -- the closest Folder above the instance, if it is inside Workspace
 	]]
-	local function pickFolder(): Instance?
+	local function folderOf(instance: Instance?): Instance?
+		local ancestor = instance
+
+		while ancestor and ancestor ~= workspace do
+			if ancestor:IsA("Folder") then
+				return ancestor
+			end
+
+			ancestor = ancestor.Parent
+		end
+
+		return nil
+	end
+
+	--[[
+		@param which string -- Working, Pending or Hover
+		@param target Instance?
+
+		Outlines every Part inside the folder, or clears the outline when there is none to draw.
+	]]
+	local function drawBox(which: string, target: Instance?)
+		local parts: { BasePart } = {}
+
+		if target and target:IsDescendantOf(workspace) then
+			for _, object in target:GetDescendants() do
+				if object:IsA("BasePart") then
+					table.insert(parts, object)
+				end
+			end
+		end
+
+		if #parts == 0 then
+			return Overlay.ClearBox(overlay, which)
+		end
+
+		local cframe, size = Geometry.Bounds(parts)
+
+		Overlay.DrawBox(overlay, which, cframe, size)
+	end
+
+	--[[
+		Redraws the outlines of the working folder, the folder waiting for a yes, and the one under the cursor.
+	]]
+	local function redrawBoxes()
+		drawBox("Working", folder)
+		drawBox("Pending", pendingFolder)
+		drawBox(
+			"Hover",
+			if picking and hoverFolder ~= pendingFolder and hoverFolder ~= folder then hoverFolder else nil
+		)
+	end
+
+	--[[
+		@param target Instance
+
+		Marks the folder as the one to confirm.
+	]]
+	local function proposeFolder(target: Instance)
+		pendingFolder = target
+		redrawBoxes()
+		panel.Refresh()
+		say(`Picked "{target:GetFullName()}". Press "Yes, work in it" to confirm, or click another Folder.`)
+	end
+
+	--[[
+		Starts picking a folder: click one in the viewport, or select one in the Explorer.
+	]]
+	local function startPicking()
+		stop()
+		picking = true
+		pendingFolder = nil
+		hoverFolder = nil
+
 		local selected = Selection:Get()
 		local candidate = selected[1]
 
-		if
-			#selected ~= 1
-			or not candidate
-			or not candidate:IsA("Folder")
-			or not candidate:IsDescendantOf(workspace)
-		then
-			say("Select exactly one Folder inside Workspace in the Explorer, then press the button.")
-
-			return nil
+		if #selected == 1 and candidate and candidate:IsA("Folder") and candidate:IsDescendantOf(workspace) then
+			return proposeFolder(candidate)
 		end
 
-		return candidate
+		redrawBoxes()
+		panel.Refresh()
+		say("Click a Folder in the viewport, or select one in the Explorer.")
+	end
+
+	--[[
+		Gives up picking and clears the outlines that picking drew.
+	]]
+	local function cancelPicking()
+		picking = false
+		pendingFolder = nil
+		hoverFolder = nil
+		redrawBoxes()
+		panel.Refresh()
 	end
 
 	--[[
@@ -1035,11 +1119,28 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		stop()
 		folder = chosen
 		Geometry.SetScope(chosen)
+		redrawBoxes()
 		panel.Refresh()
 
 		if chosen then
 			say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
 		end
+	end
+
+	--[[
+		Makes the picked folder the working folder.
+	]]
+	local function confirmPicking()
+		local chosen = pendingFolder
+
+		if not chosen then
+			return say("Click a Folder in the viewport first.")
+		end
+
+		picking = false
+		pendingFolder = nil
+		hoverFolder = nil
+		setFolder(chosen)
 	end
 
 	--[[
@@ -1099,6 +1200,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		GetFolder = function()
 			return folder
 		end,
+		GetPending = function()
+			return pendingFolder
+		end,
+		GetPicking = function()
+			return picking
+		end,
 		GetMode = function()
 			return mode
 		end,
@@ -1124,8 +1231,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					arrange.RotateBy(axis, degrees)
 				end
 			end,
-			PickFolder = pickFolder,
-			SetFolder = setFolder,
+			StartPick = startPicking,
+			CancelPick = cancelPicking,
+			ConfirmPick = confirmPicking,
 			UnhideAll = function()
 				perform("Unhide")
 			end,
@@ -1221,7 +1329,33 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	-- Clicks
 	--
 
+	trove:Connect(Selection.SelectionChanged, function()
+		if not picking then
+			return
+		end
+
+		local selected = Selection:Get()
+		local candidate = selected[1]
+
+		if #selected == 1 and candidate and candidate:IsA("Folder") and candidate:IsDescendantOf(workspace) then
+			proposeFolder(candidate)
+		end
+	end)
+
 	trove:Connect(mouse.Button1Down, function()
+		if picking then
+			local hit = hitSurface()
+			local target = if hit then folderOf(hit.Instance) else nil
+
+			if target then
+				proposeFolder(target)
+			else
+				say("That is not inside a Folder. Click a Part that sits in a Folder.")
+			end
+
+			return
+		end
+
 		if session then
 			return finishSession(true)
 		elseif extrude then
@@ -1351,6 +1485,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return
 		end
 
+		if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+			return
+		end
+
 		local key = input.KeyCode.Name
 		local modal = session ~= nil or extrude ~= nil
 
@@ -1457,6 +1595,26 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
+		if picking then
+			local hit = hitSurface()
+			local target = if hit then folderOf(hit.Instance) else nil
+
+			if target ~= hoverFolder then
+				hoverFolder = target
+				redrawBoxes()
+			end
+		end
+
+		boxClock += dt
+
+		if boxClock >= 1 then
+			boxClock = 0
+
+			if folder or pendingFolder then
+				redrawBoxes()
+			end
+		end
+
 		elapsed += dt
 
 		if elapsed < UPDATE_INTERVAL then
@@ -1469,6 +1627,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			folder = nil
 			Geometry.SetScope(nil)
 			stop()
+			redrawBoxes()
 			panel.Refresh()
 			say("The working folder is gone. Pick another one to keep working.")
 		end

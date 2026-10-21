@@ -2,7 +2,8 @@
 
 --[=[
 	The Blender-style hotkeys. `Resolve` turns a key press into an action name; the plugin decides
-	what the action does. Ctrl and Alt are never taken, so Studio's own shortcuts keep working.
+	what the action does. Ctrl and Alt are never taken, so Studio's own shortcuts keep working, and
+	neither are W A S D Q E F (with or without Shift), which Studio uses to fly the camera and focus.
 
 	@class Keymap
 ]=]
@@ -22,11 +23,21 @@ local TOOL_KEYS: { [string]: string } = {
 	Zero = "Measure",
 }
 
+local RESERVED: { [string]: boolean } = {
+	W = true,
+	A = true,
+	S = true,
+	D = true,
+	Q = true,
+	E = true,
+	F = true,
+}
+
 local PLAIN_KEYS: { [string]: Action } = {
-	E = "Extrude",
+	T = "Extrude",
 	G = "Grab",
 	R = "Rotate",
-	S = "Scale",
+	C = "Scale",
 	Escape = "Cancel",
 	Return = "Confirm",
 	KeypadEnter = "Confirm",
@@ -49,9 +60,13 @@ local Keymap = {}
 function Keymap.Describe(): { { string } }
 	return {
 		{ "1 … 9, 0", "Pick a tool: Wall, Corridor, Room, Block, Stairs, Ramp, Arch, Door, Stamp, Measure" },
-		{ "E", "Extrude the face under the cursor of the selected block" },
-		{ "G / R / S", "Grab, rotate or scale the selection" },
-		{ "Shift+D", "Duplicate the selection and grab the copy" },
+		{ "T", "Extrude the face under the cursor of the selected block" },
+		{ "G / R / C", "Grab, rotate or scale the selection" },
+		{ "Shift+G", "Duplicate the selection and grab the copy" },
+		{
+			"W A S D Q E F",
+			"Never taken: Studio uses them to fly the camera and focus. Hotkeys are also ignored while the right mouse button is held",
+		},
 		{ "X / Y / Z", "While drawing or in a modal action: lock to that world axis. Press again to unlock" },
 		{ "Shift+X / Y / Z", "Lock to the plane the axis is perpendicular to" },
 		{ "0-9 and .", "While drawing or in a modal action: type an exact length, angle or factor" },
@@ -85,6 +100,10 @@ end
 		are `Lock:X`, `Lock:Y`, `Lock:Z` and `Plane:X`, `Plane:Y`, `Plane:Z`.
 ]=]
 function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boolean, axisKeys: boolean): Action?
+	if RESERVED[keyName] then
+		return nil
+	end
+
 	if alt and not ctrl and not shift and keyName == "H" then
 		return "Unhide"
 	end
@@ -102,7 +121,7 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 	end
 
 	if shift then
-		if keyName == "D" then
+		if keyName == "G" then
 			return "Duplicate"
 		elseif keyName == "P" then
 			return "ToggleGrid"

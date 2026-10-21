@@ -3,8 +3,8 @@
 local Keymap = require("../../src/Pure/Keymap")
 
 return {
-	["E extrudes"] = function(expect)
-		expect.equal(Keymap.Resolve("E", false, false, false, false), "Extrude")
+	["T extrudes"] = function(expect)
+		expect.equal(Keymap.Resolve("T", false, false, false, false), "Extrude")
 	end,
 
 	["axis keys lock only while a drag is live"] = function(expect)
@@ -14,7 +14,7 @@ return {
 	end,
 
 	["Ctrl and Alt are left to Studio"] = function(expect)
-		expect.falsy(Keymap.Resolve("E", false, true, false, false))
+		expect.falsy(Keymap.Resolve("T", false, true, false, false))
 		expect.falsy(Keymap.Resolve("G", false, false, true, false))
 		expect.falsy(Keymap.Resolve("X", false, true, false, true))
 	end,
@@ -24,9 +24,17 @@ return {
 		expect.equal(Keymap.Resolve("Zero", false, false, false, false), "Tool:Measure")
 	end,
 
-	["Shift+D duplicates, other Shift keys do nothing"] = function(expect)
-		expect.equal(Keymap.Resolve("D", true, false, false, false), "Duplicate")
-		expect.falsy(Keymap.Resolve("E", true, false, false, false))
+	["Shift+G duplicates, other Shift keys do nothing"] = function(expect)
+		expect.equal(Keymap.Resolve("G", true, false, false, false), "Duplicate")
+		expect.falsy(Keymap.Resolve("T", true, false, false, false))
+	end,
+
+	["W A S D Q E F are never taken, with or without Shift"] = function(expect)
+		for _, key in { "W", "A", "S", "D", "Q", "E", "F" } do
+			expect.falsy(Keymap.Resolve(key, false, false, false, false), key)
+			expect.falsy(Keymap.Resolve(key, true, false, false, false), key)
+			expect.falsy(Keymap.Resolve(key, false, false, false, true), key)
+		end
 	end,
 
 	["panel navigation keys"] = function(expect)

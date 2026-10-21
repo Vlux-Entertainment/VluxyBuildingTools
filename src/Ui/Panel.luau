@@ -14,6 +14,7 @@ local Keymap = require("../Pure/Keymap")
 local PluginInfo = require("../Pure/PluginInfo")
 local Settings = require("../Pure/Settings")
 local SurfaceGrid = require("../Core/SurfaceGrid")
+local Tips = require("../Pure/Tips")
 local Tools = require("../Pure/Tools")
 
 type Settings = Settings.Settings
@@ -31,8 +32,9 @@ export type Actions = {
 	Instruction: (mode: string?) -> string,
 	Flip: (axis: string) -> (),
 	RotateBy: (axis: string, degrees: number) -> (),
-	PickFolder: () -> Instance?,
-	SetFolder: (folder: Instance?) -> (),
+	StartPick: () -> (),
+	CancelPick: () -> (),
+	ConfirmPick: () -> (),
 	UnhideAll: () -> (),
 	ToggleHiddenView: () -> (),
 }
@@ -46,6 +48,8 @@ export type Deps = {
 	Actions: Actions,
 	GetMode: () -> string?,
 	GetFolder: () -> Instance?,
+	GetPending: () -> Instance?,
+	GetPicking: () -> boolean,
 	Hidden: Hidden.Hidden,
 }
 
@@ -240,6 +244,113 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	--
+	-- Hover tooltips
+	--
+
+	local tooltip = make("Frame", {
+		AutomaticSize = Enum.AutomaticSize.XY,
+		Size = UDim2.fromOffset(0, 0),
+		BackgroundColor3 = Color3.fromRGB(34, 36, 41),
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 100,
+	}, deps.Widget)
+
+	style(tooltip, 6, Color3.fromRGB(80, 83, 91))
+	make("UIPadding", {
+		PaddingLeft = UDim.new(0, 9),
+		PaddingRight = UDim.new(0, 9),
+		PaddingTop = UDim.new(0, 7),
+		PaddingBottom = UDim.new(0, 7),
+	}, tooltip)
+	make("UIListLayout", { Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder }, tooltip)
+
+	local tooltipText = make("TextLabel", {
+		Size = UDim2.fromOffset(220, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		TextColor3 = TEXT,
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 101,
+		LayoutOrder = 1,
+	}, tooltip)
+	local tooltipKey = make("TextLabel", {
+		Size = UDim2.fromOffset(0, 20),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundColor3 = TILE,
+		BorderSizePixel = 0,
+		TextColor3 = ACCENT,
+		Font = Enum.Font.GothamBold,
+		TextSize = 12,
+		ZIndex = 101,
+		LayoutOrder = 2,
+	}, tooltip)
+
+	style(tooltipKey, 4, CARD_STROKE)
+	make("UIPadding", { PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7) }, tooltipKey)
+
+	local hoverToken = 0
+
+	local function moveTooltip(x: number, y: number)
+		local space = deps.Widget.AbsoluteSize
+		local size = tooltip.AbsoluteSize
+
+		tooltip.Position = UDim2.fromOffset(
+			math.max(4, math.min(x + 14, space.X - size.X - 6)),
+			math.max(4, math.min(y + 18, space.Y - size.Y - 6))
+		)
+	end
+
+	local function hideTooltip()
+		hoverToken += 1
+		tooltip.Visible = false
+	end
+
+	--[[
+		@param object GuiObject
+		@param tip Tips.Tip?
+
+		Shows the description, and the hotkey when there is one, after the cursor rests on the object.
+	]]
+	local function attachTip(object: GuiObject, tip: Tips.Tip?)
+		if not tip then
+			return
+		end
+
+		object.Active = true
+		object.MouseEnter:Connect(function(x, y)
+			hoverToken += 1
+
+			local mine = hoverToken
+
+			task.delay(0.35, function()
+				if hoverToken ~= mine then
+					return
+				end
+
+				tooltipText.Text = tip.Text
+				tooltipKey.Text = if tip.Key then "Hotkey   " .. tip.Key else ""
+				tooltipKey.Visible = tip.Key ~= nil
+				tooltip.Visible = true
+				moveTooltip(x, y)
+			end)
+		end)
+		object.MouseMoved:Connect(function(x, y)
+			if tooltip.Visible then
+				moveTooltip(x, y)
+			end
+		end)
+		object.MouseLeave:Connect(hideTooltip)
+	end
+
+	local function attach(object: GuiObject, name: string)
+		attachTip(object, Tips.Find(name))
+	end
+
+	--
 	-- Building blocks
 	--
 
@@ -327,6 +438,7 @@ function Panel.new(deps: Deps): Panel
 		}, frame)
 
 		style(control, 6, if primary then nil else CARD_STROKE)
+		attach(control, label)
 		register(frame, scope)
 		control.MouseButton1Click:Connect(function()
 			local ok, err = pcall(run :: any)
@@ -360,6 +472,7 @@ function Panel.new(deps: Deps): Panel
 			}, frame)
 
 			style(control, 6, CARD_STROKE)
+			attach(control, item.Text)
 			control.MouseButton1Click:Connect(function()
 				local ok, err = pcall(item.Run :: any)
 
@@ -401,7 +514,7 @@ function Panel.new(deps: Deps): Panel
 		local frame = newRow(parent, 36)
 
 		register(frame, scope)
-		make("TextLabel", {
+		local rowLabel = make("TextLabel", {
 			Size = UDim2.new(1, -170, 1, 0),
 			BackgroundTransparency = 1,
 			Text = title,
@@ -410,6 +523,7 @@ function Panel.new(deps: Deps): Panel
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}, frame)
+		attach(rowLabel, key)
 
 		local group = make("Frame", {
 			Size = UDim2.fromOffset(162, 36),
@@ -466,7 +580,7 @@ function Panel.new(deps: Deps): Panel
 		local frame = newRow(parent, 36)
 
 		register(frame, scope)
-		make("TextLabel", {
+		local rowLabel = make("TextLabel", {
 			Size = UDim2.new(1, -60, 1, 0),
 			BackgroundTransparency = 1,
 			Text = title,
@@ -475,6 +589,7 @@ function Panel.new(deps: Deps): Panel
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}, frame)
+		attach(rowLabel, title)
 
 		local track = make("TextButton", {
 			Size = UDim2.fromOffset(44, 24),
@@ -535,6 +650,7 @@ function Panel.new(deps: Deps): Panel
 		}, tabBar)
 
 		style(tab, 5)
+		attach(tab, name)
 		tabButtons[name] = tab
 		tab.MouseButton1Click:Connect(function()
 			actions.Stop()
@@ -555,20 +671,19 @@ function Panel.new(deps: Deps): Panel
 	-- Working folder
 	--
 
-	local pending: Instance? = nil
 	local folderCard = card("WORKING FOLDER", "Root")
 	local folderText = text(folderCard, "", MUTED)
 	local pickButton = button(
 		folderCard,
-		"Use selected folder",
+		"Choose working folder",
 		function()
-			pending = actions.PickFolder()
+			actions.StartPick()
 			refresh()
 		end,
 		true,
 		{
 			Condition = function()
-				return pending == nil
+				return not deps.GetPicking()
 			end,
 		}
 	)
@@ -577,23 +692,20 @@ function Panel.new(deps: Deps): Panel
 		{
 			Text = "Yes, work in it",
 			Run = function()
-				local chosen = pending
-
-				pending = nil
-				actions.SetFolder(chosen)
+				actions.ConfirmPick()
 				refresh()
 			end,
 		},
 		{
 			Text = "Cancel",
 			Run = function()
-				pending = nil
+				actions.CancelPick()
 				refresh()
 			end,
 		},
 	}, {
 		Condition = function()
-			return pending ~= nil
+			return deps.GetPicking()
 		end,
 	})
 
@@ -632,6 +744,7 @@ function Panel.new(deps: Deps): Panel
 		}, grid)
 
 		style(tile, 6)
+		attachTip(tile, { Text = tool.Description, Key = tool.Key })
 
 		local outline = make("UIStroke", {
 			Color = CARD_STROKE,
@@ -861,8 +974,6 @@ function Panel.new(deps: Deps): Panel
 			end,
 		})
 	end
-
-	displayRows(card("VIEWPORT DISPLAY", "Build"))
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
 
@@ -1102,6 +1213,8 @@ function Panel.new(deps: Deps): Panel
 	--
 
 	refresh = function()
+		hideTooltip()
+
 		local mode = deps.GetMode()
 
 		for _, entry in entries do
@@ -1130,11 +1243,18 @@ function Panel.new(deps: Deps): Panel
 		end
 
 		lockedNote.Visible = locked and LOCKED[page] == true
+		local pending = deps.GetPending()
+
 		folderText.Text = if pending
-			then `Are you sure you want to alter "{pending:GetFullName()}"? The plugin will build, move, rotate, recolor and delete parts inside it. Nothing outside it is changed.`
-			elseif workingFolder then `Working in: {workingFolder:GetFullName()}`
-			else "Select a Folder inside Workspace in the Explorer, then press the button. The plugin only works inside the folder you choose."
-		pickButton.Text = if workingFolder then "Change working folder" else "Use selected folder"
+			then `Are you sure you want to alter "{pending:GetFullName()}"? It is outlined in yellow in the viewport. The plugin will build, move, rotate, recolor and delete parts inside it. Nothing outside it is changed.`
+			elseif
+				deps.GetPicking()
+			then "Click a Folder in the viewport, or select one in the Explorer. The Folder under your cursor is outlined in blue."
+			elseif
+				workingFolder
+			then `Working in: {workingFolder:GetFullName()}. It is outlined in orange in the viewport.`
+			else "Press the button, then click a Folder in the viewport or select one in the Explorer. The plugin only works inside the folder you choose."
+		pickButton.Text = if workingFolder then "Change working folder" else "Choose working folder"
 
 		for name, tab in tabButtons do
 			local active = name == page

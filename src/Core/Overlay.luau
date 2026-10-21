@@ -20,6 +20,7 @@ export type Overlay = {
 	_planeGrid: WireframeHandleAdornment,
 	_previewWire: WireframeHandleAdornment,
 	_measureLine: WireframeHandleAdornment,
+	_boxes: { [string]: WireframeHandleAdornment },
 	_hud: ScreenGui,
 	_label: TextLabel,
 	_bar: ScreenGui,
@@ -78,6 +79,16 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	local previewWire = wire(folder, "ShapedPreviews", ACCENT, 2)
 	local measureLine = wire(folder, "Measurement", ACCENT, 2)
 	measureLine.AlwaysOnTop = true
+
+	local boxes: { [string]: WireframeHandleAdornment } = {
+		Working = wire(folder, "WorkingFolderBox", ACCENT, 4),
+		Pending = wire(folder, "PendingFolderBox", Color3.fromRGB(255, 226, 92), 4),
+		Hover = wire(folder, "HoverFolderBox", Color3.fromRGB(110, 215, 235), 3),
+	}
+
+	for _, box in boxes do
+		box.AlwaysOnTop = true
+	end
 
 	local hud = Instance.new("ScreenGui")
 	hud.Name = "VluxBlockout_Readout"
@@ -183,6 +194,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		_planeGrid = planeGrid,
 		_previewWire = previewWire,
 		_measureLine = measureLine,
+		_boxes = boxes,
 		_hud = hud,
 		_label = label,
 		_bar = bar,
@@ -479,6 +491,59 @@ end
 ]=]
 function Overlay.HideBar(self: Overlay)
 	self._bar.Enabled = false
+end
+
+local BOX_EDGES = {
+	{ 1, 2 },
+	{ 3, 4 },
+	{ 5, 6 },
+	{ 7, 8 },
+	{ 1, 3 },
+	{ 2, 4 },
+	{ 5, 7 },
+	{ 6, 8 },
+	{ 1, 5 },
+	{ 2, 6 },
+	{ 3, 7 },
+	{ 4, 8 },
+}
+
+--[=[
+	Outlines a world-aligned box in one of the folder colours: Working (orange), Pending (yellow) or
+	Hover (cyan). It replaces whatever that colour drew before.
+
+	@param self Overlay
+	@param which "Working" | "Pending" | "Hover"
+	@param cframe CFrame -- the centre of the box
+	@param size Vector3
+]=]
+function Overlay.DrawBox(self: Overlay, which: string, cframe: CFrame, size: Vector3)
+	local adornment = self._boxes[which]
+
+	adornment:Clear()
+
+	local half = (size + Vector3.one * 0.4) * 0.5
+	local corners: { Vector3 } = {}
+
+	for x = -1, 1, 2 do
+		for y = -1, 1, 2 do
+			for z = -1, 1, 2 do
+				table.insert(corners, cframe:PointToWorldSpace(half * Vector3.new(x, y, z)))
+			end
+		end
+	end
+
+	for _, edge in BOX_EDGES do
+		adornment:AddLine(corners[edge[1]], corners[edge[2]])
+	end
+end
+
+--[=[
+	@param self Overlay
+	@param which "Working" | "Pending" | "Hover"
+]=]
+function Overlay.ClearBox(self: Overlay, which: string)
+	self._boxes[which]:Clear()
 end
 
 return Overlay
