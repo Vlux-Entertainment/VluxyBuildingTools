@@ -1795,7 +1795,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local specs = previewSpecs
 
 			edit(if active == "ArchOpening" then "Create archway" else "Create " .. string.lower(active), function()
-				Geometry.Materialize(specs, if active == "ArchOpening" then "Archway" else "Wall_" .. active)
+				local model =
+					Geometry.Materialize(specs, if active == "ArchOpening" then "Archway" else "Wall_" .. active)
+
+				if active == "ArchOpening" then
+					local problem = Geometry.UnionSides(model, "Arch_Header", "Arch")
+
+					if problem then
+						say(problem)
+					end
+				end
 				assert(target and target.Parent, "Wall no longer exists")
 
 				local holder = target.Parent
@@ -1873,9 +1882,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 							end
 						end
 
-						if active == "Arch" or active == "Stairs" or active == "Ramp" then
+						if active == "Arch" or active == "ArchedCorridor" or active == "Stairs" or active == "Ramp" then
 							local problem = if active == "Arch"
 								then Geometry.UnionArchHalves(model)
+								elseif active == "ArchedCorridor" then Geometry.UnionSides(
+									model,
+									"ArchedCeiling",
+									"Ceiling"
+								)
 								else Geometry.UnionAll(model, active)
 
 							if problem then

@@ -259,6 +259,86 @@ function Geometry.UnionArchHalves(model: Model): string?
 end
 
 --[=[
+	Joins the curved pieces of a built arch into a left and a right half, for arches that have no
+	posts to split by. The two pieces farthest apart sideways give the centre and the span, and the
+	joined pieces leave the model with their Parent set to nil so undo can bring them back.
+
+	@param model Model
+	@param pieceName string -- the name shared by the curved pieces
+	@param prefix string -- the halves are named prefix .. "_Left" and prefix .. "_Right"
+	@return string? -- why it could not join them, or nil when it did
+]=]
+function Geometry.UnionSides(model: Model, pieceName: string, prefix: string): string?
+	local curves: { BasePart } = {}
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") and child.Name == pieceName then
+			table.insert(curves, child)
+		end
+	end
+
+	if #curves < 2 then
+		return nil
+	end
+
+	local first, last = curves[1], curves[1]
+	local widest = -1
+
+	for _, a in curves do
+		for _, b in curves do
+			local flat = Vector3.new(a.Position.X - b.Position.X, 0, a.Position.Z - b.Position.Z).Magnitude
+
+			if flat > widest then
+				widest, first, last = flat, a, b
+			end
+		end
+	end
+
+	if widest < 0.001 then
+		return nil
+	end
+
+	local center = (first.Position + last.Position) * 0.5
+	local across = Vector3.new(last.Position.X - first.Position.X, 0, last.Position.Z - first.Position.Z).Unit
+	local halves: { [string]: { BasePart } } = { [prefix .. "_Left"] = {}, [prefix .. "_Right"] = {} }
+
+	for _, curve in curves do
+		local side = if (curve.Position - center):Dot(across) < 0 then "_Left" else "_Right"
+
+		table.insert(halves[prefix .. side], curve)
+	end
+
+	local failed: string? = nil
+
+	for name, group in halves do
+		if #group >= 2 then
+			local base = group[1]
+			local rest = table.clone(group)
+
+			table.remove(rest, 1)
+
+			local ok, result = pcall(function()
+				return base:UnionAsync(rest)
+			end)
+
+			if ok and result then
+				result.Name = name
+				result.Anchored = true
+				result.Parent = model
+
+				for _, piece in group do
+					piece.Parent = nil
+				end
+			else
+				failed = "Roblox could not join the arch pieces: " .. tostring(result)
+			end
+		end
+	end
+
+	return failed
+end
+
+--[=[
 	Joins every Part in a built model into one union, such as the steps and landing of a stair. The
 	joined pieces leave the model with their Parent set to nil, not destroyed, so undo can bring them
 	back.
