@@ -640,6 +640,17 @@ function Panel.new(deps: Deps): Panel
 
 	local refresh: () -> ()
 
+	--[[
+		Leaving the current tab drops an unconfirmed folder pick.
+	]]
+	local function leavePage()
+		actions.Stop()
+
+		if deps.GetPicking() then
+			actions.CancelPick()
+		end
+	end
+
 	for i, name in TABS do
 		local tab = make("TextButton", {
 			Size = UDim2.new(1 / #TABS, -4, 1, -8),
@@ -657,7 +668,7 @@ function Panel.new(deps: Deps): Panel
 		attach(tab, name)
 		tabButtons[name] = tab
 		tab.MouseButton1Click:Connect(function()
-			actions.Stop()
+			leavePage()
 			page = name
 			refresh()
 		end)
@@ -1324,13 +1335,13 @@ function Panel.new(deps: Deps): Panel
 		CycleTab = function(delta: number)
 			local index = table.find(TABS, page) or 1
 
-			actions.Stop()
+			leavePage()
 			page = TABS[(index - 1 + delta) % #TABS + 1]
 			refresh()
 		end,
 		ShowTab = function(name: string)
 			if pages[name] then
-				actions.Stop()
+				leavePage()
 				page = name
 				refresh()
 			end
