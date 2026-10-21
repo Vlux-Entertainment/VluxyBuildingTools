@@ -69,8 +69,8 @@ local INSTRUCTIONS: { [string]: string } = {
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
 	Foundation = "Click two opposite corners. The slab is a little bigger than the corners and stands on the surface you click.",
 	Porch = "Click two opposite corners for the porch floor. Corner posts and a railing are added.",
-	Railing = "Click the start and the end of the railing. Click points on stairs and it follows the slope. Pillars cap both ends.",
-	HalfWall = "Click the start and the end of the half wall. Click points on stairs and it follows the slope.",
+	Railing = "Click points to draw a railing; keep clicking to connect it. Click points on stairs and it follows the slope. Enter starts a new chain.",
+	HalfWall = "Click points to draw a half wall; keep clicking to connect it. Click points on stairs and it follows the slope. Enter starts a new chain.",
 	Fence = "Click points to draw a fence. Keep clicking to connect it. Enter starts a new chain.",
 	Roof = "Click two opposite corners over the top of the walls. Pick the roof style in the options.",
 	Block = "Click two opposite footprint corners. Press Y to drag it up, or X / Z to drag it along that axis; type a number for an exact size.",
@@ -817,9 +817,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				elseif mode == "Roof" then
 					out = Builders.Roof(drawn, origin, b)
 				elseif mode == "Railing" then
-					out = Builders.Railing(drawn, origin, b)
+					out = Builders.Railing(drawn, origin, b, not chained)
 				elseif mode == "HalfWall" then
-					out = Builders.HalfWall(drawn, origin, b)
+					out = Builders.HalfWall(drawn, origin, b, not chained)
 				elseif mode == "Fence" then
 					out = Builders.Fence(drawn, origin, b, not chained)
 				elseif mode == "ArchedCorridor" then
@@ -2121,6 +2121,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					or active == "PillaredWall"
 					or active == "Corridor"
 					or active == "Fence"
+					or active == "Railing"
+					or active == "HalfWall"
 					or active == "ArchedCorridor"
 				local nextPoint = current
 				local specs = previewSpecs

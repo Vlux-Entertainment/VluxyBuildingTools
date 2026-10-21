@@ -1155,10 +1155,24 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 
-	button(scope, "Start new chain", function()
-		actions.ResetPoint()
-		say(actions.Instruction(deps.GetMode()))
-	end, false, body({ Wall = true, PillaredWall = true, Corridor = true, ArchedCorridor = true, Fence = true }))
+	button(
+		scope,
+		"Start new chain",
+		function()
+			actions.ResetPoint()
+			say(actions.Instruction(deps.GetMode()))
+		end,
+		false,
+		body({
+			Wall = true,
+			PillaredWall = true,
+			Corridor = true,
+			ArchedCorridor = true,
+			Fence = true,
+			Railing = true,
+			HalfWall = true,
+		})
+	)
 
 	switch(scope, "Ceiling", function()
 		return settings.Roof

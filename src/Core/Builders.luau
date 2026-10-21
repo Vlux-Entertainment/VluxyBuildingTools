@@ -470,9 +470,10 @@ end
 	@param settings Settings
 	@param a Vector3 -- the start, on the floor or a stair
 	@param b Vector3 -- the end, on the floor or a stair
+	@param postAtStart boolean? -- false when the railing before this one already has a pillar there
 	@return { Spec }
 ]=]
-function Builders.Railing(settings: Settings, a: Vector3, b: Vector3): { Spec }
+function Builders.Railing(settings: Settings, a: Vector3, b: Vector3, postAtStart: boolean?): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local length = d.Magnitude
@@ -487,7 +488,10 @@ function Builders.Railing(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	local height = settings.RailHeight
 	local up = Vector3.new(0, 1, 0)
 
-	newel(out, a, flatDir, height + 0.3, "RailingPillar")
+	if postAtStart ~= false then
+		newel(out, a, flatDir, height + 0.3, "RailingPillar")
+	end
+
 	newel(out, b, flatDir, height + 0.3, "RailingPillar")
 
 	local middle = (a + b) * 0.5
@@ -514,9 +518,10 @@ end
 	@param settings Settings
 	@param a Vector3
 	@param b Vector3
+	@param postAtStart boolean? -- false when the wall before this one already has a pillar there
 	@return { Spec }
 ]=]
-function Builders.HalfWall(settings: Settings, a: Vector3, b: Vector3): { Spec }
+function Builders.HalfWall(settings: Settings, a: Vector3, b: Vector3, postAtStart: boolean?): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local flat = Vector3.new(d.X, 0, d.Z)
@@ -529,7 +534,10 @@ function Builders.HalfWall(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	local height = settings.RailHeight
 	local up = Vector3.new(0, height, 0)
 
-	newel(out, a, flatDir, height + 0.3, "HalfWallPillar")
+	if postAtStart ~= false then
+		newel(out, a, flatDir, height + 0.3, "HalfWallPillar")
+	end
+
 	newel(out, b, flatDir, height + 0.3, "HalfWallPillar")
 	quadPrism(out, a, b, b + up, a + up, 0.5, "HalfWall")
 
