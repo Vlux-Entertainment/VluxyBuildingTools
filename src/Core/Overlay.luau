@@ -21,6 +21,7 @@ export type Overlay = {
 	_previewWire: WireframeHandleAdornment,
 	_measureLine: WireframeHandleAdornment,
 	_boxes: { [string]: WireframeHandleAdornment },
+	_fills: { [string]: BoxHandleAdornment },
 	_hud: ScreenGui,
 	_label: TextLabel,
 	_bar: ScreenGui,
@@ -82,12 +83,25 @@ function Overlay.new(trove: Trove.Trove): Overlay
 
 	local boxes: { [string]: WireframeHandleAdornment } = {
 		Working = wire(folder, "WorkingFolderBox", ACCENT, 4),
-		Pending = wire(folder, "PendingFolderBox", Color3.fromRGB(255, 226, 92), 4),
+		Pending = wire(folder, "PendingFolderBox", ACCENT, 4),
 		Hover = wire(folder, "HoverFolderBox", Color3.fromRGB(110, 215, 235), 3),
 	}
 
-	for _, box in boxes do
+	local fills: { [string]: BoxHandleAdornment } = {}
+
+	for name, box in boxes do
+		local fill = Instance.new("BoxHandleAdornment")
+
 		box.AlwaysOnTop = true
+		fill.Name = name .. "Fill"
+		fill.Adornee = workspace.Terrain
+		fill.Color3 = box.Color3
+		fill.Transparency = if name == "Pending" then 0.75 elseif name == "Working" then 0.88 else 0.85
+		fill.AlwaysOnTop = false
+		fill.ZIndex = 0
+		fill.Visible = false
+		fill.Parent = folder
+		fills[name] = fill
 	end
 
 	local hud = Instance.new("ScreenGui")
@@ -195,6 +209,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		_previewWire = previewWire,
 		_measureLine = measureLine,
 		_boxes = boxes,
+		_fills = fills,
 		_hud = hud,
 		_label = label,
 		_bar = bar,
@@ -509,8 +524,8 @@ local BOX_EDGES = {
 }
 
 --[=[
-	Outlines a world-aligned box in one of the folder colours: Working (orange), Pending (yellow) or
-	Hover (cyan). It replaces whatever that colour drew before.
+	Outlines and softly fills a world-aligned box in one of the folder colours: Working and Pending
+	(orange) or Hover (cyan). It replaces whatever that slot drew before.
 
 	@param self Overlay
 	@param which "Working" | "Pending" | "Hover"
@@ -520,7 +535,12 @@ local BOX_EDGES = {
 function Overlay.DrawBox(self: Overlay, which: string, cframe: CFrame, size: Vector3)
 	local adornment = self._boxes[which]
 
+	local fill = self._fills[which]
+
 	adornment:Clear()
+	fill.CFrame = cframe
+	fill.Size = size + Vector3.one * 0.4
+	fill.Visible = true
 
 	local half = (size + Vector3.one * 0.4) * 0.5
 	local corners: { Vector3 } = {}
@@ -544,6 +564,7 @@ end
 ]=]
 function Overlay.ClearBox(self: Overlay, which: string)
 	self._boxes[which]:Clear()
+	self._fills[which].Visible = false
 end
 
 return Overlay

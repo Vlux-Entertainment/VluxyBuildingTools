@@ -28,7 +28,9 @@ Tips.Entries = {
 		Text = "Then click a Folder in the viewport, or select one in the Explorer. The plugin only works inside the Folder you confirm.",
 	},
 	["Change working folder"] = { Text = "Pick a different Folder to work in. Pastel colors is switched off first." },
-	["Yes, work in it"] = { Text = "Confirm: the plugin may build, move and recolor Parts inside this folder." },
+	Yes = {
+		Text = "The plugin may build, move, rotate, recolor and delete Parts inside this Folder. Nothing outside it is changed.",
+	},
 	Cancel = { Text = "Do not change the working folder.", Key = "Esc" },
 
 	-- Switches

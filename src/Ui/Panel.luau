@@ -452,7 +452,11 @@ function Panel.new(deps: Deps): Panel
 		return control
 	end
 
-	local function buttonRow(parent: Instance, items: { { Text: string, Run: () -> () } }, scope: Scope?)
+	local function buttonRow(
+		parent: Instance,
+		items: { { Text: string, Run: () -> (), Primary: boolean? } },
+		scope: Scope?
+	)
 		local frame = newRow(parent, 34)
 		local count = #items
 
@@ -462,16 +466,16 @@ function Panel.new(deps: Deps): Panel
 			local control = make("TextButton", {
 				Size = UDim2.new(1 / count, -4, 1, 0),
 				Position = UDim2.fromScale((i - 1) / count, 0),
-				BackgroundColor3 = TILE,
+				BackgroundColor3 = if item.Primary then ACCENT else TILE,
 				BorderSizePixel = 0,
 				Text = item.Text,
-				TextColor3 = TEXT,
+				TextColor3 = if item.Primary then BACKGROUND else TEXT,
 				Font = Enum.Font.GothamMedium,
 				TextSize = 12,
 				TextWrapped = true,
 			}, frame)
 
-			style(control, 6, CARD_STROKE)
+			style(control, 6, if item.Primary then nil else CARD_STROKE)
 			attach(control, item.Text)
 			control.MouseButton1Click:Connect(function()
 				local ok, err = pcall(item.Run :: any)
@@ -672,6 +676,22 @@ function Panel.new(deps: Deps): Panel
 	--
 
 	local folderCard = card("WORKING FOLDER", "Root")
+	local folderName = make("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 28),
+		BackgroundColor3 = ACCENT_DIM,
+		BorderSizePixel = 0,
+		Text = "",
+		TextColor3 = ACCENT,
+		Font = Enum.Font.GothamBold,
+		TextSize = 13,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Visible = false,
+		LayoutOrder = nextOrder(),
+	}, folderCard)
+
+	style(folderName, 6, ACCENT)
+	make("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }, folderName)
+
 	local folderText = text(folderCard, "", MUTED)
 	local pickButton = button(
 		folderCard,
@@ -695,20 +715,21 @@ function Panel.new(deps: Deps): Panel
 
 	buttonRow(folderCard, {
 		{
-			Text = "Yes, work in it",
+			Text = "Yes",
+			Primary = true,
 			Run = function()
 				actions.ConfirmPick()
 				refresh()
 			end,
 		},
-		{ Text = "Cancel", Run = cancelPick },
+		{ Text = "Cancel", Run = cancelPick, Primary = true },
 	}, {
 		Condition = function()
 			return deps.GetPending() ~= nil
 		end,
 	})
 
-	buttonRow(folderCard, { { Text = "Cancel", Run = cancelPick } }, {
+	buttonRow(folderCard, { { Text = "Cancel", Run = cancelPick, Primary = true } }, {
 		Condition = function()
 			return deps.GetPicking() and deps.GetPending() == nil
 		end,
@@ -1249,16 +1270,15 @@ function Panel.new(deps: Deps): Panel
 
 		lockedNote.Visible = locked and LOCKED[page] == true
 		local pending = deps.GetPending()
+		local shown = pending or (if deps.GetPicking() then nil else workingFolder)
 
+		folderName.Visible = shown ~= nil
+		folderName.Text = if shown then shown:GetFullName() else ""
 		folderText.Text = if pending
-			then `Are you sure you want to alter "{pending:GetFullName()}"? It is outlined in yellow in the viewport. The plugin will build, move, rotate, recolor and delete parts inside it. Nothing outside it is changed.`
-			elseif
-				deps.GetPicking()
-			then "Click a Folder in the viewport, or select one in the Explorer. The Folder under your cursor is outlined in blue."
-			elseif
-				workingFolder
-			then `Working in: {workingFolder:GetFullName()}. It is outlined in orange in the viewport.`
-			else "Press the button, then click a Folder in the viewport or select one in the Explorer. The plugin only works inside the folder you choose."
+			then "Work in this folder?"
+			elseif deps.GetPicking() then "Click a Folder in the viewport or select one."
+			elseif workingFolder then "Working folder (outlined in orange)"
+			else "Press the button, then pick a Folder in Workspace."
 		pickButton.Text = if workingFolder then "Change working folder" else "Choose working folder"
 
 		for name, tab in tabButtons do

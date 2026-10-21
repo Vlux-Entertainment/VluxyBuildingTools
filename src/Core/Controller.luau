@@ -1070,7 +1070,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		pendingFolder = target
 		redrawBoxes()
 		panel.Refresh()
-		say(`Picked "{target:GetFullName()}". Press "Yes, work in it" to confirm, or click another Folder.`)
+		say(`Picked "{target:GetFullName()}". Press Yes to confirm, or click another Folder.`)
 	end
 
 	--[[
