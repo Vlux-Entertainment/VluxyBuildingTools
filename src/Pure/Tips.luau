@@ -59,6 +59,7 @@ Tips.Entries = {
 	FoundationMargin = { Text = "How far the slab sticks out past the corners you click." },
 	RailHeight = { Text = "How tall the railing or half wall is." },
 	FenceHeight = { Text = "How tall the fence posts are." },
+	FloorTransparency = { Text = "How see-through the floor is. 0 is solid, 1 is invisible." },
 	BalusterSpacing = { Text = "About how far apart the bars of an indoor railing are." },
 	FenceSpacing = { Text = "About how far apart the fence posts are." },
 	Ceiling = { Text = "Add a ceiling to rooms and corridors." },

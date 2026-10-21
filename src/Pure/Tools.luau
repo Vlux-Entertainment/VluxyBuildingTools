@@ -46,6 +46,13 @@ Tools.List = {
 		Description = "Draw walls with a pillar at the start and at the end of each section, so the walls have some depth. Keep clicking to chain them.",
 	},
 	{
+		Id = "Floor",
+		Label = "Floor",
+		Glyph = "▱",
+		Key = nil,
+		Description = "Click two corners to lay a flat floor. Its transparency is in the options.",
+	},
+	{
 		Id = "Room",
 		Label = "Room",
 		Glyph = "⬚",
@@ -175,8 +182,8 @@ Tools.Grid = {
 		Label = "Basic",
 		Glyph = "▥",
 		Key = "1",
-		Description = "Draw walls, pillared walls, blocks and pillars, or make arches. Pick which one in the options. Press Y to drag a wall's height.",
-		Modes = { "Wall", "PillaredWall", "Block", "Pillar", "Arch" },
+		Description = "Draw walls, pillared walls, floors, blocks and pillars, or make arches. Pick which one in the options. Press Y to drag a wall's height.",
+		Modes = { "Wall", "PillaredWall", "Floor", "Block", "Pillar", "Arch" },
 	},
 	{
 		Id = "Structures",

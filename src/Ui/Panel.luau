@@ -932,6 +932,7 @@ function Panel.new(deps: Deps): Panel
 	local hint = text(settingsCard, "", MUTED, body(nil))
 	local drawModes = {
 		Wall = true,
+		Floor = true,
 		PillaredWall = true,
 		Corridor = true,
 		ArchedCorridor = true,
@@ -1036,6 +1037,7 @@ function Panel.new(deps: Deps): Panel
 		end)
 	end
 
+	numeric(scope, "FloorTransparency", "Transparency (0 solid, 1 clear)", 0, 1, 0.1, body({ Floor = true }))
 	numeric(scope, "RoofRise", "Roof rise", 0.1, 512, nil, body({ Roof = true }))
 	numeric(scope, "RoofOverhang", "Overhang", 0, 128, nil, body({ Roof = true }))
 	numeric(scope, "FoundationHeight", "Slab height", 0.1, 256, nil, body({ Foundation = true }))
@@ -1114,7 +1116,7 @@ function Panel.new(deps: Deps): Panel
 		0.05,
 		128,
 		0.25,
-		body({ Room = true, Corridor = true, ArchedCorridor = true, Porch = true }, true)
+		body({ Room = true, Corridor = true, ArchedCorridor = true, Porch = true, Floor = true }, true)
 	)
 	numeric(
 		scope,

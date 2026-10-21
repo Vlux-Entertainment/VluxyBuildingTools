@@ -252,6 +252,26 @@ end
 
 --[=[
 	@param settings Settings
+	@param a Vector3 -- one corner, at the height of the top of the floor
+	@param b Vector3 -- the opposite corner
+	@return { Spec } -- one flat slab as thick as the panel's floor thickness
+]=]
+function Builders.Floor(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+	local f = settings.Floor
+
+	if hi.X - lo.X < 0.05 or hi.Z - lo.Z < 0.05 then
+		return out
+	end
+
+	add(out, Vector3.new(hi.X - lo.X, f, hi.Z - lo.Z), CFrame.new(c - Vector3.new(0, f / 2, 0)), "Floor")
+
+	return out
+end
+
+--[=[
+	@param settings Settings
 	@param a Vector3 -- one corner
 	@param b Vector3 -- the opposite corner
 	@return { Spec } -- one thick slab, a margin wider than the corners, standing on a's level

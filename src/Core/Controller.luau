@@ -61,6 +61,7 @@ local INSTRUCTIONS: { [string]: string } = {
 	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
 	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the wall height under the curve.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
+	Floor = "Click two opposite corners for a flat floor. Its transparency is in the options.",
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
 	Foundation = "Click two opposite corners. The slab is a little bigger than the corners and stands on the surface you click.",
 	Porch = "Click two opposite corners for the porch floor. Corner posts and a railing are added.",
@@ -90,6 +91,7 @@ local HEIGHT_MODES: { [string]: boolean } = {
 
 local DRAW_MODES: { [string]: boolean } = {
 	Wall = true,
+	Floor = true,
 	PillaredWall = true,
 	Corridor = true,
 	ArchedCorridor = true,
@@ -368,7 +370,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		A floor drawn from this point sits on the object instead of sinking into it.
 	]]
 	local function floorPoint(): Vector3?
-		local raised = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor" or mode == "Porch"
+		local raised = mode == "Room"
+			or mode == "Corridor"
+			or mode == "ArchedCorridor"
+			or mode == "Porch"
+			or mode == "Floor"
 
 		if
 			not raised
@@ -564,6 +570,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					out = Builders.Room(drawn, origin, b)
 				elseif mode == "Block" then
 					out = Builders.Block(settings, origin, b, lock)
+				elseif mode == "Floor" then
+					out = Builders.Floor(drawn, origin, b)
 				elseif mode == "Foundation" then
 					out = Builders.Foundation(drawn, origin, b)
 				elseif mode == "Porch" then
@@ -608,7 +616,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 								out[1].size.Z
 							)
 							else string.format("%.1f × %.1f studs", math.abs(d.X), math.abs(d.Z))
-					elseif mode == "Foundation" or mode == "Porch" or mode == "Roof" then
+					elseif mode == "Floor" or mode == "Foundation" or mode == "Porch" or mode == "Roof" then
 						text = string.format("%.1f × %.1f studs", math.abs(d.X), math.abs(d.Z))
 					elseif mode == "Arch" then
 						text = string.format("Span %.1f  |  Height %.1f", d.Magnitude, settings.ArchHeight)
@@ -1752,6 +1760,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				if
 					edit("Build " .. active, function()
 						local model = Geometry.Materialize(specs, "Vlux_" .. active)
+
+						if active == "Floor" and settings.FloorTransparency > 0 then
+							for _, child in model:GetChildren() do
+								if child:IsA("BasePart") then
+									child.Transparency = math.clamp(settings.FloorTransparency, 0, 1)
+								end
+							end
+						end
 
 						if active == "Arch" or active == "Stairs" or active == "Ramp" then
 							local problem = if active == "Arch"
