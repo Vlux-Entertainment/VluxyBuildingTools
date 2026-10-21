@@ -816,13 +816,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	-- Tools
 	--
 
-	local function activate(name: string)
-		if mode == name then
-			stop()
-
-			return say("Tool off.")
-		end
-
+	local function activateMode(name: string)
 		stop(true)
 
 		if not requireFolder() then
@@ -869,6 +863,48 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		panel.Refresh()
 		say(INSTRUCTIONS[name])
+	end
+
+	local lastVariant: { [string]: string } = {}
+
+	--[[
+		@param name string -- a mode of a tile, such as Room
+
+		Switches to that mode and remembers it as the one its tile starts with.
+	]]
+	local function setMode(name: string)
+		if mode == name then
+			return
+		end
+
+		activateMode(name)
+
+		local tile = Tools.TileOf(name)
+
+		if tile and mode == name then
+			lastVariant[tile.Id] = name
+		end
+	end
+
+	--[[
+		@param id string -- a tile id
+
+		Picking a tile starts the mode it used last. Picking the tile that is already active turns it off.
+	]]
+	local function activate(id: string)
+		local tile = Tools.FindTile(id)
+
+		if not tile then
+			return setMode(id)
+		end
+
+		if mode and table.find(tile.Modes, mode) then
+			stop()
+
+			return say("Tool off.")
+		end
+
+		setMode(lastVariant[tile.Id] or tile.Modes[1])
 	end
 
 	stop = function(keepActive: boolean?)
@@ -1130,10 +1166,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--[[
-		Redraws the outlines of the working folder, the folder waiting for a yes, and the one under the cursor.
+		Redraws the outlines of the working folder (only while it is selected), the folder waiting for a
+		yes, and the one under the cursor.
 	]]
 	local function redrawBoxes()
-		drawBox("Working", folder)
+		local selectedNow = Selection:Get()
+
+		drawBox("Working", if folder and table.find(selectedNow, folder) then folder else nil)
 		drawBox("Pending", pendingFolder)
 		drawBox(
 			"Hover",
@@ -1284,6 +1323,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end,
 		Actions = {
 			Activate = activate,
+			SetMode = setMode,
 			Stop = function()
 				stop()
 			end,
@@ -1410,6 +1450,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 	trove:Connect(Selection.SelectionChanged, function()
 		if not picking then
+			if folder then
+				redrawBoxes()
+			end
+
 			return
 		end
 

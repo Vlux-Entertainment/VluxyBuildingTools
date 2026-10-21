@@ -21,7 +21,8 @@ return {
 
 	["digits pick tools"] = function(expect)
 		expect.equal(Keymap.Resolve("One", false, false, false, false), "Tool:Wall")
-		expect.equal(Keymap.Resolve("Zero", false, false, false, false), "Tool:Measure")
+		expect.equal(Keymap.Resolve("Eight", false, false, false, false), "Tool:Measure")
+		expect.falsy(Keymap.Resolve("Zero", false, false, false, false))
 	end,
 
 	["V duplicates, Shift is never used"] = function(expect)

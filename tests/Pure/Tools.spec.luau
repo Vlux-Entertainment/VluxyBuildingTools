@@ -5,12 +5,27 @@ local Tools = require("../../src/Pure/Tools")
 
 return {
 	["every number-key badge matches the keymap"] = function(expect)
-		for _, tool in Tools.List do
-			if tool.Key then
+		for _, tile in Tools.Grid do
+			if tile.Key then
 				local names = { "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" }
-				local name = if tool.Key == "0" then "Zero" else names[tonumber(tool.Key) :: number]
+				local name = names[tonumber(tile.Key) :: number]
 
-				expect.equal(Keymap.Resolve(name, false, false, false, false), `Tool:{tool.Id}`, tool.Id)
+				expect.equal(Keymap.Resolve(name, false, false, false, false), `Tool:{tile.Id}`, tile.Id)
+			end
+		end
+	end,
+
+	["every mode is in exactly one tile and every tile mode is a tool"] = function(expect)
+		for _, tool in Tools.List do
+			expect.truthy(Tools.TileOf(tool.Id), tool.Id)
+		end
+
+		for _, tile in Tools.Grid do
+			expect.truthy(Tools.FindTile(tile.Id), tile.Id)
+
+			for _, mode in tile.Modes do
+				expect.truthy(Tools.Find(mode), mode)
+				expect.equal((Tools.TileOf(mode) :: Tools.Tile).Id, tile.Id, mode)
 			end
 		end
 	end,

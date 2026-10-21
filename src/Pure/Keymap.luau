@@ -13,15 +13,13 @@ export type Action = string
 
 local TOOL_KEYS: { [string]: string } = {
 	One = "Wall",
-	Two = "Corridor",
-	Three = "Room",
-	Four = "Block",
-	Five = "Stairs",
-	Six = "Ramp",
-	Seven = "Arch",
-	Eight = "Opening",
-	Nine = "Place",
-	Zero = "Measure",
+	Two = "Structures",
+	Three = "Block",
+	Four = "Stairs",
+	Five = "Arches",
+	Six = "Opening",
+	Seven = "Place",
+	Eight = "Measure",
 }
 
 local RESERVED: { [string]: boolean } = {
@@ -65,7 +63,10 @@ local Keymap = {}
 ]=]
 function Keymap.Describe(): { { string } }
 	return {
-		{ "1 … 9, 0", "Pick a tool: Wall, Corridor, Room, Block, Stairs, Ramp, Arch, Door, Stamp, Measure" },
+		{
+			"1 … 8",
+			"Pick a tool: Walls, Structures, Block, Stairs, Arches, Door / Window, Stamp, Measure. Press it again to turn it off",
+		},
 		{ "T", "Extrude the face under the cursor of the selected block" },
 		{ "G / R / C", "Grab, rotate or scale the selection" },
 		{ "V", "Duplicate the selection and grab the copy" },

@@ -21,6 +21,7 @@ type Settings = Settings.Settings
 
 export type Actions = {
 	Activate: (name: string) -> (),
+	SetMode: (name: string) -> (),
 	Stop: () -> (),
 	ResetPoint: () -> (),
 	UseSelectedFloor: () -> (),
@@ -771,7 +772,7 @@ function Panel.new(deps: Deps): Panel
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, grid)
 
-	for index, tool in Tools.List do
+	for index, tool in Tools.Grid do
 		local tile = make("TextButton", {
 			BackgroundColor3 = TILE,
 			BorderSizePixel = 0,
@@ -870,6 +871,52 @@ function Panel.new(deps: Deps): Panel
 		toolOpen = not toolOpen
 		refresh()
 	end)
+
+	for _, group in Tools.Grid do
+		if #group.Modes > 1 then
+			local modeSet: { [string]: boolean } = {}
+
+			for _, id in group.Modes do
+				modeSet[id] = true
+			end
+
+			local variantRow = newRow(settingsCard, 30)
+			local variantButtons: { [string]: TextButton } = {}
+
+			register(variantRow, { Modes = modeSet })
+
+			for i, id in group.Modes do
+				local option = Tools.Find(id) :: Tools.Tool
+				local choice = make("TextButton", {
+					Size = UDim2.new(1 / #group.Modes, -4, 1, 0),
+					Position = UDim2.fromScale((i - 1) / #group.Modes, 0),
+					BackgroundColor3 = TILE,
+					BorderSizePixel = 0,
+					Text = option.Glyph .. "  " .. option.Label,
+					TextColor3 = TEXT,
+					Font = Enum.Font.GothamMedium,
+					TextSize = 12,
+				}, variantRow)
+
+				style(choice, 6, CARD_STROKE)
+				attachTip(choice, { Text = option.Description })
+				variantButtons[id] = choice
+				choice.MouseButton1Click:Connect(function()
+					actions.SetMode(id)
+					refresh()
+				end)
+			end
+
+			table.insert(refreshers, function()
+				for id, choice in variantButtons do
+					local active = id == deps.GetMode()
+
+					choice.BackgroundColor3 = if active then ACCENT else TILE
+					choice.TextColor3 = if active then BACKGROUND else TEXT
+				end
+			end)
+		end
+	end
 
 	local function body(modes: { [string]: boolean }?, isAdvanced: boolean?): Scope
 		return {
@@ -1288,7 +1335,7 @@ function Panel.new(deps: Deps): Panel
 		folderText.Text = if pending
 			then "Work in this folder?"
 			elseif deps.GetPicking() then "Click a Folder in the viewport or select one."
-			elseif workingFolder then "Working folder (outlined in orange)"
+			elseif workingFolder then "Working folder. Select it to outline it."
 			else "Press the button, then pick a Folder in Workspace."
 		pickButton.Text = if workingFolder then "Change working folder" else "Choose working folder"
 
@@ -1301,7 +1348,8 @@ function Panel.new(deps: Deps): Panel
 		end
 
 		for id, tile in tiles do
-			local active = id == mode
+			local owner = mode and Tools.TileOf(mode)
+			local active = owner ~= nil and owner.Id == id
 
 			tile.Button.BackgroundColor3 = if active then ACCENT_DIM else TILE
 			tile.Stroke.Color = if active then ACCENT else CARD_STROKE
