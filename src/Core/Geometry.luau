@@ -337,6 +337,55 @@ function Geometry.UnionSides(model: Model, pieceName: string, prefix: string): s
 end
 
 --[=[
+	Joins every piece of the model with the given name into one union, named `result`. The joined
+	pieces leave the model with their Parent set to nil so undo can bring them back.
+
+	@param model Model
+	@param pieceName string
+	@param result string
+	@return string? -- why it could not join them, or nil when it did
+]=]
+function Geometry.UnionNamed(model: Model, pieceName: string, result: string): string?
+	local group: { BasePart } = {}
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") and child.Name == pieceName then
+			table.insert(group, child)
+		end
+	end
+
+	if #group < 2 then
+		for _, piece in group do
+			piece.Name = result
+		end
+
+		return nil
+	end
+
+	local rest = table.clone(group)
+
+	table.remove(rest, 1)
+
+	local ok, joined = pcall(function()
+		return group[1]:UnionAsync(rest)
+	end)
+
+	if not ok or not joined then
+		return "Roblox could not join the circle frame: " .. tostring(joined)
+	end
+
+	joined.Name = result
+	joined.Anchored = true
+	joined.Parent = model
+
+	for _, piece in group do
+		piece.Parent = nil
+	end
+
+	return nil
+end
+
+--[=[
 	Joins every Part in a built model into one union, such as the steps and landing of a stair. The
 	joined pieces leave the model with their Parent set to nil, not destroyed, so undo can bring them
 	back.

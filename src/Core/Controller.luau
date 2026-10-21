@@ -2034,6 +2034,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						say(problem)
 					end
 				end
+
+				if active == "CircleWindow" then
+					local problem = Geometry.UnionNamed(model, "Circle_Upper", "Circle_Frame")
+						or Geometry.UnionNamed(model, "Circle_Lower", "Circle_Frame")
+
+					if problem then
+						say(problem)
+					end
+				end
 				assert(target and target.Parent, "Wall no longer exists")
 
 				local holder = target.Parent

@@ -1219,7 +1219,7 @@ function Builders.Opening(
 					cf:PointToWorldSpace(Vector3.new(x2, edge, 0)),
 					cf:PointToWorldSpace(Vector3.new(x1, edge, 0)),
 					size.Z,
-					"Circle_Frame",
+					if side == 1 then "Circle_Upper" else "Circle_Lower",
 					p
 				)
 			end
