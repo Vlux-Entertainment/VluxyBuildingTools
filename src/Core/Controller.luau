@@ -150,7 +150,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
 	local snapMark: Vector3? = nil
-	local prevWall: { model: Model, dir: Vector3 }? = nil
+	local prevWall: { model: Model, dir: Vector3, strips: { Builders.Strip } }? = nil
 	local hoverDoor: Snapper.Doorway? = nil
 	local startDoor: Snapper.Doorway? = nil
 	local snapPart: BasePart? = nil
@@ -2008,6 +2008,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				local nextPoint = current
 				local specs = previewSpecs
 				local segment = Vector3.new(current.X - first.X, 0, current.Z - first.Z)
+				local joint = first
 
 				if
 					edit("Build " .. active, function()
@@ -2017,41 +2018,44 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 						if active == "Wall" or active == "Corridor" then
 							local before = prevWall
+							local strips = if active == "Wall"
+								then Builders.WallStrips(settings)
+								else Builders.CorridorStrips(settings)
 
 							if before and before.model.Parent and segment.Magnitude > 0.001 then
+								local bend = Builders.Bend(joint, before.dir, segment, before.strips, strips)
+								local floor = before.model:FindFirstChild("Floor")
+								local across = before.dir:Cross(Vector3.yAxis)
+
 								for _, child in before.model:GetChildren() do
 									if child:IsA("Part") then
-										local delta = 0
+										local key = child.Name
 
-										if active == "Wall" then
-											if child.Name == "Wall" then
-												delta = Builders.JoinOffsets(settings.Thickness, before.dir, segment)
-											end
-										else
-											local finish = Builders.CorridorJoin(settings, before.dir, segment).finish
+										if key == "CorridorWall" then
+											local lateral = if floor and floor:IsA("BasePart")
+												then (child.Position - floor.Position):Dot(across)
+												else 0
 
-											if child.Name == "Floor" or child.Name == "Ceiling" then
-												delta = finish.Floor
-											elseif child.Name == "CorridorWall" then
-												local floor = before.model:FindFirstChild("Floor")
-												local across = before.dir:Cross(Vector3.yAxis)
-												local lateral = if floor and floor:IsA("BasePart")
-													then (child.Position - floor.Position):Dot(across)
-													else 0
-
-												delta = if lateral > 0 then finish.Right else finish.Left
-											end
+											key = if lateral > 0 then "Right" else "Left"
 										end
 
-										if delta ~= 0 then
+										local delta = bend.finish[key]
+
+										if delta and delta ~= 0 then
 											child.Size += Vector3.new(0, 0, delta)
 											child.CFrame *= CFrame.new(0, 0, -delta / 2)
 										end
 									end
 								end
+
+								if #bend.ending > 0 then
+									Geometry.Materialize(bend.ending, "Vlux_Bend")
+								end
 							end
 
-							prevWall = if segment.Magnitude > 0.001 then { model = model, dir = segment.Unit } else nil
+							prevWall = if segment.Magnitude > 0.001
+								then { model = model, dir = segment.Unit, strips = strips }
+								else nil
 						end
 
 						if active == "Floor" and settings.FloorTransparency > 0 then

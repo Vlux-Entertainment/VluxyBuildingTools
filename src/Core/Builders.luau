@@ -525,65 +525,83 @@ function Builders.Room(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	return out
 end
 
---[=[
-	How two chained walls meet at a corner without a notch or a coplanar overlap. At about 90
-	degrees the earlier wall grows by half a thickness and the new one starts half a thickness late,
-	so it butts against the side of the earlier one. At shallower turns the earlier wall grows to
-	the outer corner of the miter and the new one starts the same distance early.
+export type Strip = {
+	key: string,
+	name: string,
+	low: number,
+	high: number,
+	rise: number,
+	height: number,
+}
 
-	@param thickness number
-	@param prevDir Vector3 -- the direction of the earlier wall
-	@param dir Vector3 -- the direction of the new wall
-	@return number -- how far the end of the earlier wall grows
-	@return number -- how far the start of the new wall moves along its direction, negative when it starts early
-]=]
-function Builders.JoinOffsets(thickness: number, prevDir: Vector3, dir: Vector3): (number, number)
-	local u = Vector3.new(prevDir.X, 0, prevDir.Z)
-	local v = Vector3.new(dir.X, 0, dir.Z)
-
-	if u.Magnitude < 0.001 or v.Magnitude < 0.001 then
-		return 0, 0
-	end
-
-	local turn = math.acos(math.clamp(u.Unit:Dot(v.Unit), -1, 1))
-	local half = thickness / 2
-
-	if turn < math.rad(2) then
-		return 0, 0
-	elseif turn >= math.rad(89) then
-		return half, half
-	end
-
-	local reach = half * math.tan(turn / 2)
-
-	return reach, -reach
-end
-
-export type CorridorJoin = {
-	finish: { Floor: number, Left: number, Right: number },
-	start: { Floor: number, Left: number, Right: number },
+export type Bend = {
+	finish: { [string]: number },
+	start: { [string]: number },
+	ending: { Spec },
+	beginning: { Spec },
 }
 
 --[=[
-	How two chained corridor segments meet at a bend. The floor and ceiling are one wide strip each,
-	and each side wall is a strip along its own offset line, so the outer wall grows past the bend
-	and the inner wall stops short of it. Every strip then closes its corner like `JoinOffsets`.
-
 	@param settings Settings
+	@return { Strip } -- the one strip a plain wall is made of, across its thickness
+]=]
+function Builders.WallStrips(settings: Settings): { Strip }
+	local t, h = settings.Thickness, settings.Height
+
+	return { { key = "Wall", name = "Wall", low = -t / 2, high = t / 2, rise = h / 2, height = h } }
+end
+
+--[=[
+	@param settings Settings
+	@return { Strip } -- the floor, the two side walls and the optional ceiling of a corridor, each across its own width
+]=]
+function Builders.CorridorStrips(settings: Settings): { Strip }
+	local w, t, h, f = settings.Width, settings.Thickness, settings.Height, settings.Floor
+	local offset = (w + t) / 2
+	local strips: { Strip } = {
+		{ key = "Floor", name = "Floor", low = -w / 2 - t, high = w / 2 + t, rise = -f / 2, height = f },
+		{ key = "Right", name = "CorridorWall", low = offset - t / 2, high = offset + t / 2, rise = h / 2, height = h },
+		{
+			key = "Left",
+			name = "CorridorWall",
+			low = -offset - t / 2,
+			high = -offset + t / 2,
+			rise = h / 2,
+			height = h,
+		},
+	}
+
+	if settings.Roof then
+		table.insert(
+			strips,
+			{ key = "Ceiling", name = "Ceiling", low = -w / 2 - t, high = w / 2 + t, rise = h + f / 2, height = f }
+		)
+	end
+
+	return strips
+end
+
+--[=[
+	Closes the corner where a wall or corridor continues another, with an exact miter and no
+	overlap. Each strip (a wall, a floor) is cut along the line that bisects the bend: the strip
+	keeps a plain rectangle up to the shorter end of that cut, and a small triangular prism fills the
+	rest. The earlier segment's rectangles move by `finish` and the new segment's by `start`; the
+	triangles go in `ending` and `beginning`.
+
+	@param joint Vector3 -- where the two segments meet, at the base level
 	@param prevDir Vector3 -- the direction of the earlier segment
 	@param dir Vector3 -- the direction of the new segment
-	@return CorridorJoin -- `finish` is how far the end of each part of the earlier segment moves (negative shrinks it), `start` how far the start of each part of the new one is delayed along its direction
+	@param prevStrips { Strip } -- the strips of the earlier segment
+	@param strips { Strip } -- the strips of the new segment
+	@return Bend -- `finish` and `start` are keyed by strip key, in studs along each segment's direction
 ]=]
-function Builders.CorridorJoin(settings: Settings, prevDir: Vector3, dir: Vector3): CorridorJoin
-	local none = {
-		finish = { Floor = 0, Left = 0, Right = 0 },
-		start = { Floor = 0, Left = 0, Right = 0 },
-	}
+function Builders.Bend(joint: Vector3, prevDir: Vector3, dir: Vector3, prevStrips: { Strip }, strips: { Strip }): Bend
+	local bend: Bend = { finish = {}, start = {}, ending = {}, beginning = {} }
 	local u = Vector3.new(prevDir.X, 0, prevDir.Z)
 	local v = Vector3.new(dir.X, 0, dir.Z)
 
 	if u.Magnitude < 0.001 or v.Magnitude < 0.001 then
-		return none
+		return bend
 	end
 
 	u, v = u.Unit, v.Unit
@@ -591,29 +609,57 @@ function Builders.CorridorJoin(settings: Settings, prevDir: Vector3, dir: Vector
 	local turn = math.acos(math.clamp(u:Dot(v), -1, 1))
 
 	if turn < math.rad(2) then
-		return none
+		return bend
 	end
 
-	local w, t = settings.Width, settings.Thickness
-	local offset = (w + t) / 2
-	local reach = offset * math.tan(math.min(turn, math.rad(89)) / 2)
-	local turningRight = if v:Dot(u:Cross(Vector3.yAxis)) > 0 then 1 else -1
-	local floorExtend, floorShift = Builders.JoinOffsets(w + 2 * t, u, v)
-	local wallExtend, wallShift = Builders.JoinOffsets(t, u, v)
+	local ru = u:Cross(Vector3.yAxis)
+	local rv = v:Cross(Vector3.yAxis)
+	local turning = if v:Dot(ru) > 0 then 1 else -1
+	local slope = turning * math.tan(math.min(turn, math.rad(170)) / 2)
 
-	local function side(sign: number): (number, number)
-		local corner = if sign == -turningRight then reach else -reach
+	for _, strip in prevStrips do
+		local atLow, atHigh = -slope * strip.low, -slope * strip.high
+		local short, long = math.min(atLow, atHigh), math.max(atLow, atHigh)
+		local shortSide = if atLow < atHigh then strip.low else strip.high
+		local longSide = if atLow < atHigh then strip.high else strip.low
+		local lift = Vector3.new(0, strip.rise, 0)
 
-		return corner + wallExtend, -corner + wallShift
+		bend.finish[strip.key] = short
+
+		if long - short > 0.01 then
+			trianglePrism(
+				bend.ending,
+				joint + u * short + ru * shortSide + lift,
+				joint + u * short + ru * longSide + lift,
+				joint + u * long + ru * longSide + lift,
+				strip.height,
+				strip.name
+			)
+		end
 	end
 
-	local rightFinish, rightStart = side(1)
-	local leftFinish, leftStart = side(-1)
+	for _, strip in strips do
+		local atLow, atHigh = slope * strip.low, slope * strip.high
+		local early, late = math.min(atLow, atHigh), math.max(atLow, atHigh)
+		local earlySide = if atLow < atHigh then strip.low else strip.high
+		local lateSide = if atLow < atHigh then strip.high else strip.low
+		local lift = Vector3.new(0, strip.rise, 0)
 
-	return {
-		finish = { Floor = floorExtend, Left = leftFinish, Right = rightFinish },
-		start = { Floor = floorShift, Left = leftStart, Right = rightStart },
-	}
+		bend.start[strip.key] = late
+
+		if late - early > 0.01 then
+			trianglePrism(
+				bend.beginning,
+				joint + v * early + rv * earlySide + lift,
+				joint + v * late + rv * earlySide + lift,
+				joint + v * late + rv * lateSide + lift,
+				strip.height,
+				strip.name
+			)
+		end
+	end
+
+	return bend
 end
 
 --[=[
@@ -646,9 +692,14 @@ function Builders.Path(
 			local start = a
 
 			if joinDir then
-				local _, shift = Builders.JoinOffsets(settings.Thickness, joinDir, d)
+				local strips = Builders.WallStrips(settings)
+				local bend = Builders.Bend(a, joinDir, d, strips, strips)
 
-				start = a + d.Unit * shift
+				start = a + d.Unit * (bend.start.Wall or 0)
+
+				for _, spec in bend.beginning do
+					table.insert(out, spec)
+				end
 			end
 
 			segment(out, start, b, settings.Thickness, settings.Height, "Wall")
@@ -675,7 +726,14 @@ function Builders.Path(
 	local w, t, h, f = settings.Width, settings.Thickness, settings.Height, settings.Floor
 	local dir = d.Unit
 	local right = dir:Cross(Vector3.yAxis)
-	local joint = if joinDir then Builders.CorridorJoin(settings, joinDir, d) else nil
+	local strips = Builders.CorridorStrips(settings)
+	local bend = if joinDir then Builders.Bend(a, joinDir, d, strips, strips) else nil
+
+	if bend then
+		for _, spec in bend.beginning do
+			table.insert(out, spec)
+		end
+	end
 
 	--[[
 		Adds a block along the corridor that starts `late` studs after a and runs to b.
@@ -692,16 +750,16 @@ function Builders.Path(
 		add(out, Vector3.new(width, height, run), CFrame.lookAt(center, center + d), name)
 	end
 
-	block(if joint then joint.start.Floor else 0, 0, -f / 2, w + 2 * t, f, "Floor")
-
-	for _, sign in { -1, 1 } do
-		local late = if joint then (if sign == 1 then joint.start.Right else joint.start.Left) else 0
-
-		block(late, sign * (w + t) / 2, h / 2, t, h, "CorridorWall")
+	local function late(key: string): number
+		return if bend then bend.start[key] or 0 else 0
 	end
 
+	block(late("Floor"), 0, -f / 2, w + 2 * t, f, "Floor")
+	block(late("Right"), (w + t) / 2, h / 2, t, h, "CorridorWall")
+	block(late("Left"), -(w + t) / 2, h / 2, t, h, "CorridorWall")
+
 	if settings.Roof then
-		block(if joint then joint.start.Floor else 0, 0, h + f / 2, w + 2 * t, f, "Ceiling")
+		block(late("Ceiling"), 0, h + f / 2, w + 2 * t, f, "Ceiling")
 	end
 
 	return out
