@@ -18,6 +18,7 @@ export type Colors = {
 	_colored: { [BasePart]: boolean },
 	_random: Random,
 	_edit: (string, () -> ()) -> boolean,
+	_remember: ((boolean) -> ())?,
 	_say: (string) -> (),
 	_refresh: () -> (),
 	_stop: () -> (),
@@ -100,6 +101,7 @@ function Colors.new(
 		Refresh: () -> (),
 		Stop: () -> (),
 		GetScope: () -> Instance?,
+		Remember: ((boolean) -> ())?,
 	},
 	trove: Trove.Trove
 ): Colors
@@ -108,6 +110,7 @@ function Colors.new(
 		_colored = {},
 		_random = Random.new(),
 		_edit = deps.Edit,
+		_remember = deps.Remember,
 		_say = deps.Say,
 		_refresh = deps.Refresh,
 		_stop = deps.Stop,
@@ -224,6 +227,11 @@ function Colors.Set(self: Colors, value: boolean)
 
 	if ok then
 		self.On = value
+
+		if self._remember then
+			self._remember(value)
+		end
+
 		self._refresh()
 		self._say(
 			if value

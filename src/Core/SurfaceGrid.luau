@@ -17,6 +17,7 @@ local Trove = require("../Packages/Trove")
 export type SurfaceGrid = {
 	On: boolean,
 	_edit: (string, () -> ()) -> boolean,
+	_remember: ((boolean) -> ())?,
 	_say: (string) -> (),
 	_refresh: () -> (),
 	_stop: () -> (),
@@ -107,12 +108,14 @@ function SurfaceGrid.new(
 		Stop: () -> (),
 		GetScope: () -> Instance?,
 		GetSize: () -> number,
+		Remember: ((boolean) -> ())?,
 	},
 	trove: Trove.Trove
 ): SurfaceGrid
 	local self: SurfaceGrid = {
 		On = workspace:GetAttribute(ACTIVE) == true,
 		_edit = deps.Edit,
+		_remember = deps.Remember,
 		_say = deps.Say,
 		_refresh = deps.Refresh,
 		_stop = deps.Stop,
@@ -215,6 +218,11 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 
 	if ok then
 		self.On = value
+
+		if self._remember then
+			self._remember(value)
+		end
+
 		self._refresh()
 		self._say(
 			if value

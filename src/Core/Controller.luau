@@ -149,6 +149,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local measurement: { a: Vector3, b: Vector3 }? = nil
 	local openingTarget: BasePart? = nil
 	local openingCuts: { Builders.Cutter }? = nil
+	local quiet = false
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
 	local snapMark: Vector3? = nil
@@ -1514,6 +1515,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--
 
 	colors = Colors.new({
+		Remember = function(value)
+			if not quiet then
+				settings.AutoPastel = value
+				save()
+			end
+		end,
 		GetScope = function()
 			return folder
 		end,
@@ -1640,7 +1647,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function setFolder(chosen: Instance?)
 		if colors.On and chosen ~= folder then
+			quiet = true
 			Colors.Set(colors, false)
+			quiet = false
 		end
 
 		stop()
@@ -1650,6 +1659,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		panel.Refresh()
 
 		if chosen then
+			if settings.AutoPastel and not colors.On then
+				Colors.Set(colors, true)
+			end
+
+			if settings.AutoGrid and not surfaceGrid.On then
+				SurfaceGrid.Set(surfaceGrid, true)
+			end
+
 			say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
 		end
 	end
@@ -1684,6 +1701,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	surfaceGrid = SurfaceGrid.new({
+		Remember = function(value)
+			if not quiet then
+				settings.AutoGrid = value
+				save()
+			end
+		end,
 		GetScope = function()
 			return folder
 		end,
