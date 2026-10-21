@@ -341,7 +341,7 @@ end
 
 --[[
 	@return { Cutter } -- the cutters applied to the room beside it
-	@return { Cutter } -- the cutters applied to the new room. Open cuts both; Shared cuts only the existing room's wall and keeps the new room's
+	@return { Cutter } -- the cutters applied to the new room. Open cuts both; Shared cuts only the new room's wall and keeps the existing room's
 ]]
 local function roomCuts(mine: Cutter, theirs: Cutter, join: string): ({ Cutter }, { Cutter })
 	if join == "Open" then
@@ -354,7 +354,7 @@ local function roomCuts(mine: Cutter, theirs: Cutter, join: string): ({ Cutter }
 		local gap = between(mine, theirs)
 
 		if gap then
-			return { gap }, {}
+			return {}, { gap }
 		end
 	end
 
