@@ -139,6 +139,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local chained = false
 	local current: Vector3? = nil
 	local heightEnd: Vector3? = nil
+	local heightMouse: Vector2? = nil
 	local lock: AxisLock.Lock? = nil
 	local numeric = NumericInput.new()
 	local source: Builders.Source? = nil
@@ -338,6 +339,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		previewSpecs, previewValid = {}, false
 		lock = nil
 		heightEnd = nil
+		heightMouse = nil
 		measurement = nil
 		NumericInput.Clear(numeric)
 		Overlay.ClearGhosts(overlay)
@@ -555,6 +557,25 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return cutDepth
 	end
 
+	--[[
+		@param from Vector3 -- the point the height is measured from
+		@return number -- a height taken from how far the mouse moved up the screen since Y was pressed
+
+		Looking straight down, the mouse cannot be projected onto a vertical line, so the height follows the mouse on screen instead.
+	]]
+	local function screenHeight(from: Vector3): number
+		local camera = workspace.CurrentCamera
+
+		if not camera or not heightMouse then
+			return gridNow()
+		end
+
+		local distance = (camera.CFrame.Position - from).Magnitude
+		local perPixel = 2 * distance * math.tan(math.rad(camera.FieldOfView) / 2) / math.max(1, camera.ViewportSize.Y)
+
+		return math.max(gridNow(), snap((heightMouse.Y - UserInputService:GetMouseLocation().Y) * perPixel))
+	end
+
 	local function lookVector(): Vector3
 		local camera = workspace.CurrentCamera
 
@@ -688,10 +709,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local height: number? = nil
 
 			if origin and lock and heightEnd and lock.Axis == "Y" and not lock.Plane then
-				local top = lockedPoint(heightEnd, lock)
+				local camera = workspace.CurrentCamera
 
-				if top then
-					height = math.max(gridNow(), math.abs(top.Y - origin.Y))
+				if camera and heightMouse and math.abs(camera.CFrame.LookVector.Y) > 0.8 then
+					height = screenHeight(origin)
+				else
+					local top = lockedPoint(heightEnd, lock)
+
+					if top then
+						height = math.max(gridNow(), math.abs(top.Y - origin.Y))
+					end
 				end
 
 				current = heightEnd
@@ -1305,8 +1332,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 
 				heightEnd = current
+				heightMouse = mouseLocation()
 			else
 				heightEnd = nil
+				heightMouse = nil
 			end
 		end
 
@@ -2097,6 +2126,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					chained = chain
 					lock = nil
 					heightEnd = nil
+					heightMouse = nil
 					NumericInput.Clear(numeric)
 					Overlay.ClearGhosts(overlay)
 					Overlay.HideReadout(overlay)

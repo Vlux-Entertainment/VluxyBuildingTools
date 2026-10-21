@@ -109,7 +109,8 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	tag(faceHandles)
 
 	local planeGrid = wire(folder, "ConstructionGrid", Color3.fromRGB(145, 165, 185), 1)
-	planeGrid.Transparency = 0.65
+	planeGrid.Transparency = 0.85
+	planeGrid.AlwaysOnTop = false
 
 	local previewWire = wire(folder, "ShapedPreviews", ACCENT, 2)
 	local measureLine = wire(folder, "Measurement", ACCENT, 2)
