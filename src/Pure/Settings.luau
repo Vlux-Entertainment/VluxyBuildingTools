@@ -7,6 +7,7 @@
 ]=]
 
 export type Settings = {
+	Version: number,
 	Grid: number,
 	FineGrid: number,
 	Elevation: number,
@@ -63,6 +64,7 @@ local Settings = {}
 ]]
 function Settings.Defaults(): Settings
 	return {
+		Version = 2,
 		Grid = 4,
 		FineGrid = 1,
 		Elevation = 0,
@@ -134,6 +136,13 @@ function Settings.Load(saved: any): Settings
 		if type(source[key]) == type(default) then
 			target[key] = source[key]
 		end
+	end
+
+	-- The snap steps changed in version 2, so a save from before it takes the new ones.
+	if source.Version ~= settings.Version then
+		local fresh = Settings.Defaults()
+
+		settings.Grid, settings.FineGrid = fresh.Grid, fresh.FineGrid
 	end
 
 	return settings

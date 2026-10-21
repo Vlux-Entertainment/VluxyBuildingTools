@@ -41,10 +41,13 @@ local SurfaceGrid = {}
 --[[
 	@param object Instance
 
-	@return boolean -- true for the kinds of Part a Texture draws on
+	@return boolean -- true for the kinds of Part a Texture draws on, unions included
 ]]
 local function eligible(object: Instance): boolean
-	return object:IsA("Part") or object:IsA("WedgePart") or object:IsA("CornerWedgePart")
+	return object:IsA("Part")
+		or object:IsA("WedgePart")
+		or object:IsA("CornerWedgePart")
+		or object:IsA("UnionOperation")
 end
 
 --[[

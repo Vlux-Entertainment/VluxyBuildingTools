@@ -10,8 +10,16 @@ return {
 		expect.equal(Settings.Load(nil).Height, 12)
 	end,
 
+	["a save from before the new snap steps takes the new defaults"] = function(expect)
+		local settings = Settings.Load({ Grid = 1, FineGrid = 0.25, Height = 20 })
+
+		expect.equal(settings.Grid, 4)
+		expect.equal(settings.FineGrid, 1)
+		expect.equal(settings.Height, 20)
+	end,
+
 	["saved values of the right type win, others are dropped"] = function(expect)
-		local settings = Settings.Load({ Grid = 2, Height = "tall", Unknown = 9, Roof = true })
+		local settings = Settings.Load({ Version = 2, Grid = 2, Height = "tall", Unknown = 9, Roof = true })
 
 		expect.equal(settings.Grid, 2)
 		expect.equal(settings.Height, 12)
