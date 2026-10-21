@@ -259,6 +259,52 @@ function Geometry.UnionArchHalves(model: Model): string?
 end
 
 --[=[
+	Joins every Part in a built model into one union, such as the steps and landing of a stair. The
+	joined pieces leave the model with their Parent set to nil, not destroyed, so undo can bring them
+	back.
+
+	@param model Model
+	@param name string -- the name of the union
+	@return string? -- why it could not join the pieces, or nil when it did
+]=]
+function Geometry.UnionAll(model: Model, name: string): string?
+	local pieces: { BasePart } = {}
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") then
+			table.insert(pieces, child)
+		end
+	end
+
+	if #pieces < 2 then
+		return nil
+	end
+
+	local base = pieces[1]
+	local rest = table.clone(pieces)
+
+	table.remove(rest, 1)
+
+	local ok, result = pcall(function()
+		return base:UnionAsync(rest)
+	end)
+
+	if not ok or not result then
+		return "Roblox could not join the pieces: " .. tostring(result)
+	end
+
+	result.Name = name
+	result.Anchored = true
+	result.Parent = model
+
+	for _, piece in pieces do
+		piece.Parent = nil
+	end
+
+	return nil
+end
+
+--[=[
 	@param parts { BasePart }
 	@return CFrame -- the centre of the world-aligned box around the parts
 	@return Vector3 -- that box's size
