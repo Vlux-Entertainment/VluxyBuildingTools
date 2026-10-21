@@ -1331,7 +1331,20 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local candidate = selected[1]
 
 		if #selected == 1 and candidate and candidate:IsA("Folder") and candidate:IsDescendantOf(workspace) then
-			proposeFolder(candidate)
+			return proposeFolder(candidate)
+		end
+
+		for _, object in selected do
+			if object:IsDescendantOf(workspace) then
+				return
+			end
+		end
+
+		if #selected > 0 and pendingFolder then
+			pendingFolder = nil
+			redrawBoxes()
+			panel.Refresh()
+			say("That is not a Folder inside Workspace. Click or select a Folder in Workspace.")
 		end
 	end)
 
