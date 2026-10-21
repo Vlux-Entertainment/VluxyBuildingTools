@@ -934,13 +934,17 @@ function Panel.new(deps: Deps): Panel
 		Wall = true,
 		Corridor = true,
 		Room = true,
+		Foundation = true,
+		Porch = true,
+		Fence = true,
+		Roof = true,
 		Block = true,
 		Stairs = true,
 		Ramp = true,
 		Arch = true,
 		Pillar = true,
 	}
-	local heightModes = { Wall = true, Corridor = true, Room = true, Block = true, Pillar = true }
+	local heightModes = { Wall = true, Corridor = true, Room = true, Block = true, Pillar = true, Porch = true }
 	local scope = settingsCard
 
 	numeric(scope, "Grid", "Snap increment", 0.05, 128, 0.5, body(drawModes))
@@ -969,12 +973,68 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "WindowHeight", "Window height", 0.1, 1024, nil, body({ Window = true }))
 	numeric(scope, "WindowSill", "Bottom above floor", 0, 1024, nil, body({ Window = true }))
 	numeric(scope, "PillarWidth", "Pillar width", 0.1, 256, nil, body({ Pillar = true, Wall = true }))
+
+	do
+		local styles = { "Gable", "Hip", "Shed", "Pyramid", "Flat" }
+		local rows = math.ceil(#styles / 3)
+		local styleRow = newRow(scope, rows * 32 - 2)
+		local styleButtons: { [string]: TextButton } = {}
+
+		register(styleRow, body({ Roof = true }))
+
+		for i, name in styles do
+			local choice = make("TextButton", {
+				Size = UDim2.new(1 / 3, -4, 0, 30),
+				Position = UDim2.new(((i - 1) % 3) / 3, 0, 0, math.floor((i - 1) / 3) * 32),
+				BackgroundColor3 = TILE,
+				BorderSizePixel = 0,
+				Text = name,
+				TextColor3 = TEXT,
+				Font = Enum.Font.GothamMedium,
+				TextSize = 12,
+			}, styleRow)
+
+			style(choice, 6, CARD_STROKE)
+			attachTip(choice, { Text = name .. " roof." })
+			styleButtons[name] = choice
+			choice.MouseButton1Click:Connect(function()
+				settings.RoofStyle = name
+				deps.Save()
+				refresh()
+			end)
+		end
+
+		table.insert(refreshers, function()
+			for name, choice in styleButtons do
+				local active = name == settings.RoofStyle
+
+				choice.BackgroundColor3 = if active then ACCENT else TILE
+				choice.TextColor3 = if active then BACKGROUND else TEXT
+			end
+		end)
+	end
+
+	numeric(scope, "RoofRise", "Roof rise", 0.1, 512, nil, body({ Roof = true }))
+	numeric(scope, "RoofOverhang", "Overhang", 0, 128, nil, body({ Roof = true }))
+	numeric(scope, "FoundationHeight", "Slab height", 0.1, 256, nil, body({ Foundation = true }))
+	numeric(scope, "FoundationMargin", "Margin around", 0, 128, nil, body({ Foundation = true }))
+	numeric(scope, "FenceHeight", "Fence height", 0.1, 256, nil, body({ Fence = true }))
+	numeric(scope, "FenceSpacing", "Post spacing", 0.5, 256, nil, body({ Fence = true, Porch = true }))
+	switch(scope, "Railing", function()
+		return settings.PorchRailing
+	end, function(on)
+		settings.PorchRailing = on
+		deps.Save()
+		refresh()
+	end, body({ Porch = true }))
+	numeric(scope, "RailHeight", "Railing height", 0.1, 256, nil, body({ Porch = true }))
+	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 
 	button(scope, "Start new chain", function()
 		actions.ResetPoint()
 		say(actions.Instruction(deps.GetMode()))
-	end, false, body({ Wall = true, Corridor = true }))
+	end, false, body({ Wall = true, Corridor = true, Fence = true }))
 
 	switch(scope, "Ceiling", function()
 		return settings.Roof
@@ -1023,7 +1083,15 @@ function Panel.new(deps: Deps): Panel
 
 	numeric(scope, "Run", "Approx. step depth", 0.1, 64, 0.25, body({ Stairs = true }, true))
 	numeric(scope, "Landing", "Top landing depth", 0, 256, nil, body({ Stairs = true, Ramp = true }, true))
-	numeric(scope, "Floor", "Floor / ceiling thickness", 0.05, 128, 0.25, body({ Room = true, Corridor = true }, true))
+	numeric(
+		scope,
+		"Floor",
+		"Floor / ceiling thickness",
+		0.05,
+		128,
+		0.25,
+		body({ Room = true, Corridor = true, Porch = true }, true)
+	)
 	numeric(scope, "ArchSegments", "Arch smoothness", 4, 48, 4, body({ Arch = true, ArchOpening = true }, true))
 	numeric(scope, "Offset", "Surface gap", -256, 256, 0.25, body({ Place = true }, true))
 	switch(scope, "Tilt copy to surface", function()

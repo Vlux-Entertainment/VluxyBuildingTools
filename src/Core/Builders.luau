@@ -138,6 +138,45 @@ local function quadPrism(
 end
 
 --[[
+	Adds fence posts and two rails from a to b. The end posts can be left out when a neighbour has them.
+]]
+local function fenceRun(
+	out: { Spec },
+	a: Vector3,
+	b: Vector3,
+	height: number,
+	spacing: number,
+	startPost: boolean,
+	endPost: boolean
+)
+	local d = b - a
+	local length = d.Magnitude
+
+	if length < 0.05 then
+		return
+	end
+
+	local dir = d.Unit
+	local count = math.max(1, math.round(length / math.max(0.5, spacing)))
+
+	for i = 0, count do
+		if (i > 0 or startPost) and (i < count or endPost) then
+			local center = a + dir * (length * i / count) + Vector3.new(0, height * 0.5, 0)
+
+			add(out, Vector3.new(0.5, height, 0.5), CFrame.lookAt(center, center + dir), "FencePost")
+		end
+	end
+
+	local middle = (a + b) * 0.5
+
+	for _, fraction in { 0.85, 0.45 } do
+		local center = middle + Vector3.new(0, height * fraction, 0)
+
+		add(out, Vector3.new(0.3, 0.4, length), CFrame.lookAt(center, center + dir), "FenceRail")
+	end
+end
+
+--[[
 	@param a Vector3 -- the start point
 	@param b Vector3 -- the end point
 
@@ -154,6 +193,148 @@ local function directionCF(a: Vector3, b: Vector3): CFrame?
 end
 
 local Builders = {}
+
+--[=[
+	@param settings Settings
+	@param a Vector3 -- one corner
+	@param b Vector3 -- the opposite corner
+	@return { Spec } -- one thick slab, a margin wider than the corners, standing on a's level
+]=]
+function Builders.Foundation(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+	local m, h = settings.FoundationMargin, settings.FoundationHeight
+	local w, d = hi.X - lo.X + 2 * m, hi.Z - lo.Z + 2 * m
+
+	if hi.X - lo.X < 0.05 or hi.Z - lo.Z < 0.05 then
+		return out
+	end
+
+	add(out, Vector3.new(w, h, d), CFrame.new(c + Vector3.new(0, h / 2, 0)), "Foundation")
+
+	return out
+end
+
+--[=[
+	@param settings Settings
+	@param a Vector3 -- one corner
+	@param b Vector3 -- the opposite corner
+	@return { Spec } -- a floor, four corner posts and, when switched on, a railing between the posts
+]=]
+function Builders.Porch(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+	local w, d = hi.X - lo.X, hi.Z - lo.Z
+	local f, h = settings.Floor, settings.Height
+	local post = 0.8
+
+	if w < 2 * post or d < 2 * post then
+		return out
+	end
+
+	add(out, Vector3.new(w, f, d), CFrame.new(c - Vector3.new(0, f / 2, 0)), "Floor")
+
+	local inset = post / 2
+	local x0, x1, z0, z1 = lo.X + inset, hi.X - inset, lo.Z + inset, hi.Z - inset
+	local corners = {
+		Vector3.new(x0, a.Y, z0),
+		Vector3.new(x1, a.Y, z0),
+		Vector3.new(x1, a.Y, z1),
+		Vector3.new(x0, a.Y, z1),
+	}
+
+	for _, corner in corners do
+		add(out, Vector3.new(post, h, post), CFrame.new(corner + Vector3.new(0, h / 2, 0)), "PorchPost")
+	end
+
+	if settings.PorchRailing then
+		for i = 1, 4 do
+			fenceRun(out, corners[i], corners[i % 4 + 1], settings.RailHeight, settings.FenceSpacing, false, false)
+		end
+	end
+
+	return out
+end
+
+--[=[
+	@param settings Settings
+	@param a Vector3 -- the start point
+	@param b Vector3 -- the end point
+	@param postAtStart boolean? -- false when the fence before this one already has a post there
+	@return { Spec } -- posts and rails running from a to b
+]=]
+function Builders.Fence(settings: Settings, a: Vector3, b: Vector3, postAtStart: boolean?): { Spec }
+	local out: { Spec } = {}
+
+	fenceRun(out, a, b, settings.FenceHeight, settings.FenceSpacing, postAtStart ~= false, true)
+
+	return out
+end
+
+--[=[
+	Builds a roof over the rectangle between two corners, bigger by the overhang on every side. Gable
+	and shed roofs are solid; hip and pyramid roofs are made of sheets; flat is a single slab.
+
+	@param settings Settings
+	@param a Vector3 -- one corner, at the height of the top of the walls
+	@param b Vector3 -- the opposite corner
+	@return { Spec }
+]=]
+function Builders.Roof(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local lo, hi, c = rectangle(a, b)
+
+	if hi.X - lo.X < 0.5 or hi.Z - lo.Z < 0.5 then
+		return out
+	end
+
+	local o, rise, t, y = settings.RoofOverhang, settings.RoofRise, settings.RoofThickness, a.Y
+	local x0, x1, z0, z1 = lo.X - o, hi.X + o, lo.Z - o, hi.Z + o
+	local w, d = x1 - x0, z1 - z0
+	local style = settings.RoofStyle
+
+	if style == "Flat" then
+		add(out, Vector3.new(w, t, d), CFrame.new(c.X, y + t / 2, c.Z), "Roof")
+	elseif style == "Shed" then
+		trianglePrism(out, Vector3.new(x0, y, c.Z), Vector3.new(x1, y, c.Z), Vector3.new(x1, y + rise, c.Z), d, "Roof")
+	elseif style == "Pyramid" then
+		local apex = Vector3.new(c.X, y + rise, c.Z)
+		local p00, p10 = Vector3.new(x0, y, z0), Vector3.new(x1, y, z0)
+		local p11, p01 = Vector3.new(x1, y, z1), Vector3.new(x0, y, z1)
+
+		trianglePrism(out, p00, p10, apex, t, "Roof")
+		trianglePrism(out, p10, p11, apex, t, "Roof")
+		trianglePrism(out, p11, p01, apex, t, "Roof")
+		trianglePrism(out, p01, p00, apex, t, "Roof")
+	elseif style == "Hip" then
+		local p00, p10 = Vector3.new(x0, y, z0), Vector3.new(x1, y, z0)
+		local p11, p01 = Vector3.new(x1, y, z1), Vector3.new(x0, y, z1)
+
+		if w >= d then
+			local r0 = Vector3.new(x0 + d / 2, y + rise, c.Z)
+			local r1 = Vector3.new(x1 - d / 2, y + rise, c.Z)
+
+			quadPrism(out, p00, p10, r1, r0, t, "Roof")
+			quadPrism(out, p01, p11, r1, r0, t, "Roof")
+			trianglePrism(out, p00, p01, r0, t, "Roof")
+			trianglePrism(out, p10, p11, r1, t, "Roof")
+		else
+			local r0 = Vector3.new(c.X, y + rise, z0 + w / 2)
+			local r1 = Vector3.new(c.X, y + rise, z1 - w / 2)
+
+			quadPrism(out, p00, p01, r1, r0, t, "Roof")
+			quadPrism(out, p10, p11, r1, r0, t, "Roof")
+			trianglePrism(out, p00, p10, r0, t, "Roof")
+			trianglePrism(out, p01, p11, r1, t, "Roof")
+		end
+	elseif w >= d then
+		trianglePrism(out, Vector3.new(c.X, y, z0), Vector3.new(c.X, y, z1), Vector3.new(c.X, y + rise, c.Z), w, "Roof")
+	else
+		trianglePrism(out, Vector3.new(x0, y, c.Z), Vector3.new(x1, y, c.Z), Vector3.new(c.X, y + rise, c.Z), d, "Roof")
+	end
+
+	return out
+end
 
 --[=[
 	@param settings Settings

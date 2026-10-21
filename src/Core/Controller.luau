@@ -60,6 +60,10 @@ local INSTRUCTIONS: { [string]: string } = {
 	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
+	Foundation = "Click two opposite corners. The slab is a little bigger than the corners and stands on the surface you click.",
+	Porch = "Click two opposite corners for the porch floor. Corner posts and a railing are added.",
+	Fence = "Click points to draw a fence. Keep clicking to connect it. Enter starts a new chain.",
+	Roof = "Click two opposite corners over the top of the walls. Pick the roof style in the options.",
 	Block = "Click two opposite footprint corners. Press Y to drag it up, or X / Z to drag it along that axis; type a number for an exact size.",
 	Stairs = "Click the first step and the end of the stair run. Length is drawn; Height sets the total rise.",
 	Ramp = "Click the bottom and top footprint point. Drag distance sets length; Height sets the rise.",
@@ -87,6 +91,10 @@ local DRAW_MODES: { [string]: boolean } = {
 	Stairs = true,
 	Ramp = true,
 	Arch = true,
+	Foundation = true,
+	Porch = true,
+	Fence = true,
+	Roof = true,
 }
 
 -- Hotkeys that keep working when Blender hotkeys are switched off, as they did before.
@@ -340,7 +348,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		A floor drawn from this point sits on the object instead of sinking into it.
 	]]
 	local function floorPoint(): Vector3?
-		if mode ~= "Room" and mode ~= "Corridor" then
+		local raised = mode == "Room" or mode == "Corridor" or mode == "Porch"
+
+		if not raised and mode ~= "Foundation" and mode ~= "Roof" and mode ~= "Fence" then
 			return nil
 		end
 
@@ -350,7 +360,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return nil
 		end
 
-		return Vector3.new(snap(hit.Position.X), hit.Position.Y + settings.Floor, snap(hit.Position.Z))
+		return Vector3.new(
+			snap(hit.Position.X),
+			hit.Position.Y + (if raised then settings.Floor else 0),
+			snap(hit.Position.Z)
+		)
 	end
 
 	local function lookVector(): Vector3
@@ -496,6 +510,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					out = Builders.Room(drawn, origin, b)
 				elseif mode == "Block" then
 					out = Builders.Block(settings, origin, b, lock)
+				elseif mode == "Foundation" then
+					out = Builders.Foundation(drawn, origin, b)
+				elseif mode == "Porch" then
+					out = Builders.Porch(drawn, origin, b)
+				elseif mode == "Roof" then
+					out = Builders.Roof(drawn, origin, b)
+				elseif mode == "Fence" then
+					out = Builders.Fence(drawn, origin, b, not chained)
 				elseif mode == "Wall" or mode == "Corridor" then
 					out = Builders.Path(drawn, origin, b, mode == "Corridor", not chained)
 				elseif mode == "Stairs" or mode == "Ramp" then
@@ -523,6 +545,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 								out[1].size.Z
 							)
 							else string.format("%.1f × %.1f studs", math.abs(d.X), math.abs(d.Z))
+					elseif mode == "Foundation" or mode == "Porch" or mode == "Roof" then
+						text = string.format("%.1f × %.1f studs", math.abs(d.X), math.abs(d.Z))
 					elseif mode == "Arch" then
 						text = string.format("Span %.1f  |  Height %.1f", d.Magnitude, settings.ArchHeight)
 					elseif mode == "Stairs" then
@@ -1646,7 +1670,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				NumericInput.Clear(numeric)
 				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
 			elseif previewValid then
-				local chain = active == "Wall" or active == "Corridor"
+				local chain = active == "Wall" or active == "Corridor" or active == "Fence"
 				local nextPoint = current
 				local specs = previewSpecs
 
