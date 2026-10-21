@@ -15,7 +15,7 @@ if not RunService:IsStudio() then
 	return
 end
 
-local WIDGET_ID = "VluxBlockoutTools_v2"
+local WIDGET_ID = "VluxyBuildingTools_left"
 
 local trove = Trove.new()
 local toolbar = plugin:CreateToolbar(PluginInfo.Name)
@@ -23,7 +23,7 @@ local button = toolbar:CreateButton(PluginInfo.Name, "Open " .. PluginInfo.Name,
 
 button.ClickableWhenViewportHidden = true
 
-local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 360, 740, 320, 420)
+local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Left, false, false, 360, 740, 320, 420)
 local widget = plugin:CreateDockWidgetPluginGuiAsync(WIDGET_ID, info)
 
 widget.Title = PluginInfo.Name

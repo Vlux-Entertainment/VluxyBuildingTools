@@ -29,7 +29,7 @@ export type Overlay = {
 	_readoutPosition: Vector3?,
 }
 
-local ACCENT = Color3.fromRGB(167, 110, 255)
+local ACCENT = Color3.fromRGB(255, 138, 36)
 local MAX_GHOSTS = 600
 local WEDGE_EDGES = { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 3, 4 }, { 3, 5 }, { 4, 6 }, { 5, 6 }, { 1, 5 }, { 2, 6 } }
 
