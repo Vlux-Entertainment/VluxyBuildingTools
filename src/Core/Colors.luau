@@ -18,6 +18,7 @@ export type Colors = {
 	_colored: { [BasePart]: boolean },
 	_random: Random,
 	_edit: (string, () -> ()) -> boolean,
+	_remember: ((boolean) -> ())?,
 	_say: (string) -> (),
 	_refresh: () -> (),
 	_stop: () -> (),
@@ -100,6 +101,7 @@ function Colors.new(
 		Refresh: () -> (),
 		Stop: () -> (),
 		GetScope: () -> Instance?,
+		Remember: ((boolean) -> ())?,
 	},
 	trove: Trove.Trove
 ): Colors
@@ -108,6 +110,7 @@ function Colors.new(
 		_colored = {},
 		_random = Random.new(),
 		_edit = deps.Edit,
+		_remember = deps.Remember,
 		_say = deps.Say,
 		_refresh = deps.Refresh,
 		_stop = deps.Stop,
@@ -138,7 +141,7 @@ function Colors.new(
 			local scope = self._scope()
 
 			if self.On then
-				if scope and object:IsDescendantOf(scope) then
+				if scope and object:IsDescendantOf(scope) and typeof(object:GetAttribute(ORIGINAL)) ~= "Color3" then
 					apply(self, object)
 				end
 			else
@@ -166,6 +169,20 @@ function Colors.new(
 	trove:Connect(ChangeHistoryService.OnRedo, sync)
 
 	return self
+end
+
+--[=[
+	Colors a part that was just built, now, so the color belongs to the same undo step as the part.
+
+	@param self Colors
+	@param part BasePart
+]=]
+function Colors.Adopt(self: Colors, part: BasePart)
+	local scope = self._scope()
+
+	if self.On and scope and part:IsDescendantOf(scope) and typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
+		apply(self, part)
+	end
 end
 
 --[=[
@@ -210,6 +227,11 @@ function Colors.Set(self: Colors, value: boolean)
 
 	if ok then
 		self.On = value
+
+		if self._remember then
+			self._remember(value)
+		end
+
 		self._refresh()
 		self._say(
 			if value

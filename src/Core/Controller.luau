@@ -26,6 +26,7 @@ local Overlay = require("./Overlay")
 local Panel = require("../Ui/Panel")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
+local Snapper = require("./Snapper")
 local SurfaceGrid = require("./SurfaceGrid")
 local Tools = require("../Pure/Tools")
 local Transform = require("./Transform")
@@ -54,13 +55,15 @@ export type Controller = {
 
 local SETTINGS_KEY = "VluxBlockoutSettings_v2"
 local UPDATE_INTERVAL = 0.05
+local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
+local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
 
 local INSTRUCTIONS: { [string]: string } = {
 	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc exits.",
 	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
-	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the wall height under the curve.",
+	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the total height at the centre, arch included.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
 	Floor = "Click two opposite corners for a flat floor. Its transparency is in the options.",
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
@@ -138,6 +141,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local chained = false
 	local current: Vector3? = nil
 	local heightEnd: Vector3? = nil
+	local heightMouse: Vector2? = nil
 	local lock: AxisLock.Lock? = nil
 	local numeric = NumericInput.new()
 	local source: Builders.Source? = nil
@@ -146,8 +150,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local previewValid = false
 	local measurement: { a: Vector3, b: Vector3 }? = nil
 	local openingTarget: BasePart? = nil
+	local openingCuts: { Builders.Cutter }? = nil
+	local quiet = false
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
+	local snapMark: Vector3? = nil
+	local prevWall: { model: Model, dir: Vector3, strips: { Builders.Strip } }? = nil
+	local hoverDoor: Snapper.Doorway? = nil
+	local startDoor: Snapper.Doorway? = nil
+	local snapPart: BasePart? = nil
 	local placementCF: CFrame? = nil
 	local extendDrag: ExtendDrag? = nil
 	local extendHover = false
@@ -246,7 +257,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return false
 		end
 
+		local added: { BasePart } = {}
+		local watch = workspace.DescendantAdded:Connect(function(object)
+			if object:IsA("BasePart") then
+				table.insert(added, object)
+			end
+		end)
 		local ok, err = pcall(callback :: any)
+
+		watch:Disconnect()
+
+		for _, part in added do
+			if part:IsDescendantOf(workspace) then
+				SurfaceGrid.Adopt(surfaceGrid, part)
+				Colors.Adopt(colors, part)
+			end
+		end
 
 		ChangeHistoryService:FinishRecording(
 			id,
@@ -271,6 +297,54 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return if fine then settings.FineGrid else settings.Grid
 	end
 
+	--[[
+		@param point Vector3 -- a grid-snapped point
+		@return Vector3 -- the point moved onto a nearby corner or edge, unless Shift is held or the setting is off
+	]]
+	local function partSnap(point: Vector3): Vector3
+		local fine = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+
+		if fine or not settings.SnapToParts then
+			return point
+		end
+
+		local snapped, found, part = Snapper.Find(point, settings.SnapRadius)
+
+		if found then
+			snapMark = snapped
+			snapPart = part
+		end
+
+		return snapped
+	end
+
+	--[[
+		@param point Vector3
+		@return Vector3? -- the middle of a doorway made by the Additive tools on the face of its wall, when the point is near one, so a corridor can start exactly there
+	]]
+	local function doorSnap(point: Vector3): Vector3?
+		local fine = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+
+		hoverDoor = nil
+
+		if first or fine or not settings.SnapToParts then
+			return nil
+		end
+
+		local found = Snapper.Doorway(point, settings.SnapRadius)
+
+		if not found then
+			return nil
+		end
+
+		hoverDoor = found
+		snapMark = found.point
+
+		return found.point
+	end
+
 	local function snap(value: number): number
 		return Snap.Round(value, gridNow())
 	end
@@ -278,10 +352,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function resetPoint()
 		first, current = nil, nil
 		lockedHit, cutDepth = nil, nil
+		prevWall = nil
+		startDoor = nil
 		chained = false
 		previewSpecs, previewValid = {}, false
 		lock = nil
 		heightEnd = nil
+		heightMouse = nil
 		measurement = nil
 		NumericInput.Clear(numeric)
 		Overlay.ClearGhosts(overlay)
@@ -309,7 +386,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local point = ray.Origin + ray.Direction * t
 
-		return Vector3.new(snap(point.X), y, snap(point.Z))
+		return partSnap(Vector3.new(snap(point.X), y, snap(point.Z)))
 	end
 
 	--[[
@@ -375,8 +452,30 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		A floor drawn from this point sits on the object instead of sinking into it.
 	]]
+	--[[
+		@param point Vector3
+		@param level boolean -- true to also take the floor height of the room or corridor snapped to
+		@return Vector3 -- the point snapped to nearby parts, standing at the floor of the structure it snapped to, so a new room lines up with the old one
+	]]
+	local function partSnapLevel(point: Vector3, level: boolean): Vector3
+		snapPart = nil
+
+		local snapped = partSnap(point)
+
+		if level and snapPart then
+			local floorTop = Joints.FloorLevel(snapPart)
+
+			if floorTop then
+				return Vector3.new(snapped.X, floorTop, snapped.Z)
+			end
+		end
+
+		return snapped
+	end
+
 	local function floorPoint(): Vector3?
 		local joins = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor"
+		local doorModes = mode == "Corridor" or mode == "ArchedCorridor"
 		local raised = mode == "Room"
 			or mode == "Corridor"
 			or mode == "ArchedCorridor"
@@ -396,7 +495,27 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local hit = hitSurface()
 
-		if not hit or hit.Normal.Y < 0.7 then
+		if not hit then
+			return nil
+		end
+
+		if doorModes then
+			local door = doorSnap(hit.Position)
+
+			if door then
+				return door
+			end
+		end
+
+		if joins then
+			local level = Joints.FloorLevel(hit.Instance)
+
+			if level then
+				return partSnapLevel(Vector3.new(snap(hit.Position.X), level, snap(hit.Position.Z)), true)
+			end
+		end
+
+		if hit.Normal.Y < 0.7 then
 			return nil
 		end
 
@@ -406,11 +525,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			snap(hit.Position.Z)
 		)
 
-		if settings.ConnectStructures and joins then
-			return Joints.Snap(point)
-		end
-
-		return point
+		return partSnapLevel(point, joins)
 	end
 
 	--[[
@@ -426,7 +541,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return nil
 		end
 
-		return Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
+		return partSnap(Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z)))
 	end
 
 	--[[
@@ -461,6 +576,25 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return cutDepth
 	end
 
+	--[[
+		@param from Vector3 -- the point the height is measured from
+		@return number -- a height taken from how far the mouse moved up the screen since Y was pressed
+
+		Looking straight down, the mouse cannot be projected onto a vertical line, so the height follows the mouse on screen instead.
+	]]
+	local function screenHeight(from: Vector3): number
+		local camera = workspace.CurrentCamera
+
+		if not camera or not heightMouse then
+			return gridNow()
+		end
+
+		local distance = (camera.CFrame.Position - from).Magnitude
+		local perPixel = 2 * distance * math.tan(math.rad(camera.FieldOfView) / 2) / math.max(1, camera.ViewportSize.Y)
+
+		return math.max(gridNow(), snap((heightMouse.Y - UserInputService:GetMouseLocation().Y) * perPixel))
+	end
+
 	local function lookVector(): Vector3
 		local camera = workspace.CurrentCamera
 
@@ -492,6 +626,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local out: { Spec } = {}
 		local cutVolume: { cf: CFrame, size: Vector3 }? = nil
+
+		openingCuts = nil
+		snapMark = nil
 		local live = settings
 		local gridStep = gridNow()
 
@@ -549,10 +686,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				depth = cutDepthFrom(lockedHit)
 			end
 
-			out, message, openingTarget, cutVolume =
+			out, message, openingTarget, cutVolume, openingCuts =
 				Builders.Opening(live, opening, if locked then lockedHit else scopedHit(), shape, depth)
 
-			if locked and #out > 0 then
+			if locked and (#out > 0 or openingCuts) then
 				message = if depth
 					then string.format(
 						"Cut depth %.2f. Move the mouse to change it; past the far side it cuts all the way through. Click to confirm.",
@@ -565,7 +702,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local base: Vector3? = nil
 
 			if hit and hit.Normal.Y >= 0.7 then
-				base = Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
+				base = partSnap(Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z)))
 			else
 				base = horizontalPoint(settings.Elevation)
 			end
@@ -592,10 +729,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local height: number? = nil
 
 			if origin and lock and heightEnd and lock.Axis == "Y" and not lock.Plane then
-				local top = lockedPoint(heightEnd, lock)
+				local camera = workspace.CurrentCamera
 
-				if top then
-					height = math.max(gridNow(), math.abs(top.Y - origin.Y))
+				if camera and heightMouse and math.abs(camera.CFrame.LookVector.Y) > 0.8 then
+					height = screenHeight(origin)
+				else
+					local top = lockedPoint(heightEnd, lock)
+
+					if top then
+						height = math.max(gridNow(), math.abs(top.Y - origin.Y))
+					end
 				end
 
 				current = heightEnd
@@ -609,6 +752,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 			else
 				current = floorPoint() or horizontalPoint(settings.Elevation)
+			end
+
+			if startDoor and origin and current and not lock then
+				local n = startDoor.normal
+				local along = math.max(0, snap((current.X - origin.X) * n.X + (current.Z - origin.Z) * n.Z))
+
+				current = Vector3.new(origin.X + n.X * along, origin.Y, origin.Z + n.Z * along)
 			end
 
 			local point = current
@@ -646,6 +796,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					drawn.Height = height
 				end
 
+				if startDoor and (mode == "Corridor" or mode == "ArchedCorridor") then
+					drawn = table.clone(drawn)
+					drawn.Width = startDoor.width
+					drawn.Height = startDoor.height or drawn.Height
+				end
+
 				if mode == "Room" then
 					out = Builders.Room(drawn, origin, b)
 				elseif mode == "Block" then
@@ -665,12 +821,20 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				elseif mode == "Fence" then
 					out = Builders.Fence(drawn, origin, b, not chained)
 				elseif mode == "ArchedCorridor" then
-					out = Builders.ArchedCorridor(drawn, origin, b)
+					local joinDir = if chained and prevWall then prevWall.dir else nil
+
+					out = Builders.ArchedCorridor(drawn, origin, b, joinDir)
 				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Corridor" then
 					local path = table.clone(drawn)
 
 					path.PillaredWalls = mode == "PillaredWall"
-					out = Builders.Path(path, origin, b, mode == "Corridor", not chained)
+					local joinDir = if chained
+							and (mode == "Wall" or mode == "Corridor")
+							and prevWall
+						then prevWall.dir
+						else nil
+
+					out = Builders.Path(path, origin, b, mode == "Corridor", not chained, joinDir)
 				elseif mode == "Stairs" or mode == "Ramp" then
 					out = Builders.Stairs(settings, origin, b, mode == "Ramp")
 				elseif mode == "Arch" then
@@ -727,18 +891,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		previewSpecs = out
 		previewValid = #out > 0
-			and (
-				first ~= nil
-				or mode == "Door"
-				or mode == "Window"
-				or mode == "CircleWindow"
-				or mode == "TriangleWindow"
-				or mode == "ArchOpening"
-				or mode == "Pillar"
-				or mode == "Place"
-			)
+			or openingCuts ~= nil
+				and (first ~= nil or mode == "Door" or mode == "Window" or mode == "CircleWindow" or mode == "TriangleWindow" or mode == "ArchOpening" or mode == "Pillar" or mode == "Place")
 		Overlay.DrawGhosts(overlay, out)
 		Overlay.DrawCut(overlay, cutVolume)
+		Overlay.DrawSnap(overlay, snapMark)
+
+		local holes: { { cf: CFrame, size: Vector3 } } = {}
+
+		if settings.ConnectStructures and #out > 0 and first then
+			if mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor" then
+				holes =
+					Joints.Preview("Vlux_" .. mode, out, settings.RoomJoin, if prevWall then prevWall.model else nil)
+			end
+		end
+
+		Overlay.DrawHoles(overlay, holes)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
 			Overlay.DrawAxisLine(overlay, heightEnd or first, lock.Axis)
@@ -1178,8 +1346,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 
 				heightEnd = current
+				heightMouse = mouseLocation()
 			else
 				heightEnd = nil
+				heightMouse = nil
 			end
 		end
 
@@ -1347,6 +1517,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--
 
 	colors = Colors.new({
+		Remember = function(value)
+			if not quiet then
+				settings.AutoPastel = value
+				save()
+			end
+		end,
 		GetScope = function()
 			return folder
 		end,
@@ -1473,16 +1649,42 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function setFolder(chosen: Instance?)
 		if colors.On and chosen ~= folder then
+			quiet = true
 			Colors.Set(colors, false)
+			quiet = false
 		end
 
 		stop()
+
+		local previous = folder
+
 		folder = chosen
 		Geometry.SetScope(chosen)
 		redrawBoxes()
 		panel.Refresh()
 
+		if previous ~= chosen then
+			edit("Set working folder", function()
+				if previous and previous:IsDescendantOf(workspace) then
+					previous:SetAttribute(FOLDER_ATTRIBUTE, nil)
+					previous:SetAttribute(OLD_FOLDER_ATTRIBUTE, nil)
+				end
+
+				if chosen then
+					chosen:SetAttribute(FOLDER_ATTRIBUTE, true)
+				end
+			end)
+		end
+
 		if chosen then
+			if settings.AutoPastel and not colors.On then
+				Colors.Set(colors, true)
+			end
+
+			if settings.AutoGrid and not surfaceGrid.On then
+				SurfaceGrid.Set(surfaceGrid, true)
+			end
+
 			say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
 		end
 	end
@@ -1517,6 +1719,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	surfaceGrid = SurfaceGrid.new({
+		Remember = function(value)
+			if not quiet then
+				settings.AutoGrid = value
+				save()
+			end
+		end,
 		GetScope = function()
 			return folder
 		end,
@@ -1803,8 +2011,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 			local target = openingTarget
 			local specs = previewSpecs
+			local carving = openingCuts
 
 			edit(if active == "ArchOpening" then "Create archway" else "Create " .. string.lower(active), function()
+				if carving then
+					assert(target and target.Parent, "Wall no longer exists")
+
+					if not Joints.Carve(target, carving) then
+						say("The wall could not be cut.")
+					end
+
+					return
+				end
+
 				local model =
 					Geometry.Materialize(specs, if active == "ArchOpening" then "Archway" else "Wall_" .. active)
 
@@ -1845,9 +2064,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			edit("Stamp copy", function()
-				Selection:Set(Arrange.CloneRoots(sourceRoots, function(cf)
+				Arrange.CloneRoots(sourceRoots, function(cf)
 					return target * pivot:ToObjectSpace(cf)
-				end))
+				end)
 			end)
 		elseif active == "Measure" and current then
 			if not first then
@@ -1869,6 +2088,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		elseif current then
 			if not first then
 				first = current
+				startDoor = if active == "Corridor" or active == "ArchedCorridor" then hoverDoor else nil
 				NumericInput.Clear(numeric)
 				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
 			elseif previewValid then
@@ -1879,10 +2099,77 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					or active == "ArchedCorridor"
 				local nextPoint = current
 				local specs = previewSpecs
+				local segment = Vector3.new(current.X - first.X, 0, current.Z - first.Z)
+				local joint = first
 
 				if
 					edit("Build " .. active, function()
 						local model = Geometry.Materialize(specs, "Vlux_" .. active)
+
+						local previousModel = if prevWall then prevWall.model else nil
+						local archCut: { Builders.Cutter } = {}
+						local archBefore: Model? = nil
+
+						if active == "Wall" or active == "Corridor" or active == "ArchedCorridor" then
+							local before = prevWall
+							local strips = if active == "Wall"
+								then Builders.WallStrips(settings)
+								elseif active == "Corridor" then Builders.CorridorStrips(settings)
+								else Builders.ArchedStrips(settings)
+
+							if before and before.model.Parent and segment.Magnitude > 0.001 then
+								local bend = Builders.Bend(joint, before.dir, segment, before.strips, strips)
+								local floor = before.model:FindFirstChild("Floor")
+								local across = before.dir:Cross(Vector3.yAxis)
+
+								for _, child in before.model:GetChildren() do
+									if child:IsA("Part") then
+										local key = child.Name
+
+										if key == "CorridorWall" then
+											local lateral = if floor and floor:IsA("BasePart")
+												then (child.Position - floor.Position):Dot(across)
+												else 0
+
+											key = if lateral > 0 then "Right" else "Left"
+										end
+
+										local delta = bend.finish[key]
+
+										if delta and delta ~= 0 then
+											child.Size += Vector3.new(0, 0, delta)
+											child.CFrame *= CFrame.new(0, 0, -delta / 2)
+										end
+									end
+								end
+
+								if #bend.ending > 0 then
+									Geometry.Materialize(bend.ending, "Vlux_Bend")
+								end
+
+								if active == "ArchedCorridor" then
+									local corner = Geometry.Materialize({}, "Vlux_BendArch")
+
+									for index, wedge in Builders.ArchedBend(settings, joint, before.dir, segment) do
+										Geometry.AddCut(
+											corner,
+											wedge.specs,
+											wedge.cutter,
+											wedge.cutterSize,
+											"ArchedCeiling"
+										)
+										archCut[index] =
+											{ cf = wedge.cutter, size = wedge.cutterSize, cylinder = false }
+									end
+
+									archBefore = before.model
+								end
+							end
+
+							prevWall = if segment.Magnitude > 0.001
+								then { model = model, dir = segment.Unit, strips = strips }
+								else nil
+						end
 
 						if active == "Floor" and settings.FloorTransparency > 0 then
 							for _, child in model:GetChildren() do
@@ -1905,13 +2192,30 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 							if problem then
 								say(problem)
 							end
+
+							if archBefore and #archCut == 2 then
+								for index, owner in { archBefore, model } do
+									for _, child in owner:GetChildren() do
+										if
+											child:IsA("BasePart")
+											and (child.Name == "Ceiling_Left" or child.Name == "Ceiling_Right")
+										then
+											Joints.Carve(child, { archCut[index] })
+										end
+									end
+								end
+							end
 						end
 
 						if
 							settings.ConnectStructures
 							and (active == "Room" or active == "Corridor" or active == "ArchedCorridor")
 						then
-							Joints.Connect(model)
+							local failed = Joints.Connect(model, settings.RoomJoin, previousModel)
+
+							if failed > 0 then
+								say(string.format("%d wall(s) could not be cut where the structures meet.", failed))
+							end
 						end
 					end)
 				then
@@ -1919,6 +2223,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					chained = chain
 					lock = nil
 					heightEnd = nil
+					heightMouse = nil
 					NumericInput.Clear(numeric)
 					Overlay.ClearGhosts(overlay)
 					Overlay.HideReadout(overlay)
@@ -2137,6 +2442,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 	end)
+
+	for _, object in workspace:GetDescendants() do
+		if
+			object:IsA("Folder")
+			and (object:GetAttribute(FOLDER_ATTRIBUTE) == true or object:GetAttribute(OLD_FOLDER_ATTRIBUTE) == true)
+		then
+			setFolder(object)
+
+			break
+		end
+	end
 
 	return {
 		Stop = function()

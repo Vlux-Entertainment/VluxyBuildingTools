@@ -7,3 +7,7 @@ A Roblox Studio plugin of building tools by Vlux Entertainment. Skeleton only fo
     rokit install
     npm run packages:refresh
     npm run verify
+
+## License
+
+MIT. See [LICENSE](LICENSE).

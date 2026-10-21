@@ -21,6 +21,8 @@ export type Overlay = {
 	_planeGrid: WireframeHandleAdornment,
 	_previewWire: WireframeHandleAdornment,
 	_cut: BoxHandleAdornment?,
+	_holes: { BoxHandleAdornment },
+	_snap: SphereHandleAdornment?,
 	_measureLine: WireframeHandleAdornment,
 	_boxes: { [string]: WireframeHandleAdornment },
 	_fills: { [string]: BoxHandleAdornment },
@@ -107,7 +109,8 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	tag(faceHandles)
 
 	local planeGrid = wire(folder, "ConstructionGrid", Color3.fromRGB(145, 165, 185), 1)
-	planeGrid.Transparency = 0.65
+	planeGrid.Transparency = 0.85
+	planeGrid.AlwaysOnTop = false
 
 	local previewWire = wire(folder, "ShapedPreviews", ACCENT, 2)
 	local measureLine = wire(folder, "Measurement", ACCENT, 2)
@@ -239,6 +242,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	return {
 		FaceHandles = faceHandles,
 		_ghosts = {},
+		_holes = {},
 		_folder = folder,
 		_planeGrid = planeGrid,
 		_previewWire = previewWire,
@@ -268,6 +272,86 @@ function Overlay.ClearGhosts(self: Overlay)
 	self._planeGrid:Clear()
 	self._previewWire:Clear()
 	Overlay.DrawCut(self, nil)
+	Overlay.DrawSnap(self, nil)
+	Overlay.DrawHoles(self, {})
+end
+
+--[=[
+	Shows the openings a new room or corridor will cut into walls as red boxes drawn over everything.
+
+	@param self Overlay
+	@param boxes { { cf: CFrame, size: Vector3 } }
+]=]
+function Overlay.DrawHoles(self: Overlay, boxes: { { cf: CFrame, size: Vector3 } })
+	local terrain = workspace.Terrain.CFrame
+	local count = math.min(#boxes, 24)
+
+	for i = 1, count do
+		local existing: BoxHandleAdornment? = self._holes[i]
+		local shown: BoxHandleAdornment
+
+		if existing then
+			shown = existing
+		else
+			shown = Instance.new("BoxHandleAdornment")
+			shown.Name = "JointHole"
+			shown.Adornee = workspace.Terrain
+			shown.AlwaysOnTop = true
+			shown.ZIndex = 2
+			shown.Transparency = 0.45
+			shown.Color3 = CUT_COLOR
+			shown.Parent = self._folder
+			tag(shown)
+			self._holes[i] = shown
+		end
+
+		shown.Size = boxes[i].size + Vector3.new(0.04, 0.04, 0.04)
+		shown.CFrame = terrain:ToObjectSpace(boxes[i].cf)
+		shown.Visible = true
+	end
+
+	for i = count + 1, #self._holes do
+		self._holes[i].Visible = false
+	end
+end
+
+--[=[
+	Marks the spot a point snapped to a nearby part, drawn over everything.
+
+	@param self Overlay
+	@param point Vector3? -- nil hides the marker
+]=]
+function Overlay.DrawSnap(self: Overlay, point: Vector3?)
+	local marker = self._snap
+
+	if not point then
+		if marker then
+			marker.Visible = false
+		end
+
+		return
+	end
+
+	if not marker then
+		local created = Instance.new("SphereHandleAdornment")
+
+		created.Name = "SnapMarker"
+		created.Adornee = workspace.Terrain
+		created.AlwaysOnTop = true
+		created.ZIndex = 3
+		created.Radius = 0.45
+		created.Transparency = 0.1
+		created.Color3 = Color3.fromRGB(60, 220, 255)
+		created.Parent = self._folder
+		tag(created)
+		self._snap = created
+		marker = created
+	end
+
+	local shown = marker :: SphereHandleAdornment
+
+	shown.CFrame = CFrame.new(workspace.Terrain.CFrame:PointToObjectSpace(point))
+	shown.Visible = true
 end
 
 --[=[

@@ -17,6 +17,7 @@ local Trove = require("../Packages/Trove")
 export type SurfaceGrid = {
 	On: boolean,
 	_edit: (string, () -> ()) -> boolean,
+	_remember: ((boolean) -> ())?,
 	_say: (string) -> (),
 	_refresh: () -> (),
 	_stop: () -> (),
@@ -107,12 +108,14 @@ function SurfaceGrid.new(
 		Stop: () -> (),
 		GetScope: () -> Instance?,
 		GetSize: () -> number,
+		Remember: ((boolean) -> ())?,
 	},
 	trove: Trove.Trove
 ): SurfaceGrid
 	local self: SurfaceGrid = {
 		On = workspace:GetAttribute(ACTIVE) == true,
 		_edit = deps.Edit,
+		_remember = deps.Remember,
 		_say = deps.Say,
 		_refresh = deps.Refresh,
 		_stop = deps.Stop,
@@ -143,7 +146,7 @@ function SurfaceGrid.new(
 			local scope = self._scope()
 
 			if self.On then
-				if scope and object:IsDescendantOf(scope) then
+				if scope and object:IsDescendantOf(scope) and not object:FindFirstChild(TEXTURE_NAME) then
 					apply(object, self._size())
 				end
 			else
@@ -161,6 +164,20 @@ function SurfaceGrid.new(
 	trove:Connect(ChangeHistoryService.OnRedo, sync)
 
 	return self
+end
+
+--[=[
+	Puts the grid on a part that was just built, now, so it belongs to the same undo step as the part.
+
+	@param self SurfaceGrid
+	@param part BasePart
+]=]
+function SurfaceGrid.Adopt(self: SurfaceGrid, part: BasePart)
+	local scope = self._scope()
+
+	if self.On and scope and eligible(part) and part:IsDescendantOf(scope) then
+		apply(part, self._size())
+	end
 end
 
 --[=[
@@ -201,6 +218,11 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 
 	if ok then
 		self.On = value
+
+		if self._remember then
+			self._remember(value)
+		end
+
 		self._refresh()
 		self._say(
 			if value

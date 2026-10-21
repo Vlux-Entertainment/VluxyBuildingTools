@@ -42,7 +42,12 @@ export type Settings = {
 	PillaredWalls: boolean,
 	FloorTransparency: number,
 	CutDepth: boolean,
+	SnapToParts: boolean,
+	AutoGrid: boolean,
+	AutoPastel: boolean,
+	SnapRadius: number,
 	ConnectStructures: boolean,
+	RoomJoin: string,
 	StandardHeight: number,
 	StandardThickness: number,
 	StandardDoorWidth: number,
@@ -76,7 +81,7 @@ local Settings = {}
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Version = 2,
+		Version = 3,
 		Grid = 4,
 		FineGrid = 1,
 		Elevation = 0,
@@ -111,7 +116,12 @@ function Settings.Defaults(): Settings
 		PillaredWalls = false,
 		FloorTransparency = 0,
 		CutDepth = true,
+		SnapToParts = true,
+		AutoGrid = true,
+		AutoPastel = true,
+		SnapRadius = 5,
 		ConnectStructures = true,
+		RoomJoin = "Open",
 		StandardHeight = 12,
 		StandardThickness = 1,
 		StandardDoorWidth = 4,
@@ -210,6 +220,7 @@ function Settings.Load(saved: any): Settings
 		local fresh = Settings.Defaults()
 
 		settings.Grid, settings.FineGrid = fresh.Grid, fresh.FineGrid
+		settings.SnapRadius = fresh.SnapRadius
 	end
 
 	Settings.Sync(settings)

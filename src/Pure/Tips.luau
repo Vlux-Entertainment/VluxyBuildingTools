@@ -72,8 +72,15 @@ Tips.Entries = {
 		Text = "The doorway height every tool starts from. A tool can override it; its name then shows a *.",
 	},
 	["Join rooms and corridors"] = {
-		Text = "Rooms, corridors and arched corridors snap to the walls already built, and openings are cut through the walls where they meet. They are not merged into one union.",
+		Text = "Openings are cut through the walls where rooms, corridors and arched corridors meet. They are not merged into one union.",
 	},
+	RoomJoin = {
+		Text = "How a new room meets a room next to it. Open removes the walls between them, Shared keeps one wall, Separate keeps both walls.",
+	},
+	["Snap to parts"] = {
+		Text = "Points snap to the corners and edges of nearby parts, with a marker where they land. Hold Shift to skip it and use the fine grid.",
+	},
+	SnapRadius = { Text = "How close, in studs, a corner or edge has to be to attract the point." },
 	CutDepth = {
 		Text = "After you click a spot, move the mouse to set how deep the cut goes. Past the far side of the wall it cuts all the way through.",
 	},

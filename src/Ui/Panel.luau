@@ -1084,6 +1084,50 @@ function Panel.new(deps: Deps): Panel
 		end)
 	end
 
+	do
+		local joins = {
+			{ "Open", "Open: no wall between the rooms." },
+			{ "Shared", "Shared: the rooms share one wall." },
+			{ "Separate", "Separate: both walls stay." },
+		}
+		local joinRow = newRow(scope, 30)
+		local joinButtons: { [string]: TextButton } = {}
+
+		register(joinRow, body({ Room = true }))
+
+		for i, entry in joins do
+			local name, tip = entry[1], entry[2]
+			local choice = make("TextButton", {
+				Size = UDim2.new(1 / 3, -4, 0, 30),
+				Position = UDim2.fromScale((i - 1) / 3, 0),
+				BackgroundColor3 = TILE,
+				BorderSizePixel = 0,
+				Text = name,
+				TextColor3 = TEXT,
+				Font = Enum.Font.GothamMedium,
+				TextSize = 12,
+			}, joinRow)
+
+			style(choice, 6, CARD_STROKE)
+			attachTip(choice, { Text = tip })
+			joinButtons[name] = choice
+			choice.MouseButton1Click:Connect(function()
+				settings.RoomJoin = name
+				deps.Save()
+				refresh()
+			end)
+		end
+
+		table.insert(refreshers, function()
+			for name, choice in joinButtons do
+				local active = name == settings.RoomJoin
+
+				choice.BackgroundColor3 = if active then ACCENT else TILE
+				choice.TextColor3 = if active then BACKGROUND else TEXT
+			end
+		end)
+	end
+
 	numeric(scope, "FloorTransparency", "Transparency (0 solid, 1 clear)", 0, 1, 0.1, body({ Floor = true }))
 	numeric(scope, "RoofRise", "Roof rise", 0.1, 512, nil, body({ Roof = true }))
 	numeric(scope, "RoofOverhang", "Overhang", 0, 128, nil, body({ Roof = true }))
@@ -1123,6 +1167,15 @@ function Panel.new(deps: Deps): Panel
 		deps.Save()
 		refresh()
 	end, body({ Room = true, Corridor = true }))
+
+	switch(scope, "Snap to parts", function()
+		return settings.SnapToParts
+	end, function(on)
+		settings.SnapToParts = on
+		deps.Save()
+		refresh()
+	end, body(drawModes))
+	numeric(scope, "SnapRadius", "Snap reach", 0.5, 32, 0.5, body(drawModes))
 
 	switch(scope, "Join rooms and corridors", function()
 		return settings.ConnectStructures
