@@ -64,9 +64,9 @@ local INSTRUCTIONS: { [string]: string } = {
 	Stairs = "Click the first step and the end of the stair run. Length is drawn; Height sets the total rise.",
 	Ramp = "Click the bottom and top footprint point. Drag distance sets length; Height sets the rise.",
 	Arch = "Click the two inner edges at ground level. Height is the arch clearance; Depth is the frame depth.",
-	ArchOpening = "Hover over a plain wall and click to cut an arched doorway. Adjust width/height below.",
+	ArchOpening = "Hover over a plain wall and click to cut an archway. Adjust width/height below.",
 	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
-	Door = "Click an undecorated rectangular wall. The door is centered on the cursor and starts at the bottom of the wall.",
+	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
 	Window = "Click an undecorated rectangular wall. The window is centered on the cursor; its height above the floor is in the options.",
 	Extend = "Click a block to select it, then drag a green face handle OUTWARD. Release to add a connected block.",
 	Place = "Select an object first. Click surfaces to stamp copies. R rotates the preview 90 degrees.",
@@ -1588,14 +1588,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local target = openingTarget
 			local specs = previewSpecs
 
-			edit(
-				if active == "ArchOpening" then "Create arched doorway" else "Create " .. string.lower(active),
-				function()
-					Geometry.Materialize(specs, if active == "ArchOpening" then "Arched_Doorway" else "Wall_" .. active)
-					assert(target and target.Parent, "Wall no longer exists")
-					target:Destroy()
+			edit(if active == "ArchOpening" then "Create archway" else "Create " .. string.lower(active), function()
+				Geometry.Materialize(specs, if active == "ArchOpening" then "Archway" else "Wall_" .. active)
+				assert(target and target.Parent, "Wall no longer exists")
+
+				local holder = target.Parent
+
+				target.Parent = nil
+
+				if holder and holder:IsA("Model") and #holder:GetChildren() == 0 then
+					holder.Parent = nil
 				end
-			)
+			end)
 		elseif active == "Pillar" then
 			if not previewValid then
 				return

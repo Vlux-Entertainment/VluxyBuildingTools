@@ -61,13 +61,13 @@ Tools.List = {
 	},
 	{ Id = "Stairs", Label = "Stairs", Glyph = "▟", Key = nil, Description = "Draw a flight of stairs along a run." },
 	{ Id = "Ramp", Label = "Ramp", Glyph = "◢", Key = nil, Description = "Draw a sloped ramp as a single wedge." },
-	{ Id = "Arch", Label = "Archway", Glyph = "∩", Key = nil, Description = "Draw an arch frame across a gap." },
+	{ Id = "Arch", Label = "Arch", Glyph = "∩", Key = nil, Description = "Draw an arch frame across a gap." },
 	{
 		Id = "ArchOpening",
-		Label = "Doorway",
+		Label = "Archway",
 		Glyph = "◠",
 		Key = nil,
-		Description = "Cut an arched doorway into a plain wall.",
+		Description = "Cut an archway into a plain wall.",
 	},
 	{
 		Id = "Pillar",
@@ -78,10 +78,10 @@ Tools.List = {
 	},
 	{
 		Id = "Door",
-		Label = "Door",
+		Label = "Doorway",
 		Glyph = "▯",
 		Key = nil,
-		Description = "Cut a door into a plain wall. It starts at the bottom of the wall.",
+		Description = "Cut a doorway into a plain wall. It starts at the bottom of the wall.",
 	},
 	{
 		Id = "Window",
@@ -135,7 +135,7 @@ Tools.Grid = {
 		Label = "Additive",
 		Glyph = "▯",
 		Key = "3",
-		Description = "Cut a door, a window or an arched doorway into a wall. Pick which one in the options.",
+		Description = "Cut a doorway, a window or an archway into a wall. Pick which one in the options.",
 		Modes = { "Door", "Window", "ArchOpening" },
 	},
 	{

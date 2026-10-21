@@ -78,7 +78,7 @@ function Keymap.Describe(): { { string } }
 	return {
 		{
 			"Ctrl+1 … Ctrl+6, Ctrl+0 or 1 … 6, 0",
-			"Pick a tool: Basic (walls, blocks, pillars, arches), Structures, Additive (doors, windows, doorways), Stairs, Face Extend, Stamp, Measure (0). Press it again to turn it off",
+			"Pick a tool: Basic (walls, blocks, pillars, arches), Structures, Additive (doorways, windows, archways), Stairs, Face Extend, Stamp, Measure (0). Press it again to turn it off",
 		},
 		{
 			"Alt+1 … Alt+0",
