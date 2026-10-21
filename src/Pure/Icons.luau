@@ -13,8 +13,8 @@ return {
 		Main = "rbxassetid://122874399865248",
 		Pastel = "rbxassetid://97620885937748",
 		Grid = "rbxassetid://76803819457008",
-		PastelOff = "",
-		GridOff = "",
+		PastelOff = "rbxassetid://99450502886123",
+		GridOff = "rbxassetid://87291522405650",
 	},
 	Tools = {
 		Basic = "",
