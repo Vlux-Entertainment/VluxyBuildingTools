@@ -194,40 +194,14 @@ end
 
 local Builders = {}
 
---[=[
-	A corridor with a rounded ceiling: a floor, two straight side walls, and a half-circle vault above
-	them that spans the clear width. The panel height is the total height at the centre, arch included,
-	so the side walls are that height minus the radius of the vault.
-
-	@param settings Settings
-	@param a Vector3 -- the start
-	@param b Vector3 -- the end
-	@return { Spec }
-]=]
-function Builders.ArchedCorridor(settings: Settings, a: Vector3, b: Vector3): { Spec }
-	local out: { Spec } = {}
-	local d = b - a
-	local length = d.Magnitude
-	local flat = Vector3.new(d.X, 0, d.Z)
-
-	if length < 0.05 or flat.Magnitude < 0.05 then
-		return out
-	end
-
-	local up = Vector3.yAxis
-	local across = flat.Unit:Cross(up).Unit
-	local middle = (a + b) * 0.5
-	local cf = CFrame.fromMatrix(middle, across, up, across:Cross(up))
+--[[
+	Adds the curved roof of an arched corridor: quads that follow the half circle, each extruded the
+	whole length along the frame's depth.
+]]
+local function archRoof(out: { Spec }, cf: CFrame, settings: Settings, length: number)
 	local radius = settings.Width / 2
-	local w, t, f = settings.Width, settings.Thickness, settings.Floor
+	local t = settings.Thickness
 	local h = math.max(0.1, settings.Height - radius)
-
-	add(out, Vector3.new(w + 2 * t, f, length), cf * CFrame.new(0, -f / 2, 0), "Floor")
-
-	for _, sign in { -1, 1 } do
-		add(out, Vector3.new(t, h, length), cf * CFrame.new(sign * (w + t) / 2, h / 2, 0), "CorridorWall")
-	end
-
 	local count = math.max(2, math.floor(settings.ArchSegments))
 
 	local function point(r: number, angle: number): Vector3
@@ -248,8 +222,154 @@ function Builders.ArchedCorridor(settings: Settings, a: Vector3, b: Vector3): { 
 			"ArchedCeiling"
 		)
 	end
+end
+
+--[=[
+	@param settings Settings
+	@return { Strip } -- the floor and the two side walls of an arched corridor
+]=]
+function Builders.ArchedStrips(settings: Settings): { Strip }
+	local w, t, f = settings.Width, settings.Thickness, settings.Floor
+	local h = math.max(0.1, settings.Height - w / 2)
+	local offset = (w + t) / 2
+
+	return {
+		{ key = "Floor", name = "Floor", low = -w / 2 - t, high = w / 2 + t, rise = -f / 2, height = f },
+		{ key = "Right", name = "CorridorWall", low = offset - t / 2, high = offset + t / 2, rise = h / 2, height = h },
+		{
+			key = "Left",
+			name = "CorridorWall",
+			low = -offset - t / 2,
+			high = -offset + t / 2,
+			rise = h / 2,
+			height = h,
+		},
+	}
+end
+
+--[=[
+	A corridor with a rounded ceiling: a floor, two straight side walls, and a half-circle vault above
+	them that spans the clear width. The panel height is the total height at the centre, arch included,
+	so the side walls are that height minus the radius of the vault.
+
+	@param settings Settings
+	@param a Vector3 -- the start
+	@param b Vector3 -- the end
+	@return { Spec }
+]=]
+function Builders.ArchedCorridor(settings: Settings, a: Vector3, b: Vector3, joinDir: Vector3?): { Spec }
+	local out: { Spec } = {}
+	local d = b - a
+	local length = d.Magnitude
+	local flat = Vector3.new(d.X, 0, d.Z)
+
+	if length < 0.05 or flat.Magnitude < 0.05 then
+		return out
+	end
+
+	local up = Vector3.yAxis
+	local across = flat.Unit:Cross(up).Unit
+	local w, t, f = settings.Width, settings.Thickness, settings.Floor
+	local h = math.max(0.1, settings.Height - w / 2)
+	local dir = flat.Unit
+	local strips = Builders.ArchedStrips(settings)
+	local bend = if joinDir then Builders.Bend(a, joinDir, flat, strips, strips) else nil
+
+	if bend then
+		for _, spec in bend.beginning do
+			table.insert(out, spec)
+		end
+	end
+
+	--[[
+		Adds a block that starts `late` studs after a and runs to b.
+	]]
+	local function block(key: string, lateral: number, rise: number, width: number, height: number, name: string)
+		local late = if bend then bend.start[key] or 0 else 0
+		local run = length - late
+
+		if run < 0.05 then
+			return
+		end
+
+		local center = a + dir * (late + run / 2) + across * lateral + Vector3.new(0, rise, 0)
+
+		add(out, Vector3.new(width, height, run), CFrame.lookAt(center, center + dir), name)
+	end
+
+	block("Floor", 0, -f / 2, w + 2 * t, f, "Floor")
+	block("Right", (w + t) / 2, h / 2, t, h, "CorridorWall")
+	block("Left", -(w + t) / 2, h / 2, t, h, "CorridorWall")
+
+	local middle = (a + b) * 0.5
+	local cf = CFrame.fromMatrix(middle, across, up, across:Cross(up))
+
+	archRoof(out, cf, settings, length)
 
 	return out
+end
+
+export type ArchWedge = {
+	specs: { Spec },
+	cutter: CFrame,
+	cutterSize: Vector3,
+}
+
+--[=[
+	The curved roof needs a corner of its own where two arched corridors meet. Each side gets the
+	arch carried on past the joint, to be cut flat along the line that bisects the bend.
+
+	@param settings Settings
+	@param joint Vector3 -- where the two corridors meet, at floor level
+	@param prevDir Vector3
+	@param dir Vector3
+	@return { ArchWedge } -- two arch pieces, each with the box that is cut out of it
+]=]
+function Builders.ArchedBend(settings: Settings, joint: Vector3, prevDir: Vector3, dir: Vector3): { ArchWedge }
+	local u = Vector3.new(prevDir.X, 0, prevDir.Z)
+	local v = Vector3.new(dir.X, 0, dir.Z)
+	local wedges: { ArchWedge } = {}
+
+	if u.Magnitude < 0.001 or v.Magnitude < 0.001 then
+		return wedges
+	end
+
+	u, v = u.Unit, v.Unit
+
+	local turn = math.acos(math.clamp(u:Dot(v), -1, 1))
+
+	if turn < math.rad(2) then
+		return wedges
+	end
+
+	local reach = math.tan(math.min(turn, math.rad(170)) / 2) * (settings.Width / 2 + settings.Thickness)
+	local bisector = (u + v).Unit
+	local big = 400
+
+	for _, side in { 1, -1 } do
+		local heading = if side == 1 then u else v
+		local forward = if side == 1 then 1 else -1
+		local center = joint + heading * forward * (reach / 2)
+		local cf = CFrame.fromMatrix(
+			center,
+			heading:Cross(Vector3.yAxis),
+			Vector3.yAxis,
+			heading:Cross(Vector3.yAxis):Cross(Vector3.yAxis)
+		)
+		local specs: { Spec } = {}
+
+		archRoof(specs, cf, settings, reach)
+
+		local away = bisector * side
+
+		table.insert(wedges, {
+			specs = specs,
+			cutter = CFrame.lookAt(joint + away * (big / 2), joint + away * big),
+			cutterSize = Vector3.new(big, big, big),
+		})
+	end
+
+	return wedges
 end
 
 --[=[

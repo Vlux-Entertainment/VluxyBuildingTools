@@ -801,7 +801,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				elseif mode == "Fence" then
 					out = Builders.Fence(drawn, origin, b, not chained)
 				elseif mode == "ArchedCorridor" then
-					out = Builders.ArchedCorridor(drawn, origin, b)
+					local joinDir = if chained and prevWall then prevWall.dir else nil
+
+					out = Builders.ArchedCorridor(drawn, origin, b, joinDir)
 				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Corridor" then
 					local path = table.clone(drawn)
 
@@ -2045,11 +2047,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 						local previousModel = if prevWall then prevWall.model else nil
 
-						if active == "Wall" or active == "Corridor" then
+						if active == "Wall" or active == "Corridor" or active == "ArchedCorridor" then
 							local before = prevWall
 							local strips = if active == "Wall"
 								then Builders.WallStrips(settings)
-								else Builders.CorridorStrips(settings)
+								elseif active == "Corridor" then Builders.CorridorStrips(settings)
+								else Builders.ArchedStrips(settings)
 
 							if before and before.model.Parent and segment.Magnitude > 0.001 then
 								local bend = Builders.Bend(joint, before.dir, segment, before.strips, strips)
@@ -2079,6 +2082,20 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 								if #bend.ending > 0 then
 									Geometry.Materialize(bend.ending, "Vlux_Bend")
+								end
+
+								if active == "ArchedCorridor" then
+									local corner = Geometry.Materialize({}, "Vlux_BendArch")
+
+									for _, wedge in Builders.ArchedBend(settings, joint, before.dir, segment) do
+										Geometry.AddCut(
+											corner,
+											wedge.specs,
+											wedge.cutter,
+											wedge.cutterSize,
+											"ArchedCeiling"
+										)
+									end
 								end
 							end
 

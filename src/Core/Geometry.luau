@@ -432,4 +432,62 @@ function Geometry.FromVec(v: AxisLock.Vec): Vector3
 	return Vector3.new(v.X, v.Y, v.Z)
 end
 
+--[=[
+	Joins the specs into one solid, cuts a box out of it and parents the result to the model. The
+	pieces it started from never enter the model, so undo only has the result to remove.
+
+	@param model Model
+	@param specs { Spec }
+	@param cutter CFrame -- where the box that is cut away sits
+	@param cutterSize Vector3
+	@param name string
+	@return boolean -- false when nothing was left or the cut failed
+]=]
+function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSize: Vector3, name: string): boolean
+	local holder = Geometry.Materialize(specs, "Vlux_Temp")
+	local parts: { BasePart } = {}
+
+	for _, child in holder:GetChildren() do
+		if child:IsA("BasePart") then
+			table.insert(parts, child)
+		end
+	end
+
+	if #parts == 0 then
+		holder:Destroy()
+
+		return false
+	end
+
+	local tool = Instance.new("Part")
+
+	tool.Size = cutterSize
+	tool.CFrame = cutter
+	tool.Anchored = true
+
+	local ok, result = pcall(function()
+		local base = parts[1]
+		local rest = table.clone(parts)
+
+		table.remove(rest, 1)
+
+		local joined = if #rest > 0 then base:UnionAsync(rest) else base
+
+		return joined:SubtractAsync({ tool })
+	end)
+
+	tool:Destroy()
+	holder:Destroy()
+
+	if not ok or not result then
+		return false
+	end
+
+	result.Name = name
+	result.Anchored = true
+	result.Parent = model
+
+	return true
+end
+
 return Geometry
