@@ -1081,6 +1081,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		elseif string.sub(action, 1, 5) == "Tool:" then
 			activate(string.sub(action, 6))
+		elseif string.sub(action, 1, 7) == "Option:" then
+			local tile = if mode then Tools.TileOf(mode) else nil
+
+			if not tile then
+				return say("Pick a tool first, then Ctrl plus a number picks an option inside it.")
+			end
+
+			local target = tile.Modes[tonumber(string.sub(action, 8)) :: number]
+
+			if #tile.Modes < 2 then
+				say(`{tile.Label} has no options.`)
+			elseif target then
+				setMode(target)
+			else
+				say(`{tile.Label} only has {#tile.Modes} options.`)
+			end
 		else
 			local kind, axis = string.match(action, "^(%a+):([XYZ])$")
 
@@ -1680,6 +1696,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or action == "FlipArm"
 			or action == "Rotate90Arm"
 			or string.sub(action, 1, 5) == "Tool:"
+			or string.sub(action, 1, 7) == "Option:"
 
 		local turnsStamp = action == "Rotate" and mode == "Place"
 

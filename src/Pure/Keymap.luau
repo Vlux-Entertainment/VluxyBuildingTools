@@ -21,6 +21,19 @@ local TOOL_KEYS: { [string]: string } = {
 	Zero = "Measure",
 }
 
+local OPTION_KEYS: { [string]: number } = {
+	One = 1,
+	Two = 2,
+	Three = 3,
+	Four = 4,
+	Five = 5,
+	Six = 6,
+	Seven = 7,
+	Eight = 8,
+	Nine = 9,
+	Zero = 10,
+}
+
 local RESERVED: { [string]: boolean } = {
 	W = true,
 	A = true,
@@ -65,6 +78,10 @@ function Keymap.Describe(): { { string } }
 		{
 			"1 … 6, 0 or Alt+1 … Alt+0",
 			"Pick a tool: Basic (walls, doors, windows, arches), Structures, Block, Stairs, Face Extend, Stamp, Measure (0). Press it again to turn it off",
+		},
+		{
+			"Ctrl+1 … Ctrl+0",
+			"Pick the 1st to 10th option inside the active tool, for example Walls, Door / Window, Archway in Basic",
 		},
 		{ "T", "Extrude the face under the cursor of the selected block" },
 		{ "G / R / C", "Grab, rotate or scale the selection" },
@@ -116,6 +133,10 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 
 	if ctrl and not alt and not shift and keyName == "M" then
 		return "FlipArm"
+	end
+
+	if ctrl and not alt and not shift and OPTION_KEYS[keyName] then
+		return `Option:{OPTION_KEYS[keyName]}`
 	end
 
 	if shift or ctrl then

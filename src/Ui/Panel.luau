@@ -900,7 +900,7 @@ function Panel.new(deps: Deps): Panel
 				}, variantRow)
 
 				style(choice, 6, CARD_STROKE)
-				attachTip(choice, { Text = option.Description })
+				attachTip(choice, { Text = option.Description, Key = "Ctrl+" .. (if i == 10 then 0 else i) })
 				variantButtons[id] = choice
 				choice.MouseButton1Click:Connect(function()
 					actions.SetMode(id)

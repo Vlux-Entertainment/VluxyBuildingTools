@@ -25,6 +25,12 @@ return {
 		expect.falsy(Keymap.Resolve("Nine", false, false, true, false))
 	end,
 
+	["Ctrl plus a digit picks an option inside the tool"] = function(expect)
+		expect.equal(Keymap.Resolve("One", false, true, false, false), "Option:1")
+		expect.equal(Keymap.Resolve("Zero", false, true, false, false), "Option:10")
+		expect.falsy(Keymap.Resolve("One", true, true, false, false))
+	end,
+
 	["digits pick tools"] = function(expect)
 		expect.equal(Keymap.Resolve("One", false, false, false, false), "Tool:Basic")
 		expect.equal(Keymap.Resolve("Zero", false, false, false, false), "Tool:Measure")
