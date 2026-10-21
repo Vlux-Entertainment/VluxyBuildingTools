@@ -1845,9 +1845,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			edit("Stamp copy", function()
-				Selection:Set(Arrange.CloneRoots(sourceRoots, function(cf)
+				Arrange.CloneRoots(sourceRoots, function(cf)
 					return target * pivot:ToObjectSpace(cf)
-				end))
+				end)
 			end)
 		elseif active == "Measure" and current then
 			if not first then

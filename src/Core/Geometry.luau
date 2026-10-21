@@ -86,7 +86,7 @@ end
 --[=[
 	@param specs { Spec }
 	@param title string -- the Model's name
-	@return Model -- parented to Workspace and selected
+	@return Model -- parented to the working folder or Workspace, and left unselected so hotkeys keep working
 ]=]
 function Geometry.Materialize(specs: { Spec }, title: string): Model
 	local model = Instance.new("Model")
@@ -124,8 +124,6 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 
 		part.Parent = model
 	end
-
-	Selection:Set({ model })
 
 	return model
 end
