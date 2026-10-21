@@ -880,7 +880,8 @@ function Panel.new(deps: Deps): Panel
 				modeSet[id] = true
 			end
 
-			local variantRow = newRow(settingsCard, 30)
+			local variantRows = math.ceil(#group.Modes / 2)
+			local variantRow = newRow(settingsCard, variantRows * 32 - 2)
 			local variantButtons: { [string]: TextButton } = {}
 
 			register(variantRow, { Modes = modeSet })
@@ -888,8 +889,8 @@ function Panel.new(deps: Deps): Panel
 			for i, id in group.Modes do
 				local option = Tools.Find(id) :: Tools.Tool
 				local choice = make("TextButton", {
-					Size = UDim2.new(1 / #group.Modes, -4, 1, 0),
-					Position = UDim2.fromScale((i - 1) / #group.Modes, 0),
+					Size = UDim2.new(0.5, -4, 0, 30),
+					Position = UDim2.new(((i - 1) % 2) / 2, 0, 0, math.floor((i - 1) / 2) * 32),
 					BackgroundColor3 = TILE,
 					BorderSizePixel = 0,
 					Text = option.Glyph .. "  " .. option.Label,
