@@ -186,6 +186,79 @@ function Geometry.PartsOf(roots: { Instance }): { BasePart }
 end
 
 --[=[
+	Joins the curved pieces of a built arch into two crescents, a left half and a right half. The posts
+	that stand below the curve are left as they are. The joined pieces are taken out of the model with
+	their Parent set to nil, not destroyed, so undo can bring them back.
+
+	@param model Model -- the model an arch was built into
+	@return string? -- why it could not join the pieces, or nil when it did
+]=]
+function Geometry.UnionArchHalves(model: Model): string?
+	local posts: { BasePart } = {}
+	local curves: { BasePart } = {}
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") then
+			if child.Name == "Arch_Post" then
+				table.insert(posts, child)
+			elseif child.Name == "Arch_Curve" then
+				table.insert(curves, child)
+			end
+		end
+	end
+
+	if #posts ~= 2 or #curves < 2 then
+		return "This arch has too few pieces to join."
+	end
+
+	local center = (posts[1].Position + posts[2].Position) * 0.5
+	local across = (posts[2].Position - posts[1].Position)
+
+	if across.Magnitude < 0.001 then
+		return "This arch has no width to split."
+	end
+
+	across = across.Unit
+
+	local halves: { [string]: { BasePart } } = { Arch_Left = {}, Arch_Right = {} }
+
+	for _, curve in curves do
+		local side = if (curve.Position - center):Dot(across) < 0 then "Arch_Left" else "Arch_Right"
+
+		table.insert(halves[side], curve)
+	end
+
+	local failed: string? = nil
+
+	for name, group in halves do
+		if #group >= 2 then
+			local base = group[1]
+			local rest = table.clone(group)
+
+			table.remove(rest, 1)
+
+			local ok, result = pcall(function()
+				return base:UnionAsync(rest)
+			end)
+
+			if ok and result then
+				result.Name = name
+				result.Anchored = true
+				result.Parent = model
+
+				for _, piece in group do
+					piece.Parent = nil
+				end
+			else
+				failed = "Roblox could not join the arch pieces: " .. tostring(result)
+			end
+		end
+	end
+
+	return failed
+end
+
+--[=[
 	@param parts { BasePart }
 	@return CFrame -- the centre of the world-aligned box around the parts
 	@return Vector3 -- that box's size

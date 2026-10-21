@@ -1674,9 +1674,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				local nextPoint = current
 				local specs = previewSpecs
 
-				if edit("Build " .. active, function()
-					Geometry.Materialize(specs, "Vlux_" .. active)
-				end) then
+				if
+					edit("Build " .. active, function()
+						local model = Geometry.Materialize(specs, "Vlux_" .. active)
+
+						if active == "Arch" then
+							local problem = Geometry.UnionArchHalves(model)
+
+							if problem then
+								say(problem)
+							end
+						end
+					end)
+				then
 					first = if chain then nextPoint else nil
 					chained = chain
 					lock = nil
