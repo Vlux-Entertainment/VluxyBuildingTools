@@ -443,8 +443,8 @@ function Panel.new(deps: Deps): Panel
 
 				deps.Save()
 
-				if key == "SurfaceGridSize" then
-					SurfaceGrid.MarkDirty(deps.SurfaceGrid)
+				if key == "GridTextureSize" then
+					SurfaceGrid.Resize(deps.SurfaceGrid)
 				end
 			end
 
@@ -853,15 +853,9 @@ function Panel.new(deps: Deps): Panel
 		switch(parent, "Surface grid", function()
 			return deps.SurfaceGrid.On
 		end, function(on)
-			SurfaceGrid.SetOn(deps.SurfaceGrid, on)
-			refresh()
-			say(
-				if on
-					then "Surface grid ON: world-aligned lines on nearby block and wedge Parts. Only you see this overlay."
-					else "Surface grid OFF. No materials were changed."
-			)
+			SurfaceGrid.Set(deps.SurfaceGrid, on)
 		end)
-		numeric(parent, "SurfaceGridSize", "Grid size", 0.5, 128, 1, {
+		numeric(parent, "GridTextureSize", "Grid tile size (studs)", 1, 512, 1, {
 			Condition = function()
 				return deps.SurfaceGrid.On
 			end,
@@ -882,7 +876,7 @@ function Panel.new(deps: Deps): Panel
 	end)
 	text(
 		displayCard,
-		"Pastel colors is a reversible whole-map toggle. It changes real colors, visible to your team; switch it off before publishing. The surface grid is a local overlay on nearby blocks and wedges.",
+		"Pastel colors and the surface grid both change the Parts inside your working folder, so your team sees them and they are saved with the place. Each switch undoes itself completely, even after Studio was closed and reopened. Switch them off before publishing.",
 		MUTED
 	)
 

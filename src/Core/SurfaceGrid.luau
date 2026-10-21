@@ -1,355 +1,232 @@
 --!strict
 
 --[=[
-	A local, world-aligned grid drawn over nearby block and wedge Parts. Lines are the intersections of
-	each face with world X, Y and Z planes, so the spacing stays fixed as Parts are scaled. Only the
-	person using the plugin sees it.
+	The surface grid. It puts a grid Texture on every face of the Parts in the working folder, so the
+	grid shows in the viewport and in play. Each Texture has a fixed name, and a flag on Workspace
+	remembers that the grid is on, so the grid can be switched off later even after Studio was closed
+	and reopened, and it stays until you do.
 
 	@class SurfaceGrid
 ]=]
 
-local CoreGui = game:GetService("CoreGui")
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
-local Geometry = require("./Geometry")
 local Trove = require("../Packages/Trove")
-
-type Record = {
-	obj: WireframeHandleAdornment,
-	cf: CFrame?,
-	size: Vector3?,
-	spacing: number?,
-}
 
 export type SurfaceGrid = {
 	On: boolean,
-	_candidates: { [BasePart]: boolean },
-	_records: { [BasePart]: Record },
-	_dirty: boolean,
-	_lastCamera: Vector3?,
-	_folder: Folder,
+	_edit: (string, () -> ()) -> boolean,
+	_say: (string) -> (),
+	_refresh: () -> (),
+	_stop: () -> (),
+	_scope: () -> Instance?,
+	_size: () -> number,
 }
 
-type Line = { Vector3 }
-
-local MAX_NEARBY = 180
-local MAX_DISTANCE = 512
-local MAX_LINES = 360
-local PLANES_EACH_SIDE = 48
-local REBUILDS_PER_UPDATE = 8
-local CAMERA_MOVE = 16
-local AXES = { "X", "Y", "Z" }
+local TEXTURE_NAME = "VluxGridTexture"
+local ACTIVE = "VluxGrid_Enabled_v1"
+local ASSET = "rbxassetid://123614831873662"
+local FACES = {
+	Enum.NormalId.Top,
+	Enum.NormalId.Bottom,
+	Enum.NormalId.Left,
+	Enum.NormalId.Right,
+	Enum.NormalId.Front,
+	Enum.NormalId.Back,
+}
 
 local SurfaceGrid = {}
 
 --[[
-	@param part BasePart
+	@param object Instance
 
-	@return boolean -- true for a visible block or wedge
+	@return boolean -- true for the kinds of Part a Texture draws on
 ]]
-local function eligible(part: BasePart): boolean
-	return (Geometry.IsPlainBlock(part) or part:IsA("WedgePart")) and part.Transparency < 1
+local function eligible(object: Instance): boolean
+	return object:IsA("Part") or object:IsA("WedgePart") or object:IsA("CornerWedgePart")
 end
 
 --[[
 	@param part BasePart
+	@param studs number -- the size of one grid tile
 
-	@return { { Vector3 } } -- the part's faces as local-space corner loops
+	Gives each face of the part a grid Texture, reusing any it already has.
 ]]
-local function partFaces(part: BasePart): { { Vector3 } }
-	local h = part.Size / 2
+local function apply(part: BasePart, studs: number)
+	for _, face in FACES do
+		local texture: Texture? = nil
 
-	local function v(x: number, y: number, z: number): Vector3
-		return Vector3.new(x * h.X, y * h.Y, z * h.Z)
+		for _, child in part:GetChildren() do
+			if child:IsA("Texture") and child.Name == TEXTURE_NAME and child.Face == face then
+				texture = child
+
+				break
+			end
+		end
+
+		local grid = texture or Instance.new("Texture")
+
+		grid.Name = TEXTURE_NAME
+		grid.Face = face
+		grid.Texture = ASSET
+		grid.StudsPerTileU = studs
+		grid.StudsPerTileV = studs
+		grid.Parent = part
 	end
-
-	if part:IsA("WedgePart") then
-		local a, b, c, d, e, f = v(-1, -1, -1), v(1, -1, -1), v(-1, -1, 1), v(1, -1, 1), v(-1, 1, 1), v(1, 1, 1)
-
-		return { { a, b, d, c }, { c, d, f, e }, { a, c, e }, { b, f, d }, { a, e, f, b } }
-	end
-
-	return {
-		{ v(-1, 1, -1), v(-1, 1, 1), v(1, 1, 1), v(1, 1, -1) },
-		{ v(-1, -1, -1), v(1, -1, -1), v(1, -1, 1), v(-1, -1, 1) },
-		{ v(-1, -1, -1), v(-1, -1, 1), v(-1, 1, 1), v(-1, 1, -1) },
-		{ v(1, -1, -1), v(1, 1, -1), v(1, 1, 1), v(1, -1, 1) },
-		{ v(-1, -1, 1), v(1, -1, 1), v(1, 1, 1), v(-1, 1, 1) },
-		{ v(-1, -1, -1), v(-1, 1, -1), v(1, 1, -1), v(1, -1, -1) },
-	}
 end
 
 --[[
-	@param part BasePart
-	@param spacing number
-	@param camera Vector3
+	@param part Instance
 
-	@return { Line } -- local-space line ends, slightly lifted off the faces
+	Removes the grid Textures from a part.
 ]]
-local function surfaceSegments(part: BasePart, spacing: number, camera: Vector3): { Line }
-	local lines: { Line } = {}
-
-	for _, face in partFaces(part) do
-		local points: { Vector3 } = {}
-
-		for _, corner in face do
-			table.insert(points, part.CFrame:PointToWorldSpace(corner))
-		end
-
-		local normal = (points[2] - points[1]):Cross(points[3] - points[1]).Unit
-		local center = Vector3.zero
-
-		for _, point in points do
-			center += point / #points
-		end
-
-		-- Wedge faces wind both ways, so pick the outward normal from the part's centre.
-		if normal:Dot(center - part.Position) < 0 then
-			normal = -normal
-		end
-
-		for _, axis in AXES do
-			local low, high = math.huge, -math.huge
-
-			for _, point in points do
-				local value = (point :: any)[axis] :: number
-
-				low = math.min(low, value)
-				high = math.max(high, value)
-			end
-
-			if high - low > 0.001 then
-				local near = math.round((camera :: any)[axis] / spacing)
-				local firstPlane = math.max(math.ceil(low / spacing), near - PLANES_EACH_SIDE)
-				local lastPlane = math.min(math.floor(high / spacing), near + PLANES_EACH_SIDE)
-
-				for plane = firstPlane, lastPlane do
-					local planeValue = plane * spacing
-					local hits: { Vector3 } = {}
-
-					local function addHit(hit: Vector3)
-						for _, existing in hits do
-							if (existing - hit).Magnitude < 0.0001 then
-								return
-							end
-						end
-
-						table.insert(hits, hit)
-					end
-
-					for i = 1, #points do
-						local a = points[i]
-						local b = points[i % #points + 1]
-						local da = (a :: any)[axis] - planeValue
-						local db = (b :: any)[axis] - planeValue
-
-						if math.abs(da) < 0.00001 then
-							addHit(a)
-						end
-
-						if da * db < 0 then
-							addHit(a + (b - a) * (da / (da - db)))
-						end
-					end
-
-					if #hits >= 2 and (hits[2] - hits[1]).Magnitude > 0.002 then
-						table.insert(lines, {
-							part.CFrame:PointToObjectSpace(hits[1] + normal * 0.012),
-							part.CFrame:PointToObjectSpace(hits[2] + normal * 0.012),
-						})
-
-						if #lines >= MAX_LINES then
-							return lines
-						end
-					end
-				end
-			end
+local function strip(part: Instance)
+	for _, child in part:GetChildren() do
+		if child:IsA("Texture") and child.Name == TEXTURE_NAME then
+			child:Destroy()
 		end
 	end
-
-	return lines
 end
 
 --[=[
-	@param trove Trove -- holds the overlay folder and the connections
+	Builds the grid and wires it to Workspace so new Parts follow the switch and undo re-reads it.
+
+	@param deps { Edit: (string, () -> ()) -> boolean, Say: (string) -> (), Refresh: () -> (), Stop: () -> (), GetScope: () -> Instance?, GetSize: () -> number }
+	@param trove Trove -- holds the connections
 	@return SurfaceGrid
 ]=]
-function SurfaceGrid.new(trove: Trove.Trove): SurfaceGrid
-	local folder = Instance.new("Folder")
-	folder.Name = "SurfaceGrid_LocalOnly"
-	folder.Parent = CoreGui
-	trove:Add(folder)
-
+function SurfaceGrid.new(
+	deps: {
+		Edit: (string, () -> ()) -> boolean,
+		Say: (string) -> (),
+		Refresh: () -> (),
+		Stop: () -> (),
+		GetScope: () -> Instance?,
+		GetSize: () -> number,
+	},
+	trove: Trove.Trove
+): SurfaceGrid
 	local self: SurfaceGrid = {
-		On = false,
-		_candidates = {},
-		_records = {},
-		_dirty = true,
-		_lastCamera = nil,
-		_folder = folder,
+		On = workspace:GetAttribute(ACTIVE) == true,
+		_edit = deps.Edit,
+		_say = deps.Say,
+		_refresh = deps.Refresh,
+		_stop = deps.Stop,
+		_scope = deps.GetScope,
+		_size = deps.GetSize,
 	}
 
-	for _, part in workspace:GetDescendants() do
-		if part:IsA("BasePart") then
-			self._candidates[part] = true
+	if not self.On then
+		for _, object in workspace:GetDescendants() do
+			if object:IsA("Texture") and object.Name == TEXTURE_NAME then
+				self.On = true
+
+				break
+			end
 		end
 	end
 
 	trove:Connect(workspace.DescendantAdded, function(object)
-		if object:IsA("BasePart") then
-			self._candidates[object] = true
-			self._dirty = true
+		if not object:IsA("BasePart") or not eligible(object) then
+			return
 		end
+
+		task.defer(function()
+			if not RunService:IsEdit() or not object:IsDescendantOf(workspace) then
+				return
+			end
+
+			local scope = self._scope()
+
+			if self.On then
+				if scope and object:IsDescendantOf(scope) then
+					apply(object, self._size())
+				end
+			else
+				strip(object)
+			end
+		end)
 	end)
-	trove:Connect(workspace.DescendantRemoving, function(object)
-		if object:IsA("BasePart") and self._candidates[object] then
-			self._candidates[object] = nil
-			self._dirty = true
-		end
-	end)
+
+	local function sync()
+		self.On = workspace:GetAttribute(ACTIVE) == true
+		self._refresh()
+	end
+
+	trove:Connect(ChangeHistoryService.OnUndo, sync)
+	trove:Connect(ChangeHistoryService.OnRedo, sync)
 
 	return self
 end
 
 --[=[
-	Removes every grid overlay.
+	Turns the grid on or off as one undoable edit. Off removes every grid Texture in Workspace, not
+	only the working folder's, so nothing is left behind.
 
-	@param self SurfaceGrid
-]=]
-function SurfaceGrid.Clear(self: SurfaceGrid)
-	for _, record in self._records do
-		record.obj:Destroy()
-	end
-
-	self._records = {}
-	self._lastCamera = nil
-	self._dirty = true
-end
-
---[=[
-	@param self SurfaceGrid
-]=]
-function SurfaceGrid.MarkDirty(self: SurfaceGrid)
-	self._dirty = true
-end
-
---[=[
 	@param self SurfaceGrid
 	@param value boolean
 ]=]
-function SurfaceGrid.SetOn(self: SurfaceGrid, value: boolean)
-	self.On = value
+function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
+	local scope = self._scope()
 
-	if value then
-		self._dirty = true
-	else
-		SurfaceGrid.Clear(self)
+	if value and not scope then
+		return self._say("Pick a working folder first. The surface grid only goes on Parts inside it.")
+	end
+
+	self._stop()
+
+	local ok = self._edit(if value then "Show surface grid" else "Remove surface grid", function()
+		if value then
+			workspace:SetAttribute(ACTIVE, true)
+
+			for _, object in (scope :: Instance):GetDescendants() do
+				if object:IsA("BasePart") and eligible(object) then
+					apply(object, self._size())
+				end
+			end
+		else
+			for _, object in workspace:GetDescendants() do
+				if object:IsA("Texture") and object.Name == TEXTURE_NAME then
+					object:Destroy()
+				end
+			end
+
+			workspace:SetAttribute(ACTIVE, nil)
+		end
+	end)
+
+	if ok then
+		self.On = value
+		self._refresh()
+		self._say(
+			if value
+				then "Surface grid ON. The grid is on the Parts in your folder. It stays until you switch it off, even if you close Studio."
+				else "Surface grid OFF. The grid Textures are removed."
+		)
 	end
 end
 
 --[=[
-	Brings the overlays up to date with the camera and the Parts, rebuilding a few per call so a
-	big scene does not stall a frame.
+	Re-sizes the tiles of every grid Texture already placed.
 
 	@param self SurfaceGrid
-	@param spacing number -- the grid size in studs
 ]=]
-function SurfaceGrid.Update(self: SurfaceGrid, spacing: number)
-	if not self.On or not RunService:IsEdit() then
-		if next(self._records) then
-			SurfaceGrid.Clear(self)
-		end
-
+function SurfaceGrid.Resize(self: SurfaceGrid)
+	if not self.On then
 		return
 	end
 
-	local camera = workspace.CurrentCamera
+	local studs = self._size()
 
-	if not camera then
-		return
-	end
-
-	local position = camera.CFrame.Position
-	local last = self._lastCamera
-
-	if not last or (last - position).Magnitude > CAMERA_MOVE then
-		self._dirty = true
-	end
-
-	if self._dirty then
-		local nearby: { { part: BasePart, distance: number } } = {}
-
-		for part in self._candidates do
-			if part:IsDescendantOf(workspace) and eligible(part) then
-				local distance = (part.Position - position).Magnitude - part.Size.Magnitude / 2
-
-				if distance < MAX_DISTANCE then
-					table.insert(nearby, { part = part, distance = distance })
-				end
+	self._edit("Resize surface grid", function()
+		for _, object in workspace:GetDescendants() do
+			if object:IsA("Texture") and object.Name == TEXTURE_NAME then
+				object.StudsPerTileU = studs
+				object.StudsPerTileV = studs
 			end
 		end
-
-		table.sort(nearby, function(a, b)
-			return a.distance < b.distance
-		end)
-
-		local keep: { [BasePart]: boolean } = {}
-
-		for i = 1, math.min(#nearby, MAX_NEARBY) do
-			keep[nearby[i].part] = true
-		end
-
-		for part, record in self._records do
-			if not keep[part] then
-				record.obj:Destroy()
-				self._records[part] = nil
-			end
-		end
-
-		for part in keep do
-			local record = self._records[part]
-
-			if not record then
-				local obj = Instance.new("WireframeHandleAdornment")
-				obj.Name = "WorldSurfaceGrid"
-				obj.Adornee = part
-				obj.Color3 = Color3.fromRGB(52, 62, 75)
-				obj.Transparency = 0.22
-				obj.Thickness = 1
-				obj.AlwaysOnTop = false
-				obj.Parent = self._folder
-				self._records[part] = { obj = obj }
-			else
-				record.cf = nil
-			end
-		end
-
-		self._lastCamera = position
-		self._dirty = false
-	end
-
-	local budget = REBUILDS_PER_UPDATE
-
-	for part, record in self._records do
-		if not part:IsDescendantOf(workspace) or not eligible(part) then
-			record.obj:Destroy()
-			self._records[part] = nil
-			self._dirty = true
-		elseif record.cf ~= part.CFrame or record.size ~= part.Size or record.spacing ~= spacing then
-			record.obj:Clear()
-
-			for _, line in surfaceSegments(part, spacing, position) do
-				record.obj:AddLine(line[1], line[2])
-			end
-
-			record.cf, record.size, record.spacing = part.CFrame, part.Size, spacing
-			budget -= 1
-
-			if budget <= 0 then
-				break
-			end
-		end
-	end
+	end)
 end
 
 return SurfaceGrid

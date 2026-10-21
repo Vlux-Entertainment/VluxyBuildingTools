@@ -97,7 +97,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	))
 	local mouse = plugin:GetMouse()
 	local overlay = Overlay.new(trove)
-	local surfaceGrid = SurfaceGrid.new(trove)
+	local surfaceGrid: SurfaceGrid.SurfaceGrid
 
 	local mode: string? = nil
 	local first: Vector3? = nil
@@ -952,9 +952,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		elseif action == "TogglePastel" then
 			Colors.Set(colors, not colors.On)
 		elseif action == "ToggleGrid" then
-			SurfaceGrid.SetOn(surfaceGrid, not surfaceGrid.On)
-			panel.Refresh()
-			say(if surfaceGrid.On then "Surface grid ON." else "Surface grid OFF.")
+			SurfaceGrid.Set(surfaceGrid, not surfaceGrid.On)
 		elseif action == "TogglePanel" then
 			widget.Enabled = not widget.Enabled
 		elseif action == "HeightUp" or action == "HeightDown" then
@@ -1056,6 +1054,23 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 	end
+
+	surfaceGrid = SurfaceGrid.new({
+		GetScope = function()
+			return folder
+		end,
+		GetSize = function()
+			return settings.GridTextureSize
+		end,
+		Edit = edit,
+		Say = say,
+		Refresh = function()
+			panel.Refresh()
+		end,
+		Stop = function()
+			stop()
+		end,
+	}, trove)
 
 	arrange = Arrange.new({
 		Settings = settings,
@@ -1463,8 +1478,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				stop()
 			end
 
-			SurfaceGrid.Clear(surfaceGrid)
-
 			return
 		end
 
@@ -1476,14 +1489,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				say("Preview stopped: " .. tostring(err))
 				warn(err)
 			end
-		end
-
-		local ok, err = pcall(SurfaceGrid.Update :: any, surfaceGrid, settings.SurfaceGridSize)
-
-		if not ok then
-			SurfaceGrid.SetOn(surfaceGrid, false)
-			panel.Refresh()
-			say("Surface grid stopped: " .. tostring(err))
 		end
 	end)
 
