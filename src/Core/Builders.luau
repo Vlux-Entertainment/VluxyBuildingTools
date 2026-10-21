@@ -715,7 +715,7 @@ end
 	Closes the corner where a wall or corridor continues another, with an exact miter and no
 	overlap. Each strip (a wall, a floor) is cut along the line that bisects the bend: the strip
 	keeps a plain rectangle up to the shorter end of that cut, and a small triangular prism fills the
-	rest. The earlier segment's rectangles move by `finish` and the new segment's by `start`; the
+	rest. A right angle needs no triangle: the earlier strip runs on to cover the corner square. The earlier segment's rectangles move by `finish` and the new segment's by `start`; the
 	triangles go in `ending` and `beginning`.
 
 	@param joint Vector3 -- where the two segments meet, at the base level
@@ -746,6 +746,7 @@ function Builders.Bend(joint: Vector3, prevDir: Vector3, dir: Vector3, prevStrip
 	local rv = v:Cross(Vector3.yAxis)
 	local turning = if v:Dot(ru) > 0 then 1 else -1
 	local slope = turning * math.tan(math.min(turn, math.rad(170)) / 2)
+	local square = math.abs(turn - math.pi / 2) < math.rad(1)
 
 	for _, strip in prevStrips do
 		local atLow, atHigh = -slope * strip.low, -slope * strip.high
@@ -754,9 +755,9 @@ function Builders.Bend(joint: Vector3, prevDir: Vector3, dir: Vector3, prevStrip
 		local longSide = if atLow < atHigh then strip.high else strip.low
 		local lift = Vector3.new(0, strip.rise, 0)
 
-		bend.finish[strip.key] = short
+		bend.finish[strip.key] = if square then long else short
 
-		if long - short > 0.01 then
+		if not square and long - short > 0.01 then
 			trianglePrism(
 				bend.ending,
 				joint + u * short + ru * shortSide + lift,
@@ -777,7 +778,7 @@ function Builders.Bend(joint: Vector3, prevDir: Vector3, dir: Vector3, prevStrip
 
 		bend.start[strip.key] = late
 
-		if late - early > 0.01 then
+		if not square and late - early > 0.01 then
 			trianglePrism(
 				bend.beginning,
 				joint + v * early + rv * earlySide + lift,
