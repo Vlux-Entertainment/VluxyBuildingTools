@@ -67,6 +67,12 @@ local INSTRUCTIONS: { [string]: string } = {
 	Measure = "Click two surface points. A distance label stays in the viewport. Esc clears it.",
 }
 
+local HEIGHT_MODES: { [string]: boolean } = {
+	Wall = true,
+	Corridor = true,
+	Room = true,
+}
+
 local DRAW_MODES: { [string]: boolean } = {
 	Wall = true,
 	Corridor = true,
@@ -102,6 +108,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local mode: string? = nil
 	local first: Vector3? = nil
 	local current: Vector3? = nil
+	local heightEnd: Vector3? = nil
 	local lock: AxisLock.Lock? = nil
 	local numeric = NumericInput.new()
 	local source: Builders.Source? = nil
@@ -230,6 +237,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		first, current = nil, nil
 		previewSpecs, previewValid = {}, false
 		lock = nil
+		heightEnd = nil
 		measurement = nil
 		NumericInput.Clear(numeric)
 		Overlay.ClearGhosts(overlay)
@@ -380,8 +388,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		else
 			local origin = first
+			local height: number? = nil
 
-			if origin and lock then
+			if origin and lock and heightEnd and lock.Axis == "Y" and not lock.Plane then
+				local top = lockedPoint(heightEnd, lock)
+
+				if top then
+					height = math.max(settings.Grid, math.abs(top.Y - origin.Y))
+				end
+
+				current = heightEnd
+			elseif origin and lock then
 				current = lockedPoint(origin, lock)
 			else
 				current = horizontalPoint(if origin then origin.Y else settings.Elevation)
@@ -415,12 +432,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					current = b
 				end
 
+				local drawn = settings
+
+				if height then
+					drawn = table.clone(settings)
+					drawn.Height = height
+				end
+
 				if mode == "Room" then
-					out = Builders.Room(settings, origin, b)
+					out = Builders.Room(drawn, origin, b)
 				elseif mode == "Block" then
 					out = Builders.Block(settings, origin, b, lock)
 				elseif mode == "Wall" or mode == "Corridor" then
-					out = Builders.Path(settings, origin, b, mode == "Corridor")
+					out = Builders.Path(drawn, origin, b, mode == "Corridor")
 				elseif mode == "Stairs" or mode == "Ramp" then
 					out = Builders.Stairs(settings, origin, b, mode == "Ramp")
 				elseif mode == "Arch" then
@@ -452,6 +476,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, settings.StairHeight)
 					elseif mode == "Ramp" then
 						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, settings.RampHeight)
+					elseif height then
+						text = string.format("%.1f studs  |  Height %.1f", d.Magnitude, height)
 					else
 						text = string.format("%.1f studs", d.Magnitude)
 					end
@@ -476,7 +502,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Overlay.DrawGhosts(overlay, out)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
-			Overlay.DrawAxisLine(overlay, first, lock.Axis)
+			Overlay.DrawAxisLine(overlay, heightEnd or first, lock.Axis)
 		end
 
 		if message then
@@ -843,11 +869,33 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return say("Extrude follows the face direction. Type a number for an exact length.")
 		end
 
-		if not active and mode and DRAW_MODES[mode] and axis == "Y" and not plane and mode ~= "Block" then
-			return say("Y lock drags a Block up or down. For this tool use X or Z, or Alt+Y to stay on the floor.")
+		if
+			not active
+			and mode
+			and DRAW_MODES[mode]
+			and axis == "Y"
+			and not plane
+			and mode ~= "Block"
+			and not HEIGHT_MODES[mode]
+		then
+			return say(
+				"Y sets the height of walls, corridors, rooms and blocks. For this tool use X or Z, or Alt+Y to stay on the floor."
+			)
 		end
 
 		local updated = AxisLock.Toggle(if active then active.Lock else lock, axis, plane)
+
+		if not active then
+			if updated and updated.Axis == "Y" and not updated.Plane and mode and HEIGHT_MODES[mode] then
+				if not first or not current then
+					return say("Click the start point first, then press Y to drag the height.")
+				end
+
+				heightEnd = current
+			else
+				heightEnd = nil
+			end
+		end
 
 		if active then
 			Transform.SetLock(active, updated, mouse.UnitRay, lookVector())
@@ -1463,6 +1511,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end) then
 					first = if chain then nextPoint else nil
 					lock = nil
+					heightEnd = nil
 					NumericInput.Clear(numeric)
 					Overlay.ClearGhosts(overlay)
 					Overlay.HideReadout(overlay)
