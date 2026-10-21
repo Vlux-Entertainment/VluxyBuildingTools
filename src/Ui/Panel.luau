@@ -948,6 +948,7 @@ function Panel.new(deps: Deps): Panel
 	local scope = settingsCard
 
 	numeric(scope, "Grid", "Snap increment", 0.05, 128, 0.5, body(drawModes))
+	numeric(scope, "FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5, body(drawModes))
 	numeric(scope, "Elevation", "Floor level (Y)", -10000, 10000, nil, body(drawModes))
 	button(scope, "Use selected floor height", actions.UseSelectedFloor, false, body(drawModes))
 	numeric(scope, "Height", "Height", 0.1, 2048, nil, body(heightModes))
@@ -1267,6 +1268,7 @@ function Panel.new(deps: Deps): Panel
 	local editing = card("EDITING", "Settings")
 
 	numeric(editing, "Grid", "Snap increment", 0.05, 128, 0.5)
+	numeric(editing, "FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5)
 	numeric(editing, "Extend", "Face extend length", 0.1, 2048)
 	switch(editing, "Blender hotkeys", function()
 		return settings.Hotkeys

@@ -88,8 +88,12 @@ function Keymap.Describe(): { { string } }
 		{ "G / R / C", "Grab, rotate or scale the selection" },
 		{ "V", "Duplicate the selection and grab the copy" },
 		{
-			"W A S D Q E F, Shift",
-			"Never taken: Studio uses them to fly the camera, focus and multi-select. Hotkeys are also ignored while the right mouse button is held",
+			"W A S D Q E F",
+			"Never taken: Studio uses them to fly the camera and focus. Hotkeys are also ignored while the right mouse button is held",
+		},
+		{
+			"Hold Shift",
+			"Snap to the fine step (1 stud by default) instead of the normal step (4 studs). Both are in Settings",
 		},
 		{ "X / Y / Z", "While drawing or in a modal action: lock to that world axis. Press again to unlock" },
 		{ "Alt+X / Y / Z", "Lock to the plane the axis is perpendicular to" },

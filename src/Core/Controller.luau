@@ -245,8 +245,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return ok
 	end
 
+	--[[
+		@return number -- the snap step in force: the fine step while Shift is held, else the normal one
+	]]
+	local function gridNow(): number
+		local fine = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+
+		return if fine then settings.FineGrid else settings.Grid
+	end
+
 	local function snap(value: number): number
-		return Snap.Round(value, settings.Grid)
+		return Snap.Round(value, gridNow())
 	end
 
 	local function resetPoint()
@@ -398,6 +408,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		local out: { Spec } = {}
+		local live = settings
+		local gridStep = gridNow()
+
+		if gridStep ~= settings.Grid then
+			live = table.clone(settings)
+			live.Grid = gridStep
+		end
 		local message: string? = nil
 
 		Overlay.ClearPlaneGrid(overlay)
@@ -424,7 +441,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				}
 				else { Width = settings.OpenWidth, Height = settings.OpenHeight, Sill = 0 }
 
-			out, message, openingTarget = Builders.Opening(settings, opening, scopedHit(), mode == "ArchOpening")
+			out, message, openingTarget = Builders.Opening(live, opening, scopedHit(), mode == "ArchOpening")
 		elseif mode == "Pillar" then
 			local hit = hitSurface()
 			local base: Vector3? = nil
@@ -460,7 +477,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				local top = lockedPoint(heightEnd, lock)
 
 				if top then
-					height = math.max(settings.Grid, math.abs(top.Y - origin.Y))
+					height = math.max(gridNow(), math.abs(top.Y - origin.Y))
 				end
 
 				current = heightEnd
@@ -478,7 +495,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				Overlay.DrawPlaneGrid(
 					overlay,
 					Vector3.new(snap(point.X), point.Y, snap(point.Z)),
-					math.max(0.05, settings.Grid)
+					math.max(0.05, gridNow())
 				)
 			end
 
@@ -500,10 +517,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					current = b
 				end
 
-				local drawn = settings
+				local drawn = live
 
 				if height then
-					drawn = table.clone(settings)
+					drawn = table.clone(live)
 					drawn.Height = height
 				end
 
@@ -867,7 +884,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
-		local text, position = Transform.Update(active, settings.Grid, mouseLocation(), mouse.UnitRay, lookVector())
+		local text, position = Transform.Update(active, gridNow(), mouseLocation(), mouse.UnitRay, lookVector())
 
 		Overlay.Readout(overlay, position, text)
 	end

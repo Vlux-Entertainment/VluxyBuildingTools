@@ -87,7 +87,8 @@ Tips.Entries = {
 	["Reset all settings"] = { Text = "Put every number and switch on this panel back to its default." },
 
 	-- Number fields, by settings key
-	Grid = { Text = "How far points snap to the grid while drawing." },
+	Grid = { Text = "How far points snap to the grid while drawing. Hold Shift for the fine step." },
+	FineGrid = { Text = "The snap step while Shift is held." },
 	Elevation = { Text = "The height of the floor you draw on." },
 	Height = { Text = "How tall walls, rooms and blocks are.", Key = "[ and ]" },
 	Thickness = { Text = "How thick walls and frames are." },

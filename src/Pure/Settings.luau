@@ -8,6 +8,7 @@
 
 export type Settings = {
 	Grid: number,
+	FineGrid: number,
 	Elevation: number,
 	Height: number,
 	Thickness: number,
@@ -62,7 +63,8 @@ local Settings = {}
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Grid = 1,
+		Grid = 4,
+		FineGrid = 1,
 		Elevation = 0,
 		Height = 12,
 		Thickness = 1,

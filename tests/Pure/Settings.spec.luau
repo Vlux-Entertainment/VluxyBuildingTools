@@ -5,14 +5,15 @@ local Snap = require("../../src/Pure/Snap")
 
 return {
 	["a bad save falls back to the defaults"] = function(expect)
-		expect.equal(Settings.Load("nope").Grid, 1)
+		expect.equal(Settings.Load("nope").Grid, 4)
+		expect.equal(Settings.Load("nope").FineGrid, 1)
 		expect.equal(Settings.Load(nil).Height, 12)
 	end,
 
 	["saved values of the right type win, others are dropped"] = function(expect)
-		local settings = Settings.Load({ Grid = 4, Height = "tall", Unknown = 9, Roof = true })
+		local settings = Settings.Load({ Grid = 2, Height = "tall", Unknown = 9, Roof = true })
 
-		expect.equal(settings.Grid, 4)
+		expect.equal(settings.Grid, 2)
 		expect.equal(settings.Height, 12)
 		expect.equal(settings.Roof, true)
 		expect.falsy((settings :: any).Unknown)
