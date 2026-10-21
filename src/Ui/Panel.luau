@@ -688,6 +688,11 @@ function Panel.new(deps: Deps): Panel
 		}
 	)
 
+	local function cancelPick()
+		actions.CancelPick()
+		refresh()
+	end
+
 	buttonRow(folderCard, {
 		{
 			Text = "Yes, work in it",
@@ -696,16 +701,16 @@ function Panel.new(deps: Deps): Panel
 				refresh()
 			end,
 		},
-		{
-			Text = "Cancel",
-			Run = function()
-				actions.CancelPick()
-				refresh()
-			end,
-		},
+		{ Text = "Cancel", Run = cancelPick },
 	}, {
 		Condition = function()
-			return deps.GetPicking()
+			return deps.GetPending() ~= nil
+		end,
+	})
+
+	buttonRow(folderCard, { { Text = "Cancel", Run = cancelPick } }, {
+		Condition = function()
+			return deps.GetPicking() and deps.GetPending() == nil
 		end,
 	})
 
