@@ -1423,13 +1423,21 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--[[
-		Starts picking a folder. A Folder selected before this is ignored; click one in the viewport or select one now.
+		Starts picking a folder. A Folder in Workspace that is already selected becomes the pick right
+		away; otherwise click one in the viewport or select one now.
 	]]
 	local function startPicking()
 		stop()
 		picking = true
 		pendingFolder = nil
 		hoverFolder = nil
+
+		local selected = Selection:Get()
+		local only = if #selected == 1 then selected[1] else nil
+
+		if only and only:IsA("Folder") and only:IsDescendantOf(workspace) then
+			return proposeFolder(only)
+		end
 
 		redrawBoxes()
 		panel.Refresh()

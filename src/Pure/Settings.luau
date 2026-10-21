@@ -42,6 +42,14 @@ export type Settings = {
 	PillaredWalls: boolean,
 	FloorTransparency: number,
 	CutDepth: boolean,
+	StandardHeight: number,
+	StandardThickness: number,
+	StandardDoorWidth: number,
+	StandardDoorHeight: number,
+	HeightOverride: boolean,
+	ThicknessOverride: boolean,
+	DoorWidthOverride: boolean,
+	DoorHeightOverride: boolean,
 	RoofStyle: string,
 	RoofRise: number,
 	RoofOverhang: number,
@@ -102,6 +110,14 @@ function Settings.Defaults(): Settings
 		PillaredWalls = false,
 		FloorTransparency = 0,
 		CutDepth = true,
+		StandardHeight = 12,
+		StandardThickness = 1,
+		StandardDoorWidth = 4,
+		StandardDoorHeight = 8,
+		HeightOverride = false,
+		ThicknessOverride = false,
+		DoorWidthOverride = false,
+		DoorHeightOverride = false,
 		RoofStyle = "Gable",
 		RoofRise = 5,
 		RoofOverhang = 1,
@@ -128,6 +144,41 @@ end
 	@param saved any -- whatever the plugin settings store returned
 	@return Settings
 ]=]
+--[=[
+	The values a tool field can override, as { field, standard, override flag }.
+
+	@prop Standards { { string } }
+	@within Settings
+]=]
+Settings.Standards = {
+	{ "Height", "StandardHeight", "HeightOverride" },
+	{ "Thickness", "StandardThickness", "ThicknessOverride" },
+	{ "DoorWidth", "StandardDoorWidth", "DoorWidthOverride" },
+	{ "DoorHeight", "StandardDoorHeight", "DoorHeightOverride" },
+}
+
+--[=[
+	Gives every field that is not overridden the standard value, and clears an override that now
+	matches its standard.
+
+	@param settings Settings
+]=]
+function Settings.Sync(settings: Settings)
+	local target = settings :: any
+
+	for _, row in Settings.Standards do
+		local field, standard, flag = row[1], row[2], row[3]
+
+		if target[field] == target[standard] then
+			target[flag] = false
+		end
+
+		if not target[flag] then
+			target[field] = target[standard]
+		end
+	end
+end
+
 function Settings.Load(saved: any): Settings
 	local settings = Settings.Defaults()
 
@@ -144,12 +195,22 @@ function Settings.Load(saved: any): Settings
 		end
 	end
 
+	for _, row in Settings.Standards do
+		local field, standard, flag = row[1], row[2], row[3]
+
+		if source[flag] == nil and type(source[field]) == "number" and source[field] ~= target[standard] then
+			target[flag] = true
+		end
+	end
+
 	-- The snap steps changed in version 2, so a save from before it takes the new ones.
 	if source.Version ~= settings.Version then
 		local fresh = Settings.Defaults()
 
 		settings.Grid, settings.FineGrid = fresh.Grid, fresh.FineGrid
 	end
+
+	Settings.Sync(settings)
 
 	return settings
 end

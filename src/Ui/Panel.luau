@@ -507,6 +507,14 @@ function Panel.new(deps: Deps): Panel
 		return control
 	end
 
+	local refresh: () -> ()
+
+	local overrideFlag: { [string]: string } = {}
+
+	for _, row in Settings.Standards do
+		overrideFlag[row[1]] = row[3]
+	end
+
 	local function numeric(
 		parent: Instance,
 		key: string,
@@ -529,6 +537,15 @@ function Panel.new(deps: Deps): Panel
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}, frame)
 		attach(rowLabel, key)
+
+		local flagKey = overrideFlag[key]
+
+		local function paintLabel()
+			rowLabel.Text = if flagKey and (values :: any)[flagKey] then title .. " *" else title
+		end
+
+		paintLabel()
+		table.insert(refreshers, paintLabel)
 
 		local group = make("Frame", {
 			Size = UDim2.fromOffset(162, 36),
@@ -558,6 +575,14 @@ function Panel.new(deps: Deps): Panel
 
 				if key == "Copies" or key == "ArchSegments" then
 					values[key] = math.floor(values[key])
+				end
+
+				if flagKey then
+					(values :: any)[flagKey] = values[key] ~= (values :: any)["Standard" .. key]
+					paintLabel()
+				elseif string.sub(key, 1, 8) == "Standard" then
+					Settings.Sync(values)
+					refresh()
 				end
 
 				deps.Save()
@@ -638,8 +663,6 @@ function Panel.new(deps: Deps): Panel
 		}, root)
 		make("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, pages[name])
 	end
-
-	local refresh: () -> ()
 
 	--[[
 		Leaving the current tab drops an unconfirmed folder pick.
@@ -1334,6 +1357,10 @@ function Panel.new(deps: Deps): Panel
 
 	numeric(editing, "Grid", "Snap increment", 0.05, 128, 0.5)
 	numeric(editing, "FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5)
+	numeric(editing, "StandardHeight", "Standard wall height", 0.1, 2048)
+	numeric(editing, "StandardThickness", "Standard wall thickness", 0.05, 512)
+	numeric(editing, "StandardDoorWidth", "Standard doorway width", 0.1, 1024)
+	numeric(editing, "StandardDoorHeight", "Standard doorway height", 0.1, 1024)
 	numeric(editing, "Extend", "Face extend length", 0.1, 2048)
 	switch(editing, "Blender hotkeys", function()
 		return settings.Hotkeys

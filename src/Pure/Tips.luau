@@ -59,6 +59,18 @@ Tips.Entries = {
 	FoundationMargin = { Text = "How far the slab sticks out past the corners you click." },
 	RailHeight = { Text = "How tall the railing or half wall is." },
 	FenceHeight = { Text = "How tall the fence posts are." },
+	StandardHeight = {
+		Text = "The wall height every tool starts from. A tool can override it; its name then shows a *.",
+	},
+	StandardThickness = {
+		Text = "The wall thickness every tool starts from. A tool can override it; its name then shows a *.",
+	},
+	StandardDoorWidth = {
+		Text = "The doorway width every tool starts from. A tool can override it; its name then shows a *.",
+	},
+	StandardDoorHeight = {
+		Text = "The doorway height every tool starts from. A tool can override it; its name then shows a *.",
+	},
 	CutDepth = {
 		Text = "After you click a spot, move the mouse to set how deep the cut goes. Past the far side of the wall it cuts all the way through.",
 	},
