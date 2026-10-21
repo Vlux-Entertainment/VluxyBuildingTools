@@ -932,6 +932,7 @@ function Panel.new(deps: Deps): Panel
 	local hint = text(settingsCard, "", MUTED, body(nil))
 	local drawModes = {
 		Wall = true,
+		PillaredWall = true,
 		Corridor = true,
 		ArchedCorridor = true,
 		Room = true,
@@ -949,6 +950,7 @@ function Panel.new(deps: Deps): Panel
 	}
 	local heightModes = {
 		Wall = true,
+		PillaredWall = true,
 		Corridor = true,
 		ArchedCorridor = true,
 		Room = true,
@@ -970,7 +972,7 @@ function Panel.new(deps: Deps): Panel
 		0.05,
 		128,
 		nil,
-		body({ Wall = true, Corridor = true, ArchedCorridor = true, Room = true, Arch = true })
+		body({ Wall = true, PillaredWall = true, Corridor = true, ArchedCorridor = true, Room = true, Arch = true })
 	)
 	numeric(
 		scope,
@@ -992,7 +994,7 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "WindowWidth", "Window width", 0.1, 1024, nil, body({ Window = true }))
 	numeric(scope, "WindowHeight", "Window height", 0.1, 1024, nil, body({ Window = true }))
 	numeric(scope, "WindowSill", "Bottom above floor", 0, 1024, nil, body({ Window = true }))
-	numeric(scope, "PillarWidth", "Pillar width", 0.1, 256, nil, body({ Pillar = true, Wall = true }))
+	numeric(scope, "PillarWidth", "Pillar width", 0.1, 256, nil, body({ Pillar = true, PillaredWall = true }))
 
 	do
 		local styles = { "Gable", "Hip", "Shed", "Pyramid", "Flat" }
@@ -1063,7 +1065,7 @@ function Panel.new(deps: Deps): Panel
 	button(scope, "Start new chain", function()
 		actions.ResetPoint()
 		say(actions.Instruction(deps.GetMode()))
-	end, false, body({ Wall = true, Corridor = true, ArchedCorridor = true, Fence = true }))
+	end, false, body({ Wall = true, PillaredWall = true, Corridor = true, ArchedCorridor = true, Fence = true }))
 
 	switch(scope, "Ceiling", function()
 		return settings.Roof
@@ -1072,14 +1074,6 @@ function Panel.new(deps: Deps): Panel
 		deps.Save()
 		refresh()
 	end, body({ Room = true, Corridor = true }))
-
-	switch(scope, "Pillared ends", function()
-		return settings.PillaredWalls
-	end, function(on)
-		settings.PillaredWalls = on
-		deps.Save()
-		refresh()
-	end, body({ Wall = true }))
 
 	local advancedRow = newRow(scope, 30)
 	local advancedButton = make("TextButton", {

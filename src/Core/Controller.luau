@@ -57,6 +57,7 @@ local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
 
 local INSTRUCTIONS: { [string]: string } = {
+	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc exits.",
 	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
 	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the wall height under the curve.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
@@ -82,12 +83,14 @@ local INSTRUCTIONS: { [string]: string } = {
 
 local HEIGHT_MODES: { [string]: boolean } = {
 	Wall = true,
+	PillaredWall = true,
 	Corridor = true,
 	Room = true,
 }
 
 local DRAW_MODES: { [string]: boolean } = {
 	Wall = true,
+	PillaredWall = true,
 	Corridor = true,
 	ArchedCorridor = true,
 	Room = true,
@@ -575,8 +578,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					out = Builders.Fence(drawn, origin, b, not chained)
 				elseif mode == "ArchedCorridor" then
 					out = Builders.ArchedCorridor(drawn, origin, b)
-				elseif mode == "Wall" or mode == "Corridor" then
-					out = Builders.Path(drawn, origin, b, mode == "Corridor", not chained)
+				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Corridor" then
+					local path = table.clone(drawn)
+
+					path.PillaredWalls = mode == "PillaredWall"
+					out = Builders.Path(path, origin, b, mode == "Corridor", not chained)
 				elseif mode == "Stairs" or mode == "Ramp" then
 					out = Builders.Stairs(settings, origin, b, mode == "Ramp")
 				elseif mode == "Arch" then
@@ -1736,6 +1742,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
 			elseif previewValid then
 				local chain = active == "Wall"
+					or active == "PillaredWall"
 					or active == "Corridor"
 					or active == "Fence"
 					or active == "ArchedCorridor"

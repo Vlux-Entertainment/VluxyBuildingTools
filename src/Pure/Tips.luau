@@ -61,9 +61,6 @@ Tips.Entries = {
 	FenceHeight = { Text = "How tall the fence posts are." },
 	BalusterSpacing = { Text = "About how far apart the bars of an indoor railing are." },
 	FenceSpacing = { Text = "About how far apart the fence posts are." },
-	["Pillared ends"] = {
-		Text = "Put a pillar at each end of a wall, wider than the wall, so walls have some depth. Chained walls share their pillars.",
-	},
 	Ceiling = { Text = "Add a ceiling to rooms and corridors." },
 	["Tilt copy to surface"] = { Text = "Tilt stamped copies so they sit flat on a sloped surface." },
 
