@@ -195,8 +195,9 @@ end
 local Builders = {}
 
 --[=[
-	A corridor with a rounded ceiling: a floor, two straight side walls as tall as the panel height, and
-	a half-circle vault above them that spans the clear width.
+	A corridor with a rounded ceiling: a floor, two straight side walls, and a half-circle vault above
+	them that spans the clear width. The panel height is the total height at the centre, arch included,
+	so the side walls are that height minus the radius of the vault.
 
 	@param settings Settings
 	@param a Vector3 -- the start
@@ -217,8 +218,9 @@ function Builders.ArchedCorridor(settings: Settings, a: Vector3, b: Vector3): { 
 	local across = flat.Unit:Cross(up).Unit
 	local middle = (a + b) * 0.5
 	local cf = CFrame.fromMatrix(middle, across, up, across:Cross(up))
-	local w, t, h, f = settings.Width, settings.Thickness, settings.Height, settings.Floor
-	local radius = w / 2
+	local radius = settings.Width / 2
+	local w, t, f = settings.Width, settings.Thickness, settings.Floor
+	local h = math.max(0.1, settings.Height - radius)
 
 	add(out, Vector3.new(w + 2 * t, f, length), cf * CFrame.new(0, -f / 2, 0), "Floor")
 
@@ -557,13 +559,70 @@ function Builders.JoinOffsets(thickness: number, prevDir: Vector3, dir: Vector3)
 	return reach, -reach
 end
 
+export type CorridorJoin = {
+	finish: { Floor: number, Left: number, Right: number },
+	start: { Floor: number, Left: number, Right: number },
+}
+
+--[=[
+	How two chained corridor segments meet at a bend. The floor and ceiling are one wide strip each,
+	and each side wall is a strip along its own offset line, so the outer wall grows past the bend
+	and the inner wall stops short of it. Every strip then closes its corner like `JoinOffsets`.
+
+	@param settings Settings
+	@param prevDir Vector3 -- the direction of the earlier segment
+	@param dir Vector3 -- the direction of the new segment
+	@return CorridorJoin -- `finish` is how far the end of each part of the earlier segment moves (negative shrinks it), `start` how far the start of each part of the new one is delayed along its direction
+]=]
+function Builders.CorridorJoin(settings: Settings, prevDir: Vector3, dir: Vector3): CorridorJoin
+	local none = {
+		finish = { Floor = 0, Left = 0, Right = 0 },
+		start = { Floor = 0, Left = 0, Right = 0 },
+	}
+	local u = Vector3.new(prevDir.X, 0, prevDir.Z)
+	local v = Vector3.new(dir.X, 0, dir.Z)
+
+	if u.Magnitude < 0.001 or v.Magnitude < 0.001 then
+		return none
+	end
+
+	u, v = u.Unit, v.Unit
+
+	local turn = math.acos(math.clamp(u:Dot(v), -1, 1))
+
+	if turn < math.rad(2) then
+		return none
+	end
+
+	local w, t = settings.Width, settings.Thickness
+	local offset = (w + t) / 2
+	local reach = offset * math.tan(math.min(turn, math.rad(89)) / 2)
+	local turningRight = if v:Dot(u:Cross(Vector3.yAxis)) > 0 then 1 else -1
+	local floorExtend, floorShift = Builders.JoinOffsets(w + 2 * t, u, v)
+	local wallExtend, wallShift = Builders.JoinOffsets(t, u, v)
+
+	local function side(sign: number): (number, number)
+		local corner = if sign == -turningRight then reach else -reach
+
+		return corner + wallExtend, -corner + wallShift
+	end
+
+	local rightFinish, rightStart = side(1)
+	local leftFinish, leftStart = side(-1)
+
+	return {
+		finish = { Floor = floorExtend, Left = leftFinish, Right = rightFinish },
+		start = { Floor = floorShift, Left = leftStart, Right = rightStart },
+	}
+end
+
 --[=[
 	@param settings Settings
 	@param a Vector3
 	@param b Vector3
 	@param corridor boolean -- true for a floored corridor, false for a single wall
 	@param pillarAtStart boolean? -- false when the start already has a pillar from the wall before it
-	@param joinDir Vector3? -- the direction of the wall this one continues, so the corner closes without a notch
+	@param joinDir Vector3? -- the direction of the wall or corridor this one continues, so the corner closes without a notch
 	@return { Spec }
 ]=]
 function Builders.Path(
@@ -613,17 +672,36 @@ function Builders.Path(
 		return out
 	end
 
-	local cf = CFrame.lookAt((a + b) * 0.5, (a + b) * 0.5 + d)
 	local w, t, h, f = settings.Width, settings.Thickness, settings.Height, settings.Floor
+	local dir = d.Unit
+	local right = dir:Cross(Vector3.yAxis)
+	local joint = if joinDir then Builders.CorridorJoin(settings, joinDir, d) else nil
 
-	add(out, Vector3.new(w + 2 * t, f, length), cf * CFrame.new(0, -f / 2, 0), "Floor")
+	--[[
+		Adds a block along the corridor that starts `late` studs after a and runs to b.
+	]]
+	local function block(late: number, lateral: number, rise: number, width: number, height: number, name: string)
+		local run = length - late
+
+		if run < 0.05 then
+			return
+		end
+
+		local center = a + dir * (late + run / 2) + right * lateral + Vector3.new(0, rise, 0)
+
+		add(out, Vector3.new(width, height, run), CFrame.lookAt(center, center + d), name)
+	end
+
+	block(if joint then joint.start.Floor else 0, 0, -f / 2, w + 2 * t, f, "Floor")
 
 	for _, sign in { -1, 1 } do
-		add(out, Vector3.new(t, h, length), cf * CFrame.new(sign * (w + t) / 2, h / 2, 0), "CorridorWall")
+		local late = if joint then (if sign == 1 then joint.start.Right else joint.start.Left) else 0
+
+		block(late, sign * (w + t) / 2, h / 2, t, h, "CorridorWall")
 	end
 
 	if settings.Roof then
-		add(out, Vector3.new(w + 2 * t, f, length), cf * CFrame.new(0, h + f / 2, 0), "Ceiling")
+		block(if joint then joint.start.Floor else 0, 0, h + f / 2, w + 2 * t, f, "Ceiling")
 	end
 
 	return out

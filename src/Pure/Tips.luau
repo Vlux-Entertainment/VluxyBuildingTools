@@ -74,6 +74,9 @@ Tips.Entries = {
 	["Join rooms and corridors"] = {
 		Text = "Openings are cut through the walls where rooms, corridors and arched corridors meet. They are not merged into one union.",
 	},
+	RoomJoin = {
+		Text = "How a new room meets a room next to it. Open removes the walls between them, Shared keeps one wall, Separate keeps both walls.",
+	},
 	["Snap to parts"] = {
 		Text = "Points snap to the corners and edges of nearby parts, with a marker where they land. Hold Shift to skip it and use the fine grid.",
 	},

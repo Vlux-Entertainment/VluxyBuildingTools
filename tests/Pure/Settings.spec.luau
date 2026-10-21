@@ -19,7 +19,7 @@ return {
 	end,
 
 	["saved values of the right type win, others are dropped"] = function(expect)
-		local settings = Settings.Load({ Version = 2, Grid = 2, Height = "tall", Unknown = 9, Roof = true })
+		local settings = Settings.Load({ Version = 3, Grid = 2, Height = "tall", Unknown = 9, Roof = true })
 
 		expect.equal(settings.Grid, 2)
 		expect.equal(settings.Height, 12)

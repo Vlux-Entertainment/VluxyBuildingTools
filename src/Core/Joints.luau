@@ -28,7 +28,7 @@ local CUT_PARTS: { [string]: boolean } = {
 	Ceiling_Right = true,
 }
 
-type Cutter = { cf: CFrame, size: Vector3, cylinder: boolean }
+type Cutter = { cf: CFrame, size: Vector3, cylinder: boolean, thickness: number? }
 
 local Joints = {}
 
@@ -48,44 +48,46 @@ local function structures(): { Instance }
 end
 
 --[[
-	@return { Cutter } -- the clear space of a freshly built structure, made a wall thickness longer at both ends so a cut goes all the way through a wall
+	@param name string -- Vlux_Room, Vlux_Corridor or Vlux_ArchedCorridor
+	@param find (string) -> (CFrame, Vector3)? -- the CFrame and size of the part with that name
+	@return { Cutter } -- the clear space of a structure, made a wall thickness longer at both ends so a cut goes all the way through a wall
 ]]
-local function measure(model: Model): { Cutter }
+local function measureWith(name: string, find: (string) -> (CFrame?, Vector3?)): { Cutter }
 	local cutters: { Cutter } = {}
-	local floor = model:FindFirstChild("Floor")
+	local floorCF, floorSize = find("Floor")
 
-	if not floor or not floor:IsA("BasePart") then
+	if not floorCF or not floorSize then
 		return cutters
 	end
 
-	if model.Name == "Vlux_Room" then
-		local north = model:FindFirstChild("Wall_North")
+	if name == "Vlux_Room" then
+		local northCF, northSize = find("Wall_North")
 
-		if north and north:IsA("BasePart") then
-			local t, h = north.Size.Z, north.Size.Y
-			local base = north.Position.Y - h / 2
-			local size = Vector3.new(floor.Size.X - 2 * t, h, floor.Size.Z - 2 * t)
+		if northCF and northSize then
+			local t, h = northSize.Z, northSize.Y
+			local base = northCF.Position.Y - h / 2
 
 			table.insert(cutters, {
-				cf = CFrame.new(floor.Position.X, base + h / 2, floor.Position.Z),
-				size = size,
+				cf = CFrame.new(floorCF.Position.X, base + h / 2, floorCF.Position.Z),
+				size = Vector3.new(floorSize.X - 2 * t, h, floorSize.Z - 2 * t),
 				cylinder = false,
+				thickness = t,
 			})
 		end
 
 		return cutters
 	end
 
-	local wall = model:FindFirstChild("CorridorWall")
+	local _, wallSize = find("CorridorWall")
 
-	if not wall or not wall:IsA("BasePart") then
+	if not wallSize then
 		return cutters
 	end
 
-	local t, h = wall.Size.X, wall.Size.Y
-	local length = floor.Size.Z
-	local width = floor.Size.X - 2 * t
-	local base = floor.CFrame * CFrame.new(0, floor.Size.Y / 2, 0)
+	local t, h = wallSize.X, wallSize.Y
+	local length = floorSize.Z
+	local width = floorSize.X - 2 * t
+	local base = floorCF * CFrame.new(0, floorSize.Y / 2, 0)
 
 	table.insert(cutters, {
 		cf = base * CFrame.new(0, h / 2, 0),
@@ -93,7 +95,7 @@ local function measure(model: Model): { Cutter }
 		cylinder = false,
 	})
 
-	if model.Name == "Vlux_ArchedCorridor" then
+	if name == "Vlux_ArchedCorridor" then
 		table.insert(cutters, {
 			cf = base * CFrame.new(0, h, 0) * CFrame.Angles(0, math.pi / 2, 0),
 			size = Vector3.new(length + 2 * t, width, width),
@@ -102,6 +104,21 @@ local function measure(model: Model): { Cutter }
 	end
 
 	return cutters
+end
+
+--[[
+	@return { Cutter } -- the clear space of a freshly built structure
+]]
+local function measure(model: Model): { Cutter }
+	return measureWith(model.Name, function(partName)
+		local part = model:FindFirstChild(partName)
+
+		if part and part:IsA("BasePart") then
+			return part.CFrame, part.Size
+		end
+
+		return nil, nil
+	end)
 end
 
 --[[
@@ -115,10 +132,14 @@ local function stored(model: Instance): { Cutter }
 		local size = model:GetAttribute("Cut" .. index .. "_Size")
 
 		if typeof(cf) == "CFrame" and typeof(size) == "Vector3" then
-			table.insert(
-				out,
-				{ cf = cf, size = size, cylinder = model:GetAttribute("Cut" .. index .. "_Cylinder") == true }
-			)
+			local wall = model:GetAttribute("Cut" .. index .. "_Thickness")
+
+			table.insert(out, {
+				cf = cf,
+				size = size,
+				cylinder = model:GetAttribute("Cut" .. index .. "_Cylinder") == true,
+				thickness = if type(wall) == "number" then wall else nil,
+			})
 		end
 	end
 
@@ -202,19 +223,225 @@ local function carveModel(model: Instance, cutters: { Cutter })
 	end
 end
 
+--[[
+	@return { cf: CFrame, size: Vector3 }? -- the box where the cutter passes through the part, in the part's own axes
+]]
+local function hole(partCF: CFrame, partSize: Vector3, cutter: Cutter): { cf: CFrame, size: Vector3 }?
+	local half = cutter.size / 2
+	local lo = Vector3.new(math.huge, math.huge, math.huge)
+	local hi = -lo
+
+	for _, sx in { -1, 1 } do
+		for _, sy in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				local corner = partCF:PointToObjectSpace(
+					cutter.cf:PointToWorldSpace(Vector3.new(sx * half.X, sy * half.Y, sz * half.Z))
+				)
+
+				lo = lo:Min(corner)
+				hi = hi:Max(corner)
+			end
+		end
+	end
+
+	local limit = partSize / 2
+	local from = lo:Max(-limit)
+	local to = hi:Min(limit)
+	local size = to - from
+
+	if size.X < 0.01 or size.Y < 0.01 or size.Z < 0.01 then
+		return nil
+	end
+
+	return { cf = partCF * CFrame.new((from + to) / 2), size = size }
+end
+
+--[[
+	@return Vector3 -- the low corner of the cutter's box, which is axis-aligned for rooms
+	@return Vector3 -- the high corner
+]]
+local function corners(cutter: Cutter): (Vector3, Vector3)
+	local half = cutter.size / 2
+
+	return cutter.cf.Position - half, cutter.cf.Position + half
+end
+
+--[[
+	@return Cutter? -- the box of wall between two rooms side by side, across the span where both face each other, or nil when they are not neighbours
+]]
+local function between(a: Cutter, b: Cutter): Cutter?
+	local aLo, aHi = corners(a)
+	local bLo, bHi = corners(b)
+	local low = math.max(aLo.Y, bLo.Y)
+	local high = math.min(aHi.Y, bHi.Y)
+
+	if high - low < 0.5 then
+		return nil
+	end
+
+	local reach = (a.thickness or 1) + (b.thickness or 1) + 0.1
+	local gapX = math.max(aLo.X, bLo.X) - math.min(aHi.X, bHi.X)
+	local gapZ = math.max(aLo.Z, bLo.Z) - math.min(aHi.Z, bHi.Z)
+	local x0, x1, z0, z1
+
+	if gapX > -0.05 and gapX <= reach and gapZ < -0.5 then
+		x0, x1 = math.min(aHi.X, bHi.X), math.max(aLo.X, bLo.X)
+		z0, z1 = math.max(aLo.Z, bLo.Z), math.min(aHi.Z, bHi.Z)
+	elseif gapZ > -0.05 and gapZ <= reach and gapX < -0.5 then
+		z0, z1 = math.min(aHi.Z, bHi.Z), math.max(aLo.Z, bLo.Z)
+		x0, x1 = math.max(aLo.X, bLo.X), math.min(aHi.X, bHi.X)
+	else
+		return nil
+	end
+
+	local lo = Vector3.new(math.min(x0, x1) - 0.05, low, math.min(z0, z1) - 0.05)
+	local hi = Vector3.new(math.max(x0, x1) + 0.05, high, math.max(z0, z1) + 0.05)
+
+	return { cf = CFrame.new((lo + hi) / 2), size = hi - lo, cylinder = false }
+end
+
+--[[
+	@return { Cutter } -- every wall of the model as a box, for cutting a neighbour where it overlaps them
+]]
+local function wallBoxes(model: Instance): { Cutter }
+	local out: { Cutter } = {}
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") and CUT_PARTS[child.Name] and child.Name ~= "Ceiling" then
+			table.insert(out, { cf = child.CFrame, size = child.Size, cylinder = false })
+		end
+	end
+
+	return out
+end
+
+--[[
+	@return { Cutter } -- what a new room cuts out of itself and out of the room beside it, as `mine` cut from the neighbour and `own` cut from the new room
+]]
+local function roomCuts(mine: Cutter, theirs: Cutter, other: Instance, join: string): ({ Cutter }, { Cutter })
+	if join == "Open" then
+		local gap = between(mine, theirs)
+
+		if gap then
+			return { gap }, { gap }
+		end
+	elseif join == "Shared" then
+		return {}, wallBoxes(other)
+	end
+
+	return {}, {}
+end
+
+--[=[
+	Lists the openings a structure about to be built would cut, so the preview can light them up:
+	where its clear space passes through the walls already built, and where theirs passes through its walls.
+
+	@param name string -- Vlux_Room, Vlux_Corridor or Vlux_ArchedCorridor
+	@param specs { Geometry.Spec } -- the parts of the structure about to be built
+	@param roomJoin string -- Open, Shared or Separate
+	@param skip Instance? -- a structure to leave alone, such as the previous one in a chain
+	@return { { cf: CFrame, size: Vector3 } }
+]=]
+function Joints.Preview(
+	name: string,
+	specs: { Geometry.Spec },
+	roomJoin: string,
+	skip: Instance?
+): { { cf: CFrame, size: Vector3 } }
+	local out: { { cf: CFrame, size: Vector3 } } = {}
+	local mine = measureWith(name, function(partName)
+		for _, spec in specs do
+			if spec.name == partName then
+				return spec.cf, spec.size
+			end
+		end
+
+		return nil, nil
+	end)
+
+	if #mine == 0 then
+		return out
+	end
+
+	for _, other in structures() do
+		if other ~= skip then
+			local theirs = stored(other)
+			local fromMine: { Cutter } = mine
+			local fromTheirs: { Cutter } = theirs
+
+			if name == "Vlux_Room" and other.Name == "Vlux_Room" and mine[1] and theirs[1] then
+				fromMine, fromTheirs = roomCuts(mine[1], theirs[1], other, roomJoin)
+			end
+
+			for _, child in other:GetChildren() do
+				if child:IsA("BasePart") and CUT_PARTS[child.Name] then
+					for _, cutter in fromMine do
+						local found = hole(child.CFrame, child.Size, cutter)
+
+						if found then
+							table.insert(out, found)
+						end
+					end
+				end
+			end
+
+			for _, cutter in fromTheirs do
+				for _, spec in specs do
+					if CUT_PARTS[spec.name] then
+						local found = hole(spec.cf, spec.size, cutter)
+
+						if found then
+							table.insert(out, found)
+						end
+					end
+				end
+			end
+		end
+	end
+
+	return out
+end
+
+--[=[
+	@param instance Instance
+	@return number? -- the height of the floor top of the room or corridor the instance belongs to, if it belongs to one
+]=]
+function Joints.FloorLevel(instance: Instance): number?
+	local model = instance.Parent
+
+	while model and model ~= workspace do
+		if STRUCTURES[model.Name] then
+			local floor = model:FindFirstChild("Floor")
+
+			if floor and floor:IsA("BasePart") then
+				return floor.Position.Y + floor.Size.Y / 2
+			end
+
+			return nil
+		end
+
+		model = model.Parent
+	end
+
+	return nil
+end
+
 --[=[
 	Remembers the clear space of a freshly built structure on the model, and cuts openings between
 	it and the structures already built. Call it inside the undo recording, right after the build.
 
 	@param model Model -- a Vlux_Room, Vlux_Corridor or Vlux_ArchedCorridor
+	@param roomJoin string -- Open, Shared or Separate, for a room built beside another room
+	@param skip Instance? -- a structure to leave alone, such as the previous one in a chain
 ]=]
-function Joints.Connect(model: Model)
+function Joints.Connect(model: Model, roomJoin: string, skip: Instance?)
 	local mine = measure(model)
 
 	for index, cutter in mine do
 		model:SetAttribute("Cut" .. index .. "_CF", cutter.cf)
 		model:SetAttribute("Cut" .. index .. "_Size", cutter.size)
 		model:SetAttribute("Cut" .. index .. "_Cylinder", cutter.cylinder)
+		model:SetAttribute("Cut" .. index .. "_Thickness", cutter.thickness)
 	end
 
 	model:SetAttribute("Cuts", #mine)
@@ -224,11 +451,18 @@ function Joints.Connect(model: Model)
 	end
 
 	for _, other in structures() do
-		if other ~= model then
+		if other ~= model and other ~= skip then
 			local theirs = stored(other)
 
-			carveModel(other, mine)
-			carveModel(model, theirs)
+			if model.Name == "Vlux_Room" and other.Name == "Vlux_Room" and mine[1] and theirs[1] then
+				local fromMine, fromTheirs = roomCuts(mine[1], theirs[1], other, roomJoin)
+
+				carveModel(other, fromMine)
+				carveModel(model, fromTheirs)
+			else
+				carveModel(other, mine)
+				carveModel(model, theirs)
+			end
 		end
 	end
 end

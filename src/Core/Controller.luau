@@ -61,7 +61,7 @@ local MAX_STAMP_PARTS = 600
 local INSTRUCTIONS: { [string]: string } = {
 	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc exits.",
 	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
-	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the wall height under the curve.",
+	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the total height at the centre, arch included.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
 	Floor = "Click two opposite corners for a flat floor. Its transparency is in the options.",
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
@@ -150,7 +150,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
 	local snapMark: Vector3? = nil
-	local prevWall: { part: BasePart, dir: Vector3 }? = nil
+	local prevWall: { model: Model, dir: Vector3 }? = nil
+	local hoverDoor: Snapper.Doorway? = nil
+	local startDoor: Snapper.Doorway? = nil
+	local snapPart: BasePart? = nil
 	local placementCF: CFrame? = nil
 	local extendDrag: ExtendDrag? = nil
 	local extendHover = false
@@ -286,13 +289,40 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return point
 		end
 
-		local snapped, found = Snapper.Find(point, settings.SnapRadius)
+		local snapped, found, part = Snapper.Find(point, settings.SnapRadius)
 
 		if found then
 			snapMark = snapped
+			snapPart = part
 		end
 
 		return snapped
+	end
+
+	--[[
+		@param point Vector3
+		@return Vector3? -- the middle of a doorway made by the Additive tools on the face of its wall, when the point is near one, so a corridor can start exactly there
+	]]
+	local function doorSnap(point: Vector3): Vector3?
+		local fine = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+
+		hoverDoor = nil
+
+		if first or fine or not settings.SnapToParts then
+			return nil
+		end
+
+		local found = Snapper.Doorway(point, settings.SnapRadius)
+
+		if not found then
+			return nil
+		end
+
+		hoverDoor = found
+		snapMark = found.point
+
+		return found.point
 	end
 
 	local function snap(value: number): number
@@ -303,6 +333,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		first, current = nil, nil
 		lockedHit, cutDepth = nil, nil
 		prevWall = nil
+		startDoor = nil
 		chained = false
 		previewSpecs, previewValid = {}, false
 		lock = nil
@@ -400,7 +431,30 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		A floor drawn from this point sits on the object instead of sinking into it.
 	]]
+	--[[
+		@param point Vector3
+		@param level boolean -- true to also take the floor height of the room or corridor snapped to
+		@return Vector3 -- the point snapped to nearby parts, standing at the floor of the structure it snapped to, so a new room lines up with the old one
+	]]
+	local function partSnapLevel(point: Vector3, level: boolean): Vector3
+		snapPart = nil
+
+		local snapped = partSnap(point)
+
+		if level and snapPart then
+			local floorTop = Joints.FloorLevel(snapPart)
+
+			if floorTop then
+				return Vector3.new(snapped.X, floorTop, snapped.Z)
+			end
+		end
+
+		return snapped
+	end
+
 	local function floorPoint(): Vector3?
+		local joins = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor"
+		local doorModes = mode == "Corridor" or mode == "ArchedCorridor"
 		local raised = mode == "Room"
 			or mode == "Corridor"
 			or mode == "ArchedCorridor"
@@ -420,7 +474,27 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local hit = hitSurface()
 
-		if not hit or hit.Normal.Y < 0.7 then
+		if not hit then
+			return nil
+		end
+
+		if doorModes then
+			local door = doorSnap(hit.Position)
+
+			if door then
+				return door
+			end
+		end
+
+		if joins then
+			local level = Joints.FloorLevel(hit.Instance)
+
+			if level then
+				return partSnapLevel(Vector3.new(snap(hit.Position.X), level, snap(hit.Position.Z)), true)
+			end
+		end
+
+		if hit.Normal.Y < 0.7 then
 			return nil
 		end
 
@@ -430,7 +504,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			snap(hit.Position.Z)
 		)
 
-		return partSnap(point)
+		return partSnapLevel(point, joins)
 	end
 
 	--[[
@@ -633,6 +707,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				current = floorPoint() or horizontalPoint(settings.Elevation)
 			end
 
+			if startDoor and origin and current and not lock then
+				local n = startDoor.normal
+				local along = math.max(0, snap((current.X - origin.X) * n.X + (current.Z - origin.Z) * n.Z))
+
+				current = Vector3.new(origin.X + n.X * along, origin.Y, origin.Z + n.Z * along)
+			end
+
 			local point = current
 
 			if point and settings.ShowGrid and not lock then
@@ -668,6 +749,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					drawn.Height = height
 				end
 
+				if startDoor and (mode == "Corridor" or mode == "ArchedCorridor") then
+					drawn = table.clone(drawn)
+					drawn.Width = startDoor.width
+					drawn.Height = startDoor.height or drawn.Height
+				end
+
 				if mode == "Room" then
 					out = Builders.Room(drawn, origin, b)
 				elseif mode == "Block" then
@@ -692,7 +779,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					local path = table.clone(drawn)
 
 					path.PillaredWalls = mode == "PillaredWall"
-					local joinDir = if chained and mode == "Wall" and prevWall then prevWall.dir else nil
+					local joinDir = if chained
+							and (mode == "Wall" or mode == "Corridor")
+							and prevWall
+						then prevWall.dir
+						else nil
 
 					out = Builders.Path(path, origin, b, mode == "Corridor", not chained, joinDir)
 				elseif mode == "Stairs" or mode == "Ramp" then
@@ -764,6 +855,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Overlay.DrawGhosts(overlay, out)
 		Overlay.DrawCut(overlay, cutVolume)
 		Overlay.DrawSnap(overlay, snapMark)
+
+		local holes: { { cf: CFrame, size: Vector3 } } = {}
+
+		if settings.ConnectStructures and #out > 0 and first then
+			if mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor" then
+				holes =
+					Joints.Preview("Vlux_" .. mode, out, settings.RoomJoin, if prevWall then prevWall.model else nil)
+			end
+		end
+
+		Overlay.DrawHoles(overlay, holes)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
 			Overlay.DrawAxisLine(overlay, heightEnd or first, lock.Axis)
@@ -1894,6 +1996,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		elseif current then
 			if not first then
 				first = current
+				startDoor = if active == "Corridor" or active == "ArchedCorridor" then hoverDoor else nil
 				NumericInput.Clear(numeric)
 				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
 			elseif previewValid then
@@ -1910,24 +2013,45 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					edit("Build " .. active, function()
 						local model = Geometry.Materialize(specs, "Vlux_" .. active)
 
-						if active == "Wall" then
-							local wall = model:FindFirstChild("Wall")
+						local previousModel = if prevWall then prevWall.model else nil
+
+						if active == "Wall" or active == "Corridor" then
 							local before = prevWall
 
-							if before and before.part.Parent and segment.Magnitude > 0.001 then
-								local extend = Builders.JoinOffsets(settings.Thickness, before.dir, segment)
+							if before and before.model.Parent and segment.Magnitude > 0.001 then
+								for _, child in before.model:GetChildren() do
+									if child:IsA("Part") then
+										local delta = 0
 
-								if extend > 0 then
-									before.part.Size += Vector3.new(0, 0, extend)
-									before.part.CFrame *= CFrame.new(0, 0, -extend / 2)
+										if active == "Wall" then
+											if child.Name == "Wall" then
+												delta = Builders.JoinOffsets(settings.Thickness, before.dir, segment)
+											end
+										else
+											local finish = Builders.CorridorJoin(settings, before.dir, segment).finish
+
+											if child.Name == "Floor" or child.Name == "Ceiling" then
+												delta = finish.Floor
+											elseif child.Name == "CorridorWall" then
+												local floor = before.model:FindFirstChild("Floor")
+												local across = before.dir:Cross(Vector3.yAxis)
+												local lateral = if floor and floor:IsA("BasePart")
+													then (child.Position - floor.Position):Dot(across)
+													else 0
+
+												delta = if lateral > 0 then finish.Right else finish.Left
+											end
+										end
+
+										if delta ~= 0 then
+											child.Size += Vector3.new(0, 0, delta)
+											child.CFrame *= CFrame.new(0, 0, -delta / 2)
+										end
+									end
 								end
 							end
 
-							prevWall = if wall
-									and wall:IsA("BasePart")
-									and segment.Magnitude > 0.001
-								then { part = wall, dir = segment.Unit }
-								else nil
+							prevWall = if segment.Magnitude > 0.001 then { model = model, dir = segment.Unit } else nil
 						end
 
 						if active == "Floor" and settings.FloorTransparency > 0 then
@@ -1957,7 +2081,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 							settings.ConnectStructures
 							and (active == "Room" or active == "Corridor" or active == "ArchedCorridor")
 						then
-							Joints.Connect(model)
+							Joints.Connect(model, settings.RoomJoin, previousModel)
 						end
 					end)
 				then
