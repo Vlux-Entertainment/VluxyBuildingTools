@@ -333,7 +333,7 @@ function Panel.new(deps: Deps): Panel
 				end
 
 				tooltipText.Text = tip.Text
-				tooltipKey.Text = if tip.Key then "Hotkey   " .. tip.Key else ""
+				tooltipKey.Text = tip.Key or ""
 				tooltipKey.Visible = tip.Key ~= nil
 				tooltip.Visible = true
 				moveTooltip(x, y)
