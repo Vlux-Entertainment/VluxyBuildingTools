@@ -195,6 +195,62 @@ end
 local Builders = {}
 
 --[=[
+	A corridor with a rounded ceiling: a floor, two straight side walls as tall as the panel height, and
+	a half-circle vault above them that spans the clear width.
+
+	@param settings Settings
+	@param a Vector3 -- the start
+	@param b Vector3 -- the end
+	@return { Spec }
+]=]
+function Builders.ArchedCorridor(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local d = b - a
+	local length = d.Magnitude
+	local flat = Vector3.new(d.X, 0, d.Z)
+
+	if length < 0.05 or flat.Magnitude < 0.05 then
+		return out
+	end
+
+	local up = Vector3.yAxis
+	local across = flat.Unit:Cross(up).Unit
+	local middle = (a + b) * 0.5
+	local cf = CFrame.fromMatrix(middle, across, up, across:Cross(up))
+	local w, t, h, f = settings.Width, settings.Thickness, settings.Height, settings.Floor
+	local radius = w / 2
+
+	add(out, Vector3.new(w + 2 * t, f, length), cf * CFrame.new(0, -f / 2, 0), "Floor")
+
+	for _, sign in { -1, 1 } do
+		add(out, Vector3.new(t, h, length), cf * CFrame.new(sign * (w + t) / 2, h / 2, 0), "CorridorWall")
+	end
+
+	local count = math.max(2, math.floor(settings.ArchSegments))
+
+	local function point(r: number, angle: number): Vector3
+		return cf:PointToWorldSpace(Vector3.new(r * math.cos(angle), h + r * math.sin(angle), 0))
+	end
+
+	for i = 0, count - 1 do
+		local x = i * math.pi / count
+		local y = (i + 1) * math.pi / count
+
+		quadPrism(
+			out,
+			point(radius, x),
+			point(radius + t, x),
+			point(radius + t, y),
+			point(radius, y),
+			length,
+			"ArchedCeiling"
+		)
+	end
+
+	return out
+end
+
+--[=[
 	@param settings Settings
 	@param a Vector3 -- one corner
 	@param b Vector3 -- the opposite corner

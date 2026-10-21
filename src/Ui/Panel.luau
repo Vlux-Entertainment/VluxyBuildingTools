@@ -933,6 +933,7 @@ function Panel.new(deps: Deps): Panel
 	local drawModes = {
 		Wall = true,
 		Corridor = true,
+		ArchedCorridor = true,
 		Room = true,
 		Foundation = true,
 		Porch = true,
@@ -946,7 +947,15 @@ function Panel.new(deps: Deps): Panel
 		Arch = true,
 		Pillar = true,
 	}
-	local heightModes = { Wall = true, Corridor = true, Room = true, Block = true, Pillar = true, Porch = true }
+	local heightModes = {
+		Wall = true,
+		Corridor = true,
+		ArchedCorridor = true,
+		Room = true,
+		Block = true,
+		Pillar = true,
+		Porch = true,
+	}
 	local scope = settingsCard
 
 	numeric(scope, "Grid", "Snap increment", 0.05, 128, 0.5, body(drawModes))
@@ -961,9 +970,17 @@ function Panel.new(deps: Deps): Panel
 		0.05,
 		128,
 		nil,
-		body({ Wall = true, Corridor = true, Room = true, Arch = true })
+		body({ Wall = true, Corridor = true, ArchedCorridor = true, Room = true, Arch = true })
 	)
-	numeric(scope, "Width", "Clear width", 0.1, 1024, nil, body({ Corridor = true, Stairs = true, Ramp = true }))
+	numeric(
+		scope,
+		"Width",
+		"Clear width",
+		0.1,
+		1024,
+		nil,
+		body({ Corridor = true, ArchedCorridor = true, Stairs = true, Ramp = true })
+	)
 	numeric(scope, "StairHeight", "Total stair rise", 0.1, 1024, nil, body({ Stairs = true }))
 	numeric(scope, "RampHeight", "Ramp rise", 0.1, 1024, nil, body({ Ramp = true }))
 	numeric(scope, "ArchHeight", "Clear height", 0.1, 1024, nil, body({ Arch = true }))
@@ -1046,7 +1063,7 @@ function Panel.new(deps: Deps): Panel
 	button(scope, "Start new chain", function()
 		actions.ResetPoint()
 		say(actions.Instruction(deps.GetMode()))
-	end, false, body({ Wall = true, Corridor = true, Fence = true }))
+	end, false, body({ Wall = true, Corridor = true, ArchedCorridor = true, Fence = true }))
 
 	switch(scope, "Ceiling", function()
 		return settings.Roof
@@ -1083,6 +1100,7 @@ function Panel.new(deps: Deps): Panel
 			Ramp = true,
 			Room = true,
 			Corridor = true,
+			ArchedCorridor = true,
 			Arch = true,
 			ArchOpening = true,
 			Place = true,
@@ -1102,9 +1120,17 @@ function Panel.new(deps: Deps): Panel
 		0.05,
 		128,
 		0.25,
-		body({ Room = true, Corridor = true, Porch = true }, true)
+		body({ Room = true, Corridor = true, ArchedCorridor = true, Porch = true }, true)
 	)
-	numeric(scope, "ArchSegments", "Arch smoothness", 4, 48, 4, body({ Arch = true, ArchOpening = true }, true))
+	numeric(
+		scope,
+		"ArchSegments",
+		"Arch smoothness",
+		4,
+		48,
+		4,
+		body({ Arch = true, ArchOpening = true, ArchedCorridor = true }, true)
+	)
 	numeric(scope, "Offset", "Surface gap", -256, 256, 0.25, body({ Place = true }, true))
 	switch(scope, "Tilt copy to surface", function()
 		return settings.Align

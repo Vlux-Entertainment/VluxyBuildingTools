@@ -70,6 +70,13 @@ Tools.List = {
 		Description = "Cut an archway into a plain wall.",
 	},
 	{
+		Id = "ArchedCorridor",
+		Label = "Arched Corridor",
+		Glyph = "⌓",
+		Key = nil,
+		Description = "Draw a corridor with a rounded arch ceiling between two points. Keep clicking to chain it.",
+	},
+	{
 		Id = "Foundation",
 		Label = "Foundation",
 		Glyph = "▬",
@@ -169,8 +176,8 @@ Tools.Grid = {
 		Label = "Structures",
 		Glyph = "⬚",
 		Key = "2",
-		Description = "Draw a room, corridor, foundation, porch or roof. Pick which one in the options. Press Y to drag the height.",
-		Modes = { "Room", "Corridor", "Foundation", "Porch", "Roof" },
+		Description = "Draw a room, corridor, arched corridor, foundation, porch or roof. Pick which one in the options. Press Y to drag the height.",
+		Modes = { "Room", "Corridor", "ArchedCorridor", "Foundation", "Porch", "Roof" },
 	},
 	{
 		Id = "Additive",

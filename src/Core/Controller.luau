@@ -58,6 +58,7 @@ local MAX_STAMP_PARTS = 600
 
 local INSTRUCTIONS: { [string]: string } = {
 	Wall = "Click start and end points. Keep clicking to connect walls. Enter starts a new chain; Esc exits. X / Y / Z locks the drag.",
+	ArchedCorridor = "Click an arched corridor start and end. Continue clicking for connected segments. Width sets the arch span; Height is the wall height under the curve.",
 	Corridor = "Click a corridor start and end. Continue clicking for connected segments. Joints may overlap at bends.",
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
 	Foundation = "Click two opposite corners. The slab is a little bigger than the corners and stands on the surface you click.",
@@ -88,6 +89,7 @@ local HEIGHT_MODES: { [string]: boolean } = {
 local DRAW_MODES: { [string]: boolean } = {
 	Wall = true,
 	Corridor = true,
+	ArchedCorridor = true,
 	Room = true,
 	Block = true,
 	Stairs = true,
@@ -363,7 +365,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		A floor drawn from this point sits on the object instead of sinking into it.
 	]]
 	local function floorPoint(): Vector3?
-		local raised = mode == "Room" or mode == "Corridor" or mode == "Porch"
+		local raised = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor" or mode == "Porch"
 
 		if
 			not raised
@@ -571,6 +573,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					out = Builders.HalfWall(drawn, origin, b)
 				elseif mode == "Fence" then
 					out = Builders.Fence(drawn, origin, b, not chained)
+				elseif mode == "ArchedCorridor" then
+					out = Builders.ArchedCorridor(drawn, origin, b)
 				elseif mode == "Wall" or mode == "Corridor" then
 					out = Builders.Path(drawn, origin, b, mode == "Corridor", not chained)
 				elseif mode == "Stairs" or mode == "Ramp" then
@@ -1731,7 +1735,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				NumericInput.Clear(numeric)
 				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
 			elseif previewValid then
-				local chain = active == "Wall" or active == "Corridor" or active == "Fence"
+				local chain = active == "Wall"
+					or active == "Corridor"
+					or active == "Fence"
+					or active == "ArchedCorridor"
 				local nextPoint = current
 				local specs = previewSpecs
 
