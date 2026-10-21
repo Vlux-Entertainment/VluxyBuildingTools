@@ -113,6 +113,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 	local mode: string? = nil
 	local first: Vector3? = nil
+	local chained = false
 	local current: Vector3? = nil
 	local heightEnd: Vector3? = nil
 	local lock: AxisLock.Lock? = nil
@@ -241,6 +242,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 	local function resetPoint()
 		first, current = nil, nil
+		chained = false
 		previewSpecs, previewValid = {}, false
 		lock = nil
 		heightEnd = nil
@@ -495,7 +497,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				elseif mode == "Block" then
 					out = Builders.Block(settings, origin, b, lock)
 				elseif mode == "Wall" or mode == "Corridor" then
-					out = Builders.Path(drawn, origin, b, mode == "Corridor")
+					out = Builders.Path(drawn, origin, b, mode == "Corridor", not chained)
 				elseif mode == "Stairs" or mode == "Ramp" then
 					out = Builders.Stairs(settings, origin, b, mode == "Ramp")
 				elseif mode == "Arch" then
@@ -1648,6 +1650,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					Geometry.Materialize(specs, "Vlux_" .. active)
 				end) then
 					first = if chain then nextPoint else nil
+					chained = chain
 					lock = nil
 					heightEnd = nil
 					NumericInput.Clear(numeric)

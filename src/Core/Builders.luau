@@ -55,6 +55,15 @@ local function segment(out: { Spec }, a: Vector3, b: Vector3, width: number, hei
 end
 
 --[[
+	Adds a square pillar standing on the floor at base, turned to match a wall that runs along dir.
+]]
+local function pillar(out: { Spec }, base: Vector3, dir: Vector3, width: number, height: number)
+	local center = base + Vector3.new(0, height * 0.5, 0)
+
+	add(out, Vector3.new(width, height, width), CFrame.lookAt(center, center + dir), "Pillar")
+end
+
+--[[
 	Extrudes a planar triangle into two exact triangular WedgeParts. The corners may be given in any
 	order; the longest side becomes the wedges' shared base.
 ]]
@@ -180,9 +189,10 @@ end
 	@param a Vector3
 	@param b Vector3
 	@param corridor boolean -- true for a floored corridor, false for a single wall
+	@param pillarAtStart boolean? -- false when the start already has a pillar from the wall before it
 	@return { Spec }
 ]=]
-function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boolean): { Spec }
+function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boolean, pillarAtStart: boolean?): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local length = d.Magnitude
@@ -192,7 +202,24 @@ function Builders.Path(settings: Settings, a: Vector3, b: Vector3, corridor: boo
 	end
 
 	if not corridor then
-		segment(out, a, b, settings.Thickness, settings.Height, "Wall")
+		if not settings.PillaredWalls then
+			segment(out, a, b, settings.Thickness, settings.Height, "Wall")
+
+			return out
+		end
+
+		local dir = d.Unit
+		local width = math.max(settings.PillarWidth, settings.Thickness)
+
+		if pillarAtStart ~= false then
+			pillar(out, a, dir, width, settings.Height)
+		end
+
+		pillar(out, b, dir, width, settings.Height)
+
+		if length > width + 0.05 then
+			segment(out, a + dir * (width / 2), b - dir * (width / 2), settings.Thickness, settings.Height, "Wall")
+		end
 
 		return out
 	end

@@ -968,7 +968,7 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "WindowWidth", "Window width", 0.1, 1024, nil, body({ Window = true }))
 	numeric(scope, "WindowHeight", "Window height", 0.1, 1024, nil, body({ Window = true }))
 	numeric(scope, "WindowSill", "Bottom above floor", 0, 1024, nil, body({ Window = true }))
-	numeric(scope, "PillarWidth", "Pillar width", 0.1, 256, nil, body({ Pillar = true }))
+	numeric(scope, "PillarWidth", "Pillar width", 0.1, 256, nil, body({ Pillar = true, Wall = true }))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 
 	button(scope, "Start new chain", function()
@@ -983,6 +983,14 @@ function Panel.new(deps: Deps): Panel
 		deps.Save()
 		refresh()
 	end, body({ Room = true, Corridor = true }))
+
+	switch(scope, "Pillared ends", function()
+		return settings.PillaredWalls
+	end, function(on)
+		settings.PillaredWalls = on
+		deps.Save()
+		refresh()
+	end, body({ Wall = true }))
 
 	local advancedRow = newRow(scope, 30)
 	local advancedButton = make("TextButton", {

@@ -50,6 +50,9 @@ Tips.Entries = {
 		Key = "I",
 	},
 	["Blender hotkeys"] = { Text = "Turn the Blender-style hotkeys on or off. Esc, Enter and [ ] always work." },
+	["Pillared ends"] = {
+		Text = "Put a pillar at each end of a wall, wider than the wall, so walls have some depth. Chained walls share their pillars.",
+	},
 	Ceiling = { Text = "Add a ceiling to rooms and corridors." },
 	["Tilt copy to surface"] = { Text = "Tilt stamped copies so they sit flat on a sloped surface." },
 
