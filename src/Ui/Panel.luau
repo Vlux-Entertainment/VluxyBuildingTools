@@ -1124,6 +1124,15 @@ function Panel.new(deps: Deps): Panel
 		refresh()
 	end, body({ Room = true, Corridor = true }))
 
+	switch(scope, "Snap to parts", function()
+		return settings.SnapToParts
+	end, function(on)
+		settings.SnapToParts = on
+		deps.Save()
+		refresh()
+	end, body(drawModes))
+	numeric(scope, "SnapRadius", "Snap reach", 0.5, 32, 0.5, body(drawModes))
+
 	switch(scope, "Join rooms and corridors", function()
 		return settings.ConnectStructures
 	end, function(on)

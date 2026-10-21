@@ -21,6 +21,7 @@ export type Overlay = {
 	_planeGrid: WireframeHandleAdornment,
 	_previewWire: WireframeHandleAdornment,
 	_cut: BoxHandleAdornment?,
+	_snap: SphereHandleAdornment?,
 	_measureLine: WireframeHandleAdornment,
 	_boxes: { [string]: WireframeHandleAdornment },
 	_fills: { [string]: BoxHandleAdornment },
@@ -268,6 +269,46 @@ function Overlay.ClearGhosts(self: Overlay)
 	self._planeGrid:Clear()
 	self._previewWire:Clear()
 	Overlay.DrawCut(self, nil)
+	Overlay.DrawSnap(self, nil)
+end
+
+--[=[
+	Marks the spot a point snapped to a nearby part, drawn over everything.
+
+	@param self Overlay
+	@param point Vector3? -- nil hides the marker
+]=]
+function Overlay.DrawSnap(self: Overlay, point: Vector3?)
+	local marker = self._snap
+
+	if not point then
+		if marker then
+			marker.Visible = false
+		end
+
+		return
+	end
+
+	if not marker then
+		local created = Instance.new("SphereHandleAdornment")
+
+		created.Name = "SnapMarker"
+		created.Adornee = workspace.Terrain
+		created.AlwaysOnTop = true
+		created.ZIndex = 3
+		created.Radius = 0.45
+		created.Transparency = 0.1
+		created.Color3 = Color3.fromRGB(60, 220, 255)
+		created.Parent = self._folder
+		tag(created)
+		self._snap = created
+		marker = created
+	end
+
+	local shown = marker :: SphereHandleAdornment
+
+	shown.CFrame = CFrame.new(workspace.Terrain.CFrame:PointToObjectSpace(point))
+	shown.Visible = true
 end
 
 --[=[

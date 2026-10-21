@@ -26,6 +26,7 @@ local Overlay = require("./Overlay")
 local Panel = require("../Ui/Panel")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
+local Snapper = require("./Snapper")
 local SurfaceGrid = require("./SurfaceGrid")
 local Tools = require("../Pure/Tools")
 local Transform = require("./Transform")
@@ -148,6 +149,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local openingTarget: BasePart? = nil
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
+	local snapMark: Vector3? = nil
 	local placementCF: CFrame? = nil
 	local extendDrag: ExtendDrag? = nil
 	local extendHover = false
@@ -271,6 +273,27 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return if fine then settings.FineGrid else settings.Grid
 	end
 
+	--[[
+		@param point Vector3 -- a grid-snapped point
+		@return Vector3 -- the point moved onto a nearby corner or edge, unless Shift is held or the setting is off
+	]]
+	local function partSnap(point: Vector3): Vector3
+		local fine = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+
+		if fine or not settings.SnapToParts then
+			return point
+		end
+
+		local snapped, found = Snapper.Find(point, settings.SnapRadius)
+
+		if found then
+			snapMark = snapped
+		end
+
+		return snapped
+	end
+
 	local function snap(value: number): number
 		return Snap.Round(value, gridNow())
 	end
@@ -309,7 +332,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local point = ray.Origin + ray.Direction * t
 
-		return Vector3.new(snap(point.X), y, snap(point.Z))
+		return partSnap(Vector3.new(snap(point.X), y, snap(point.Z)))
 	end
 
 	--[[
@@ -376,7 +399,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		A floor drawn from this point sits on the object instead of sinking into it.
 	]]
 	local function floorPoint(): Vector3?
-		local joins = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor"
 		local raised = mode == "Room"
 			or mode == "Corridor"
 			or mode == "ArchedCorridor"
@@ -406,11 +428,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			snap(hit.Position.Z)
 		)
 
-		if settings.ConnectStructures and joins then
-			return Joints.Snap(point)
-		end
-
-		return point
+		return partSnap(point)
 	end
 
 	--[[
@@ -426,7 +444,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return nil
 		end
 
-		return Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
+		return partSnap(Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z)))
 	end
 
 	--[[
@@ -492,6 +510,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local out: { Spec } = {}
 		local cutVolume: { cf: CFrame, size: Vector3 }? = nil
+
+		snapMark = nil
 		local live = settings
 		local gridStep = gridNow()
 
@@ -565,7 +585,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local base: Vector3? = nil
 
 			if hit and hit.Normal.Y >= 0.7 then
-				base = Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
+				base = partSnap(Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z)))
 			else
 				base = horizontalPoint(settings.Elevation)
 			end
@@ -739,6 +759,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			)
 		Overlay.DrawGhosts(overlay, out)
 		Overlay.DrawCut(overlay, cutVolume)
+		Overlay.DrawSnap(overlay, snapMark)
 
 		if lock and not lock.Plane and first and mode and DRAW_MODES[mode] then
 			Overlay.DrawAxisLine(overlay, heightEnd or first, lock.Axis)

@@ -16,7 +16,6 @@ local STRUCTURES: { [string]: boolean } = {
 	Vlux_Corridor = true,
 	Vlux_ArchedCorridor = true,
 }
-local SNAP_RADIUS = 3
 local CUT_PARTS: { [string]: boolean } = {
 	Wall_North = true,
 	Wall_South = true,
@@ -232,47 +231,6 @@ function Joints.Connect(model: Model)
 			carveModel(model, theirs)
 		end
 	end
-end
-
---[=[
-	Moves a point to the nearest wall of a built room or corridor within a few studs. Only the
-	directions it had to move change, so along the wall it keeps its own snapped value.
-
-	@param point Vector3 -- the already grid-snapped point
-	@return Vector3
-]=]
-function Joints.Snap(point: Vector3): Vector3
-	local best: Vector3? = nil
-	local bestDistance = SNAP_RADIUS
-
-	for _, model in structures() do
-		for _, part in model:GetChildren() do
-			if part:IsA("BasePart") and CUT_PARTS[part.Name] and part.Name ~= "Ceiling" then
-				local relative = part.CFrame:PointToObjectSpace(point)
-				local half = part.Size / 2
-				local nearest = Vector3.new(
-					math.clamp(relative.X, -half.X, half.X),
-					relative.Y,
-					math.clamp(relative.Z, -half.Z, half.Z)
-				)
-				local world = part.CFrame:PointToWorldSpace(nearest)
-				local distance = Vector3.new(world.X - point.X, 0, world.Z - point.Z).Magnitude
-
-				if distance < bestDistance then
-					bestDistance, best = distance, world
-				end
-			end
-		end
-	end
-
-	if not best then
-		return point
-	end
-
-	local x = if math.abs(best.X - point.X) > 0.001 then best.X else point.X
-	local z = if math.abs(best.Z - point.Z) > 0.001 then best.Z else point.Z
-
-	return Vector3.new(x, point.Y, z)
 end
 
 return Joints
