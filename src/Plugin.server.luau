@@ -24,6 +24,13 @@ local button = toolbar:CreateButton(PluginInfo.Name, "Open " .. PluginInfo.Name,
 
 button.ClickableWhenViewportHidden = true
 
+--[[ Every button is made before the dock widget below, which yields, so Studio lists all of them when you customize your tabs. ]]
+local pastelButton = toolbar:CreateButton("PastelColors", "Pastel colors on or off (P)", Icons.Toolbar.Pastel, "Pastel")
+local gridButton = toolbar:CreateButton("SurfaceGrid", "Surface grid on or off (L)", Icons.Toolbar.Grid, "Grid")
+
+pastelButton.ClickableWhenViewportHidden = true
+gridButton.ClickableWhenViewportHidden = true
+
 local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Left, false, false, 360, 740, 320, 420)
 local widget = plugin:CreateDockWidgetPluginGuiAsync(WIDGET_ID, info)
 
@@ -43,11 +50,6 @@ trove:Connect(widget:GetPropertyChangedSignal("Enabled"), function()
 end)
 button:SetActive(widget.Enabled)
 
-local pastelButton = toolbar:CreateButton("PastelColors", "Pastel colors on or off (P)", Icons.Toolbar.Pastel, "Pastel")
-local gridButton = toolbar:CreateButton("SurfaceGrid", "Surface grid on or off (L)", Icons.Toolbar.Grid, "Grid")
-
-pastelButton.ClickableWhenViewportHidden = true
-gridButton.ClickableWhenViewportHidden = true
 trove:Connect(pastelButton.Click, controller.TogglePastel)
 trove:Connect(gridButton.Click, controller.ToggleGrid)
 
