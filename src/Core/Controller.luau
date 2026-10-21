@@ -720,6 +720,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 			current = if hit then hit.Position else horizontalPoint(settings.Elevation)
 
+			if current and settings.SnapToParts then
+				local corner, found = Snapper.Vertex(current, math.max(settings.SnapRadius, 1.5))
+
+				if found then
+					current = corner
+					snapMark = corner
+				end
+			end
+
 			if current and first then
 				Overlay.DrawMeasurement(overlay, first, current)
 				message = "Click to keep this measurement. The number stays in the viewport."

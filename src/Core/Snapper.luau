@@ -136,6 +136,49 @@ function Snapper.Find(point: Vector3, radius: number): (Vector3, boolean, BasePa
 end
 
 --[=[
+	Finds the nearest of the eight corners of any part within the radius, in all three dimensions.
+	The Measure tool uses it so a distance starts and ends exactly on a vertex.
+
+	@param point Vector3 -- where the cursor hit
+	@param radius number
+	@return Vector3 -- the corner, or the same point when none is near
+	@return boolean -- whether it moved to a corner
+]=]
+function Snapper.Vertex(point: Vector3, radius: number): (Vector3, boolean)
+	local params = OverlapParams.new()
+
+	params.MaxParts = MAX_PARTS
+
+	local best: Vector3? = nil
+	local bestDistance = radius
+
+	for _, part in workspace:GetPartBoundsInRadius(point, radius, params) do
+		if not part:IsA("Terrain") then
+			local half = part.Size / 2
+
+			for _, x in { -1, 1 } do
+				for _, y in { -1, 1 } do
+					for _, z in { -1, 1 } do
+						local corner = part.CFrame:PointToWorldSpace(Vector3.new(half.X * x, half.Y * y, half.Z * z))
+						local distance = (corner - point).Magnitude
+
+						if distance < bestDistance then
+							bestDistance, best = distance, corner
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if best then
+		return best, true
+	end
+
+	return point, false
+end
+
+--[=[
 	Finds a doorway made by the Additive tools near the point: a rectangular or arched opening
 	that reaches the floor. The result is the middle of the opening on the face of the wall the point is
 	on, with the direction pointing away from that face, so a corridor can start there.
