@@ -645,6 +645,8 @@ function Builders.Room(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	return out
 end
 
+export type Cutter = { cf: CFrame, size: Vector3, cylinder: boolean, thickness: number? }
+
 export type Strip = {
 	key: string,
 	name: string,
@@ -1081,13 +1083,20 @@ function Builders.Opening(
 	hit: RaycastResult?,
 	shape: string,
 	depth: number?
-): ({ Spec }, string, BasePart?, { cf: CFrame, size: Vector3 }?)
+): ({ Spec }, string, BasePart?, { cf: CFrame, size: Vector3 }?, { Cutter }?)
 	local out: { Spec } = {}
 	local wall = hit and hit.Instance
+	local plain = Geometry.IsPlainBlock(wall)
+	local carvable = wall ~= nil
+		and wall:IsA("BasePart")
+		and not wall:IsA("Terrain")
+		and (wall.ClassName == "UnionOperation" or wall.ClassName == "Part")
 
-	if not hit or not wall or not Geometry.IsPlainBlock(wall) then
-		return out, "Click a rectangular Part wall (not a mesh, union, or wedge).", nil
+	if not hit or not wall or not (plain or carvable) then
+		return out, "Click a Part or union wall (not a mesh, wedge or terrain).", nil
 	end
+
+	local carve = not plain
 
 	local p = wall :: Part
 
@@ -1117,6 +1126,10 @@ function Builders.Opening(
 		return out, "Arch height must be at least half the opening width.", nil
 	end
 
+	if carve and shape == "Triangle" then
+		return out, "The triangle window needs a plain Part wall. Rooms cut by a neighbour are unions.", nil
+	end
+
 	local localHit = cf:PointToObjectSpace(hit.Position)
 	local x = Snap.Round(localHit.X, settings.Grid)
 	local bottom = -size.Y / 2 + sill
@@ -1125,6 +1138,48 @@ function Builders.Opening(
 
 	if left <= -size.X / 2 + 0.01 or right >= size.X / 2 - 0.01 or sill < 0 or top > size.Y / 2 + 0.001 then
 		return out, "Opening must fit inside the wall, with wall remaining on both sides.", nil
+	end
+
+	if carve then
+		local reach = if depth and depth < size.Z - 0.01 then depth else size.Z + 0.2
+		local near = if localHit.Z >= 0 then 1 else -1
+		local zMid = if depth and depth < size.Z - 0.01 then near * (size.Z / 2 - reach / 2) else 0
+		local cutters: { Cutter } = {}
+
+		if shape == "Circle" then
+			local diameter = math.min(w, h)
+
+			table.insert(cutters, {
+				cf = cf * CFrame.new(x, bottom + diameter / 2, zMid) * CFrame.Angles(0, math.pi / 2, 0),
+				size = Vector3.new(reach, diameter, diameter),
+				cylinder = true,
+			})
+		else
+			local boxHeight = if arched then h - w / 2 else h
+
+			table.insert(cutters, {
+				cf = cf * CFrame.new(x, bottom + boxHeight / 2, zMid),
+				size = Vector3.new(w, boxHeight, reach),
+				cylinder = false,
+			})
+
+			if arched then
+				table.insert(cutters, {
+					cf = cf * CFrame.new(x, bottom + h - w / 2, zMid) * CFrame.Angles(0, math.pi / 2, 0),
+					size = Vector3.new(reach, w, w),
+					cylinder = true,
+				})
+			end
+		end
+
+		local openHeight = if shape == "Circle" then math.min(w, h) else h
+		local openWidth = if shape == "Circle" then math.min(w, h) else w
+		local shown = {
+			cf = cf * CFrame.new(x, bottom + openHeight / 2, near * (size.Z / 2 - math.min(reach, size.Z) / 2)),
+			size = Vector3.new(openWidth, openHeight, math.min(reach, size.Z)),
+		}
+
+		return out, "Click to cut this wall. Undo restores it.", p, shown, cutters
 	end
 
 	add(

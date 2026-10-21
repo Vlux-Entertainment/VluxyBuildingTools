@@ -244,6 +244,18 @@ local function carve(part: BasePart, cutters: { Cutter }): boolean
 	return true
 end
 
+--[=[
+	Cuts the cutters out of one part, leaving the original with its Parent set to nil so undo can
+	bring it back.
+
+	@param part BasePart
+	@param cutters { { cf: CFrame, size: Vector3, cylinder: boolean } }
+	@return boolean -- false when the cut failed
+]=]
+function Joints.Carve(part: BasePart, cutters: { Cutter }): boolean
+	return carve(part, cutters)
+end
+
 --[[
 	@param model Instance
 	@param cutters { Cutter }
@@ -359,6 +371,95 @@ local function roomCuts(mine: Cutter, theirs: Cutter, join: string): ({ Cutter }
 	end
 
 	return {}, {}
+end
+
+--[[
+	@param rooms { Cutter } -- the interior boxes of every room
+	@param point Vector3
+	@return boolean -- whether the point is inside one of the rooms' clear space, looking from above
+]]
+local function insideRoom(rooms: { Cutter }, point: Vector3): boolean
+	for _, room in rooms do
+		local lo, hi = corners(room)
+
+		if point.X > lo.X and point.X < hi.X and point.Z > lo.Z and point.Z < hi.Z then
+			return true
+		end
+	end
+
+	return false
+end
+
+--[[
+	Where the gaps cut between a new room and two of its neighbours cross, the corner of the walls
+	between all three is left standing. This finds those corners and lists what to cut away: the whole
+	post when a room sits in every quarter around it, else the post except the small corner that
+	faces the open outside, which stays as the outside wall's corner.
+
+	@param gaps { Cutter } -- the gaps between the new room and each room beside it
+	@param rooms { Cutter } -- every room's interior box, the new one included
+	@return { Cutter }
+]]
+local function junctions(gaps: { Cutter }, rooms: { Cutter }): { Cutter }
+	local out: { Cutter } = {}
+
+	for i, first in gaps do
+		for j = i + 1, #gaps do
+			local second = gaps[j]
+			local across, along = first, second
+
+			if across.size.X > across.size.Z then
+				across, along = second, first
+			end
+
+			if across.size.X < across.size.Z and along.size.Z < along.size.X then
+				local aLo, aHi = corners(across)
+				local bLo, bHi = corners(along)
+				local wx, wz = across.size.X, along.size.Z
+				local x0, x1 = math.max(aLo.X, bLo.X - wx), math.min(aHi.X, bHi.X + wx)
+				local z0, z1 = math.max(bLo.Z, aLo.Z - wz), math.min(bHi.Z, aHi.Z + wz)
+
+				if x1 - x0 > 0.2 and z1 - z0 > 0.2 then
+					local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
+					local y0, y1 = math.max(aLo.Y, bLo.Y), math.min(aHi.Y, bHi.Y)
+					local mid = (y0 + y1) / 2
+					local rise = y1 - y0
+					local open: { { number } } = {}
+
+					for _, sx in { -1, 1 } do
+						for _, sz in { -1, 1 } do
+							local sample =
+								Vector3.new(cx + sx * ((x1 - x0) / 2 + 0.4), mid, cz + sz * ((z1 - z0) / 2 + 0.4))
+
+							if not insideRoom(rooms, sample) then
+								table.insert(open, { sx, sz })
+							end
+						end
+					end
+
+					local function box(x: number, z: number, sizeX: number, sizeZ: number)
+						table.insert(out, {
+							cf = CFrame.new(x, mid, z),
+							size = Vector3.new(sizeX, rise + 0.1, sizeZ),
+							cylinder = false,
+						})
+					end
+
+					if #open == 0 then
+						box(cx, cz, x1 - x0 + 0.1, z1 - z0 + 0.1)
+					elseif #open == 1 then
+						local ex, ez = open[1][1], open[1][2]
+						local hx, hz = (x1 - x0) / 2, (z1 - z0) / 2
+
+						box(cx, cz - ez * hz / 2, x1 - x0 + 0.1, hz + 0.1)
+						box(cx - ex * hx / 2, cz + ez * hz / 2, hx + 0.1, hz + 0.1)
+					end
+				end
+			end
+		end
+	end
+
+	return out
 end
 
 --[=[
@@ -481,6 +582,13 @@ function Joints.Connect(model: Model, roomJoin: string, skip: Instance?): number
 	end
 
 	local failed = 0
+	local gaps: { Cutter } = {}
+	local roomBoxes: { Cutter } = {}
+	local rooms: { Instance } = {}
+
+	if model.Name == "Vlux_Room" and roomJoin == "Open" and mine[1] then
+		table.insert(roomBoxes, mine[1])
+	end
 
 	for _, other in structures() do
 		if other ~= model and other ~= skip then
@@ -491,9 +599,32 @@ function Joints.Connect(model: Model, roomJoin: string, skip: Instance?): number
 
 				failed += carveModel(other, fromMine)
 				failed += carveModel(model, fromTheirs)
+
+				if roomJoin == "Open" then
+					local gap = between(mine[1], theirs[1])
+
+					table.insert(roomBoxes, theirs[1])
+					table.insert(rooms, other)
+
+					if gap then
+						table.insert(gaps, gap)
+					end
+				end
 			else
 				failed += carveModel(other, mine)
 				failed += carveModel(model, theirs)
+			end
+		end
+	end
+
+	if #gaps >= 2 then
+		local posts = junctions(gaps, roomBoxes)
+
+		if #posts > 0 then
+			failed += carveModel(model, posts)
+
+			for _, room in rooms do
+				failed += carveModel(room, posts)
 			end
 		end
 	end

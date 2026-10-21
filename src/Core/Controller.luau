@@ -148,6 +148,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local previewValid = false
 	local measurement: { a: Vector3, b: Vector3 }? = nil
 	local openingTarget: BasePart? = nil
+	local openingCuts: { Builders.Cutter }? = nil
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
 	local snapMark: Vector3? = nil
@@ -608,6 +609,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local out: { Spec } = {}
 		local cutVolume: { cf: CFrame, size: Vector3 }? = nil
 
+		openingCuts = nil
 		snapMark = nil
 		local live = settings
 		local gridStep = gridNow()
@@ -666,10 +668,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				depth = cutDepthFrom(lockedHit)
 			end
 
-			out, message, openingTarget, cutVolume =
+			out, message, openingTarget, cutVolume, openingCuts =
 				Builders.Opening(live, opening, if locked then lockedHit else scopedHit(), shape, depth)
 
-			if locked and #out > 0 then
+			if locked and (#out > 0 or openingCuts) then
 				message = if depth
 					then string.format(
 						"Cut depth %.2f. Move the mouse to change it; past the far side it cuts all the way through. Click to confirm.",
@@ -871,16 +873,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		previewSpecs = out
 		previewValid = #out > 0
-			and (
-				first ~= nil
-				or mode == "Door"
-				or mode == "Window"
-				or mode == "CircleWindow"
-				or mode == "TriangleWindow"
-				or mode == "ArchOpening"
-				or mode == "Pillar"
-				or mode == "Place"
-			)
+			or openingCuts ~= nil
+				and (first ~= nil or mode == "Door" or mode == "Window" or mode == "CircleWindow" or mode == "TriangleWindow" or mode == "ArchOpening" or mode == "Pillar" or mode == "Place")
 		Overlay.DrawGhosts(overlay, out)
 		Overlay.DrawCut(overlay, cutVolume)
 		Overlay.DrawSnap(overlay, snapMark)
@@ -1961,8 +1955,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 			local target = openingTarget
 			local specs = previewSpecs
+			local carving = openingCuts
 
 			edit(if active == "ArchOpening" then "Create archway" else "Create " .. string.lower(active), function()
+				if carving then
+					assert(target and target.Parent, "Wall no longer exists")
+
+					if not Joints.Carve(target, carving) then
+						say("The wall could not be cut.")
+					end
+
+					return
+				end
+
 				local model =
 					Geometry.Materialize(specs, if active == "ArchOpening" then "Archway" else "Wall_" .. active)
 
