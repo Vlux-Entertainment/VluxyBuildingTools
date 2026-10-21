@@ -64,7 +64,7 @@ local Keymap = {}
 function Keymap.Describe(): { { string } }
 	return {
 		{
-			"1 … 8",
+			"1 … 8 or Alt+1 … Alt+8",
 			"Pick a tool: Walls, Structures, Block, Stairs, Arches, Door / Window, Stamp, Measure. Press it again to turn it off",
 		},
 		{ "T", "Extrude the face under the cursor of the selected block" },
@@ -128,7 +128,9 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 	end
 
 	if alt then
-		return nil
+		local picked = TOOL_KEYS[keyName]
+
+		return if picked then `Tool:{picked}` else nil
 	end
 
 	local tool = TOOL_KEYS[keyName]
