@@ -782,7 +782,7 @@ function Panel.new(deps: Deps): Panel
 		}, grid)
 
 		style(tile, 6)
-		attachTip(tile, { Text = tool.Description, Key = tool.Key })
+		attachTip(tile, { Text = tool.Description, Key = if tool.Key then "Alt+" .. tool.Key else nil })
 
 		local outline = make("UIStroke", {
 			Color = CARD_STROKE,
