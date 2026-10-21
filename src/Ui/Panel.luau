@@ -1317,7 +1317,7 @@ function Panel.new(deps: Deps): Panel
 					return
 				end
 
-				settings.GridColor = string.upper(string.gsub(hex, "^#", ""))
+				settings.GridColor = string.upper((string.gsub(hex, "^#", "")))
 				hexBox.Text = settings.GridColor
 				deps.Save()
 				SurfaceGrid.Recolor(deps.SurfaceGrid)

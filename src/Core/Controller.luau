@@ -156,7 +156,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
 	local snapMark: Vector3? = nil
-	local prevWall: { model: Model, dir: Vector3, strips: { Builders.Strip } }? = nil
+	local prevWall: { model: Instance, dir: Vector3, strips: { Builders.Strip } }? = nil
 	local hoverDoor: Snapper.Doorway? = nil
 	local startDoor: Snapper.Doorway? = nil
 	local snapPart: BasePart? = nil
@@ -2075,7 +2075,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local specs = previewSpecs
 
 			edit("Build pillar", function()
-				Geometry.Materialize(specs, "Vlux_Pillar")
+				Geometry.Place(specs, "Pillar")
 			end)
 		elseif active == "Place" then
 			local target = placementCF
@@ -2134,9 +2134,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 				if
 					edit("Build " .. active, function()
-						local model = Geometry.Materialize(specs, "Vlux_" .. active)
-
-						local previousModel = if prevWall then prevWall.model else nil
+						local loose = active == "Wall"
+							or active == "Block"
+							or active == "Floor"
+							or active == "Foundation"
+							or active == "HalfWall"
+						local placed: Instance = if loose
+							then Geometry.Place(specs, active)
+							else Geometry.Materialize(specs, "Vlux_" .. active)
+						local model: Model? = if placed:IsA("Model") then placed else nil
+						local previousModel = if prevWall and prevWall.model:IsA("Model") then prevWall.model else nil
 						local archCut: { Builders.Cutter } = {}
 						local archBefore: Model? = nil
 
@@ -2152,7 +2159,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 								local floor = before.model:FindFirstChild("Floor")
 								local across = before.dir:Cross(Vector3.yAxis)
 
-								for _, child in before.model:GetChildren() do
+								local pieces: { Instance } = if before.model:IsA("BasePart")
+									then { before.model }
+									else before.model:GetChildren()
+
+								for _, child in pieces do
 									if child:IsA("Part") then
 										local key = child.Name
 
@@ -2192,24 +2203,36 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 											{ cf = wedge.cutter, size = wedge.cutterSize, cylinder = false }
 									end
 
-									archBefore = before.model
+									archBefore = if before.model:IsA("Model") then before.model else nil
 								end
 							end
 
 							prevWall = if segment.Magnitude > 0.001
-								then { model = model, dir = segment.Unit, strips = strips }
+								then { model = placed, dir = segment.Unit, strips = strips }
 								else nil
 						end
 
 						if active == "Floor" and settings.FloorTransparency > 0 then
-							for _, child in model:GetChildren() do
+							local pieces: { Instance } = if placed:IsA("BasePart")
+								then { placed }
+								else placed:GetChildren()
+
+							for _, child in pieces do
 								if child:IsA("BasePart") then
 									child.Transparency = math.clamp(settings.FloorTransparency, 0, 1)
 								end
 							end
 						end
 
-						if active == "Arch" or active == "ArchedCorridor" or active == "Stairs" or active == "Ramp" then
+						if
+							model
+							and (
+								active == "Arch"
+								or active == "ArchedCorridor"
+								or active == "Stairs"
+								or active == "Ramp"
+							)
+						then
 							local problem = if active == "Arch"
 								then Geometry.UnionArchHalves(model)
 								elseif active == "ArchedCorridor" then Geometry.UnionSides(
@@ -2238,7 +2261,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						end
 
 						if
-							settings.ConnectStructures
+							model
+							and settings.ConnectStructures
 							and (active == "Room" or active == "Corridor" or active == "ArchedCorridor")
 						then
 							local failed = Joints.Connect(model, settings.RoomJoin, previousModel)

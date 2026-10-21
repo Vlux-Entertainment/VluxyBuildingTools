@@ -129,6 +129,31 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 end
 
 --[=[
+	Like Materialize, but a build of a single piece goes straight into the folder as a Part, with no
+	Model around it. Builds of several pieces still get a Model.
+
+	@param specs { Spec }
+	@param title string -- the Model's name, or the Part's when there is only one piece
+	@return Instance -- the Part, or the Model holding the pieces
+]=]
+function Geometry.Place(specs: { Spec }, title: string): Instance
+	local model = Geometry.Materialize(specs, title)
+	local parts = model:GetChildren()
+
+	if #parts ~= 1 then
+		return model
+	end
+
+	local part = parts[1]
+
+	part.Name = title
+	part.Parent = model.Parent
+	model:Destroy()
+
+	return part
+end
+
+--[=[
 	@param anywhere boolean? -- true to ignore the working folder
 	@return { Instance } -- the selected Parts and Models in the working folder, leaving out any whose ancestor is also selected
 ]=]
