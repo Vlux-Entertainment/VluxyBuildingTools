@@ -19,10 +19,9 @@ return {
 		expect.falsy(Keymap.Resolve("X", false, true, false, true))
 	end,
 
-	["Ctrl plus a digit picks the same tool"] = function(expect)
-		expect.equal(Keymap.Resolve("One", false, true, false, false), "Tool:Basic")
-		expect.equal(Keymap.Resolve("Zero", false, true, false, false), "Tool:Measure")
-		expect.falsy(Keymap.Resolve("Nine", false, true, false, false))
+	["Ctrl plus a digit is left to Studio"] = function(expect)
+		expect.falsy(Keymap.Resolve("One", false, true, false, false))
+		expect.falsy(Keymap.Resolve("Zero", false, true, false, false))
 	end,
 
 	["Alt plus a digit picks an option inside the tool"] = function(expect)
