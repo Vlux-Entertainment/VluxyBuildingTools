@@ -44,6 +44,10 @@ type Extrude = {
 
 export type Controller = {
 	Stop: () -> (),
+	TogglePastel: () -> (),
+	ToggleGrid: () -> (),
+	PastelOn: () -> boolean,
+	GridOn: () -> boolean,
 	Destroy: () -> (),
 }
 
@@ -1719,6 +1723,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	return {
 		Stop = function()
 			stop()
+		end,
+		TogglePastel = function()
+			perform("TogglePastel")
+		end,
+		ToggleGrid = function()
+			perform("ToggleGrid")
+		end,
+		PastelOn = function()
+			return colors.On
+		end,
+		GridOn = function()
+			return surfaceGrid.On
 		end,
 		Destroy = function()
 			stop()

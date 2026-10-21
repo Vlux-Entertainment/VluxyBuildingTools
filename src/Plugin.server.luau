@@ -42,6 +42,28 @@ trove:Connect(widget:GetPropertyChangedSignal("Enabled"), function()
 end)
 button:SetActive(widget.Enabled)
 
+local pastelButton = toolbar:CreateButton("PastelColors", "Pastel colors on or off (P)", "", "Pastel")
+local gridButton = toolbar:CreateButton("SurfaceGrid", "Surface grid on or off (L)", "", "Grid")
+
+pastelButton.ClickableWhenViewportHidden = true
+gridButton.ClickableWhenViewportHidden = true
+trove:Connect(pastelButton.Click, controller.TogglePastel)
+trove:Connect(gridButton.Click, controller.ToggleGrid)
+
+local sinceSync = 0
+
+trove:Connect(RunService.Heartbeat, function(dt)
+	sinceSync += dt
+
+	if sinceSync < 0.25 then
+		return
+	end
+
+	sinceSync = 0
+	pastelButton:SetActive(controller.PastelOn())
+	gridButton:SetActive(controller.GridOn())
+end)
+
 trove:Connect(plugin.Unloading, function()
 	controller.Destroy()
 	trove:Clean()
