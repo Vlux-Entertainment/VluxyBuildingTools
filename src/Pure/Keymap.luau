@@ -16,9 +16,10 @@ local TOOL_KEYS: { [string]: string } = {
 	One = "Basic",
 	Two = "Structures",
 	Three = "Additive",
-	Four = "Stairs",
-	Five = "Extend",
-	Six = "Place",
+	Four = "Railings",
+	Five = "Stairs",
+	Six = "Extend",
+	Seven = "Place",
 	Zero = "Measure",
 }
 
@@ -77,8 +78,8 @@ local Keymap = {}
 function Keymap.Describe(): { { string } }
 	return {
 		{
-			"Ctrl+1 … Ctrl+6, Ctrl+0 or 1 … 6, 0",
-			"Pick a tool: Basic (walls, blocks, pillars, arches), Structures, Additive (doorways, windows, archways), Stairs, Face Extend, Stamp, Measure (0). Press it again to turn it off",
+			"Ctrl+1 … Ctrl+7, Ctrl+0 or 1 … 7, 0",
+			"Pick a tool: Basic (walls, blocks, pillars, arches), Structures, Additive (doorways, windows, archways), Railings, Stairs, Face Extend, Stamp, Measure (0). Press it again to turn it off",
 		},
 		{
 			"Alt+1 … Alt+0",

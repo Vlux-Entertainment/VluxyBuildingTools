@@ -938,6 +938,8 @@ function Panel.new(deps: Deps): Panel
 		Porch = true,
 		Fence = true,
 		Roof = true,
+		Railing = true,
+		HalfWall = true,
 		Block = true,
 		Stairs = true,
 		Ramp = true,
@@ -1028,7 +1030,16 @@ function Panel.new(deps: Deps): Panel
 		deps.Save()
 		refresh()
 	end, body({ Porch = true }))
-	numeric(scope, "RailHeight", "Railing height", 0.1, 256, nil, body({ Porch = true }))
+	numeric(
+		scope,
+		"RailHeight",
+		"Railing height",
+		0.1,
+		256,
+		nil,
+		body({ Porch = true, Railing = true, HalfWall = true })
+	)
+	numeric(scope, "BalusterSpacing", "Bar spacing", 0.3, 64, nil, body({ Railing = true }))
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 

@@ -62,6 +62,8 @@ local INSTRUCTIONS: { [string]: string } = {
 	Room = "Click two opposite corners. Elevation is the finished floor height.",
 	Foundation = "Click two opposite corners. The slab is a little bigger than the corners and stands on the surface you click.",
 	Porch = "Click two opposite corners for the porch floor. Corner posts and a railing are added.",
+	Railing = "Click the start and the end of the railing. Click points on stairs and it follows the slope. Pillars cap both ends.",
+	HalfWall = "Click the start and the end of the half wall. Click points on stairs and it follows the slope.",
 	Fence = "Click points to draw a fence. Keep clicking to connect it. Enter starts a new chain.",
 	Roof = "Click two opposite corners over the top of the walls. Pick the roof style in the options.",
 	Block = "Click two opposite footprint corners. Press Y to drag it up, or X / Z to drag it along that axis; type a number for an exact size.",
@@ -95,6 +97,8 @@ local DRAW_MODES: { [string]: boolean } = {
 	Porch = true,
 	Fence = true,
 	Roof = true,
+	Railing = true,
+	HalfWall = true,
 }
 
 -- Hotkeys that keep working when Blender hotkeys are switched off, as they did before.
@@ -361,7 +365,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function floorPoint(): Vector3?
 		local raised = mode == "Room" or mode == "Corridor" or mode == "Porch"
 
-		if not raised and mode ~= "Foundation" and mode ~= "Roof" and mode ~= "Fence" then
+		if
+			not raised
+			and mode ~= "Foundation"
+			and mode ~= "Roof"
+			and mode ~= "Fence"
+			and mode ~= "Railing"
+			and mode ~= "HalfWall"
+		then
 			return nil
 		end
 
@@ -376,6 +387,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			hit.Position.Y + (if raised then settings.Floor else 0),
 			snap(hit.Position.Z)
 		)
+	end
+
+	--[[
+		@return Vector3? -- the snapped spot on the top of whatever the cursor is over, height included,
+			so a railing can be placed on the steps of a stair
+
+		The height is not snapped, so the point stays on the surface.
+	]]
+	local function surfaceTop(): Vector3?
+		local hit = hitSurface()
+
+		if not hit or hit.Normal.Y < 0.7 then
+			return nil
+		end
+
+		return Vector3.new(snap(hit.Position.X), hit.Position.Y, snap(hit.Position.Z))
 	end
 
 	local function lookVector(): Vector3
@@ -484,7 +511,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			elseif origin and lock then
 				current = lockedPoint(origin, lock)
 			elseif origin then
-				current = horizontalPoint(origin.Y)
+				if mode == "Railing" or mode == "HalfWall" then
+					current = surfaceTop() or horizontalPoint(origin.Y)
+				else
+					current = horizontalPoint(origin.Y)
+				end
 			else
 				current = floorPoint() or horizontalPoint(settings.Elevation)
 			end
@@ -534,6 +565,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					out = Builders.Porch(drawn, origin, b)
 				elseif mode == "Roof" then
 					out = Builders.Roof(drawn, origin, b)
+				elseif mode == "Railing" then
+					out = Builders.Railing(drawn, origin, b)
+				elseif mode == "HalfWall" then
+					out = Builders.HalfWall(drawn, origin, b)
 				elseif mode == "Fence" then
 					out = Builders.Fence(drawn, origin, b, not chained)
 				elseif mode == "Wall" or mode == "Corridor" then

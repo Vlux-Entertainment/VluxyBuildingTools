@@ -57,8 +57,9 @@ Tips.Entries = {
 	RoofThickness = { Text = "How thick the roof sheets are on hip and pyramid roofs." },
 	FoundationHeight = { Text = "How thick the foundation slab is." },
 	FoundationMargin = { Text = "How far the slab sticks out past the corners you click." },
-	RailHeight = { Text = "How tall the porch railing is." },
+	RailHeight = { Text = "How tall the railing or half wall is." },
 	FenceHeight = { Text = "How tall the fence posts are." },
+	BalusterSpacing = { Text = "About how far apart the bars of an indoor railing are." },
 	FenceSpacing = { Text = "About how far apart the fence posts are." },
 	["Pillared ends"] = {
 		Text = "Put a pillar at each end of a wall, wider than the wall, so walls have some depth. Chained walls share their pillars.",
