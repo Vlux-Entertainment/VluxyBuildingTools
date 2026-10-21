@@ -1684,10 +1684,20 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local turnsStamp = action == "Rotate" and mode == "Place"
 
 		if starts and (processed or modal) and not turnsStamp then
+			if string.sub(action, 1, 5) == "Tool:" then
+				say(
+					`Key {key} is {action}, but it was ignored: Studio took the key = {processed}, a tool action is running = {modal}.`
+				)
+			end
+
 			return
 		end
 
 		if not settings.Hotkeys and not ALWAYS_ON[action] and not turnsStamp then
+			if string.sub(action, 1, 5) == "Tool:" then
+				say(`Key {key} is {action}, but Blender hotkeys are switched off in Settings.`)
+			end
+
 			return
 		end
 
