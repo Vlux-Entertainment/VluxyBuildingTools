@@ -1,0 +1,11 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+*.luau text eol=lf
+*.md   text eol=lf
+
+# wally install rewrites this with LF, so without the pin core.autocrlf=true
+# leaves it permanently dirty with a diff that has no changed content.
+wally.lock text eol=lf
+*.zap  text eol=lf
+*.json text eol=lf
+*.mjs  text eol=lf

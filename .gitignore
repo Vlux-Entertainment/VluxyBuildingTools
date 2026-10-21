@@ -1,0 +1,32 @@
+# Place files live only on the machine that has them
+/*.rbxl
+/*.rbxlx
+/*.rbxl.lock
+/*.rbxlx.lock
+
+# Generated / installed
+Packages/
+ServerPackages/
+DevPackages/
+wally.lock
+sourcemap.json
+node_modules/
+build/
+
+# selene std caches
+roblox.yml
+roblox.toml
+
+# Editor and Claude local state
+.vscode/
+.claude/worktrees/
+.claude/settings.local.json
+.claude/shell-snapshots/
+.claude/todos/
+.claude/statsig/
+.claude/history.jsonl
+.luau-analyze/
+
+# Built plugin
+*.rbxm
+.agents/

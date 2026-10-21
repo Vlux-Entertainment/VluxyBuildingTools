@@ -1,0 +1,10 @@
+{
+  "name": "vluxybuildingtools",
+  "private": true,
+  "scripts": {
+    "verify": "node Commands/Verify.mjs",
+    "verify:fix": "node Commands/Verify.mjs --fix",
+    "packages:refresh": "node Commands/RefreshPackages.mjs",
+    "plugin:build": "rojo build plugin.project.json --plugin VluxyBuildingTools.rbxm"
+  }
+}

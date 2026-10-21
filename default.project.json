@@ -1,0 +1,16 @@
+{
+  "name": "VluxyBuildingTools",
+  "servePlaceIds": [88678433007729],
+  "tree": {
+    "$className": "DataModel",
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "VluxyBuildingTools": {
+        "$path": "src",
+        "Packages": {
+          "$path": "Packages"
+        }
+      }
+    }
+  }
+}
