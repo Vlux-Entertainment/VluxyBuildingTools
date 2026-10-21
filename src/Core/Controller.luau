@@ -141,6 +141,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local chained = false
 	local current: Vector3? = nil
 	local heightEnd: Vector3? = nil
+	local riseStage = false
 	local heightMouse: Vector2? = nil
 	local lock: AxisLock.Lock? = nil
 	local numeric = NumericInput.new()
@@ -359,6 +360,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		lock = nil
 		heightEnd = nil
 		heightMouse = nil
+		riseStage = false
 		measurement = nil
 		NumericInput.Clear(numeric)
 		Overlay.ClearGhosts(overlay)
@@ -836,7 +838,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 					out = Builders.Path(path, origin, b, mode == "Corridor", not chained, joinDir)
 				elseif mode == "Stairs" or mode == "Ramp" then
-					out = Builders.Stairs(settings, origin, b, mode == "Ramp")
+					local sized = settings
+
+					if riseStage and height then
+						sized = table.clone(settings)
+						sized.StairHeight = height
+						sized.RampHeight = height
+					end
+
+					out = Builders.Stairs(sized, origin, b, mode == "Ramp")
 				elseif mode == "Arch" then
 					out = Builders.Arch(settings, origin, b)
 				end
@@ -865,9 +875,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					elseif mode == "Arch" then
 						text = string.format("Span %.1f  |  Height %.1f", d.Magnitude, settings.ArchHeight)
 					elseif mode == "Stairs" then
-						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, settings.StairHeight)
+						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, height or settings.StairHeight)
 					elseif mode == "Ramp" then
-						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, settings.RampHeight)
+						text = string.format("Run %.1f  |  Rise %.1f", d.Magnitude, height or settings.RampHeight)
 					elseif height then
 						text = string.format("%.1f studs  |  Height %.1f", d.Magnitude, height)
 					else
@@ -2100,6 +2110,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				startDoor = if active == "Corridor" or active == "ArchedCorridor" then hoverDoor else nil
 				NumericInput.Clear(numeric)
 				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
+			elseif previewValid and (active == "Stairs" or active == "Ramp") and not riseStage then
+				riseStage = true
+				heightEnd = current
+				heightMouse = mouseLocation()
+				lock = AxisLock.Toggle(nil, "Y", false)
+				say("Move the mouse up or down to set the height. Click to place.")
 			elseif previewValid then
 				local chain = active == "Wall"
 					or active == "PillaredWall"
@@ -2233,6 +2249,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					lock = nil
 					heightEnd = nil
 					heightMouse = nil
+					riseStage = false
 					NumericInput.Clear(numeric)
 					Overlay.ClearGhosts(overlay)
 					Overlay.HideReadout(overlay)
