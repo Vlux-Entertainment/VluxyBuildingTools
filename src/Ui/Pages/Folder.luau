@@ -3,7 +3,7 @@
 
 --[=[
 	The Working Folder card at the top of the panel, one compact row. Normally it names the folder,
-	shows who is working in it (the admin wears a crown) and offers a button to change folder. While
+	offers a button to change folder, and the card's title line shows who is working in it (the admin has a ring). While
 	picking, confirming, settling differing settings or answering an admin request, the same row
 	shows that step's short text and buttons instead.
 
@@ -38,10 +38,13 @@ type StepButton = { Text: string, Width: number, Run: () -> (), Primary: boolean
 local new = Kit.New
 
 local ROW_HEIGHT = 34
-local AVATAR = 22
-local AVATAR_GAP = 3
-local CHANGE_WIDTH = 28
-local GAP = 4
+local AVATAR = 20
+local AVATAR_GAP = 5
+local CHANGE_WIDTH = 30
+local GAP = 6
+
+--[[ How far above the folder row the card's title line sits: its height plus the card's row gap. ]]
+local TITLE_LIFT = 24
 
 --[[
 	@param ui Ui
@@ -113,7 +116,7 @@ end
 	@param ui Ui
 	@param person () -> Person
 	@param index number
-	@return ImageButton -- a round head shot; the admin's has a ring and a crown, and clicking offers admin
+	@return ImageButton -- a round head shot; the admin's has a ring, and clicking offers admin
 ]]
 local function avatar(ui: Ui, person: () -> Person, index: number): ImageButton
 	local app = ui.App
@@ -165,20 +168,6 @@ local function avatar(ui: Ui, person: () -> Person, index: number): ImageButton
 			TextColor3 = Theme.Text,
 			Font = Enum.Font.GothamBold,
 			TextSize = 11,
-		}),
-		new("TextLabel")({
-			Size = UDim2.fromOffset(12, 12),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(1, -2, 0, 1),
-			BackgroundTransparency = 1,
-			Text = "♛",
-			Visible = function()
-				return person().Admin
-			end,
-			TextColor3 = Theme.Accent,
-			Font = Enum.Font.GothamBold,
-			TextSize = 12,
-			ZIndex = 2,
 		}),
 		ui.Popups.Tip(function(): Tips.Tip?
 			local who = person()
@@ -232,25 +221,37 @@ return function(ui: Ui): Frame
 		end
 	end
 
-	--[[ The width the avatars and the change button take on the right of the folder row. ]]
-	local function rightWidth(): number
-		local count = #state.People()
-
-		return CHANGE_WIDTH + GAP + count * (AVATAR + AVATAR_GAP)
-	end
-
 	local avatars = vide.indexes(state.People, function(person: () -> Person, index: number)
 		return avatar(ui, person, index)
 	end)
+
+	--[[ The avatars sit at the right of the card's title line, so the folder row keeps its width and the card its height. ]]
+	local people = new("Frame")({
+		Size = function()
+			return UDim2.fromOffset(#state.People() * (AVATAR + AVATAR_GAP), AVATAR)
+		end,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, -TITLE_LIFT),
+		BackgroundTransparency = 1,
+		Visible = function()
+			return state.Folder() ~= nil
+		end,
+		new("UIListLayout")({
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = UDim.new(0, AVATAR_GAP),
+		}),
+		avatars,
+	})
 
 	local folderRow = new("Frame")({
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		Visible = showing("Folder"),
 		new("TextLabel")({
-			Size = function()
-				return UDim2.new(1, -rightWidth() - GAP, 1, -4)
-			end,
+			Size = UDim2.new(1, -CHANGE_WIDTH - GAP, 1, -4),
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.fromScale(0, 0.5),
 			BackgroundColor3 = Theme.AccentDim,
@@ -274,24 +275,8 @@ return function(ui: Ui): Frame
 				return if target then { Text = target:GetFullName() } else nil
 			end),
 		}),
-		new("Frame")({
-			Size = function()
-				return UDim2.new(0, #state.People() * (AVATAR + AVATAR_GAP), 1, 0)
-			end,
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -CHANGE_WIDTH - GAP, 0, 0),
-			BackgroundTransparency = 1,
-			new("UIListLayout")({
-				FillDirection = Enum.FillDirection.Horizontal,
-				HorizontalAlignment = Enum.HorizontalAlignment.Right,
-				VerticalAlignment = Enum.VerticalAlignment.Center,
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, AVATAR_GAP),
-			}),
-			avatars,
-		}),
 		new("TextButton")({
-			Size = UDim2.new(0, CHANGE_WIDTH, 1, -6),
+			Size = UDim2.new(0, CHANGE_WIDTH, 1, -4),
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.fromScale(1, 0.5),
 			BackgroundColor3 = Theme.Tile,
@@ -336,6 +321,7 @@ return function(ui: Ui): Frame
 
 	return Controls.Card(ui, "WORKING FOLDER", {
 		Kit.Row(ROW_HEIGHT, {
+			people,
 			folderRow,
 			choose,
 			step(ui, function()

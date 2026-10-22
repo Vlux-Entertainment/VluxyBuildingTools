@@ -16,8 +16,8 @@ decided by one person. Each working folder has one **admin**.
   always the admin.
 - When the admin closes the plugin, changes folder or stops answering for about 45 seconds, admin
   passes to the next person who has been there longest.
-- The Working Folder card shows a face for everyone in the folder. The admin's has a ring and a
-  crown; hover a face to see the name.
+- The Working Folder card's title line shows a face for everyone in the folder. The admin's has a
+  ring; hover a face to see the name.
 - The admin can click someone's face and pick **Give admin**. Anyone else can click a face and pick
   **Request admin**; the admin then sees the request on the card and picks **Give** or **Ignore**.
   A request runs out after a minute.
