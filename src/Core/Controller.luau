@@ -3405,7 +3405,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if tiles then
 			local index = if held then table.find(grid, held) :: number else if step > 0 then 0 else #grid + 1
 
-			activate(grid[(index - 1 + step) % #grid + 1].Id)
+			for _ = 1, #grid do
+				index = (index - 1 + step) % #grid + 1
+				activate(grid[index].Id)
+
+				if mode and Tools.TileOf(mode) == grid[index] then
+					return
+				end
+			end
 
 			return
 		end

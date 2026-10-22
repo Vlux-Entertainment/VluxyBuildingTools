@@ -105,7 +105,7 @@ function Keymap.Describe(): { { string } }
 		{ "Tab / `", "Next or previous panel tab" },
 		{ "Ctrl+Scroll", "Step to the previous or next tool. The camera does not zoom while you do" },
 		{
-			"Ctrl+Alt+Scroll",
+			"Alt+Scroll",
 			"Step to the previous or next option inside the current tool. The camera does not zoom while you do",
 		},
 		{ "F1", "Open this Hotkeys tab" },
@@ -172,11 +172,12 @@ end
 	@param alt boolean
 	@param shift boolean
 	@param wheel number -- the wheel movement, positive when scrolled up
-	@return Action? -- `Tile:-1` or `Tile:1` for Ctrl+scroll, `Mode:-1` or `Mode:1` for Ctrl+Alt+scroll, else nil.
+	@return Action? -- `Tile:-1` or `Tile:1` for Ctrl+scroll, `Mode:-1` or `Mode:1` for Alt+scroll, else nil.
+		Holding both Ctrl and Alt does nothing.
 		Scrolling up steps back, scrolling down steps forward.
 ]=]
 function Keymap.Scroll(ctrl: boolean, alt: boolean, shift: boolean, wheel: number): Action?
-	if not ctrl or shift or wheel == 0 then
+	if shift or wheel == 0 or ctrl == alt then
 		return nil
 	end
 

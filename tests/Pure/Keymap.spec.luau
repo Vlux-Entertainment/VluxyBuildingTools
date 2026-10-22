@@ -26,13 +26,13 @@ return {
 		expect.falsy(Keymap.Resolve("One", false, false, false, false))
 	end,
 
-	["Ctrl plus scroll steps tools, Ctrl plus Alt plus scroll steps options"] = function(expect)
+	["Ctrl plus scroll steps tools, Alt plus scroll steps options"] = function(expect)
 		expect.equal(Keymap.Scroll(true, false, false, 1), "Tile:-1")
 		expect.equal(Keymap.Scroll(true, false, false, -1), "Tile:1")
-		expect.equal(Keymap.Scroll(true, true, false, 1), "Mode:-1")
-		expect.equal(Keymap.Scroll(true, true, false, -1), "Mode:1")
+		expect.equal(Keymap.Scroll(false, true, false, 1), "Mode:-1")
+		expect.equal(Keymap.Scroll(false, true, false, -1), "Mode:1")
+		expect.falsy(Keymap.Scroll(true, true, false, 1))
 		expect.falsy(Keymap.Scroll(false, false, false, 1))
-		expect.falsy(Keymap.Scroll(false, true, false, 1))
 		expect.falsy(Keymap.Scroll(true, false, true, 1))
 	end,
 
