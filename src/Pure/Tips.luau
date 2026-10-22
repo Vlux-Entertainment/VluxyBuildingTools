@@ -33,7 +33,11 @@ Tips.Entries = {
 	EDITING = { Text = "Standard sizes and how the plugin behaves." },
 	RESET = { Text = "Put every setting back to default; builds are untouched." },
 	["WORKING FOLDER"] = { Text = "The plugin only edits parts inside this folder." },
-	HOTKEYS = { Text = "Every hotkey the plugin uses." },
+	TOOLS = { Text = "Pick tools and their options without the mouse." },
+	DRAWING = { Text = "Keys that work while you draw or move something." },
+	["MOVE & EDIT"] = { Text = "Act on the selected parts, Blender-style." },
+	["SHOW & HIDE"] = { Text = "Themes, grid, camera light and hidden parts." },
+	PANEL = { Text = "Move around this panel; Studio keeps its camera keys." },
 	INTERFACE = { Text = "How the panel looks and moves." },
 	["UI animations"] = { Text = "Buttons pop when clicked and prop pictures spin." },
 

@@ -48,14 +48,15 @@ local lastPop: { [GuiObject]: number } = setmetatable({}, { __mode = "k" }) :: a
 	Grows the button a little and settles it back. A see-through button laid over something, such
 	as a prop picture, grows what it covers instead. Does nothing while UI animations are off.
 
-	@param button GuiButton
+	@param button GuiObject
 ]=]
-function Kit.Pop(button: GuiButton)
+function Kit.Pop(button: GuiObject)
 	if not Kit.Animate() then
 		return
 	end
 
-	local covers = button.BackgroundTransparency >= 1
+	local covers = button:IsA("GuiButton")
+		and button.BackgroundTransparency >= 1
 		and not (button:IsA("TextButton") and button.Text ~= "")
 		and button.Parent
 		and button.Parent:IsA("GuiObject")
@@ -101,7 +102,7 @@ function Kit.PopWhen(selected: () -> boolean): any
 			local now = selected()
 
 			if now and not was then
-				Kit.Pop(instance :: GuiButton)
+				Kit.Pop(instance :: GuiObject)
 			end
 
 			was = now

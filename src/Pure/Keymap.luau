@@ -71,61 +71,97 @@ local PLAIN_KEYS: { [string]: Action } = {
 local Keymap = {}
 
 --[=[
-	Every binding with its plain-language meaning, for the Help tab.
+	@type Binding { Keys: { string }, Meaning: string }
+	@within Keymap
 
-	@return { { string } } -- pairs of { keys, meaning }
+	One row of the Hotkeys tab. `Keys` are shown in order as key chips, except the joining words
+	that `IsJoiner` picks out.
 ]=]
-function Keymap.Describe(): { { string } }
+export type Binding = { Keys: { string }, Meaning: string }
+
+--[=[
+	@type Section { Title: string, Bindings: { Binding } }
+	@within Keymap
+]=]
+export type Section = { Title: string, Bindings: { Binding } }
+
+local JOINERS: { [string]: boolean } = {
+	["+"] = true,
+	["/"] = true,
+	["then"] = true,
+	["hold"] = true,
+}
+
+--[=[
+	@param token string -- one entry of a binding's `Keys`
+	@return boolean -- true for the words between keys, such as "+" and "then", which are not keys
+]=]
+function Keymap.IsJoiner(token: string): boolean
+	return JOINERS[token] == true
+end
+
+--[=[
+	Every binding with a short meaning, grouped into the cards of the Hotkeys tab.
+
+	@return { Section }
+]=]
+function Keymap.Sections(): { Section }
 	return {
 		{
-			"Ctrl+1 … Ctrl+7, Ctrl+0",
-			"Pick a tool; press again to turn it off",
+			Title = "TOOLS",
+			Bindings = {
+				{ Keys = { "Ctrl", "+", "1–7", "/", "0" }, Meaning = "Pick a tool; again to stop" },
+				{ Keys = { "Alt", "+", "1–0" }, Meaning = "Pick a tool option" },
+				{ Keys = { "Ctrl", "+", "Scroll" }, Meaning = "Previous or next tool or prop section" },
+				{ Keys = { "Alt", "+", "Scroll" }, Meaning = "Previous or next option" },
+			},
 		},
 		{
-			"Alt+1 … Alt+0",
-			"Pick an option inside the active tool",
-		},
-		{ "T", "Extrude the face under the cursor" },
-		{ "G / R / C", "Grab, rotate or scale the selection" },
-		{ "V", "Duplicate and grab the selection" },
-		{
-			"W A S D Q E F",
-			"Left to Studio for the camera",
-		},
-		{
-			"Hold Shift",
-			"Snap to the precise grid",
-		},
-		{ "X / Y / Z", "Lock to that axis; press again to unlock" },
-		{ "Alt+X / Y / Z", "Lock to the plane across that axis" },
-		{ "0-9 and .", "Type an exact amount" },
-		{ "Enter / click", "Confirm" },
-		{ "Esc / right-click", "Cancel, or stop the tool" },
-		{ "[ and ]", "Lower or raise the height" },
-		{ "Tab / `", "Next or previous panel tab" },
-		{
-			"Ctrl+Scroll",
-			"Previous or next tool, or prop section",
+			Title = "DRAWING",
+			Bindings = {
+				{ Keys = { "hold", "Shift" }, Meaning = "Snap to the fine grid" },
+				{ Keys = { "X", "/", "Y", "/", "Z" }, Meaning = "Lock to an axis; again to unlock" },
+				{ Keys = { "Alt", "+", "X", "/", "Y", "/", "Z" }, Meaning = "Lock to the plane across it" },
+				{ Keys = { "0–9", "." }, Meaning = "Type an exact amount" },
+				{ Keys = { "[", "]" }, Meaning = "Lower or raise the height" },
+				{ Keys = { "Enter", "/", "Click" }, Meaning = "Confirm" },
+				{ Keys = { "Esc", "/", "Right-click" }, Meaning = "Cancel, or stop the tool" },
+			},
 		},
 		{
-			"Alt+Scroll",
-			"Previous or next tool option",
+			Title = "MOVE & EDIT",
+			Bindings = {
+				{ Keys = { "G" }, Meaning = "Grab the selection" },
+				{ Keys = { "R" }, Meaning = "Rotate the selection" },
+				{ Keys = { "C" }, Meaning = "Scale the selection" },
+				{ Keys = { "Arrows" }, Meaning = "Turn 90° while rotating" },
+				{ Keys = { "V" }, Meaning = "Duplicate and grab" },
+				{ Keys = { "T" }, Meaning = "Extrude the face under the cursor" },
+				{ Keys = { "Ctrl", "+", "M", "then", "X/Y/Z" }, Meaning = "Mirror on that axis" },
+				{ Keys = { "O", "then", "X/Y/Z" }, Meaning = "Turn 90°; Alt for -90°" },
+			},
 		},
-		{ "F1", "Open this tab" },
-		{ "P", "Themes on or off" },
-		{ "Hold P + Scroll", "Switch the theme" },
-		{ "L", "Surface grid on or off" },
-		{ "Alt+L", "Camera light on or off" },
-		{ "N", "Show or hide the panel" },
-		{ "Ctrl+M, then X / Y / Z", "Mirror the selection on that axis" },
 		{
-			"O, then X / Y / Z",
-			"Turn the selection 90 degrees; Alt for -90",
+			Title = "SHOW & HIDE",
+			Bindings = {
+				{ Keys = { "H" }, Meaning = "Hide selected parts, just for you" },
+				{ Keys = { "Alt", "+", "H" }, Meaning = "Unhide everything" },
+				{ Keys = { "I" }, Meaning = "Hidden parts as ghosts on or off" },
+				{ Keys = { "P" }, Meaning = "Themes on or off" },
+				{ Keys = { "hold", "P", "+", "Scroll" }, Meaning = "Switch the theme" },
+				{ Keys = { "L" }, Meaning = "Surface grid on or off" },
+				{ Keys = { "Alt", "+", "L" }, Meaning = "Camera light on or off" },
+			},
 		},
-		{ "Arrow keys in Rotate", "Turn by 90 degrees while rotating" },
-		{ "H", "Hide the selected parts, just for you" },
-		{ "Alt+H", "Unhide everything" },
-		{ "I", "Show hidden parts as ghosts, or not" },
+		{
+			Title = "PANEL",
+			Bindings = {
+				{ Keys = { "N" }, Meaning = "Show or hide the panel" },
+				{ Keys = { "Tab", "/", "`" }, Meaning = "Next or previous tab" },
+				{ Keys = { "F1" }, Meaning = "Open this tab" },
+				{ Keys = { "W A S D Q E F" }, Meaning = "Left to Studio's camera" },
+			},
+		},
 	}
 end
 

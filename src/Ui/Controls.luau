@@ -465,6 +465,7 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 	local store = ui.App.Store
 	local dragging = false
 	local bar: Frame
+	local knob: Frame
 
 	local function value(): number
 		return math.clamp(Store.Get(store, key) :: number, 0, 1)
@@ -491,30 +492,37 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 			BorderSizePixel = 0,
 			Kit.Corner(3),
 		}),
-		new("Frame")({
-			Size = UDim2.fromOffset(14, 14),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = function()
-				return UDim2.fromScale(value(), 0.5)
-			end,
-			BackgroundColor3 = Theme.White,
-			BorderSizePixel = 0,
-			Kit.Corner(7),
-		}),
+	})
+	knob = new("Frame")({
+		Size = UDim2.fromOffset(14, 14),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = function()
+			return UDim2.fromScale(value(), 0.5)
+		end,
+		BackgroundColor3 = Theme.White,
+		BorderSizePixel = 0,
+		Parent = bar,
+		Kit.Corner(7),
 	})
 
-	vide.cleanup(ui.Root.InputChanged:Connect(function(input)
+	--[[ Follows the mouse while dragging. ]]
+	local function moved(input: InputObject)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			setFrom(input.Position.X)
 		end
-	end))
-	vide.cleanup(ui.Root.InputEnded:Connect(function(input)
+	end
+
+	--[[ Ends the drag on the mouse's release, wherever the panel hears it, and saves the value once. ]]
+	local function ended(input: InputObject)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = false
 			Store.Save(store)
 			ui.App.Sound("Tab")
 		end
-	end))
+	end
+
+	vide.cleanup(ui.Root.InputChanged:Connect(moved))
+	vide.cleanup(ui.Root.InputEnded:Connect(ended))
 
 	local initial = (Settings.Defaults() :: any)[key]
 
@@ -529,20 +537,22 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 			TextXAlignment = Enum.TextXAlignment.Left,
 			ui.Popups.Tip(Tips.Find(key)),
 		}),
-		new("TextButton")({
+		new("Frame")({
 			Size = UDim2.fromOffset(130, 28),
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -46, 0.5, 0),
 			BackgroundTransparency = 1,
-			Text = "",
-			AutoButtonColor = false,
+			Active = true,
 			bar,
 			InputBegan = function(input: InputObject)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 then
 					dragging = true
 					setFrom(input.Position.X)
+					Kit.Pop(knob)
 				end
 			end,
+			InputChanged = moved,
+			InputEnded = ended,
 		}),
 		new("TextLabel")({
 			Size = UDim2.fromOffset(40, 36),

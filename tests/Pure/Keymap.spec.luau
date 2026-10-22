@@ -86,6 +86,23 @@ return {
 	end,
 
 	["every binding is described"] = function(expect)
-		expect.truthy(#Keymap.Describe() >= 12)
+		local count = 0
+
+		for _, section in Keymap.Sections() do
+			expect.truthy(#section.Title > 0)
+
+			for _, binding in section.Bindings do
+				expect.truthy(#binding.Keys > 0, binding.Meaning)
+				count += 1
+			end
+		end
+
+		expect.truthy(count >= 25)
+	end,
+
+	["joining words are not keys"] = function(expect)
+		expect.truthy(Keymap.IsJoiner("+"))
+		expect.truthy(Keymap.IsJoiner("then"))
+		expect.falsy(Keymap.IsJoiner("Ctrl"))
 	end,
 }
