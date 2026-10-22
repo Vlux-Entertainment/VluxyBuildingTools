@@ -111,6 +111,7 @@ function Slopes.Arch(settings: Settings, a: Vector3, b: Vector3): { Spec }
 
 	local count = math.floor(settings.ArchSegments)
 
+	--[[ A point on the arch at radius r and an angle from the springing line, in world space. ]]
 	local function point(r: number, angle: number): Vector3
 		return cf:PointToWorldSpace(Vector3.new(r * math.cos(angle), spring + r * math.sin(angle), 0))
 	end

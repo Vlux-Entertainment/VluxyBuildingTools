@@ -54,7 +54,8 @@ The map of the code, the tool contract and a "where to look when it breaks" tabl
 |---|---|
 | All gates (format, lint, Lune tests, both Rojo builds, strict types) | `npm run verify` (`--fix` reformats first) |
 | Install packages, sourcemap and package types | `npm run packages:refresh` |
-| Tests alone | `lune run tests/runner [pattern]` |
+| Tests alone (Pure, and Core via `tests/Support/Harness`) | `npm test` or `lune run tests/runner [pattern]` |
+| Benchmarks against budgets (not in verify) | `npm run perf` |
 | Build the plugin file | `npm run plugin:build` (writes `VluxyBuildingTools.rbxm`; `rojo build --plugin` also installs it) |
 
 ## Conventions

@@ -1,8 +1,8 @@
 --!strict
 
 --[[
-	The test runner. It runs under Lune, outside Roblox, so it can only test code that touches no
-	Roblox API: the Pure layer.
+	The test runner. It runs under Lune, outside Roblox: specs under tests/Pure require the Pure
+	layer directly, and specs under tests/Core load plugin modules through tests/Support/Harness.
 
 	    lune run tests/runner                 every spec under tests/
 	    lune run tests/runner Hash            only specs whose path contains "Hash"

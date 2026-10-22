@@ -5,6 +5,8 @@
   "scripts": {
     "verify": "node Commands/Verify.mjs",
     "verify:fix": "node Commands/Verify.mjs --fix",
+    "test": "lune run tests/runner",
+    "perf": "lune run tests/perf",
     "packages:refresh": "node Commands/RefreshPackages.mjs",
     "plugin:build": "rojo build plugin.project.json --plugin VluxyBuildingTools.rbxm"
   }
