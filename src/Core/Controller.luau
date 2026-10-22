@@ -225,6 +225,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local hoverFolder: Instance? = nil
 	local boxClock = 0
 	local hidden = Hidden.new(trove)
+
+	Hidden.SetGhost(hidden, settings.GhostTransparency)
 	local arrange: Arrange.Actions
 
 	local panel: Panel.Panel

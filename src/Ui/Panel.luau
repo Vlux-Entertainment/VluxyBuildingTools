@@ -698,6 +698,8 @@ function Panel.new(deps: Deps): Panel
 
 				if key == "GridTextureSize" then
 					SurfaceGrid.Resize(deps.SurfaceGrid)
+				elseif key == "GhostTransparency" then
+					Hidden.SetGhost(deps.Hidden, values[key])
 				end
 			end
 
@@ -1715,6 +1717,7 @@ function Panel.new(deps: Deps): Panel
 	end, function()
 		actions.ToggleHiddenView()
 	end)
+	numeric(hiddenCard, "GhostTransparency", "Ghost transparency (0 solid, 1 clear)", 0.3, 0.98, 0.05)
 	button(hiddenCard, "Unhide all (Alt+H)", actions.UnhideAll, false)
 	text(
 		hiddenCard,
