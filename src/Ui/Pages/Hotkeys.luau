@@ -21,7 +21,8 @@ local KEY_WIDTH = 112
 local KEY_GAP = 10
 local LINE_HEIGHT = 20
 local ROW_PADDING_X = 8
-local ROW_PADDING_Y = 5
+local ROW_PADDING_Y = 7
+local ROW_GAP = 4
 
 --[[ A key chip in the UI color, or a muted joining word such as "+" or "then". ]]
 local function token(text: string, index: number): TextLabel
@@ -135,7 +136,7 @@ return function(ui: Ui): { Instance }
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
 					LayoutOrder = Kit.Next(),
-					Kit.List(1),
+					Kit.List(ROW_GAP),
 					rows,
 				}),
 			})
