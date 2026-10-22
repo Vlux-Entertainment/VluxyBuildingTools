@@ -11,13 +11,14 @@
 	@class Openings
 ]=]
 
-local Builders = require("../Core/Builders")
 local Common = require("./Common")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local Joints = require("../Core/Joints")
+local Openings = require("../Core/Builders/Openings")
 local Overlay = require("../Core/Overlay")
 local Settings = require("../Pure/Settings")
+local Shapes = require("../Core/Builders/Shapes")
 local Snap = require("../Pure/Snap")
 local Types = require("./Types")
 
@@ -29,7 +30,7 @@ type Opening = {
 	Depth: number?,
 	--[=[ From the last preview: the wall to replace, the cuts to carve and what to build. ]=]
 	Target: BasePart?,
-	Cuts: { Builders.Cutter }?,
+	Cuts: { Shapes.Cutter }?,
 	Specs: { Geometry.Spec },
 }
 
@@ -123,7 +124,7 @@ local function opening(mode: string): Types.Tool
 			state.Depth = depthFrom(ctx, locked, state.Depth)
 		end
 
-		local out, message, target, cut, cuts = Builders.Opening(
+		local out, message, target, cut, cuts = Openings.Opening(
 			Common.Live(ctx),
 			dimensions(ctx.Settings, mode) :: any,
 			locked or Cursor.ScopedHit(ctx.Cursor),

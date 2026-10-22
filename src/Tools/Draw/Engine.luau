@@ -22,7 +22,6 @@
 ]=]
 
 local AxisLock = require("../../Pure/AxisLock")
-local Builders = require("../../Core/Builders")
 local Common = require("../Common")
 local Cursor = require("../../Services/Cursor")
 local Geometry = require("../../Core/Geometry")
@@ -30,6 +29,7 @@ local Joints = require("../../Core/Joints")
 local NumericInput = require("../../Pure/NumericInput")
 local Overlay = require("../../Core/Overlay")
 local Settings = require("../../Pure/Settings")
+local Shapes = require("../../Core/Builders/Shapes")
 local Snapper = require("../../Core/Snapper")
 local Tools = require("../../Pure/Tools")
 local Types = require("../Types")
@@ -44,9 +44,9 @@ type Spec = Geometry.Spec
 	@within DrawEngine
 	.model Instance -- what the segment built
 	.dir Vector3 -- its flat direction
-	.strips { Builders.Strip } -- the layers across it, which a bend lines up
+	.strips { Shapes.Strip } -- the layers across it, which a bend lines up
 ]=]
-export type Segment = { model: Instance, dir: Vector3, strips: { Builders.Strip } }
+export type Segment = { model: Instance, dir: Vector3, strips: { Shapes.Strip } }
 
 --[=[
 	The vent tools' extra drawing state. Vents start against surfaces and other vents, so they

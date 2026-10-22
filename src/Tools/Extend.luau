@@ -14,9 +14,9 @@ local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 
-local Builders = require("../Core/Builders")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
+local Openings = require("../Core/Builders/Openings")
 local Overlay = require("../Core/Overlay")
 local Tools = require("../Pure/Tools")
 local Trove = require("../Packages/Trove")
@@ -66,7 +66,7 @@ local function release(ctx: Context, state: ExtendState)
 	state.Drag = nil
 
 	if drag.length >= math.max(0.05, ctx.Settings.Grid) and drag.source.Parent then
-		local out = Builders.Extend(ctx.Settings, drag.source, drag.normal, drag.length)
+		local out = Openings.Extend(ctx.Settings, drag.source, drag.normal, drag.length)
 		local built: Model?
 
 		if ctx.Edit("Drag face extension", function()
@@ -122,7 +122,7 @@ local function connect(ctx: Context, state: ExtendState)
 		drag.length = math.clamp(Cursor.Snap(ctx.Cursor, distance), 0, MAX_LENGTH)
 
 		if drag.length > 0.001 then
-			local out = Builders.Extend(ctx.Settings, drag.source, drag.normal, drag.length)
+			local out = Openings.Extend(ctx.Settings, drag.source, drag.normal, drag.length)
 
 			Overlay.DrawGhosts(ctx.Overlay, out)
 			Overlay.Readout(ctx.Overlay, out[1].cf.Position, string.format("Extend %.2f studs", drag.length))

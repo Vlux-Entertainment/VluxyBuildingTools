@@ -7,7 +7,7 @@
 	@class Pillar
 ]=]
 
-local Builders = require("../Core/Builders")
+local Areas = require("../Core/Builders/Areas")
 local Common = require("./Common")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
@@ -34,7 +34,7 @@ local tool: Types.Tool = {
 			return Common.Empty()
 		end
 
-		local specs = Builders.Pillar(ctx.Settings, base)
+		local specs = Areas.Pillar(ctx.Settings, base)
 
 		return { Specs = specs, Valid = #specs > 0, Message = "Click to place the pillar." }
 	end,

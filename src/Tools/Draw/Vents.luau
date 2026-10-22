@@ -14,14 +14,15 @@
 local CollectionService = game:GetService("CollectionService")
 
 local Bends = require("./Bends")
-local Builders = require("../../Core/Builders")
 local Cursor = require("../../Services/Cursor")
 local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
 local Joints = require("../../Core/Joints")
 local Points = require("./Points")
+local Shapes = require("../../Core/Builders/Shapes")
 local Snapper = require("../../Core/Snapper")
 local Types = require("../Types")
+local Vents = require("../../Core/Builders/Vents")
 
 type Context = Types.Context
 type Draw = Engine.Draw
@@ -52,11 +53,11 @@ local function inVent(part: BasePart): boolean
 end
 
 --[[
-	@param cutters { Builders.Cutter }
+	@param cutters { Shapes.Cutter }
 	@param keep (part: BasePart) -> boolean
 	@return { [BasePart]: boolean } -- the parts in the working folder the cutters touch and `keep` accepts
 ]]
-local function touched(cutters: { Builders.Cutter }, keep: (part: BasePart) -> boolean): { [BasePart]: boolean }
+local function touched(cutters: { Shapes.Cutter }, keep: (part: BasePart) -> boolean): { [BasePart]: boolean }
 	local params = OverlapParams.new()
 	local scope = Geometry.GetScope()
 	local found: { [BasePart]: boolean } = {}
@@ -101,7 +102,7 @@ local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: 
 	CollectionService:AddTag(model, VENT_TAG)
 
 	local failed = 0
-	local cutters = Builders.VentCutters(ctx.Settings, a, b)
+	local cutters = Vents.VentCutters(ctx.Settings, a, b)
 
 	for part in
 		touched(cutters, function(candidate)
@@ -113,7 +114,7 @@ local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: 
 		end
 	end
 
-	local joins = Builders.VentJoinCutters(ctx.Settings, a, b)
+	local joins = Vents.VentJoinCutters(ctx.Settings, a, b)
 
 	for part in
 		touched(joins, function(candidate)
@@ -173,7 +174,7 @@ local function idle(ctx: Context, draw: Draw, _point: Vector3): { Geometry.Spec 
 	local normal, mark = ventOf(draw).HitNormal, ctx.Cursor.Mark
 
 	if normal and mark then
-		return Builders.VentHoleMark(mark + normal * 0.05, normal, ctx.Settings.VentSize)
+		return Vents.VentHoleMark(mark + normal * 0.05, normal, ctx.Settings.VentSize)
 	end
 
 	return nil
@@ -319,10 +320,10 @@ local vent: Engine.Shape = {
 
 		ventOf(draw).Ends = { a + up, b + up }
 
-		return Builders.VentRun(ctx.Settings, a, b, if draw.Chained and draw.Previous then draw.Previous.dir else nil)
+		return Vents.VentRun(ctx.Settings, a, b, if draw.Chained and draw.Previous then draw.Previous.dir else nil)
 	end,
 	Commit = function(ctx, draw, result)
-		Bends.Join(draw, result, Builders.VentStrips(ctx.Settings))
+		Bends.Join(draw, result, Vents.VentStrips(ctx.Settings))
 		commit(ctx, draw, result)
 	end,
 }
@@ -343,7 +344,7 @@ local ventRamp: Engine.Shape = {
 		local up = lift(ctx)
 
 		if not draw.Rise then
-			return Builders.VentRun(ctx.Settings, a, b, nil)
+			return Vents.VentRun(ctx.Settings, a, b, nil)
 		end
 
 		local run = Vector3.new(b.X - a.X, 0, b.Z - a.Z).Magnitude
@@ -351,7 +352,7 @@ local ventRamp: Engine.Shape = {
 
 		ventOf(draw).Ends = { a + up, top + up }
 
-		return Builders.VentDuct(ctx.Settings, a + up, top + up)
+		return Vents.VentDuct(ctx.Settings, a + up, top + up)
 	end,
 	Commit = commit,
 }
@@ -376,7 +377,7 @@ local ventShaft: Engine.Shape = {
 
 		ventOf(draw).Ends = { bottom, top }
 
-		return Builders.VentDuct(ctx.Settings, bottom, top)
+		return Vents.VentDuct(ctx.Settings, bottom, top)
 	end,
 	Commit = commit,
 }

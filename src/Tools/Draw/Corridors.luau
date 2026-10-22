@@ -8,12 +8,13 @@
 ]=]
 
 local Bends = require("./Bends")
-local Builders = require("../../Core/Builders")
 local Cursor = require("../../Services/Cursor")
 local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
 local Joints = require("../../Core/Joints")
+local Paths = require("../../Core/Builders/Paths")
 local Points = require("./Points")
+local Shapes = require("../../Core/Builders/Shapes")
 local Types = require("../Types")
 
 type Context = Types.Context
@@ -100,10 +101,10 @@ local corridor: Engine.Shape = {
 	Chain = true,
 	Joins = true,
 	Build = function(_ctx, draw, a, b, sized)
-		return Builders.Path(sized.Live, a, b, true, not draw.Chained, joinDir(draw))
+		return Paths.Path(sized.Live, a, b, true, not draw.Chained, joinDir(draw))
 	end,
 	Commit = function(ctx, draw, built)
-		Bends.Join(draw, built, Builders.CorridorStrips(ctx.Settings))
+		Bends.Join(draw, built, Paths.CorridorStrips(ctx.Settings))
 		connect(ctx, built)
 	end,
 }
@@ -111,14 +112,14 @@ local corridor: Engine.Shape = {
 --[[
 	@param ctx Context
 	@param built Built
-	@return { Builders.Cutter } -- the two wedges cut from the old and new ceiling at an arched bend
+	@return { Shapes.Cutter } -- the two wedges cut from the old and new ceiling at an arched bend
 	@return Model? -- the previous section, whose ceiling the first wedge cuts
 
 	Fills the corner of an arched bend with a wedge of arched roof.
 ]]
-local function archedCorner(ctx: Context, built: Built): ({ Builders.Cutter }, Model?)
+local function archedCorner(ctx: Context, built: Built): ({ Shapes.Cutter }, Model?)
 	local before = built.Previous
-	local cuts: { Builders.Cutter } = {}
+	local cuts: { Shapes.Cutter } = {}
 
 	if not before or not before.model.Parent or built.Segment.Magnitude <= 0.001 then
 		return cuts, nil
@@ -126,7 +127,7 @@ local function archedCorner(ctx: Context, built: Built): ({ Builders.Cutter }, M
 
 	local corner = Geometry.Materialize({}, "Vlux_BendArch")
 
-	for index, wedge in Builders.ArchedBend(ctx.Settings, built.Joint, before.dir, built.Segment) do
+	for index, wedge in Paths.ArchedBend(ctx.Settings, built.Joint, before.dir, built.Segment) do
 		if not Geometry.AddCut(corner, wedge.specs, wedge.cutter, wedge.cutterSize, "ArchedCeiling") then
 			ctx.Say("Part of the arched corner roof could not be built.")
 		end
@@ -145,12 +146,12 @@ local archedCorridor: Engine.Shape = {
 	Chain = true,
 	Joins = true,
 	Build = function(_ctx, draw, a, b, sized)
-		return Builders.ArchedCorridor(sized.Live, a, b, joinDir(draw))
+		return Paths.ArchedCorridor(sized.Live, a, b, joinDir(draw))
 	end,
 	Commit = function(ctx, draw, built)
-		local cuts: { Builders.Cutter }, before: Model? = {}, nil
+		local cuts: { Shapes.Cutter }, before: Model? = {}, nil
 
-		if Bends.Join(draw, built, Builders.ArchedStrips(ctx.Settings)) then
+		if Bends.Join(draw, built, Paths.ArchedStrips(ctx.Settings)) then
 			cuts, before = archedCorner(ctx, built)
 		end
 

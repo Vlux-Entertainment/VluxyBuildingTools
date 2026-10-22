@@ -8,9 +8,10 @@
 ]=]
 
 local Bends = require("./Bends")
-local Builders = require("../../Core/Builders")
 local Engine = require("./Engine")
+local Paths = require("../../Core/Builders/Paths")
 local Points = require("./Points")
+local Railings = require("../../Core/Builders/Railings")
 local Types = require("../Types")
 
 type Context = Types.Context
@@ -54,10 +55,10 @@ local wall: Engine.Shape = {
 
 		path.PillaredWalls = false
 
-		return Builders.Path(path, a, b, false, not draw.Chained, joinDir(draw))
+		return Paths.Path(path, a, b, false, not draw.Chained, joinDir(draw))
 	end,
 	Commit = function(ctx, draw, built)
-		Bends.Join(draw, built, Builders.WallStrips(ctx.Settings))
+		Bends.Join(draw, built, Paths.WallStrips(ctx.Settings))
 	end,
 }
 
@@ -72,7 +73,7 @@ local pillaredWall: Engine.Shape = {
 
 		path.PillaredWalls = true
 
-		return Builders.Path(path, a, b, false, not draw.Chained, nil)
+		return Paths.Path(path, a, b, false, not draw.Chained, nil)
 	end,
 }
 
@@ -82,7 +83,7 @@ local railing: Engine.Shape = {
 	Next = nextOnTop,
 	Chain = true,
 	Build = function(_ctx, draw, a, b, sized)
-		return Builders.Railing(sized.Live, a, b, not draw.Chained)
+		return Railings.Railing(sized.Live, a, b, not draw.Chained)
 	end,
 }
 
@@ -93,7 +94,7 @@ local halfWall: Engine.Shape = {
 	Chain = true,
 	Loose = true,
 	Build = function(_ctx, draw, a, b, sized)
-		return Builders.HalfWall(sized.Live, a, b, not draw.Chained)
+		return Railings.HalfWall(sized.Live, a, b, not draw.Chained)
 	end,
 }
 
@@ -102,7 +103,7 @@ local fence: Engine.Shape = {
 	Start = startOnFloor,
 	Chain = true,
 	Build = function(_ctx, draw, a, b, sized)
-		return Builders.Fence(sized.Live, a, b, not draw.Chained)
+		return Railings.Fence(sized.Live, a, b, not draw.Chained)
 	end,
 }
 

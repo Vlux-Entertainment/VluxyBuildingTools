@@ -7,7 +7,7 @@
 	@class DrawAreas
 ]=]
 
-local Builders = require("../../Core/Builders")
+local Areas = require("../../Core/Builders/Areas")
 local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
 local Joints = require("../../Core/Joints")
@@ -56,7 +56,7 @@ local room: Engine.Shape = {
 	Joins = true,
 	Readout = boxReadout,
 	Build = function(_ctx, _draw, a, b, sized)
-		return Builders.Room(sized.Live, a, b)
+		return Areas.Room(sized.Live, a, b)
 	end,
 	Commit = function(ctx, _draw, built)
 		if built.Model and ctx.Settings.ConnectStructures then
@@ -75,7 +75,7 @@ local floor: Engine.Shape = {
 	Loose = true,
 	Readout = areaReadout,
 	Build = function(_ctx, _draw, a, b, sized)
-		return Builders.Floor(sized.Live, a, b)
+		return Areas.Floor(sized.Live, a, b)
 	end,
 	Commit = function(ctx, _draw, built)
 		local transparency = ctx.Settings.FloorTransparency
@@ -102,7 +102,7 @@ local foundation: Engine.Shape = {
 	Loose = true,
 	Readout = areaReadout,
 	Build = function(_ctx, _draw, a, b, sized)
-		return Builders.Foundation(sized.Live, a, b)
+		return Areas.Foundation(sized.Live, a, b)
 	end,
 }
 
@@ -111,7 +111,7 @@ local porch: Engine.Shape = {
 	Start = onFloor({ Raised = true }),
 	Readout = areaReadout,
 	Build = function(_ctx, _draw, a, b, sized)
-		return Builders.Porch(sized.Live, a, b)
+		return Areas.Porch(sized.Live, a, b)
 	end,
 }
 
@@ -120,7 +120,7 @@ local roof: Engine.Shape = {
 	Start = onFloor({}),
 	Readout = areaReadout,
 	Build = function(_ctx, _draw, a, b, sized)
-		return Builders.Roof(sized.Live, a, b)
+		return Areas.Roof(sized.Live, a, b)
 	end,
 }
 
@@ -130,7 +130,7 @@ local block: Engine.Shape = {
 	Loose = true,
 	Readout = boxReadout,
 	Build = function(ctx, draw, a, b)
-		return Builders.Block(ctx.Settings, a, b, draw.Lock)
+		return Areas.Block(ctx.Settings, a, b, draw.Lock)
 	end,
 }
 

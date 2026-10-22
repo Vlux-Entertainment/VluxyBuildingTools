@@ -7,10 +7,10 @@
 	@class DrawSlopes
 ]=]
 
-local Builders = require("../../Core/Builders")
 local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
 local Points = require("./Points")
+local Slopes = require("../../Core/Builders/Slopes")
 local Types = require("../Types")
 
 type Context = Types.Context
@@ -50,7 +50,7 @@ local function slope(ramp: boolean): Engine.Shape
 				settings.RampHeight = sized.Height
 			end
 
-			return Builders.Stairs(settings, a, b, ramp)
+			return Slopes.Stairs(settings, a, b, ramp)
 		end,
 		Commit = function(ctx, _draw, built)
 			local problem = if built.Model then Geometry.UnionAll(built.Model, id) else nil
@@ -74,7 +74,7 @@ local arch: Engine.Shape = {
 		return "Arch height must be at least half the drawn span. Increase clearance height or draw a narrower arch."
 	end,
 	Build = function(ctx, _draw, a, b)
-		return Builders.Arch(ctx.Settings, a, b)
+		return Slopes.Arch(ctx.Settings, a, b)
 	end,
 	Commit = function(ctx, _draw, built)
 		local problem = if built.Model then Geometry.UnionArchHalves(built.Model) else nil

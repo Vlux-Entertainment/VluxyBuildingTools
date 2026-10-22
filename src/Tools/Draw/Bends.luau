@@ -8,9 +8,10 @@
 	@class DrawBends
 ]=]
 
-local Builders = require("../../Core/Builders")
 local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
+local Paths = require("../../Core/Builders/Paths")
+local Shapes = require("../../Core/Builders/Shapes")
 
 type Draw = Engine.Draw
 type Built = Engine.Built
@@ -44,16 +45,16 @@ end
 
 	@param draw Draw
 	@param built Built
-	@param strips { Builders.Strip } -- the layers of the segment just placed
+	@param strips { Shapes.Strip } -- the layers of the segment just placed
 	@return boolean -- true when there was a previous segment and it was bent
 ]=]
-function Bends.Join(draw: Draw, built: Built, strips: { Builders.Strip }): boolean
+function Bends.Join(draw: Draw, built: Built, strips: { Shapes.Strip }): boolean
 	local before = built.Previous
 	local segment = built.Segment
 	local bent = false
 
 	if before and before.model.Parent and segment.Magnitude > 0.001 then
-		local bend = Builders.Bend(built.Joint, before.dir, segment, before.strips, strips)
+		local bend = Paths.Bend(built.Joint, before.dir, segment, before.strips, strips)
 		local floor = before.model:FindFirstChild("Floor") or before.model:FindFirstChild("VentFloor")
 		local across = before.dir:Cross(Vector3.yAxis)
 		local pieces: { Instance } = if before.model:IsA("BasePart")

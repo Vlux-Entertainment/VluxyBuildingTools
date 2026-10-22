@@ -16,10 +16,11 @@ local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 
 local Brushes = require("../Core/Brushes")
-local Builders = require("../Core/Builders")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local Overlay = require("../Core/Overlay")
+local Place = require("../Core/Builders/Place")
+local Shapes = require("../Core/Builders/Shapes")
 local Types = require("./Types")
 
 type Context = Types.Context
@@ -30,9 +31,9 @@ type Context = Types.Context
 	@interface Item
 	@within Brush
 	.roots { Instance }
-	.source Builders.Source
+	.source Shapes.Source
 ]=]
-type Item = { roots: { Instance }, source: Builders.Source }
+type Item = { roots: { Instance }, source: Shapes.Source }
 
 --[=[
 	@interface BrushState
@@ -198,7 +199,7 @@ local function step(ctx: Context, state: BrushState, hit: RaycastResult)
 	state.Last = hit.Position
 
 	local yaw = if settings.BrushRandomYaw then math.random() * 360 else settings.Yaw
-	local specs, target = Builders.PlaceAt(settings, spot, normal, item.source, yaw, state.Scale)
+	local specs, target = Place.PlaceAt(settings, spot, normal, item.source, yaw, state.Scale)
 
 	table.insert(state.Targets, { cf = target, item = item, scale = state.Scale })
 
@@ -299,7 +300,7 @@ local tool: Types.Tool = {
 	Preview = function(ctx: Context, state: BrushState): Types.Preview?
 		local hit = Cursor.Hit(ctx.Cursor, exclude(state))
 		local item = state.Item
-		local out, placeMessage = Builders.Place(ctx.Settings, hit, if item then item.source else nil, state.Scale)
+		local out, placeMessage = Place.Place(ctx.Settings, hit, if item then item.source else nil, state.Scale)
 		local message: string? = placeMessage
 
 		if not item then

@@ -29,7 +29,7 @@ Pure/                   plain data and maths, no Roblox API, tested under Lune
 | `Tools/Draw/` | The 19 point-to-point tools: `Engine` (the shared drawing flow) and one small file per family of shapes. |
 | `Modal/` | Extrude (T) and Move (G, R, C, D) behind `Modal/Types.luau`; `Host` runs the active one and the armed flip/rotate. |
 | `Ui/` | `Panel` (shell), `Controls` (number field, switch, slider, choice row…), `Popups` (tooltip, reset menu), `Pages/`. |
-| `Core/` | `Builders` (what each shape is made of), `Geometry` (specs → parts, unions), `Joints` (cutting holes), `Overlay` (viewport drawing), `Colors`, `SurfaceGrid`, `Snapper`, `Transform`, `Arrange`, `Hidden`, `Brushes`, `Sounds`, `Props`. |
+| `Core/` | `Builders/` (what each shape is made of, one file per family: Paths, Areas, Railings, Slopes, Openings, Vents, Place, with shared `Shapes`), `Geometry` (specs → parts, unions), `Joints` (cutting holes), `Overlay` (viewport drawing), `Colors`, `SurfaceGrid`, `Snapper`, `Transform`, `Arrange`, `Hidden`, `Brushes`, `Sounds`, `Props`. |
 | `Pure/` | `Settings`, `Keymap`, `Tools` (labels, glyphs, instructions, tiles), `PropData`, `AxisLock`, `NumericInput`, `Polygon`, `Snap`, `Cycle`, `Tips`, `SoundIds`. |
 
 ## How a frame flows
@@ -86,7 +86,7 @@ one tool does can leak into the next. The runner is the only caller.
 | Symptom | Start in |
 |---|---|
 | A tool's preview or build is wrong | its file under `Tools/` (find it in `Tools/Registry`); for a draw tool, its shape in `Tools/Draw/`, then `Engine` |
-| What a shape is made of (sizes, pieces) | `Core/Builders.luau` |
+| What a shape is made of (sizes, pieces) | its family in `Core/Builders/` |
 | A cut or hole is wrong, or rooms do not join | `Core/Joints.luau` |
 | A point snaps to the wrong place | `Tools/Draw/Points.luau`, `Services/Cursor.luau`, `Core/Snapper.luau` |
 | A key does the wrong thing | `Pure/Keymap.luau` (which action), `App/Input.luau` (when it is ignored), `App/Actions.luau` (what it does) |

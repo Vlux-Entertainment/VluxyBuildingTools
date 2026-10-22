@@ -12,11 +12,11 @@
 
 local Selection = game:GetService("Selection")
 
-local Builders = require("../Core/Builders")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local ModalTypes = require("./Types")
 local NumericInput = require("../Pure/NumericInput")
+local Openings = require("../Core/Builders/Openings")
 local Overlay = require("../Core/Overlay")
 local ToolTypes = require("../Tools/Types")
 
@@ -77,7 +77,7 @@ function Extrude.Start(ctx: Context): ModalTypes.Modal?
 		return nil
 	end
 
-	local axis, side = Builders.FaceAxis(part, picked)
+	local axis, side = Openings.FaceAxis(part, picked)
 	local localUnit = if axis == 1 then Vector3.xAxis elseif axis == 2 then Vector3.yAxis else Vector3.zAxis
 	local half = (if axis == 1 then part.Size.X elseif axis == 2 then part.Size.Y else part.Size.Z) / 2
 	local normal = part.CFrame:VectorToWorldSpace(localUnit * side)
@@ -116,7 +116,7 @@ function Extrude.Start(ctx: Context): ModalTypes.Modal?
 				return true
 			end
 
-			local out = Builders.Extend(ctx.Settings, part, normal, length)
+			local out = Openings.Extend(ctx.Settings, part, normal, length)
 
 			Overlay.DrawGhosts(ctx.Overlay, out)
 
@@ -133,7 +133,7 @@ function Extrude.Start(ctx: Context): ModalTypes.Modal?
 				return false
 			end
 
-			local out = Builders.Extend(ctx.Settings, part, normal, length)
+			local out = Openings.Extend(ctx.Settings, part, normal, length)
 
 			ctx.Edit("Extrude face", function()
 				Geometry.Materialize(out, "Face_Extension")

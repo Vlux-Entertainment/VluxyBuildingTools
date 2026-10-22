@@ -8,11 +8,11 @@
 ]=]
 
 local AxisLock = require("../Pure/AxisLock")
-local Builders = require("../Core/Builders")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local Joints = require("../Core/Joints")
 local Settings = require("../Pure/Settings")
+local Shapes = require("../Core/Builders/Shapes")
 local Types = require("./Types")
 
 type Context = Types.Context
@@ -75,10 +75,10 @@ end
 --[=[
 	Cuts a box out of every Part inside the working folder that it touches.
 
-	@param cut Builders.Cutter
+	@param cut Shapes.Cutter
 	@return number -- how many parts could not be cut
 ]=]
-function Common.CarveBox(cut: Builders.Cutter): number
+function Common.CarveBox(cut: Shapes.Cutter): number
 	local params = OverlapParams.new()
 	local scope = Geometry.GetScope()
 	local failed = 0

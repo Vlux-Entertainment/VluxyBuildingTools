@@ -16,6 +16,9 @@ The layout, the tool contract and a "where to look when it breaks" table are in
   contract, and `Modal/` for extrude and grab/rotate/scale.
 - The 2,600-line `Ui/Panel.luau` is rebuilt on vide: it reads the settings and app state
   reactively, so there is no refresh to forget. One file per tab under `Ui/Pages/`.
+- `Core/Builders.luau` (2,000 lines) is split by family into `Core/Builders/`.
+- A parity review against `main` found one real regression (switching folders with "Use folder's"
+  overwrote the old folder's shared settings) and a few small differences; all fixed.
 - `npm run verify` gained a strict `luau-lsp` type check. It found a real bug on `main`: the sound
   slider connected to events the dock widget does not have, so building the panel threw.
 
@@ -28,6 +31,7 @@ The layout, the tool contract and a "where to look when it breaks" table are in
 - An axis key with a tool that has no axis lock says so.
 - A vent started from another vent continues the chain from the axis-snapped end.
 - The debug prints of the shared theme are gone.
+- Pillar's viewport bar no longer lists Alt and axis-lock hints (Pillar never used them).
 
 ## Next: test in Studio
 
@@ -56,6 +60,4 @@ ServerStorage, and work through this list. Note anything that differs from `main
 
 ## Open questions
 
-- Should `Core/Builders.luau` (2,000 lines of shape geometry) also be split by family? Planned
-  next, mechanical.
 - Merge into `main` once Studio testing passes, or keep the branch separate for a while?

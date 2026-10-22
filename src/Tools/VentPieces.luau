@@ -8,16 +8,17 @@
 	@class VentPieces
 ]=]
 
-local Builders = require("../Core/Builders")
 local Common = require("./Common")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local Settings = require("../Pure/Settings")
+local Shapes = require("../Core/Builders/Shapes")
 local Snapper = require("../Core/Snapper")
 local Types = require("./Types")
+local Vents = require("../Core/Builders/Vents")
 
 type Context = Types.Context
-type Cut = Builders.Cutter
+type Cut = Shapes.Cutter
 
 --[=[
 	A piece tool's state: the hole the last preview would cut, if any.
@@ -31,10 +32,10 @@ type Piece = { Cut: Cut? }
 local PEEK_WIDTH = 2.4
 
 local BUILDERS: { [string]: (Settings.Settings, Vector3, Vector3) -> { Geometry.Spec } } = {
-	VentCover = Builders.VentCover,
-	VentCap = Builders.VentCap,
-	VentFan = Builders.VentFan,
-	VentPeek = Builders.VentPeek,
+	VentCover = Vents.VentCover,
+	VentCap = Vents.VentCap,
+	VentFan = Vents.VentFan,
+	VentPeek = Vents.VentPeek,
 }
 
 --[[
@@ -61,7 +62,7 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 		center = Common.SnapOnSurface(center, normal, Common.RoundTo(math.max(0.25, ctx.Settings.FineGrid)))
 		state.Cut = {
 			cf = Common.SurfaceFrame(center, normal) * CFrame.new(0, 0, 0.1 - depth / 2),
-			size = Vector3.new(PEEK_WIDTH - 0.5, Builders.PEEK_HEIGHT - 0.4, depth),
+			size = Vector3.new(PEEK_WIDTH - 0.5, Vents.PEEK_HEIGHT - 0.4, depth),
 			cylinder = false,
 		}
 	else
@@ -142,7 +143,7 @@ local hole: Types.Tool = {
 			cylinder = false,
 		}
 
-		local specs = Builders.VentHoleMark(center + normal * 0.05, normal, inner)
+		local specs = Vents.VentHoleMark(center + normal * 0.05, normal, inner)
 
 		return { Specs = specs, Valid = #specs > 0, Message = "Click to cut a vent hole." }
 	end,

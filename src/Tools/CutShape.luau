@@ -8,10 +8,10 @@
 	@class CutShape
 ]=]
 
-local Builders = require("../Core/Builders")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local Joints = require("../Core/Joints")
+local Openings = require("../Core/Builders/Openings")
 local Overlay = require("../Core/Overlay")
 local Polygon = require("../Pure/Polygon")
 local Tools = require("../Pure/Tools")
@@ -58,7 +58,7 @@ local CLOSE = 0.05
 	@return Face
 ]]
 local function faceOf(part: BasePart, normal: Vector3): Face
-	local axis, side = Builders.FaceAxis(part, normal)
+	local axis, side = Openings.FaceAxis(part, normal)
 	local cf = part.CFrame
 	local axes = { cf.RightVector, cf.UpVector, cf.LookVector }
 	local sizes = { part.Size.X, part.Size.Y, part.Size.Z }
@@ -135,7 +135,7 @@ local function finish(ctx: Context, state: CutState)
 		return ctx.Say("The outline crosses itself or has no area. Press Esc and try again.")
 	end
 
-	local specs = Builders.CutShape(points, triangles, face.thickness + 0.5, -face.normal * (face.thickness / 2))
+	local specs = Openings.CutShape(points, triangles, face.thickness + 0.5, -face.normal * (face.thickness / 2))
 	local part = face.part
 
 	ctx.Edit("Cut shape", function()
