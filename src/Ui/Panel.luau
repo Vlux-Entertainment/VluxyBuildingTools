@@ -98,7 +98,7 @@ local ACCENT = Color3.fromRGB(255, 138, 36)
 local DANGER = Color3.fromRGB(235, 64, 64)
 local ACCENT_DIM = Color3.fromRGB(62, 40, 22)
 local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
-local TABS = { "Build", "Arrange", "Props", "Display", "Hotkeys", "Settings" }
+local TABS = { "Build", "Props", "Arrange", "Display", "Hotkeys", "Settings" }
 local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Props = true, Display = true }
 
 --[[ The setting each switch changes, by its title, so a switch can offer a reset to the default. ]]
@@ -2075,35 +2075,6 @@ function Panel.new(deps: Deps): Panel
 			refresh()
 		end, { Modes = { Prop = true }, Condition = propSelected })
 		numeric(propsCard, "PropRandomAmount", "Random rotation (+/- degrees)", 0, 180, 5, {
-			Modes = { Prop = true },
-			Condition = function()
-				return propSelected() and settings.PropRandomRotation
-			end,
-		})
-	end
-
-	do
-		local buildProps = card("PROPS", "Build", { Modes = { Prop = true } })
-
-		propsBrowser(buildProps, true)
-		numeric(buildProps, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
-		numeric(
-			buildProps,
-			"PropScale",
-			"Prop size (x)",
-			0.2,
-			5,
-			0.1,
-			{ Modes = { Prop = true }, Condition = propSelected }
-		)
-		switch(buildProps, "Randomize prop rotation", function()
-			return settings.PropRandomRotation
-		end, function(on)
-			settings.PropRandomRotation = on
-			deps.Save()
-			refresh()
-		end, { Modes = { Prop = true }, Condition = propSelected })
-		numeric(buildProps, "PropRandomAmount", "Random rotation (+/- degrees)", 0, 180, 5, {
 			Modes = { Prop = true },
 			Condition = function()
 				return propSelected() and settings.PropRandomRotation

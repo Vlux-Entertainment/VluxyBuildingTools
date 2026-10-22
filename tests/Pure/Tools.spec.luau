@@ -17,7 +17,7 @@ return {
 
 	["every mode is in exactly one tile and every tile mode is a tool"] = function(expect)
 		for _, tool in Tools.List do
-			expect.truthy(Tools.TileOf(tool.Id), tool.Id)
+			expect.truthy(tool.Id == "Prop" or Tools.TileOf(tool.Id), tool.Id)
 		end
 
 		for _, tile in Tools.Grid do

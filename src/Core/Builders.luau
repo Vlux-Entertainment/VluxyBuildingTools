@@ -1557,8 +1557,8 @@ function Builders.VentRun(settings: Settings, a: Vector3, b: Vector3, joinDir: V
 	end
 
 	for _, strip in strips do
-		local late = if bend then bend.start[strip.key] or 0 else 0
-		local run = flat.Magnitude - late
+		local late = if bend then bend.start[strip.key] or 0 else 0.03
+		local run = flat.Magnitude - late - 0.03
 
 		if run >= 0.05 then
 			local center = a + dir * (late + run / 2) + across * ((strip.low + strip.high) / 2) + up * strip.rise
@@ -1619,6 +1619,13 @@ end
 ]=]
 function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	local out: { Spec } = {}
+
+	if (b - a).Magnitude > 0.2 then
+		local inset = (b - a).Unit * 0.03
+
+		a, b = a + inset, b - inset
+	end
+
 	local frame = ductFrame(a, b)
 
 	if not frame then

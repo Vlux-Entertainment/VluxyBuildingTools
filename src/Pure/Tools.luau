@@ -318,14 +318,6 @@ Tools.Grid = {
 		Modes = { "Place" },
 	},
 	{
-		Id = "Props",
-		Label = "Props",
-		Glyph = "◧",
-		Key = "8",
-		Description = "Place built-in furniture and props. Pick one in the Props tab.",
-		Modes = { "Prop" },
-	},
-	{
 		Id = "Measure",
 		Label = "Measure",
 		Glyph = "↔",
