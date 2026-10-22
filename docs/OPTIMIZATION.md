@@ -63,9 +63,12 @@ again or pastel is switched off and on.
 **Now:** `WorkingFolder.drawBox` walks every part of the selected folder once a second and works
 out its bounds. Estimated 0.2 s hitch every second at 100k.
 
-**Change:** compute the bounds once, then mark them stale on `DescendantAdded`,
-`DescendantRemoving` and the end of each plugin edit, and recompute at most once a second, only
-when stale. A folder nobody touches costs nothing.
+**Change (done):** `Core/BoundsScan` measures an outlined folder a little at a time: each frame it
+walks the folder for a set time (4 ms until the first box shows, then 0.3 ms) and picks up where it
+stopped; each finished walk publishes the box and starts the next one. The outline is redrawn
+only when the box changed. So a small folder updates every frame, a 100k folder every second or
+two, it follows parts moved with Studio's own tools, and no frame stalls. `Geometry.Bounds` also
+works out each part's box from its rotation instead of eight corners, about eight times less math.
 
 ## Phase 3: the drawing previews
 

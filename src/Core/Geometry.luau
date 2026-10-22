@@ -472,6 +472,25 @@ function Geometry.UnionAll(model: Model, name: string): string?
 end
 
 --[=[
+	The world-aligned box around one part, worked out from its rotation instead of its eight corners.
+
+	@param part BasePart
+	@return Vector3 -- the low corner
+	@return Vector3 -- the high corner
+]=]
+function Geometry.PartBox(part: BasePart): (Vector3, Vector3)
+	local cf, half = part.CFrame, part.Size * 0.5
+	local right, up, look = cf.RightVector, cf.UpVector, cf.LookVector
+	local reach = Vector3.new(
+		math.abs(right.X) * half.X + math.abs(up.X) * half.Y + math.abs(look.X) * half.Z,
+		math.abs(right.Y) * half.X + math.abs(up.Y) * half.Y + math.abs(look.Y) * half.Z,
+		math.abs(right.Z) * half.X + math.abs(up.Z) * half.Y + math.abs(look.Z) * half.Z
+	)
+
+	return cf.Position - reach, cf.Position + reach
+end
+
+--[=[
 	@param parts { BasePart }
 	@return CFrame -- the centre of the world-aligned box around the parts
 	@return Vector3 -- that box's size
@@ -481,17 +500,9 @@ function Geometry.Bounds(parts: { BasePart }): (CFrame, Vector3)
 	local high = -low
 
 	for _, part in parts do
-		for x = -1, 1, 2 do
-			for y = -1, 1, 2 do
-				for z = -1, 1, 2 do
-					local corner = part.CFrame:PointToWorldSpace(part.Size * Vector3.new(x, y, z) * 0.5)
+		local partLow, partHigh = Geometry.PartBox(part)
 
-					low = Vector3.new(math.min(low.X, corner.X), math.min(low.Y, corner.Y), math.min(low.Z, corner.Z))
-					high =
-						Vector3.new(math.max(high.X, corner.X), math.max(high.Y, corner.Y), math.max(high.Z, corner.Z))
-				end
-			end
-		end
+		low, high = low:Min(partLow), high:Max(partHigh)
 	end
 
 	return CFrame.new((low + high) * 0.5), high - low

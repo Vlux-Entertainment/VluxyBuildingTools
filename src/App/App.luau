@@ -276,7 +276,7 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Overlay.PositionReadout(overlay)
 		CameraLight.Step(cameraLight)
 		Profile.Run("Modal", Host.Step, host)
-		Profile.Run("Folder", WorkingFolder.Step, folder, dt)
+		Profile.Run("Folder", WorkingFolder.Step, folder)
 
 		elapsed += dt
 

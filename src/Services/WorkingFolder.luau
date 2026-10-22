@@ -18,6 +18,7 @@ local CollectionService = game:GetService("CollectionService")
 local Selection = game:GetService("Selection")
 
 local AppState = require("../State/AppState")
+local BoundsScan = require("../Core/BoundsScan")
 local Cursor = require("./Cursor")
 local Display = require("./Display")
 local Edit = require("./Edit")
@@ -47,7 +48,10 @@ export type WorkingFolder = {
 	_conflict: Conflict?,
 	_seen: { [string]: any },
 	_watch: RBXScriptConnection?,
-	_boxClock: number,
+	--[=[ What each outline is measuring, its latest box, and the box version last drawn. ]=]
+	_boxTargets: { [string]: Instance? },
+	_scans: { [string]: BoundsScan.BoundsScan },
+	_drawn: { [string]: number },
 	--[=[ True while taking a new folder's settings, so they are not written onto the old folder. ]=]
 	_adopting: boolean,
 }
@@ -56,7 +60,10 @@ local MAP_TAG = "VluxyBT_Map"
 local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
 local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local SHARED_PREFIX = "VluxyBT_"
-local BOX_INTERVAL = 1
+local BOXES = { "Working", "Pending", "Hover" }
+--[[ Seconds an outline may spend measuring in a frame: more until its first box shows, then a sliver. ]]
+local FIRST_BUDGET = 0.004
+local STEADY_BUDGET = 0.0003
 
 local WorkingFolder = {}
 
@@ -89,49 +96,50 @@ end
 
 --[[
 	@param self WorkingFolder
-	@param which string -- Working, Pending or Hover
-	@param target Instance?
+	@param budget number -- seconds each outline may spend measuring
 
-	Outlines every Part inside the folder, or clears the outline when there is none to draw.
+	Measures each outlined folder for a while and redraws an outline only when its box changed.
 ]]
-local function drawBox(self: WorkingFolder, which: string, target: Instance?)
+local function stepBoxes(self: WorkingFolder, budget: number)
 	local overlay = self._deps.Overlay
-	local parts: { BasePart } = {}
 
-	if target and target:IsDescendantOf(workspace) then
-		for _, object in target:GetDescendants() do
-			if object:IsA("BasePart") then
-				table.insert(parts, object)
+	for _, which in BOXES do
+		local scan = self._scans[which]
+		local target = self._boxTargets[which]
+
+		if target and not target:IsDescendantOf(workspace) then
+			target = nil
+		end
+
+		BoundsScan.Step(scan, target, if scan.Size then budget else math.max(budget, FIRST_BUDGET))
+
+		if scan.Version ~= self._drawn[which] then
+			self._drawn[which] = scan.Version
+
+			if scan.CFrame and scan.Size then
+				Overlay.DrawBox(overlay, which, scan.CFrame, scan.Size)
+			else
+				Overlay.ClearBox(overlay, which)
 			end
 		end
 	end
-
-	if #parts == 0 then
-		return Overlay.ClearBox(overlay, which)
-	end
-
-	local cframe, size = Geometry.Bounds(parts)
-
-	Overlay.DrawBox(overlay, which, cframe, size)
 end
 
 --[[
 	@param self WorkingFolder
 
-	Redraws the outlines of the working folder (only while it is selected), the folder waiting for a
-	yes, and the one under the cursor while picking.
+	Picks what to outline, the working folder (only while it is selected), the folder waiting for a
+	yes, and the one under the cursor while picking, and draws what can be measured straight away.
 ]]
 local function redrawBoxes(self: WorkingFolder)
 	local state = self._deps.State
 	local folder, pending = state.Folder(), state.Pending()
+	local targets = self._boxTargets
 
-	drawBox(self, "Working", if folder and table.find(Selection:Get(), folder) then folder else nil)
-	drawBox(self, "Pending", pending)
-	drawBox(
-		self,
-		"Hover",
-		if state.Picking() and self._hover ~= pending and self._hover ~= folder then self._hover else nil
-	)
+	targets.Working = if folder and table.find(Selection:Get(), folder) then folder else nil
+	targets.Pending = pending
+	targets.Hover = if state.Picking() and self._hover ~= pending and self._hover ~= folder then self._hover else nil
+	stepBoxes(self, FIRST_BUDGET)
 end
 
 --[[
@@ -317,7 +325,9 @@ function WorkingFolder.new(deps: Deps, trove: Trove.Trove): WorkingFolder
 		_conflict = nil,
 		_seen = {},
 		_watch = nil,
-		_boxClock = 0,
+		_boxTargets = {},
+		_scans = { Working = BoundsScan.new(), Pending = BoundsScan.new(), Hover = BoundsScan.new() },
+		_drawn = {},
 		_adopting = false,
 	}
 
@@ -525,13 +535,12 @@ function WorkingFolder.Click(self: WorkingFolder): boolean
 end
 
 --[=[
-	Runs every frame: follows the folder under the cursor while picking, refreshes the outlines once a
-	second, and lets go of a working folder that was deleted.
+	Runs every frame: follows the folder under the cursor while picking, measures the outlines a
+	little further, and lets go of a working folder that was deleted.
 
 	@param self WorkingFolder
-	@param dt number
 ]=]
-function WorkingFolder.Step(self: WorkingFolder, dt: number)
+function WorkingFolder.Step(self: WorkingFolder)
 	local state = self._deps.State
 
 	if state.Picking() then
@@ -544,12 +553,7 @@ function WorkingFolder.Step(self: WorkingFolder, dt: number)
 		end
 	end
 
-	self._boxClock += dt
-
-	if self._boxClock >= BOX_INTERVAL then
-		self._boxClock = 0
-		redrawBoxes(self)
-	end
+	stepBoxes(self, STEADY_BUDGET)
 
 	local folder = state.Folder()
 
