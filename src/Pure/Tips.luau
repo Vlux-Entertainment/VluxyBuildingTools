@@ -130,7 +130,7 @@ Tips.Entries = {
 	WindowSill = { Text = "How far the bottom of the window is above the bottom of the wall." },
 	Yaw = { Text = "How much to turn painted copies.", Key = "R" },
 	FieldStep = {
-		Text = "How much the + and - buttons beside a number change it. 0 lets each field use its own step; set 0.1 to make every field move by 0.1.",
+		Text = "Arrow step: how much the + and - buttons beside every number change it. Set 0.1 to move by 0.1 everywhere. 0 lets each field use its own step.",
 	},
 	GhostTransparency = {
 		Text = "How see-through hidden parts look when you show them as ghosts. 0 is solid, 1 is clear.",

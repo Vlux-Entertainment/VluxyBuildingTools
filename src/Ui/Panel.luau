@@ -2240,7 +2240,7 @@ function Panel.new(deps: Deps): Panel
 		refresh()
 	end, nil, true)
 
-	numeric(editing, "FieldStep", "Step for the + / - buttons (0 = automatic)", 0, 100, 0.05)
+	numeric(editing, "FieldStep", "Arrow step", 0, 100, 0.05)
 	numeric(editing, "Grid", "Snap increment", 0.05, 128, 0.5)
 	numeric(editing, "FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5)
 	numeric(editing, "StandardHeight", "Standard wall height", 0.1, 2048)
