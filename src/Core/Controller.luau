@@ -1520,6 +1520,42 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 					b = origin + axis * sign * (if alongX then math.abs(d.X) else math.abs(d.Z))
 
+					local aim = hitSurface()
+					local _, _, owner =
+						if aim then Snapper.VentConnect(aim.Position, settings.VentSize * 1.1, 1) else nil, nil, nil
+					local hostA = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
+					local hostB = if owner then owner:GetAttribute("VluxyBT_VentEnd") else nil
+
+					if
+						typeof(hostA) == "Vector3"
+						and typeof(hostB) == "Vector3"
+						and math.abs(hostB.Y - hostA.Y) < 0.05
+					then
+						local along = Vector3.new(hostB.X - hostA.X, 0, hostB.Z - hostA.Z)
+						local direction = axis * sign
+
+						if along.Magnitude > 0.05 then
+							local hostDir = along.Unit
+							local cross = direction.X * hostDir.Z - direction.Z * hostDir.X
+							local reachTo = Vector3.new(hostA.X - origin.X, 0, hostA.Z - origin.Z)
+							local s = (reachTo.X * hostDir.Z - reachTo.Z * hostDir.X)
+								/ (if cross == 0 then 1 else cross)
+							local meet = origin + direction * s
+							local position = Vector3.new(meet.X - hostA.X, 0, meet.Z - hostA.Z):Dot(hostDir)
+							local centreY = origin.Y + settings.VentSize / 2
+
+							if
+								math.abs(cross) > 0.9
+								and math.abs(hostA.Y - centreY) < settings.VentSize * 0.5
+								and position > -0.1
+								and position < along.Magnitude + 0.1
+								and s - settings.VentSize / 2 > 0.1
+							then
+								b = origin + direction * (s - settings.VentSize / 2)
+							end
+						end
+					end
+
 					if not chained and ventNormal then
 						local sideways = math.abs((axis * sign):Dot(ventNormal)) < 0.5
 
