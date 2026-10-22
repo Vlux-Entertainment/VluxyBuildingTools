@@ -184,24 +184,51 @@ function Kit.Pop(button: GuiObject)
 end
 
 --[=[
+	Follows a condition the way it settles, not every blink: it turns true at once, but only turns
+	false if still false once the current change is over. A tool switch that passes through "no
+	tool" for an instant therefore never reads as off.
+
+	@param condition () -> boolean -- read reactively
+	@return () -> boolean -- the settled value
+]=]
+function Kit.Settled(condition: () -> boolean): () -> boolean
+	local settled = vide.untrack(condition)
+
+	vide.effect(function()
+		if condition() then
+			task.defer(function()
+				settled = true
+			end)
+		else
+			task.defer(function()
+				if not vide.untrack(condition) then
+					settled = false
+				end
+			end)
+		end
+	end)
+
+	return function()
+		return settled
+	end
+end
+
+--[=[
 	A vide action that pops the button each time it becomes the selected one, however that
-	happened: a click, a hotkey or the wheel.
+	happened: a click, a hotkey or the wheel. A selection that only blinks off and on does not pop.
 
 	@param selected () -> boolean
+	@param allow (() -> boolean)? -- asked when the button becomes selected; false skips the pop
 	@return any -- the action, to put among the button's properties
 ]=]
-function Kit.PopWhen(selected: () -> boolean): any
+function Kit.PopWhen(selected: () -> boolean, allow: (() -> boolean)?): any
 	return vide.action(function(instance: Instance)
-		local was = vide.untrack(selected)
+		local was = Kit.Settled(selected)
 
 		vide.effect(function()
-			local now = selected()
-
-			if now and not was then
+			if selected() and not was() and (allow == nil or allow()) then
 				Kit.Pop(instance :: GuiObject)
 			end
-
-			was = now
 		end)
 	end)
 end

@@ -612,6 +612,16 @@ export type ChoiceSpec = {
 function Controls.Choice(ui: Ui, spec: ChoiceSpec): Frame
 	local buttons = {}
 	local columns = spec.Columns
+	local values: { [string]: boolean } = {}
+
+	for _, option in spec.Options do
+		values[option.Value] = true
+	end
+
+	--[[ Whether one of these options was already picked, so arriving at the row from elsewhere does not pop it. ]]
+	local wasHere = Kit.Settled(function()
+		return values[spec.Get() or ""] == true
+	end)
 
 	for i, option in spec.Options do
 		table.insert(
@@ -628,7 +638,7 @@ function Controls.Choice(ui: Ui, spec: ChoiceSpec): Frame
 				end),
 				Kit.PopWhen(function()
 					return spec.Get() == option.Value
-				end),
+				end, wasHere),
 				Kit.Corner(6),
 				Kit.Stroke(),
 				ui.Popups.Tip(if option.Tip then { Text = option.Tip, Key = option.Key } else nil),
