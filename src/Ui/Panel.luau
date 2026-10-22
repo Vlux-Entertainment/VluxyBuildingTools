@@ -14,6 +14,7 @@ local Hidden = require("../Core/Hidden")
 local Keymap = require("../Pure/Keymap")
 local PluginInfo = require("../Pure/PluginInfo")
 local PropData = require("../Pure/PropData")
+local Props = require("../Core/Props")
 local Settings = require("../Pure/Settings")
 local SurfaceGrid = require("../Core/SurfaceGrid")
 local Tips = require("../Pure/Tips")
@@ -1699,9 +1700,9 @@ function Panel.new(deps: Deps): Panel
 
 	do
 		local propsCard = card("PROPS", "Props")
-		local category = PropData.Categories[1].Id
+		local category = "All"
 		local categoryButtons: { [string]: TextButton } = {}
-		local propButtons: { [string]: TextButton } = {}
+		local cells: { [string]: { frame: Frame, button: TextButton } } = {}
 
 		text(
 			propsCard,
@@ -1717,7 +1718,7 @@ function Panel.new(deps: Deps): Panel
 		}, propsCard)
 
 		make("UIGridLayout", {
-			CellSize = UDim2.new(0.5, -3, 0, 28),
+			CellSize = UDim2.new(1 / 3, -4, 0, 26),
 			CellPadding = UDim2.fromOffset(4, 4),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}, sections)
@@ -1730,10 +1731,71 @@ function Panel.new(deps: Deps): Panel
 		}, propsCard)
 
 		make("UIGridLayout", {
-			CellSize = UDim2.new(0.5, -3, 0, 34),
+			CellSize = UDim2.new(1 / 3, -4, 0, 104),
 			CellPadding = UDim2.fromOffset(4, 4),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}, shown)
+
+		--[[
+			@param prop PropData.Prop
+			@return ViewportFrame -- a picture of the prop. The parts live only inside the viewport, so they are local to this user and never reach the place.
+		]]
+		local function picture(prop: PropData.Prop, parent: Instance): ViewportFrame
+			local view = make("ViewportFrame", {
+				Size = UDim2.new(1, -8, 1, -24),
+				Position = UDim2.fromOffset(4, 4),
+				BackgroundTransparency = 1,
+				Ambient = Color3.fromRGB(150, 150, 160),
+				LightColor = Color3.fromRGB(255, 255, 255),
+				LightDirection = Vector3.new(-0.5, -1, 0.7),
+			}, parent) :: ViewportFrame
+			local low, high =
+				Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+
+			for _, spec in Props.Build(prop, CFrame.new(), 1) do
+				local part = Instance.new("Part")
+
+				part.Anchored = true
+				part.Size = spec.size
+				part.CFrame = spec.cf
+				part.Material = Enum.Material.SmoothPlastic
+				part.Color = if spec.name == "PropAccent"
+					then Color3.fromRGB(255, 138, 36)
+					else Color3.fromRGB(176, 179, 188)
+
+				if spec.shape == "Cylinder" then
+					part.Shape = Enum.PartType.Cylinder
+				elseif spec.shape == "Ball" then
+					part.Shape = Enum.PartType.Ball
+				end
+
+				part.Parent = view
+
+				local reach = spec.size.Magnitude / 2
+
+				low = Vector3.new(
+					math.min(low.X, spec.cf.Position.X - reach),
+					math.min(low.Y, spec.cf.Position.Y - reach),
+					math.min(low.Z, spec.cf.Position.Z - reach)
+				)
+				high = Vector3.new(
+					math.max(high.X, spec.cf.Position.X + reach),
+					math.max(high.Y, spec.cf.Position.Y + reach),
+					math.max(high.Z, spec.cf.Position.Z + reach)
+				)
+			end
+
+			local middle = (low + high) / 2
+			local radius = math.max(2, (high - low).Magnitude / 2)
+			local camera = Instance.new("Camera")
+
+			camera.FieldOfView = 40
+			camera.CFrame = CFrame.lookAt(middle + Vector3.new(0.9, 0.7, -1.3).Unit * radius * 2.4, middle)
+			camera.Parent = view
+			view.CurrentCamera = camera
+
+			return view
+		end
 
 		local function paintProps()
 			for id, choice in categoryButtons do
@@ -1745,53 +1807,80 @@ function Panel.new(deps: Deps): Panel
 
 			local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
 
-			for id, choice in propButtons do
-				local active = id == current
-
-				choice.BackgroundColor3 = if active then ACCENT else TILE
-				choice.TextColor3 = if active then BACKGROUND else TEXT
+			for id, cell in cells do
+				cell.frame.BackgroundColor3 = if id == current then ACCENT else TILE
 			end
 		end
 
 		local function showCategory()
-			for _, child in shown:GetChildren() do
-				if child:IsA("TextButton") then
-					child:Destroy()
-				end
+			for _, cell in cells do
+				cell.frame.Visible = false
 			end
 
-			table.clear(propButtons)
+			for i, prop in PropData.Props do
+				if category == "All" or prop.Category == category then
+					local cell = cells[prop.Id]
 
-			for i, prop in PropData.InCategory(category) do
-				local choice = make("TextButton", {
-					BackgroundColor3 = TILE,
-					BorderSizePixel = 0,
-					Text = prop.Label,
-					TextColor3 = TEXT,
-					Font = Enum.Font.GothamMedium,
-					TextSize = 12,
-					LayoutOrder = i,
-				}, shown)
+					if not cell then
+						local frame = make("Frame", {
+							BackgroundColor3 = TILE,
+							BorderSizePixel = 0,
+						}, shown)
 
-				style(choice, 6, CARD_STROKE)
-				attachTip(choice, { Text = prop.Label .. if prop.Mount == "wall" then " (hangs on a wall)." else "." })
-				propButtons[prop.Id] = choice
-				choice.MouseButton1Click:Connect(function()
-					actions.PickProp(prop.Id)
-				end)
+						style(frame, 6, CARD_STROKE)
+						picture(prop, frame)
+						make("TextLabel", {
+							Size = UDim2.new(1, -4, 0, 18),
+							AnchorPoint = Vector2.new(0, 1),
+							Position = UDim2.new(0, 2, 1, -2),
+							BackgroundTransparency = 1,
+							Text = prop.Label,
+							TextColor3 = TEXT,
+							Font = Enum.Font.GothamMedium,
+							TextSize = 11,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}, frame)
+
+						local click = make("TextButton", {
+							Size = UDim2.fromScale(1, 1),
+							BackgroundTransparency = 1,
+							Text = "",
+							ZIndex = 5,
+						}, frame)
+
+						attachTip(
+							click,
+							{ Text = prop.Label .. if prop.Mount == "wall" then " (hangs on a wall)." else "." }
+						)
+						click.MouseButton1Click:Connect(function()
+							actions.PickProp(prop.Id)
+						end)
+						cell = { frame = frame, button = click }
+						cells[prop.Id] = cell
+					end
+
+					cell.frame.LayoutOrder = i
+					cell.frame.Visible = true
+				end
 			end
 
 			paintProps()
 		end
 
-		for i, entry in PropData.Categories do
+		local choices = { { Id = "All", Label = "All" } }
+
+		for _, entry in PropData.Categories do
+			table.insert(choices, entry)
+		end
+
+		for i, entry in choices do
 			local choice = make("TextButton", {
 				BackgroundColor3 = TILE,
 				BorderSizePixel = 0,
 				Text = entry.Label,
 				TextColor3 = TEXT,
 				Font = Enum.Font.GothamMedium,
-				TextSize = 12,
+				TextSize = 11,
 				LayoutOrder = i,
 			}, sections)
 

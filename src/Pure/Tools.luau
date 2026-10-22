@@ -314,7 +314,7 @@ Tools.Grid = {
 		Id = "Props",
 		Label = "Props",
 		Glyph = "◧",
-		Key = nil,
+		Key = "8",
 		Description = "Place built-in furniture and props. Pick one in the Props tab.",
 		Modes = { "Prop" },
 	},
