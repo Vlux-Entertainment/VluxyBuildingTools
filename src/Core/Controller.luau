@@ -117,6 +117,7 @@ local INSTRUCTIONS: { [string]: string } = {
 	VentCap = "Click a vent opening or any surface to close it with a plain square plate.",
 	VentFan = "Click a vent opening to block it with a fan.",
 	VentPeek = "Click a wall or vent opening to place a small louvred cover for looking out.",
+	VentHole = "Click a wall, room, corridor, stairs, floor, ceiling or vent to cut a vent-sized hole through it.",
 	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
 	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
 	CircleWindow = "Click an undecorated rectangular wall. The round window is centered on the cursor; its size is the smaller of the window width and height.",
@@ -214,6 +215,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local conflict: { Folder: Instance, Names: string }? = nil
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
+	local holeCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
 	local ventHost: Vector3? = nil
 	local ventNormal: Vector3? = nil
@@ -1431,6 +1433,40 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						depth
 					)
 					else "Move the mouse to set the cut depth. Click to confirm."
+			end
+		elseif mode == "VentHole" then
+			local hit = hitSurface()
+
+			holeCut = nil
+
+			if hit and hit.Instance:IsA("BasePart") and not hit.Instance:IsA("Terrain") then
+				local part = hit.Instance :: BasePart
+				local normal = hit.Normal
+				local fine = math.max(0.25, settings.FineGrid)
+				local center = Vector3.new(
+					if math.abs(normal.X) < 0.5 then math.round(hit.Position.X / fine) * fine else hit.Position.X,
+					if math.abs(normal.Y) < 0.5 then math.round(hit.Position.Y / fine) * fine else hit.Position.Y,
+					if math.abs(normal.Z) < 0.5 then math.round(hit.Position.Z / fine) * fine else hit.Position.Z
+				)
+				local cf = part.CFrame
+				local size = part.Size
+				local extent = math.abs(normal:Dot(cf.XVector)) * size.X
+					+ math.abs(normal:Dot(cf.YVector)) * size.Y
+					+ math.abs(normal:Dot(cf.ZVector)) * size.Z
+				local depth = extent + 0.2
+				local inner = math.max(0.5, settings.VentSize - 2 * settings.VentThickness)
+				local u = (if math.abs(normal.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis):Cross(normal).Unit
+				local frame = CFrame.fromMatrix(center, u, normal:Cross(u), normal)
+
+				holeCut = {
+					cf = frame * CFrame.new(0, 0, 0.1 - depth / 2),
+					size = Vector3.new(inner, inner, depth),
+					cylinder = false,
+				}
+				out = Builders.VentHoleMark(center + normal * 0.05, normal, inner)
+				message = "Click to cut a vent hole."
+			else
+				message = "Point at a wall, floor, ceiling, stairs or vent."
 			end
 		elseif mode == "VentCover" or mode == "VentCap" or mode == "VentFan" or mode == "VentPeek" then
 			local hit = hitSurface()
@@ -3270,6 +3306,28 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 			end)
 			resetPoint()
+		elseif active == "VentHole" then
+			local cut = holeCut
+
+			if not previewValid or not cut then
+				return
+			end
+
+			edit("Cut vent hole", function()
+				local params = OverlapParams.new()
+				local scope = Geometry.GetScope()
+
+				if scope then
+					params.FilterType = Enum.RaycastFilterType.Include
+					params.FilterDescendantsInstances = { scope }
+				end
+
+				for _, part in workspace:GetPartBoundsInBox(cut.cf, cut.size, params) do
+					if not part:IsA("Terrain") then
+						Joints.Carve(part, { cut })
+					end
+				end
+			end)
 		elseif active == "VentCover" or active == "VentCap" or active == "VentFan" or active == "VentPeek" then
 			if not previewValid then
 				return

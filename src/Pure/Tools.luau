@@ -175,6 +175,13 @@ Tools.List = {
 		Description = "Close a vent end with a frame and fan blades that block the way.",
 	},
 	{
+		Id = "VentHole",
+		Label = "Vent Hole",
+		Glyph = "▣",
+		Key = nil,
+		Description = "Cut a square hole the size of a vent through a wall, room, corridor, stairs, floor, ceiling or a vent itself.",
+	},
+	{
 		Id = "VentPeek",
 		Label = "Peek Cover",
 		Glyph = "▭",
@@ -276,7 +283,7 @@ Tools.Grid = {
 		Glyph = "▯",
 		Key = "3",
 		Description = "Cut a doorway, a window or an archway into a wall. Pick which one in the options.",
-		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "CutShape", "Extend" },
+		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "CutShape", "VentHole", "Extend" },
 	},
 	{
 		Id = "Structures",

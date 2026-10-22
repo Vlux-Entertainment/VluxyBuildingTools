@@ -1870,6 +1870,28 @@ function Builders.VentPeek(settings: Settings, center: Vector3, normal: Vector3)
 end
 
 --[=[
+	A square outline lying on a surface, showing where a vent hole will be cut.
+
+	@param center Vector3
+	@param normal Vector3
+	@param size number -- the side of the hole
+	@return { Spec }
+]=]
+function Builders.VentHoleMark(center: Vector3, normal: Vector3, size: number): { Spec }
+	local out: { Spec } = {}
+	local frame = surfaceFrame(center, normal)
+	local bar, depth = 0.15, 0.1
+	local half = size / 2 - bar / 2
+
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, half, 0), "VentHoleMark")
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, -half, 0), "VentHoleMark")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(half, 0, 0), "VentHoleMark")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(-half, 0, 0), "VentHoleMark")
+
+	return out
+end
+
+--[=[
 	Copies of the source selection, seated flush on the surface under the cursor.
 
 	@param settings Settings

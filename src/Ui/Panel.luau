@@ -1394,6 +1394,7 @@ function Panel.new(deps: Deps): Panel
 			VentCap = true,
 			VentFan = true,
 			VentPeek = true,
+			VentHole = true,
 		})
 	)
 	numeric(
@@ -1403,7 +1404,7 @@ function Panel.new(deps: Deps): Panel
 		0.05,
 		4,
 		0.05,
-		body({ Vent = true, VentRamp = true, VentShaft = true })
+		body({ Vent = true, VentRamp = true, VentShaft = true, VentHole = true })
 	)
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
