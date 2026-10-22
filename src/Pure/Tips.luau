@@ -31,6 +31,12 @@ Tips.Entries = {
 	Yes = {
 		Text = "The plugin may build, move, rotate, recolor and delete Parts inside this Folder. Nothing outside it is changed.",
 	},
+	["Use folder's"] = {
+		Text = "Takes the settings saved on this folder (theme, ghost transparency, pastel, grid) as your own, then starts working in it.",
+	},
+	Overwrite = {
+		Text = "Starts working in this folder and saves your settings onto it, replacing the ones it had. Everyone who uses the folder gets yours.",
+	},
 	Cancel = { Text = "Do not change the working folder.", Key = "Esc" },
 
 	-- Switches
