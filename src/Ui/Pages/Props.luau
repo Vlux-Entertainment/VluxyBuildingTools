@@ -148,12 +148,14 @@ return function(ui: Ui): { Instance }
 		)
 	end
 
-	--[[ Every prop cell; rebuilt when the pictures are reloaded or the theme changes. ]]
-	local function cells(): { Instance }
-		pictures()
-		Store.Get(store, "ColorTheme")
+	--[[
+		Every prop cell, built once. Only the picture inside is redrawn, when the pictures are
+		reloaded or the theme changes: vide cannot make reactive cells inside a reactive rebuild.
+	]]
+	local cells: { Instance } = {}
 
-		local out: { Instance } = {}
+	do
+		local out = cells
 
 		for _, prop in PropData.Props do
 			local cell = new("Frame")({
@@ -177,7 +179,18 @@ return function(ui: Ui): { Instance }
 				end,
 				Kit.Corner(6),
 				Kit.Stroke(),
-				picture(ui, prop),
+				function(): Instance
+					pictures()
+					Store.Get(store, "ColorTheme")
+
+					local view = vide.untrack(function()
+						return picture(ui, prop)
+					end)
+
+					vide.cleanup(view)
+
+					return view
+				end,
 				new("TextLabel")({
 					Size = UDim2.new(1, -4, 0, 18),
 					AnchorPoint = Vector2.new(0, 1),
@@ -203,11 +216,8 @@ return function(ui: Ui): { Instance }
 				}),
 			})
 
-			vide.cleanup(cell)
 			table.insert(out, cell)
 		end
-
-		return out
 	end
 
 	return {
