@@ -970,6 +970,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 			end
 
+			if not shaft and openEnd and math.abs(openEnd.Y) > 0.9 then
+				local centre = endPoint - openEnd.Unit * (size / 2)
+
+				ventHitHost = openEnd.Unit
+				snapMark = centre
+
+				return centre - Vector3.new(0, size / 2, 0)
+			end
+
 			snapMark = endPoint
 
 			return if shaft then endPoint else endPoint - Vector3.new(0, size / 2, 0)
