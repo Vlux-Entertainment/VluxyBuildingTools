@@ -18,8 +18,10 @@ type Ui = Controls.Ui
 local new = Kit.New
 
 local KEY_WIDTH = 112
-local KEY_GAP = 8
+local KEY_GAP = 10
 local LINE_HEIGHT = 20
+local ROW_PADDING_X = 8
+local ROW_PADDING_Y = 5
 
 --[[ A key chip in the UI color, or a muted joining word such as "+" or "then". ]]
 local function token(text: string, index: number): TextLabel
@@ -51,8 +53,11 @@ local function token(text: string, index: number): TextLabel
 	})
 end
 
---[[ One binding: the keys wrap inside a fixed-width column and the meaning wraps beside them. ]]
-local function row(binding: Keymap.Binding): Frame
+--[[
+	One binding: the keys wrap inside a fixed-width column and the meaning wraps beside them.
+	Every other row has a faint band behind it, so a meaning is easy to match to its keys.
+]]
+local function row(binding: Keymap.Binding, striped: boolean): Frame
 	local tokens = {}
 
 	for index, text in binding.Keys do
@@ -62,8 +67,12 @@ local function row(binding: Keymap.Binding): Frame
 	return new("Frame")({
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = Theme.Tile,
+		BackgroundTransparency = if striped then 0 else 1,
+		BorderSizePixel = 0,
 		LayoutOrder = Kit.Next(),
+		Kit.Corner(5),
+		Kit.Padding(ROW_PADDING_X, ROW_PADDING_Y),
 		new("Frame")({
 			Size = UDim2.fromOffset(KEY_WIDTH, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
@@ -114,11 +123,23 @@ return function(ui: Ui): { Instance }
 	for _, section in Keymap.Sections() do
 		local rows = {}
 
-		for _, binding in section.Bindings do
-			table.insert(rows, row(binding))
+		for index, binding in section.Bindings do
+			table.insert(rows, row(binding, index % 2 == 1))
 		end
 
-		table.insert(cards, Controls.Card(ui, section.Title, rows))
+		table.insert(
+			cards,
+			Controls.Card(ui, section.Title, {
+				new("Frame")({
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					LayoutOrder = Kit.Next(),
+					Kit.List(1),
+					rows,
+				}),
+			})
+		)
 	end
 
 	return cards
