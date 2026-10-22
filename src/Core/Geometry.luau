@@ -104,6 +104,12 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 		part.Material = Enum.Material.SmoothPlastic
 		part.Color = Color3.fromRGB(163, 162, 165)
 
+		if spec.name == "Door_Panel" then
+			part.Transparency = 0.5
+			part.CanCollide = false
+			part.CanTouch = false
+		end
+
 		local source = spec.source
 
 		if source then

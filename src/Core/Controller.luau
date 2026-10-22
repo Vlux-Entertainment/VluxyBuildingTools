@@ -1290,7 +1290,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or mode == "ArchOpening"
 		then
 			local opening = if mode == "Door"
-				then { Width = settings.DoorWidth, Height = settings.DoorHeight, Sill = 0 }
+				then { Width = settings.DoorWidth, Height = settings.DoorHeight, Sill = 0, Panel = settings.DoorPanel }
 				elseif mode == "Window" or mode == "TriangleWindow" then {
 					Width = settings.WindowWidth,
 					Height = settings.WindowHeight,
@@ -2955,6 +2955,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 					if not Joints.Carve(target, carving) then
 						say("The wall could not be cut.")
+					end
+
+					if #specs > 0 then
+						Geometry.Materialize(specs, "Wall_" .. active)
 					end
 
 					return

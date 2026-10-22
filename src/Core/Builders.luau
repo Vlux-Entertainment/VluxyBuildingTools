@@ -1090,7 +1090,7 @@ end
 ]=]
 function Builders.Opening(
 	settings: Settings,
-	dims: { Width: number, Height: number, Sill: number },
+	dims: { Width: number, Height: number, Sill: number, Panel: boolean? },
 	hit: RaycastResult?,
 	shape: string,
 	depth: number?
@@ -1149,6 +1149,10 @@ function Builders.Opening(
 
 	if left <= -size.X / 2 + 0.01 or right >= size.X / 2 - 0.01 or sill < 0 or top > size.Y / 2 + 0.001 then
 		return out, "Opening must fit inside the wall, with wall remaining on both sides.", nil
+	end
+
+	if dims.Panel and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
+		add(out, Vector3.new(w, h, math.min(size.Z, 0.3)), cf * CFrame.new(x, bottom + h / 2, 0), "Door_Panel")
 	end
 
 	if carve then
