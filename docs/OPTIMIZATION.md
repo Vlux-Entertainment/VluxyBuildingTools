@@ -1,7 +1,8 @@
-# Optimization plan: 100k parts per working folder
+# Optimization plan: 80k parts per working folder
 
-Branch `perf/100k-parts`. Goal: a working folder of **100,000 parts** feels the same as a small one.
-Most maps will be under 50k, so 100k is the target with headroom, and it is what we test at.
+Branch `perf/80k-parts`. Goal: a working folder of **80,000 parts** feels the same as a small one.
+Most maps will be under 50k, so 80k is the supported maximum with headroom. We test at 80k, and
+once at 100k to check nothing falls apart just past the limit.
 
 ## The rule
 
@@ -13,7 +14,7 @@ The recurring problem in the code is "walk everything to find a few things". Eac
 replaces such a walk with knowing where the few things are: the parts an edit touched, a
 CollectionService tag, or a box search near the cursor.
 
-## Budgets at 100k
+## Budgets at 80k
 
 | What | Budget |
 |---|---|
@@ -34,15 +35,15 @@ CollectionService tag, or a box search near the cursor.
    - `Load`, `Pastel`, `Grid`, `Hidden`
 2. **Stress place generator**: `tools/StressPlace.luau`, run from the Studio command bar. It fills
    a folder with rooms, corridors, walls, floors, stairs and doorways made by the plugin's own
-   builders, to a chosen part count (default 100k). It is not part of the plugin build.
-3. **Baseline**: record the numbers for every label at 10k, 50k and 100k in this file before any
+   builders, to a chosen part count (default 80k). It is not part of the plugin build.
+3. **Baseline**: record the numbers for every label at 10k, 50k and 80k in this file before any
    fix, so each phase shows what it changed.
 
 ## Phase 1: the sweep after every edit
 
 **Now:** every plugin edit runs `Display.Sweep`. With pastel or the grid on, that walks the whole
 working folder twice, `Colors.Sweep` and `SurfaceGrid.Sweep`, and in Unity mode it also runs the
-name matching and the shape sizing on every part. Estimated 0.3 to 0.4 s per click at 100k.
+name matching and the shape sizing on every part. Estimated 0.25 to 0.35 s per click at 80k.
 
 **Change:**
 - `Services/Edit` already collects the parts an edit adds. It also collects the parts an edit
@@ -59,7 +60,7 @@ tool with Unity colors on.
 ## Phase 2: the working folder outline
 
 **Now:** `WorkingFolder.drawBox` walks every part of the selected folder once a second and works
-out its bounds. Estimated 0.2 s hitch every second at 100k.
+out its bounds. Estimated 0.15 s hitch every second at 80k.
 
 **Change:** compute the bounds once, then mark them stale on `DescendantAdded`,
 `DescendantRemoving` and the end of each plugin edit, and recompute at most once a second, only
@@ -69,7 +70,7 @@ when stale. A folder nobody touches costs nothing.
 
 **Now:** two lookups run on every preview tick and walk every child of the folder:
 `Snapper.Doorway` (6 `FindFirstChild` calls on each model) and `Joints.Preview` through
-`structures()`. At 100k parts the folder holds roughly 15 to 25 thousand models.
+`structures()`. At 80k parts the folder holds roughly 12 to 20 thousand models.
 
 **Change:**
 - Builders tag what they make: `VluxyBT_Doorway` on a model with an opening that reaches the
@@ -89,11 +90,11 @@ size walk all of Workspace.
 **Change:** tag the parts the plugin marks (`VluxyBT_Colored`, `VluxyBT_Gridded`, and hidden parts
 if they are not tagged yet), and read the tags. Older places without tags get one walk, then
 tags from then on. Expected gain: about a quarter second at load and a second or so per switch-off
-at 100k. Lowest priority of the four.
+at 80k. Lowest priority of the four.
 
 ## Phase 5: the surface grid (needs a decision)
 
-At 100k parts the grid is about 600,000 Texture instances, six per part. That strains Studio's
+At 80k parts the grid is about 480,000 Texture instances, six per part. That strains Studio's
 memory and rendering whatever our code does. Options:
 
 | Option | Effect |
@@ -125,12 +126,12 @@ parallel for a plugin saved from ServerStorage.
 
 ## Order and landing
 
-One branch, a commit per phase, `npm run verify` before each, and a re-measure at 100k after
+One branch, a commit per phase, `npm run verify` before each, and a re-measure at 80k after
 phases 1, 3 and 6. Phase 0 lands first so every later phase has numbers. One PR at the end, with the
 before and after table filled in.
 
 ## Results
 
-| Label | 10k before | 100k before | 100k after |
+| Label | 10k before | 80k before | 80k after |
 |---|---|---|---|
 | (filled in during phase 0 and at the end) | | | |
