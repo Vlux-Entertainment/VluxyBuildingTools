@@ -115,7 +115,9 @@ local SWITCH_KEYS: { [string]: string } = {
 	["Construction grid while drawing"] = "ShowGrid",
 	["Allow untagged folders (not recommended)"] = "AllowUntagged",
 	["Blender hotkeys"] = "Hotkeys",
-	["Add a door with frame (see-through, no collision)"] = "DoorPanel",
+	["Door"] = "DoorPanel",
+	["Door frame"] = "DoorFrame",
+	["Door blocks movement"] = "DoorCollide",
 }
 
 local Panel = {}
@@ -1200,13 +1202,46 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "OpenHeight", "Archway height", 0.1, 1024, nil, body({ ArchOpening = true }))
 	numeric(scope, "DoorWidth", "Doorway width", 0.1, 1024, nil, body({ Door = true }))
 	numeric(scope, "DoorHeight", "Doorway height", 0.1, 1024, nil, body({ Door = true }))
-	switch(scope, "Add a door with frame (see-through, no collision)", function()
+	switch(scope, "Door frame", function()
+		return settings.DoorFrame
+	end, function(on)
+		settings.DoorFrame = on
+		deps.Save()
+		refresh()
+	end, body({ Door = true }))
+	local function frameShown()
+		return settings.DoorFrame
+	end
+	local function doorShown()
+		return settings.DoorPanel
+	end
+	local function onlyIf(check: () -> boolean): Scope
+		return {
+			Modes = { Door = true },
+			Condition = function()
+				return toolOpen and check()
+			end,
+		}
+	end
+
+	numeric(scope, "FrameWidth", "Frame width", 0.05, 8, nil, onlyIf(frameShown))
+	numeric(scope, "FrameOverhang", "Frame overhang", 0, 8, nil, onlyIf(frameShown))
+	switch(scope, "Door", function()
 		return settings.DoorPanel
 	end, function(on)
 		settings.DoorPanel = on
 		deps.Save()
 		refresh()
 	end, body({ Door = true }))
+	numeric(scope, "DoorThickness", "Door thickness", 0.05, 8, nil, onlyIf(doorShown))
+	numeric(scope, "DoorTransparency", "Door transparency", 0, 1, 0.1, onlyIf(doorShown))
+	switch(scope, "Door blocks movement", function()
+		return settings.DoorCollide
+	end, function(on)
+		settings.DoorCollide = on
+		deps.Save()
+		refresh()
+	end, onlyIf(doorShown))
 	numeric(
 		scope,
 		"WindowWidth",

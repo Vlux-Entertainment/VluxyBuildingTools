@@ -148,9 +148,15 @@ Tips.Entries = {
 		Text = "After you pick a prop, the browser goes back to showing only its first row so the settings are in view. Turn off to keep it open.",
 	},
 	PropScale = { Text = "Makes the prop bigger or smaller than its normal size. 1 is normal." },
-	["Add a door with frame (see-through, no collision)"] = {
-		Text = "Also puts a frame and a see-through door panel in the doorway. The panel has no collision, so you can walk through.",
+	["Door frame"] = { Text = "Adds a frame of three bars around the doorway: two sides and a top." },
+	Door = {
+		Text = "Adds a door panel that fills the doorway. It is see-through and can be walked through unless Door blocks movement is on.",
 	},
+	["Door blocks movement"] = { Text = "Makes the door solid so players cannot walk through it. Off by default." },
+	FrameWidth = { Text = "How wide each bar of the door frame is, in studs." },
+	FrameOverhang = { Text = "How far the frame sticks out past the wall faces, in studs. 0 keeps it flush." },
+	DoorThickness = { Text = "How thick the door panel is, in studs." },
+	DoorTransparency = { Text = "How see-through the door is. 0 is solid, 1 is invisible." },
 	["Allow untagged folders (not recommended)"] = {
 		Text = "Lets the plugin work in any folder. Off by default: a folder needs the VluxyBT_Map tag so the plugin never edits a folder by accident.",
 	},

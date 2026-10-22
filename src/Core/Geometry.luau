@@ -18,6 +18,8 @@ export type Spec = {
 	source: BasePart?,
 	class: string,
 	shape: string?,
+	transparency: number?,
+	collide: boolean?,
 }
 
 local MAX_PART_SIZE = 2048
@@ -112,9 +114,9 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 		end
 
 		if spec.name == "Door_Panel" then
-			part.Transparency = 0.5
-			part.CanCollide = false
-			part.CanTouch = false
+			part.Transparency = spec.transparency or 0.5
+			part.CanCollide = spec.collide == true
+			part.CanTouch = spec.collide == true
 		end
 
 		local source = spec.source

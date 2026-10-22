@@ -341,6 +341,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				or (force == true and stored ~= value)
 				or (sharedSeen[entry.Key] ~= value and stored ~= value)
 			then
+				if entry.Key == "ColorTheme" then
+					print(`[VluxyBuildingTools] writing theme {value} to {target.Name}
+{debug.traceback()}`)
+				end
+
 				target:SetAttribute(SHARED_PREFIX .. entry.Key, value)
 			end
 
@@ -1380,7 +1385,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or mode == "ArchOpening"
 		then
 			local opening = if mode == "Door"
-				then { Width = settings.DoorWidth, Height = settings.DoorHeight, Sill = 0, Panel = settings.DoorPanel }
+				then {
+					Width = settings.DoorWidth,
+					Height = settings.DoorHeight,
+					Sill = 0,
+					Panel = settings.DoorPanel,
+					Frame = settings.DoorFrame,
+					FrameWidth = settings.FrameWidth,
+					FrameOverhang = settings.FrameOverhang,
+					DoorThickness = settings.DoorThickness,
+					DoorTransparency = settings.DoorTransparency,
+					DoorCollide = settings.DoorCollide,
+				}
 				elseif mode == "Window" or mode == "TriangleWindow" then {
 					Width = settings.WindowWidth,
 					Height = settings.WindowHeight,
@@ -2714,6 +2730,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				folderWatch = chosen.AttributeChanged:Connect(function(name)
 					for _, entry in SHARED_SETTINGS do
 						if name == SHARED_PREFIX .. entry.Key then
+							if entry.Key == "ColorTheme" then
+								print(`[VluxyBuildingTools] folder theme is now {chosen:GetAttribute(name)}`)
+							end
+
 							adoptShared(chosen, entry.Key)
 						end
 					end
