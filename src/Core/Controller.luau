@@ -1771,7 +1771,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					if not chained and ventNormal then
 						local sideways = math.abs((axis * sign):Dot(ventNormal)) < 0.5
 
-						ventShift = if sideways then ventNormal * (settings.VentSize / 2) else Vector3.zero
+						ventShift = if sideways then ventNormal * (settings.VentSize / 2 - 0.03) else Vector3.zero
 					end
 
 					if not chained and ventHost then
@@ -1922,7 +1922,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					Overlay.Readout(overlay, (origin + b) * 0.5, text)
 				end
 			elseif point then
-				Geometry.Add(out, Vector3.new(0.25, 0.15, 0.25), CFrame.new(point), "Start")
+				if ventHitNormal and snapMark and mode and string.sub(mode, 1, 4) == "Vent" then
+					out = Builders.VentHoleMark(snapMark + ventHitNormal * 0.05, ventHitNormal, settings.VentSize)
+				else
+					Geometry.Add(out, Vector3.new(0.25, 0.15, 0.25), CFrame.new(point), "Start")
+				end
 			end
 		end
 
