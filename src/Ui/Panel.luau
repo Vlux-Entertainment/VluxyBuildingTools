@@ -1706,6 +1706,7 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	local category = "All"
+	local propsExpanded = false
 	local propBrowsers: { { show: () -> (), paint: () -> (), reload: () -> () } } = {}
 	local showAllProps: () -> () = function() end
 	local propChoices = { { Id = "All", Label = "All" } }
@@ -1808,6 +1809,11 @@ function Panel.new(deps: Deps): Panel
 			BackgroundTransparency = 1,
 			LayoutOrder = nextOrder(),
 		}, parent)
+		local toggle = button(parent, "Show all props", function()
+			propsExpanded = not propsExpanded
+			refresh()
+		end, false)
+		local toggleRow = toggle.Parent :: GuiObject
 
 		make("UIGridLayout", {
 			CellSize = UDim2.new(1 / 3, -4, 0, 104),
@@ -1816,6 +1822,14 @@ function Panel.new(deps: Deps): Panel
 		}, shown)
 
 		local function paint()
+			local collapsed = deps.GetMode() == "Prop" and deps.GetProp() ~= nil and not propsExpanded
+
+			shown.AutomaticSize = if collapsed then Enum.AutomaticSize.None else Enum.AutomaticSize.Y
+			shown.Size = if collapsed then UDim2.new(1, 0, 0, 104) else UDim2.fromScale(1, 0)
+			shown.ClipsDescendants = collapsed
+			toggleRow.Visible = deps.GetMode() == "Prop" and deps.GetProp() ~= nil
+			toggle.Text = if propsExpanded then "Show first row only" else "Show all props"
+
 			for id, choice in categoryButtons do
 				local active = id == category
 
