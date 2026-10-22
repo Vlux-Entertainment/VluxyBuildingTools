@@ -71,6 +71,7 @@ export type Panel = {
 	ShowTab: (name: string) -> (),
 	StepSection: (delta: number) -> (),
 	StepProp: (delta: number) -> (),
+	OnPropsTab: () -> boolean,
 }
 
 type Entry = {
@@ -2510,6 +2511,9 @@ function Panel.new(deps: Deps): Panel
 		end,
 		StepProp = function(delta: number)
 			stepProp(delta)
+		end,
+		OnPropsTab = function(): boolean
+			return page == "Props"
 		end,
 		ShowTab = function(name: string)
 			if pages[name] then
