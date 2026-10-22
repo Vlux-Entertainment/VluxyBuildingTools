@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code in this repository. Read `docs/HANDOFF.md` (what is built and what is next)
+Guidance for Claude Code in this repository. Read `dev/HANDOFF.md` (what is built and what is next)
 before starting work.
 
 ## Usage

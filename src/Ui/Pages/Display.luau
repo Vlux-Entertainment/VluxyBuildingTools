@@ -93,10 +93,10 @@ local function gridColor(ui: Ui, visible: () -> boolean): Frame
 	return Kit.Row(30, { swatches, hexBox }, visible)
 end
 
---[=[
+--[[
 	@param ui Ui
 	@return { Instance } -- the cards of the Display tab
-]=]
+]]
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local state, store = app.State, app.Store

@@ -1,3 +1,8 @@
+---
+sidebar_position: 20
+title: Architecture
+---
+
 # Architecture
 
 How VluxyBuildingTools fits together, and where to look when something breaks. Every module also

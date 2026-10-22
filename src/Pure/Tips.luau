@@ -20,8 +20,8 @@ Tips.Entries = {
 	Build = { Text = "Pick a building tool and set its numbers.", Key = "Tab" },
 	Arrange = { Text = "Flip the selection or make array copies.", Key = "Tab" },
 	Display = { Text = "Themes, the surface grid and hidden parts.", Key = "Tab" },
-	Settings = { Text = "Standard sizes, sounds, hotkeys and reset.", Key = "Tab" },
-	Hotkeys = { Text = "Every hotkey in one list.", Key = "F1" },
+	Settings = { Text = "Snapping, standard sizes, the panel's look and sound.", Key = "Tab" },
+	Hotkeys = { Text = "Every hotkey, and the switch for them.", Key = "F1" },
 
 	-- Card titles
 	["BUILD TOOLS"] = { Text = "Pick a tool, then click in the viewport." },

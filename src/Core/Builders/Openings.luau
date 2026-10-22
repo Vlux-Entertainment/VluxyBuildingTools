@@ -32,7 +32,8 @@ local quadPrism = Shapes.QuadPrism
 	@param settings Settings
 	@param dims { Width: number, Height: number, Sill: number } -- the opening to cut
 	@param hit RaycastResult? -- what the cursor is over
-	@param arched boolean
+	@param shape string -- which opening to cut
+	@param depth number? -- how far the opening goes into the wall
 	@return { Spec }
 	@return string -- what to tell the user
 	@return BasePart? -- the wall to delete when the opening is built

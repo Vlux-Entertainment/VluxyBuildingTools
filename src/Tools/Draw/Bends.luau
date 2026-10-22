@@ -5,7 +5,7 @@
 	layer of the old segment (left wall, floor, right wall and so on) is stretched or shortened so it
 	meets the matching layer of the new one, and corner filler pieces are added.
 
-	@class DrawBends
+	@class Bends
 ]=]
 
 local Engine = require("./Engine")

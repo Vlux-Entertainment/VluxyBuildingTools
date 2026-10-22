@@ -4,7 +4,7 @@
 	Small helpers several tools share. Each one used to be written out again in every tool that
 	needed it.
 
-	@class ToolCommon
+	@class Common
 ]=]
 
 local AxisLock = require("../Pure/AxisLock")

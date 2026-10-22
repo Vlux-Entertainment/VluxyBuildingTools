@@ -8,7 +8,7 @@
 	sets how deep the cut goes; past the far side it cuts all the way through. Otherwise one click
 	cuts through.
 
-	@class Openings
+	@class OpeningTools
 ]=]
 
 local Common = require("./Common")

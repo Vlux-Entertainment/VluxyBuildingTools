@@ -58,14 +58,13 @@ function Controls.Safe(ui: Ui, run: () -> ()): () -> ()
 	end
 end
 
---[=[
+--[[
 	@param ui Ui
-	@param frame GuiObject -- the row to right-click
 	@param defaultText string -- the default, as shown in the menu
 	@param reset () -> ()
 
 	Right-clicking the row offers to put that one setting back to its default.
-]=]
+]]
 local function resetMenu(ui: Ui, defaultText: string, reset: () -> ()): any
 	return vide.action(function(instance: Instance)
 		(instance :: GuiObject).InputBegan:Connect(function(input)
@@ -118,7 +117,7 @@ function Controls.Card(ui: Ui, title: string?, children: { any }, visible: Prop<
 end
 
 --[=[
-	@param ui Ui
+	@param _ui Ui
 	@param text Prop<string>
 	@param color Prop<Color3>?
 	@param visible Prop<boolean>?

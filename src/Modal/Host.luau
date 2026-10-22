@@ -4,7 +4,7 @@
 	Runs the one modal action that may be active (see `Modal/Types`), and the armed one-key
 	actions: after Ctrl+M (flip) or O (rotate 90), the next X, Y or Z says which axis.
 
-	@class ModalHost
+	@class Host
 ]=]
 
 local ModalTypes = require("./Types")
@@ -25,7 +25,7 @@ export type Deps = {
 	A one-key action waiting for its axis.
 
 	@type Armed "Flip" | "Rotate90"
-	@within ModalHost
+	@within Host
 ]=]
 export type Armed = "Flip" | "Rotate90"
 

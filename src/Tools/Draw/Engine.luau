@@ -18,7 +18,7 @@
 	4. The next click builds. A chaining shape keeps going from the end point (`Chained`); the last
 	   segment is kept in `Previous` so the next one can join it.
 
-	@class DrawEngine
+	@class Engine
 ]=]
 
 local AxisLock = require("../../Pure/AxisLock")
@@ -41,7 +41,7 @@ type Spec = Geometry.Spec
 	The last segment of a chain, kept so the next segment can join it at a bend.
 
 	@interface Segment
-	@within DrawEngine
+	@within Engine
 	.model Instance -- what the segment built
 	.dir Vector3 -- its flat direction
 	.strips { Shapes.Strip } -- the layers across it, which a bend lines up
@@ -53,7 +53,7 @@ export type Segment = { model: Instance, dir: Vector3, strips: { Shapes.Strip } 
 	remember what they started on.
 
 	@interface VentState
-	@within DrawEngine
+	@within Engine
 	.Normal Vector3? -- the normal of the surface the run started on
 	.Host Vector3? -- the direction of the vent the run started from
 	.Shift Vector3 -- how far the run is pushed so it sits against its surface or host
@@ -76,7 +76,7 @@ export type VentState = {
 	The state of one drawing tool.
 
 	@interface Draw
-	@within DrawEngine
+	@within Engine
 ]=]
 export type Draw = {
 	Shape: Shape,
@@ -104,7 +104,7 @@ export type Draw = {
 	What the preview worked out, handed to a shape's `Build`.
 
 	@interface Sized
-	@within DrawEngine
+	@within Engine
 	.Live Settings -- the settings to build with: the fine grid while Shift is held, the dragged height, a doorway's size
 	.Height number? -- the height from the Y drag or rise stage, when one runs
 	.Signed number -- the same height with its sign, for parts that can go down
@@ -115,7 +115,7 @@ export type Sized = { Live: Settings.Settings, Height: number?, Signed: number }
 	What a shape's `Commit` gets after its build was placed, inside the undo step.
 
 	@interface Built
-	@within DrawEngine
+	@within Engine
 	.Placed Instance -- the Model (or loose Part) placed
 	.Model Model? -- `Placed` when it is a Model
 	.Segment Vector3 -- the flat vector from the first point to the end point
@@ -135,7 +135,7 @@ export type Built = {
 	required.
 
 	@interface Shape
-	@within DrawEngine
+	@within Engine
 	.Id string -- the tool mode
 	.Start (ctx, draw) -> Vector3? -- the point under the cursor before the first click
 	.Next ((ctx, draw, origin) -> Vector3?)? -- the point under the cursor after it; default the grid on the first point's level

@@ -215,9 +215,9 @@ export type Bend = {
 	beginning: { Spec },
 }
 
---[=[
+--[[
 	The shared pieces, for the other builders.
-]=]
+]]
 Shapes.Rectangle = rectangle
 Shapes.Segment = segment
 Shapes.Pillar = pillar

@@ -15,10 +15,10 @@ local WorkingFolder = require("../../Services/WorkingFolder")
 
 type Ui = Controls.Ui
 
---[=[
+--[[
 	@param ui Ui
 	@return Frame
-]=]
+]]
 return function(ui: Ui): Frame
 	local app = ui.App
 	local state, folder = app.State, app.Folder

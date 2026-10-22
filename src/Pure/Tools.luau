@@ -18,6 +18,9 @@ export type Tool = {
 --[=[
 	One tile of the tool grid. A tile with several `Modes` is a group: picking it starts the mode used
 	last, and the panel offers the others as options. A plain tile has one mode with its own id.
+
+	@interface Tile
+	@within Tools
 ]=]
 export type Tile = {
 	Id: string,

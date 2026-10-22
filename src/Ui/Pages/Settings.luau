@@ -14,10 +14,10 @@ local Theme = require("../Theme")
 
 type Ui = Controls.Ui
 
---[=[
+--[[
 	@param ui Ui
 	@return { Instance } -- the cards of the Settings tab
-]=]
+]]
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local store = app.Store
