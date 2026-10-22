@@ -88,7 +88,7 @@ Tips.Entries = {
 		Text = "How a new room meets a room next to it. Open removes the walls between them, Shared keeps one wall, Separate keeps both walls.",
 	},
 	["Snap to parts"] = {
-		Text = "Points snap to the corners and edges of nearby parts, with a marker where they land. Hold Shift to skip it and use the Shift grid.",
+		Text = "Points snap to the corners and edges of nearby parts, with a marker where they land. Hold Shift to skip it and use the Precise Grid Snap.",
 	},
 	SnapRadius = { Text = "How close, in studs, the cursor has to be to a corner or edge for the point to snap to it." },
 	CutDepth = {
@@ -119,7 +119,7 @@ Tips.Entries = {
 
 	-- Number fields, by settings key
 	Grid = { Text = "Points you draw land on a grid of this many studs." },
-	FineGrid = { Text = "The smaller grid points land on while you hold Shift, for fine placement." },
+	FineGrid = { Text = "The smaller grid points land on while you hold Shift, for precise placement.", Key = "Shift" },
 	Height = { Text = "How tall walls, rooms and blocks are.", Key = "[ and ]" },
 	Thickness = { Text = "How thick walls and frames are." },
 	Width = { Text = "How wide corridors, stairs and ramps are." },
