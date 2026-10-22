@@ -113,7 +113,7 @@ local DOOR_KEYS =
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Version = 4,
+		Version = 5,
 		Grid = 4,
 		FineGrid = 1,
 		Elevation = 0,
@@ -169,7 +169,7 @@ function Settings.Defaults(): Settings
 		CameraLight = false,
 		AllowUntagged = false,
 		CameraLightRange = 60,
-		CameraLightBrightness = 2,
+		CameraLightBrightness = 0.5,
 		Roof = false,
 		PillaredWalls = false,
 		FloorTransparency = 0,
@@ -228,7 +228,7 @@ Settings.Standards = {
 	@prop Themes { string }
 	@within Settings
 ]=]
-Settings.Themes = { "Pastel", "Unity" }
+Settings.Themes = { "Pastel", "Unity", "Levels", "Structures", "Facing", "Size" }
 
 --[=[
 	The settings everyone working in one folder shares, as { Key, Name }. They are kept in
@@ -390,6 +390,11 @@ function Settings.Load(saved: any): Settings
 		for _, key in DOOR_KEYS do
 			target[key] = (fresh :: any)[key]
 		end
+	end
+
+	-- The camera light became dimmer by default in version 5; a light left at the old default follows.
+	if version < 5 and settings.CameraLightBrightness == 2 then
+		settings.CameraLightBrightness = fresh.CameraLightBrightness
 	end
 
 	Settings.Sync(settings)

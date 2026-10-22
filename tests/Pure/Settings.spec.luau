@@ -35,6 +35,12 @@ return {
 		expect.equal(current.DoorCollide, true)
 	end,
 
+	["a camera light left at the old default takes the new one"] = function(expect)
+		expect.equal(Settings.Load({ Version = 4, CameraLightBrightness = 2 }).CameraLightBrightness, 0.5)
+		expect.equal(Settings.Load({ Version = 4, CameraLightBrightness = 3 }).CameraLightBrightness, 3)
+		expect.equal(Settings.Load({ Version = 5, CameraLightBrightness = 2 }).CameraLightBrightness, 2)
+	end,
+
 	["saved values of the right type win, others are dropped"] = function(expect)
 		local settings = Settings.Load({ Version = 3, Grid = 2, Height = "tall", Unknown = 9, Roof = true })
 

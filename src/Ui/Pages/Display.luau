@@ -2,7 +2,7 @@
 --# selene: allow(mixed_table)
 
 --[=[
-	The Display tab: the camera light, pastel colors and theme, the surface grid and its look, the
+	The Display tab: the camera light, the color themes, the surface grid and its look, the
 	construction grid, and hidden parts.
 
 	@class DisplayPage
@@ -25,6 +25,10 @@ local SWATCHES = { "FFFFFF", "FF8A24", "6CD0E0", "FFB3BA", "BAFFC9", "BAE1FF", "
 local THEME_TIPS: { [string]: string } = {
 	Pastel = "Pastel theme: a random soft color for every part. Partly see-through parts are purple.",
 	Unity = "Unity theme: walls, pillars, blocks, arches, doors and window frames grey; floors, ceilings and stairs orange. Other parts are grey, except cubes and rectangular blocks, which are orange. Partly see-through parts are purple.",
+	Levels = "Levels theme: one color per building level, by height (your standard height plus floor and ceiling), so stacked floors stand apart. Partly see-through parts are purple.",
+	Structures = "Structures theme: one bold color per room, corridor, model or loose part in the working folder, so you can see where each one starts and ends. Partly see-through parts are purple.",
+	Facing = "Facing theme: blue runs along X, green along Z, orange diagonal, sand lies flat, grey is square, and pink is tilted off level, so crooked parts stand out. Partly see-through parts are purple.",
+	Size = "Size theme: by a part's longest side, yellow under 1 stud, lime under 4, teal under 12, blue under 32, and violet beyond. Partly see-through parts are purple.",
 }
 
 --[[
@@ -129,7 +133,7 @@ return function(ui: Ui): { Instance }
 				Visible = setting("CameraLight"),
 			}),
 			Controls.Switch(ui, {
-				Title = "Pastel colors",
+				Title = "Themes",
 				Get = state.PastelOn,
 				Set = function(on)
 					Display.SetPastel(app.Display, on)
@@ -137,7 +141,7 @@ return function(ui: Ui): { Instance }
 			}),
 			Controls.Choice(ui, {
 				Options = themes,
-				Columns = #themes,
+				Columns = 3,
 				Get = function()
 					return Store.Get(store, "ColorTheme")
 				end,
@@ -165,7 +169,7 @@ return function(ui: Ui): { Instance }
 			Controls.Switch(ui, { Title = "Construction grid while drawing", Key = "ShowGrid" }),
 			Controls.Text(
 				ui,
-				"Pastel colors and the surface grid both change the Parts inside your working folder, so your team sees them and they are saved with the place. Each switch undoes itself completely, even after Studio was closed and reopened. Switch them off before publishing."
+				"Themes and the surface grid both change the Parts inside your working folder, so your team sees them and they are saved with the place. Each switch undoes itself completely, even after Studio was closed and reopened. Switch them off before publishing."
 			),
 		}),
 		Controls.Card(ui, "HIDDEN PARTS", {

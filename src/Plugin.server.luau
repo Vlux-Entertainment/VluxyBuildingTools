@@ -26,7 +26,7 @@ local button = toolbar:CreateButton(PluginInfo.Name, "Open " .. PluginInfo.Name,
 button.ClickableWhenViewportHidden = true
 
 --[[ Every button is made before the dock widget below, which yields, so Studio lists all of them when you customize your tabs. ]]
-local pastelButton = toolbar:CreateButton("PastelColors", "Pastel colors on or off (P)", Icons.Toolbar.Pastel, "Pastel")
+local pastelButton = toolbar:CreateButton("PastelColors", "Themes on or off (P)", Icons.Toolbar.Pastel, "Themes")
 local gridButton = toolbar:CreateButton("SurfaceGrid", "Surface grid on or off (L)", Icons.Toolbar.Grid, "Grid")
 
 pastelButton.ClickableWhenViewportHidden = true
