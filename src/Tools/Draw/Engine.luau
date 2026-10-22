@@ -210,9 +210,14 @@ end
 	Drops every point and lock, so the next click starts a new drawing.
 ]]
 local function reset(ctx: Context, draw: Draw)
-	for key, value in fresh(draw.Shape) :: any do
-		(draw :: any)[key] = value
-	end
+	local blank = fresh(draw.Shape)
+
+	draw.First, draw.Current, draw.Chained = nil, nil, false
+	draw.Lock, draw.HeightEnd, draw.HeightMouse, draw.Rise = nil, nil, nil, false
+	draw.Numeric = blank.Numeric
+	draw.Previous, draw.HoverDoor, draw.StartDoor = nil, nil, nil
+	draw.Vent = blank.Vent
+	draw.Specs = {}
 
 	Overlay.ClearGhosts(ctx.Overlay)
 	Overlay.HideReadout(ctx.Overlay)
