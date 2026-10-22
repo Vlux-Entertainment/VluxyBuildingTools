@@ -79,7 +79,7 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color by what the part is: parts that are tallest up and down, or wide one way and thin the other, dark grey; flat or chunky parts orange, ceilings and roofs lighter grey
+	@return Color3 -- the Unity theme color by what the part is: parts that are disproportionately thin on at least one side dark grey; even or tiny parts orange, ceilings and roofs lighter grey
 ]]
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
@@ -116,11 +116,14 @@ local function unityColor(part: BasePart): Color3
 
 	local size = part.Size
 
-	local flat = size.Y * 2 <= math.min(size.X, size.Z)
-	local thin = math.min(size.X, size.Z) * 2 <= math.max(size.X, size.Z)
+	if size.X * size.Y * size.Z <= 1 then
+		return ORANGE
+	end
 
-	return if (size.Y >= math.max(size.X, size.Z) or thin) and not flat then GREY else ORANGE
-end
+	local thinnest = math.min(size.X, size.Y, size.Z)
+	local longest = math.max(size.X, size.Y, size.Z)
+
+	return if longest >= thinnest * 2 then GREY else ORANGE
 
 --[[
 	@param color Color3
