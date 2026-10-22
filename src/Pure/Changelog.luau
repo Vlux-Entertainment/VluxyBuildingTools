@@ -19,6 +19,15 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.2.0",
+		Date = "2026-10-22",
+		Changes = {
+			"Unity colors parts made with Studio's tools too: flat slabs orange, standing slabs grey.",
+			"Dragging, rotating and scaling with Studio's own tools plays a sound.",
+			"The folder card's avatars are bigger and sit on its title line.",
+		},
+	},
+	{
 		Version = "1.1.0",
 		Date = "2026-10-22",
 		Changes = {
