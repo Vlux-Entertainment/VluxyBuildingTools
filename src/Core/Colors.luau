@@ -101,19 +101,13 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color: shape decides it, a prop's accent parts take the opposite color so they stand out, ceilings and roofs are lighter grey, vents have their own colors
+	@return Color3 -- the Unity theme color: shape decides it, props included, ceilings and roofs are lighter grey, vents have their own colors
 ]]
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
 
 	if named(name, { "prop" }) then
-		local base = shapeColor(part)
-
-		if named(name, { "propaccent" }) then
-			return if base == ORANGE then GREY else ORANGE
-		end
-
-		return base
+		return shapeColor(part)
 	elseif named(name, { "ventwall" }) then
 		return GREY
 	elseif named(name, { "ventceiling" }) then
