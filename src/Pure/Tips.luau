@@ -33,7 +33,7 @@ Tips.Entries = {
 	BUILDING = { Text = "The standard sizes new builds start from." },
 	VIEWPORT = { Text = "What the plugin draws in the 3D view." },
 	SOUND = { Text = "The plugin's sounds." },
-	ADVANCED = { Text = "Folder safety and a full reset; builds are untouched." },
+	ADVANCED = { Text = "Folder safety and a reset of this tab; builds are untouched." },
 	Tooltips = { Text = "Show these descriptions when you hover." },
 	TooltipDelay = { Text = "How long to hover before a description shows." },
 	["Previews use the UI color"] = { Text = "Build previews and folder outlines take the UI color, not orange." },
@@ -91,7 +91,7 @@ Tips.Entries = {
 	["Flip X"] = { Text = "Mirror the selection across X.", Key = "Ctrl+M, then X" },
 	["Flip Y"] = { Text = "Mirror the selection across Y.", Key = "Ctrl+M, then Y" },
 	["Flip Z"] = { Text = "Mirror the selection across Z.", Key = "Ctrl+M, then Z" },
-	["Reset all settings"] = { Text = "Put every setting back to its default." },
+	["Reset settings"] = { Text = "Put this tab's settings back to their defaults; tools, display and hotkeys stay." },
 
 	-- Number fields, by settings key
 	Grid = { Text = "The grid points snap to, in studs." },

@@ -179,6 +179,23 @@ function Store.Reset(self: Store)
 end
 
 --[=[
+	Puts some settings back to their defaults as one change, the way the panel writes them, so a
+	reset standard size flows into the tool fields that follow it.
+
+	@param self Store
+	@param keys { string }
+]=]
+function Store.ResetKeys(self: Store, keys: { string })
+	local defaults = Settings.Defaults() :: any
+
+	Store.Mutate(self, function(values)
+		for _, key in keys do
+			Settings.Apply(values, key, defaults[key])
+		end
+	end)
+end
+
+--[=[
 	@param self Store
 	@param listener (values: Settings.Settings) -> () -- called after every save
 ]=]

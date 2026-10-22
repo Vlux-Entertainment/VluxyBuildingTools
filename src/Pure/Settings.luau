@@ -249,6 +249,34 @@ Settings.Standards = {
 }
 
 --[=[
+	The settings shown on the Settings tab, which its Reset puts back; tool, display and hotkey
+	settings are left alone.
+
+	@prop Page { string }
+	@within Settings
+]=]
+Settings.Page = {
+	"StandardHeight",
+	"StandardThickness",
+	"StandardDoorWidth",
+	"StandardDoorHeight",
+	"Extend",
+	"FieldStep",
+	"UiAccent",
+	"UiAnimations",
+	"AnimationIntensity",
+	"ZebraRows",
+	"Tooltips",
+	"TooltipDelay",
+	"PreviewsFollowUi",
+	"HintBar",
+	"PropSpin",
+	"SoundEnabled",
+	"SoundVolume",
+	"AllowUntagged",
+}
+
+--[=[
 	The color themes, in the order the panel shows them.
 
 	@prop Themes { string }

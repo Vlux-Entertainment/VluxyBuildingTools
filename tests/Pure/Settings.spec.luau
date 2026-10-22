@@ -56,6 +56,18 @@ return {
 		expect.equal(Settings.Load({ Version = 5, CameraLightBrightness = 2 }).CameraLightBrightness, 2)
 	end,
 
+	["the Settings tab's reset list names real settings, and no tool, display or hotkey ones"] = function(expect)
+		local defaults = Settings.Defaults() :: any
+
+		for _, key in Settings.Page do
+			expect.truthy(defaults[key] ~= nil, key)
+		end
+
+		for _, other in { "Grid", "Height", "ColorTheme", "Hotkeys", "CameraLight", "DoorPanel" } do
+			expect.falsy(table.find(Settings.Page, other))
+		end
+	end,
+
 	["saved values of the right type win, others are dropped"] = function(expect)
 		local settings = Settings.Load({ Version = 3, Grid = 2, Height = "tall", Unknown = 9, Roof = true })
 

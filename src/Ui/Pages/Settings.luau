@@ -8,6 +8,7 @@
 ]=]
 
 local Controls = require("../Controls")
+local Settings = require("../../Pure/Settings")
 local Store = require("../../State/Store")
 local Theme = require("../Theme")
 
@@ -89,9 +90,9 @@ return function(ui: Ui): { Instance }
 				Key = "AllowUntagged",
 				Danger = true,
 			}),
-			Controls.Button(ui, "Reset all settings", function()
-				Store.Reset(store)
-				app.Say("Settings reset to the defaults.")
+			Controls.Button(ui, "Reset settings", function()
+				Store.ResetKeys(store, Settings.Page)
+				app.Say("This tab's settings are back to their defaults.")
 			end),
 		}),
 	}
