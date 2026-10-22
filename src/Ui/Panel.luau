@@ -46,6 +46,8 @@ export type Deps = {
 	Settings: Settings,
 	Save: () -> (),
 	Colors: Colors.Colors,
+	GetTheme: () -> string,
+	SetTheme: (string) -> (),
 	SurfaceGrid: SurfaceGrid.SurfaceGrid,
 	Actions: Actions,
 	GetMode: () -> string?,
@@ -1461,8 +1463,7 @@ function Panel.new(deps: Deps): Panel
 				})
 				themeButtons[name] = choice
 				choice.MouseButton1Click:Connect(function()
-					settings.ColorTheme = name
-					deps.Save()
+					deps.SetTheme(name)
 					Colors.Retheme(deps.Colors)
 					refresh()
 				end)
@@ -1470,7 +1471,7 @@ function Panel.new(deps: Deps): Panel
 
 			table.insert(refreshers, function()
 				for name, choice in themeButtons do
-					local active = name == settings.ColorTheme
+					local active = name == deps.GetTheme()
 
 					choice.BackgroundColor3 = if active then ACCENT else TILE
 					choice.TextColor3 = if active then BACKGROUND else TEXT

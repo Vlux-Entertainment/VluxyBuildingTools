@@ -73,6 +73,7 @@ local SETTINGS_KEY = "VluxBlockoutSettings_v2"
 local UPDATE_INTERVAL = 0.05
 local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
 local MAP_TAG = "VluxyBT_Map"
+local THEME_ATTRIBUTE = "VluxyBT_ColorTheme"
 local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
@@ -2363,9 +2364,26 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	-- Panel
 	--
 
+	--[[
+		@return string -- the color theme shared by everyone working in the folder: the first one picked, until somebody changes it. It is kept in an attribute on the folder.
+	]]
+	local function currentTheme(): string
+		if folder and folder:IsDescendantOf(workspace) then
+			local shared = folder:GetAttribute(THEME_ATTRIBUTE)
+
+			if type(shared) == "string" and table.find(Colors.Themes, shared) then
+				return shared
+			end
+
+			folder:SetAttribute(THEME_ATTRIBUTE, settings.ColorTheme)
+		end
+
+		return settings.ColorTheme
+	end
+
 	colors = Colors.new({
 		GetTheme = function()
-			return settings.ColorTheme
+			return currentTheme()
 		end,
 		Remember = function(value)
 			if not quiet then
@@ -2634,6 +2652,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Settings = settings,
 		Save = save,
 		Colors = colors,
+		GetTheme = currentTheme,
+		SetTheme = function(name: string)
+			settings.ColorTheme = name
+			save()
+
+			if folder and folder:IsDescendantOf(workspace) then
+				folder:SetAttribute(THEME_ATTRIBUTE, name)
+			end
+		end,
 		SurfaceGrid = surfaceGrid,
 		Hidden = hidden,
 		GetFolder = function()
