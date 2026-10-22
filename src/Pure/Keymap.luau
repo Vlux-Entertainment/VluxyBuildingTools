@@ -20,7 +20,6 @@ local TOOL_KEYS: { [string]: string } = {
 	Five = "Vents",
 	Six = "Railings",
 	Seven = "Place",
-	Eight = "Props",
 	Zero = "Measure",
 }
 
@@ -80,7 +79,7 @@ function Keymap.Describe(): { { string } }
 	return {
 		{
 			"Ctrl+1 … Ctrl+8, Ctrl+0",
-			"Pick a tool: Basic (walls, floors, blocks, pillars, arches), Stairs, Additive (doorways, windows, archways, face extend), Structures, Vents, Railings, Brush, Props (8), Measure (0). Press it again to turn it off",
+			"Pick a tool: Basic (walls, floors, blocks, pillars, arches), Stairs, Additive (doorways, windows, archways, face extend), Structures, Vents, Railings, Brush, Measure (0). Press it again to turn it off",
 		},
 		{
 			"Alt+1 … Alt+0",
@@ -106,7 +105,7 @@ function Keymap.Describe(): { { string } }
 		{ "Tab / `", "Next or previous panel tab" },
 		{
 			"Ctrl+Scroll",
-			"Step to the previous or next tool. With the Props tool, step through its sections. The camera does not zoom while you do",
+			"Step to the previous or next tool. On the Props tab, step through its sections. The camera does not zoom while you do",
 		},
 		{
 			"Alt+Scroll",

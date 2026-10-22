@@ -3757,6 +3757,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		perform(action)
 	end)
 
+	local scrollTile: number? = nil
+
 	--[[
 		@param step number -- 1 or -1
 		@param tiles boolean -- true to step between tools, false to step between the options of the current tool
@@ -3764,7 +3766,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Moves to the next or previous tool tile, or option inside the tile, wrapping around.
 	]]
 	local function stepTool(step: number, tiles: boolean)
-		if mode == "Prop" and panel.OnPropsTab() then
+		if panel.OnPropsTab() then
 			if tiles then
 				panel.StepSection(step)
 			else
@@ -3778,16 +3780,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local held = if mode then Tools.TileOf(mode) else nil
 
 		if tiles then
-			local index = if held then table.find(grid, held) :: number else if step > 0 then 0 else #grid + 1
+			local index = if held
+				then table.find(grid, held) :: number
+				elseif scrollTile then scrollTile
+				else if step > 0 then 0 else #grid + 1
 
-			for _ = 1, #grid do
-				index = (index - 1 + step) % #grid + 1
-				activate(grid[index].Id)
-
-				if mode and Tools.TileOf(mode) == grid[index] then
-					return
-				end
-			end
+			index = (index - 1 + step) % #grid + 1
+			scrollTile = index
+			activate(grid[index].Id)
 
 			return
 		end
