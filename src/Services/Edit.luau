@@ -11,13 +11,13 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
+local Profile = require("../Core/Profile")
+
 export type Deps = {
 	Say: (text: string) -> (),
 	Sound: (name: string) -> (),
-	--[=[ Called for every Part the change added, after it ran. ]=]
-	Adopt: (part: BasePart) -> (),
-	--[=[ Called once after every change, to tidy up Parts that left. ]=]
-	Sweep: () -> (),
+	--[=[ Called once after every change with the Parts it added, still in the same undo step. ]=]
+	Sweep: (parts: { BasePart }) -> (),
 }
 
 --[=[
@@ -57,21 +57,17 @@ function Edit.new(deps: Deps): Edit
 				table.insert(added, object)
 			end
 		end)
-		local ok, err = pcall(change :: any)
+		local ok, err = pcall(Profile.Run :: any, "Edit", change)
 
 		watch:Disconnect()
 
-		for _, part in added do
-			if part:IsDescendantOf(workspace) then
-				deps.Adopt(part)
-			end
-		end
-
-		deps.Sweep()
-		ChangeHistoryService:FinishRecording(
-			id,
-			if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
-		)
+		Profile.Run("Sweep", deps.Sweep, added)
+		Profile.Run("Commit", function()
+			ChangeHistoryService:FinishRecording(
+				id,
+				if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
+			)
+		end)
 
 		if ok then
 			deps.Sound(if action == "Place prop" then "Prop" else "Build")

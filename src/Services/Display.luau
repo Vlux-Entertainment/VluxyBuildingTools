@@ -14,6 +14,7 @@
 local Colors = require("../Core/Colors")
 local Geometry = require("../Core/Geometry")
 local Hidden = require("../Core/Hidden")
+local Profile = require("../Core/Profile")
 local Settings = require("../Pure/Settings")
 local Store = require("../State/Store")
 local SurfaceGrid = require("../Core/SurfaceGrid")
@@ -119,7 +120,7 @@ function Display.new(deps: Deps, trove: Trove.Trove): Display
 		SurfaceGrid.Recolor(self.Grid)
 	end))
 	trove:Add(Store.Watch(store, "ColorTheme", function()
-		Colors.Retheme(self.Colors)
+		Display.Retheme(self)
 	end))
 
 	local recount = false
@@ -176,7 +177,7 @@ end
 	@param on boolean
 ]=]
 function Display.SetPastel(self: Display, on: boolean)
-	Colors.Set(self.Colors, on)
+	Profile.Run("Pastel", Colors.Set, self.Colors, on)
 end
 
 --[=[
@@ -184,7 +185,7 @@ end
 	@param on boolean
 ]=]
 function Display.SetGrid(self: Display, on: boolean)
-	SurfaceGrid.Set(self.Grid, on)
+	Profile.Run("Grid", SurfaceGrid.Set, self.Grid, on)
 end
 
 --[=[
@@ -193,7 +194,7 @@ end
 	@param self Display
 ]=]
 function Display.Retheme(self: Display)
-	Colors.Retheme(self.Colors)
+	Profile.Run("Pastel", Colors.Retheme, self.Colors)
 end
 
 --[=[
@@ -233,24 +234,15 @@ function Display.Suspend(self: Display)
 end
 
 --[=[
-	Gives a Part a plugin edit just made its pastel color and grid.
+	Gives parts their pastel color and grid: after a plugin edit, the parts it added or changed;
+	when a folder is picked, every part in it.
 
 	@param self Display
-	@param part BasePart
+	@param parts { BasePart }? -- nil for every part in the working folder
 ]=]
-function Display.Adopt(self: Display, part: BasePart)
-	SurfaceGrid.Adopt(self.Grid, part)
-	Colors.Adopt(self.Colors, part)
-end
-
---[=[
-	Tidies the colors and grid after every plugin edit.
-
-	@param self Display
-]=]
-function Display.Sweep(self: Display)
-	SurfaceGrid.Sweep(self.Grid)
-	Colors.Sweep(self.Colors)
+function Display.Sweep(self: Display, parts: { BasePart }?)
+	SurfaceGrid.Sweep(self.Grid, parts)
+	Colors.Sweep(self.Colors, parts)
 end
 
 --[=[

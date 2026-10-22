@@ -32,6 +32,7 @@ local Input = require("./Input")
 local Overlay = require("../Core/Overlay")
 local Panel = require("../Ui/Panel")
 local Presence = require("../Services/Presence")
+local Profile = require("../Core/Profile")
 local Runner = require("../Tools/Runner")
 local Sounds = require("../Core/Sounds")
 local Status = require("../Services/Status")
@@ -135,11 +136,8 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 	local edit = Edit.new({
 		Say = say,
 		Sound = sound,
-		Adopt = function(part)
-			Display.Adopt(display, part)
-		end,
-		Sweep = function()
-			Display.Sweep(display)
+		Sweep = function(parts)
+			Display.Sweep(display, parts)
 		end,
 	})
 
@@ -273,11 +271,12 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 
 	local elapsed = 0
 
-	trove:Connect(RunService.Heartbeat, function(dt)
+	--[[ The per-frame work: readout, camera light, a running modal action, the folder outlines, and the tool preview a few times a second. ]]
+	local function step(dt: number)
 		Overlay.PositionReadout(overlay)
 		CameraLight.Step(cameraLight)
-		Host.Step(host)
-		WorkingFolder.Step(folder, dt)
+		Profile.Run("Modal", Host.Step, host)
+		Profile.Run("Folder", WorkingFolder.Step, folder)
 
 		elapsed += dt
 
@@ -295,7 +294,11 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 			return
 		end
 
-		Runner.Step(runner)
+		Profile.Run("Preview", Runner.Step, runner)
+	end
+
+	trove:Connect(RunService.Heartbeat, function(dt)
+		Profile.Run("Heartbeat", step, dt)
 	end)
 
 	WorkingFolder.Detect(folder)

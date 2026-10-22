@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local App = require("./App/App")
 local Icons = require("./Pure/Icons")
 local PluginInfo = require("./Pure/PluginInfo")
+local Profile = require("./Core/Profile")
 local Trove = require("./Packages/Trove")
 local vide = require("./Packages/vide")
 
@@ -37,7 +38,7 @@ local widget = plugin:CreateDockWidgetPluginGuiAsync(WIDGET_ID, info)
 
 widget.Title = PluginInfo.Name
 
-local app = App.new(plugin, widget, trove :: any)
+local app: App.Handle = Profile.Run("Load", App.new, plugin, widget, trove :: any)
 
 if not widget.Enabled then
 	task.defer(app.Suspend)

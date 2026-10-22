@@ -11,6 +11,8 @@
 
 local Geometry = require("./Geometry")
 
+--[[ How many studs past a structure's space another structure's parts may sit and still be found: more than any wall is thick. ]]
+local NEAR = 4
 local STRUCTURES: { [string]: boolean } = {
 	Vlux_Room = true,
 	Vlux_Corridor = true,
@@ -48,14 +50,64 @@ end
 local Joints = {}
 
 --[[
-	@return { Instance } -- the built structures in the working folder, or in Workspace without one
+	@param boxes { { cf: CFrame, size: Vector3 } } -- the space to look around
+	@param margin number -- how many studs past the boxes still count
+	@return { Instance } -- the built structures in the working folder (or Workspace without one) with a part in or near the boxes
+
+	Asks the physics index for the parts nearby instead of going through the whole folder, so the
+	cost does not grow with the size of the map. A structure that touches none of the space cannot
+	be cut by it or cut into it.
 ]]
-local function structures(): { Instance }
+local function structuresNear(boxes: { { cf: CFrame, size: Vector3 } }, margin: number): { Instance }
 	local out: { Instance } = {}
 
-	for _, child in (Geometry.GetScope() or workspace):GetChildren() do
-		if STRUCTURES[child.Name] then
-			table.insert(out, child)
+	if #boxes == 0 then
+		return out
+	end
+
+	local low = Vector3.new(math.huge, math.huge, math.huge)
+	local high = -low
+
+	for _, box in boxes do
+		local boxLow, boxHigh = Geometry.BoxOf(box.cf, box.size)
+
+		low, high = low:Min(boxLow), high:Max(boxHigh)
+	end
+
+	low -= Vector3.one * margin
+	high += Vector3.one * margin
+
+	local holder = Geometry.GetScope() or workspace
+	local params = OverlapParams.new()
+	local seen: { [Instance]: boolean } = {}
+
+	if holder ~= workspace then
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { holder }
+	end
+
+	for _, part in workspace:GetPartBoundsInBox(CFrame.new((low + high) * 0.5), high - low, params) do
+		local model = part.Parent
+
+		if model and not seen[model] and model.Parent == holder and STRUCTURES[model.Name] then
+			seen[model] = true
+			table.insert(out, model)
+		end
+	end
+
+	return out
+end
+
+--[[
+	@param model Instance
+	@return { { cf: CFrame, size: Vector3 } } -- the boxes of the model's own parts
+]]
+local function partBoxes(model: Instance): { { cf: CFrame, size: Vector3 } }
+	local out: { { cf: CFrame, size: Vector3 } } = {}
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") then
+			table.insert(out, { cf = child.CFrame, size = child.Size })
 		end
 	end
 
@@ -575,7 +627,17 @@ function Joints.Preview(
 		return out
 	end
 
-	for _, other in structures() do
+	local space: { { cf: CFrame, size: Vector3 } } = {}
+
+	for _, box in mine do
+		table.insert(space, { cf = box.cf, size = box.size })
+	end
+
+	for _, spec in specs do
+		table.insert(space, { cf = spec.cf, size = spec.size })
+	end
+
+	for _, other in structuresNear(space, NEAR) do
 		if other ~= skip then
 			local theirs = stored(other)
 			local fromMine: { Cutter } = mine
@@ -678,7 +740,10 @@ local function stackOver(model: Model, roomJoin: string): number
 	local bottom = floor.Position.Y - thick / 2
 	local failed = 0
 
-	for _, lower in structures() do
+	--[[ Only structures under the new floor: its footprint, a little inside the edges so a neighbour beside it is left alone. ]]
+	local under = { cf = floor.CFrame, size = floor.Size + Vector3.new(-0.2, 0.5, -0.2) }
+
+	for _, lower in structuresNear({ under }, 0) do
 		if lower ~= model and math.abs(topOf(lower) - bottom) < 0.25 then
 			local wall = lower:FindFirstChild("CorridorWall") or lower:FindFirstChild("Wall_North")
 			local cut: { Cutter } = {}
@@ -748,7 +813,13 @@ function Joints.Connect(model: Model, roomJoin: string, skip: Instance?): number
 		table.insert(roomBoxes, mine[1])
 	end
 
-	for _, other in structures() do
+	local space = partBoxes(model)
+
+	for _, box in mine do
+		table.insert(space, { cf = box.cf, size = box.size })
+	end
+
+	for _, other in structuresNear(space, NEAR) do
 		if other ~= model and other ~= skip then
 			local theirs = stored(other)
 
