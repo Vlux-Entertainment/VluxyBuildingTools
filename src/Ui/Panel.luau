@@ -14,6 +14,7 @@
 local Actions = require("../App/Actions")
 local AppState = require("../State/AppState")
 local AppTypes = require("../App/Types")
+local Changelog = require("../Pure/Changelog")
 local Controls = require("./Controls")
 local Kit = require("./Kit")
 local Overlay = require("../Core/Overlay")
@@ -39,9 +40,10 @@ local new = Kit.New
 local Panel = {}
 
 --[[
-	@return Frame -- the logo, name and version
+	@param open () -> () -- shows the version list
+	@return Frame -- the logo, name and version; the version opens the list of what changed
 ]]
-local function header(): Frame
+local function header(open: () -> ()): Frame
 	return new("Frame")({
 		Size = UDim2.new(1, 0, 0, 38),
 		BackgroundTransparency = 1,
@@ -66,16 +68,124 @@ local function header(): Frame
 			TextSize = 16,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
-		new("TextLabel")({
-			Size = UDim2.fromOffset(40, 38),
+		new("TextButton")({
+			Size = UDim2.fromOffset(56, 38),
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.fromScale(1, 0),
 			BackgroundTransparency = 1,
-			Text = PluginInfo.Version,
+			Text = "v" .. PluginInfo.Version,
 			TextColor3 = Theme.Muted,
 			Font = Enum.Font.GothamMedium,
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Right,
+			MouseButton1Click = open,
+		}),
+	})
+end
+
+--[[
+	@param shown vide.Source<boolean> -- whether the list is open
+	@return Frame -- a screen over the whole panel listing every release and what changed, newest first
+]]
+local function versions(shown: vide.Source<boolean>): Frame
+	local releases = {}
+
+	for index, release in Changelog do
+		local lines = {}
+
+		for line, change in release.Changes do
+			table.insert(
+				lines,
+				new("TextLabel")({
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					Text = "•  " .. change,
+					TextColor3 = Theme.Text,
+					Font = Enum.Font.Gotham,
+					TextSize = 12,
+					TextWrapped = true,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					LayoutOrder = line,
+					ZIndex = 53,
+				})
+			)
+		end
+
+		table.insert(
+			releases,
+			new("Frame")({
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundColor3 = Theme.Card,
+				BorderSizePixel = 0,
+				LayoutOrder = index,
+				ZIndex = 52,
+				Kit.Corner(8),
+				Kit.Padding(10, 8),
+				Kit.List(4),
+				new("TextLabel")({
+					Size = UDim2.new(1, 0, 0, 20),
+					BackgroundTransparency = 1,
+					Text = `v{release.Version}   <font color="#8B8E96">{release.Date}</font>`,
+					RichText = true,
+					TextColor3 = if index == 1 then Theme.Accent else Theme.Text,
+					Font = Enum.Font.GothamBold,
+					TextSize = 14,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					LayoutOrder = 0,
+					ZIndex = 53,
+				}),
+				lines,
+			})
+		)
+	end
+
+	return new("Frame")({
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Theme.Background,
+		BorderSizePixel = 0,
+		Visible = shown,
+		ZIndex = 50,
+		new("TextLabel")({
+			Size = UDim2.new(1, -60, 0, 44),
+			Position = UDim2.fromOffset(12, 0),
+			BackgroundTransparency = 1,
+			Text = "WHAT'S NEW",
+			TextColor3 = Theme.Muted,
+			Font = Enum.Font.GothamBold,
+			TextSize = 12,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 51,
+		}),
+		new("TextButton")({
+			Size = UDim2.fromOffset(32, 32),
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -8, 0, 6),
+			BackgroundColor3 = Theme.Tile,
+			BorderSizePixel = 0,
+			Text = "✕",
+			TextColor3 = Theme.Text,
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			ZIndex = 51,
+			Kit.Corner(6),
+			MouseButton1Click = function()
+				shown(false)
+			end,
+		}),
+		new("ScrollingFrame")({
+			Size = UDim2.new(1, 0, 1, -44),
+			Position = UDim2.fromOffset(0, 44),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ScrollBarThickness = 4,
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			CanvasSize = UDim2.new(),
+			ZIndex = 51,
+			Kit.Padding(10, 0, 14),
+			Kit.List(8),
+			releases,
 		}),
 	})
 end
@@ -179,8 +289,12 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 		Kit.List(8),
 	}) :: ScrollingFrame
 	local popups: Popups.Popups
+	local versionList: Frame
 
 	local destroy = vide.root(function()
+		local showVersions = vide.source(false)
+
+		versionList = versions(showVersions)
 		popups = Popups.new(widget, function()
 			local values = app.Store.Values
 
@@ -216,7 +330,9 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 		lockedNote.LayoutOrder = 5
 
 		local children: { any } = {
-			header(),
+			header(function()
+				showVersions(true)
+			end),
 			folderCard,
 			tabBar(ui),
 			new("TextLabel")({
@@ -258,6 +374,7 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 	end)
 
 	root.Parent = widget
+	versionList.Parent = widget
 
 	for _, frame in popups.Frames do
 		frame.Parent = widget
@@ -266,6 +383,7 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 	return function()
 		destroy()
 		root:Destroy()
+		versionList:Destroy()
 
 		for _, frame in popups.Frames do
 			frame:Destroy()
