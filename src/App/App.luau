@@ -17,7 +17,6 @@
 ]=]
 
 local RunService = game:GetService("RunService")
-local SoundService = game:GetService("SoundService")
 
 local Actions = require("./Actions")
 local AppState = require("../State/AppState")
@@ -103,7 +102,7 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Status.Warn(status, text)
 	end
 
-	local sounds = Sounds.new(SoundService, function()
+	local sounds = Sounds.new(function()
 		return settings.SoundEnabled
 	end, function()
 		return settings.SoundVolume
