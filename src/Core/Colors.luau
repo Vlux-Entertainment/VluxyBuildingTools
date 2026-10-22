@@ -79,41 +79,9 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color by what the part is: parts that are disproportionately thin on at least one side dark grey; even or tiny parts orange, ceilings and roofs lighter grey
+	@return Color3 -- dark grey for a part that is disproportionately thin on at least one side or cannot be judged, orange for an even or tiny part
 ]]
-local function unityColor(part: BasePart): Color3
-	local name = part.Name
-
-	if named(name, { "prop" }) then
-		local holder = part.Parent
-		local id = if holder then holder:GetAttribute("VluxyBT_Prop") else nil
-		local orange = false
-
-		if type(id) == "string" then
-			local sum = 0
-
-			for i = 1, #id do
-				sum += string.byte(id, i)
-			end
-
-			orange = sum % 2 == 0
-		end
-
-		if named(name, { "propaccent" }) then
-			return if orange then GREY else ORANGE
-		end
-
-		return if orange then ORANGE_DARK else GREY_LIGHT
-	elseif named(name, { "ventwall" }) then
-		return GREY
-	elseif named(name, { "ventceiling" }) then
-		return GREY_LIGHT
-	elseif named(name, { "vent" }) then
-		return if named(name, { "floor", "duct" }) then ORANGE_DARK else ORANGE
-	elseif named(name, { "ceiling", "roof", "arched" }) then
-		return GREY_LIGHT
-	end
-
+local function shapeColor(part: BasePart): Color3
 	local size = part.Size
 	local volume = size.X * size.Y * size.Z
 
@@ -129,6 +97,34 @@ local function unityColor(part: BasePart): Color3
 	local longest = math.max(size.X, size.Y, size.Z)
 
 	return if longest >= thinnest * 2 then GREY else ORANGE
+end
+
+--[[
+	@param part BasePart
+	@return Color3 -- the Unity theme color: shape decides it, a prop's accent parts take the opposite color so they stand out, ceilings and roofs are lighter grey, vents have their own colors
+]]
+local function unityColor(part: BasePart): Color3
+	local name = part.Name
+
+	if named(name, { "prop" }) then
+		local base = shapeColor(part)
+
+		if named(name, { "propaccent" }) then
+			return if base == ORANGE then GREY else ORANGE
+		end
+
+		return base
+	elseif named(name, { "ventwall" }) then
+		return GREY
+	elseif named(name, { "ventceiling" }) then
+		return GREY_LIGHT
+	elseif named(name, { "vent" }) then
+		return if named(name, { "floor", "duct" }) then ORANGE_DARK else ORANGE
+	elseif named(name, { "ceiling", "roof", "arched" }) then
+		return GREY_LIGHT
+	end
+
+	return shapeColor(part)
 end
 
 --[[
