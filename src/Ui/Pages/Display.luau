@@ -23,12 +23,12 @@ local new = Kit.New
 
 local SWATCHES = { "FFFFFF", "FF8A24", "6CD0E0", "FFB3BA", "BAFFC9", "BAE1FF", "9AA0AA", "000000" }
 local THEME_TIPS: { [string]: string } = {
-	Pastel = "Pastel theme: a random soft color for every part. Partly see-through parts are purple.",
-	Unity = "Unity theme: walls, pillars, blocks, arches, doors and window frames grey; floors, ceilings and stairs orange. Other parts are grey, except cubes and rectangular blocks, which are orange. Partly see-through parts are purple.",
-	Levels = "Levels theme: one color per building level, by height (your standard height plus floor and ceiling), so stacked floors stand apart. Partly see-through parts are purple.",
-	Structures = "Structures theme: one bold color per room, corridor, model or loose part in the working folder, so you can see where each one starts and ends. Partly see-through parts are purple.",
-	Facing = "Facing theme: blue runs along X, green along Z, orange diagonal, sand lies flat, grey is square, and pink is tilted off level, so crooked parts stand out. Partly see-through parts are purple.",
-	Size = "Size theme: by a part's longest side, yellow under 1 stud, lime under 4, teal under 12, blue under 32, and violet beyond. Partly see-through parts are purple.",
+	Pastel = "A random soft color for every part.",
+	Unity = "Walls grey, floors and stairs orange.",
+	Levels = "One color per building level.",
+	Structures = "One color per room, corridor or model.",
+	Facing = "Colors by direction, so crooked parts stand out.",
+	Size = "Colors by size, from yellow (small) to violet (big).",
 }
 
 --[[

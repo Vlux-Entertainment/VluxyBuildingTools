@@ -419,7 +419,7 @@ function Runner.Back(self: Runner): string?
 	Runner.Stop(self)
 	self._deps.Stopped()
 
-	return "Tool stopped. Your completed builds stay in the map. Press Enter to bring it back."
+	return "Tool stopped; Enter brings it back."
 end
 
 --[=[

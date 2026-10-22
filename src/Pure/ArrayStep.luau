@@ -16,7 +16,7 @@ local ArrayStep = {}
 	@prop MaxCount number
 	@within ArrayStep
 ]=]
-ArrayStep.MaxCount = 100
+ArrayStep.MaxCount = 50
 
 --[=[
 	@param size { number } -- the object's size along world X, Y and Z

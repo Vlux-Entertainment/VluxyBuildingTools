@@ -147,6 +147,11 @@ end
 ]=]
 function Panel.Mount(app: AppTypes.App): () -> ()
 	local widget = app.Widget
+
+	Kit.Animate = function()
+		return app.Store.Values.UiAnimations
+	end
+
 	local root = new("ScrollingFrame")({
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Theme.Background,
@@ -183,14 +188,9 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 		end
 
 		local folderCard = FolderCard(ui)
-		local lockedNote = Controls.Text(
-			ui,
-			"Pick a working folder above to start using the tools.",
-			Theme.Accent,
-			function()
-				return locked(app, app.State.Page())
-			end
-		)
+		local lockedNote = Controls.Text(ui, "Pick a working folder above to start.", Theme.Accent, function()
+			return locked(app, app.State.Page())
+		end)
 
 		folderCard.LayoutOrder = 2
 		lockedNote.LayoutOrder = 5

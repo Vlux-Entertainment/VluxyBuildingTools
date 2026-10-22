@@ -139,7 +139,7 @@ function Extrude.Start(ctx: Context): ModalTypes.Modal?
 				Geometry.Materialize(out, "Face_Extension")
 			end)
 			clear()
-			ctx.Say(string.format("Extruded %.2f studs. Press T again to keep going.", length))
+			ctx.Say(string.format("Extruded %.2f studs; press T to keep going.", length))
 
 			return true
 		end,
@@ -148,13 +148,11 @@ function Extrude.Start(ctx: Context): ModalTypes.Modal?
 			ctx.Say("Extrude cancelled.")
 		end,
 		Lock = function()
-			ctx.Say("Extrude follows the face direction. Type a number for an exact length.")
+			ctx.Say("Type a number for an exact length.")
 		end,
 	}
 
-	ctx.Say(
-		"Extrude: move the mouse to pull the face out. Type a number for an exact length. Click or Enter builds; Esc cancels."
-	)
+	ctx.Say("Extrude: move the mouse, then click; Esc cancels.")
 
 	return modal
 end

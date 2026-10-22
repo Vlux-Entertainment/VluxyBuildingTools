@@ -45,13 +45,13 @@ function Place.Place(
 
 	for _, part in source.Parts do
 		if not part:IsDescendantOf(game) then
-			return out, "Selection changed or was removed. Choose Brush again.", nil
+			return out, "Selection changed; choose Brush again.", nil
 		end
 	end
 
 	local specs, target = Place.PlaceAt(settings, hit.Position, hit.Normal, source, settings.Yaw, scale)
 
-	return specs, "Click or drag to paint copies onto surfaces. Radius, spacing and rotation are in the panel.", target
+	return specs, "Click or drag to paint copies onto surfaces.", target
 end
 
 --[=[

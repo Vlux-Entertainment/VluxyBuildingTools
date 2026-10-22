@@ -80,7 +80,7 @@ function Geometry.Add(out: { Spec }, size: Vector3, cf: CFrame, name: string?, s
 	if size.X > 0.001 and size.Y > 0.001 and size.Z > 0.001 then
 		assert(
 			math.max(size.X, size.Y, size.Z) <= MAX_PART_SIZE,
-			"A generated Part exceeds Studio's 2048-stud size limit. Reduce dimensions."
+			"A part would pass Studio's 2048-stud limit; make it smaller."
 		)
 		table.insert(out, { size = size, cf = cf, name = name or "Block", source = source, class = class or "Part" })
 	end

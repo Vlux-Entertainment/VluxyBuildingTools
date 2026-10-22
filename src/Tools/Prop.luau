@@ -82,7 +82,7 @@ local tool: Types.Tool = {
 		return {
 			Specs = specs,
 			Valid = #specs > 0,
-			Message = `Click to place the {def.Label}. R turns it 90 degrees.`,
+			Message = `Click to place the {def.Label}; R turns it.`,
 		}
 	end,
 	Click = function(ctx: Context, state: PropState, shown: Types.Preview?)

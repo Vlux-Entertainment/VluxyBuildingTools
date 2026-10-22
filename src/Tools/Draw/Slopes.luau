@@ -71,7 +71,7 @@ local arch: Engine.Shape = {
 		return string.format("Span %.1f  |  Height %.1f", (b - a).Magnitude, sized.Live.ArchHeight)
 	end,
 	Problem = function()
-		return "Arch height must be at least half the drawn span. Increase clearance height or draw a narrower arch."
+		return "The arch is too low for this span; raise it or draw a narrower one."
 	end,
 	Build = function(ctx, _draw, a, b)
 		return Slopes.Arch(ctx.Settings, a, b)

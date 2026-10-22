@@ -102,8 +102,8 @@ function Actions.Arm(app: App, which: Host.Armed)
 	app.Modal.Armed = which
 	app.Say(
 		if which == "Flip"
-			then "Flip: press X, Y or Z to mirror the selection across that axis. Esc cancels."
-			else "Rotate 90°: press X, Y or Z (hold Alt for -90°). Esc cancels."
+			then "Flip: press X, Y or Z, or Esc to cancel."
+			else "Rotate 90°: press X, Y or Z (Alt for -90°), or Esc to cancel."
 	)
 end
 
@@ -343,7 +343,7 @@ function Actions.Hide(app: App)
 
 	Display.Hide(app.Display, parts)
 	Selection:Set({})
-	app.Say(`Hid {#parts} part(s). Alt+H unhides them, I shows them as ghosts.`)
+	app.Say(`Hid {#parts} part(s); Alt+H brings them back.`)
 end
 
 --[=[

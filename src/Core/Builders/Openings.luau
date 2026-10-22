@@ -73,7 +73,7 @@ function Openings.Opening(
 
 	for _, child in p:GetChildren() do
 		if not (child:IsA("Texture") and child.Name == "VluxGridTexture") then
-			return out, "Use an undecorated wall. Openings replace the wall with new Parts.", nil
+			return out, "Use a plain wall with no openings yet.", nil
 		end
 	end
 
@@ -105,7 +105,7 @@ function Openings.Opening(
 	end
 
 	if carve and shape == "Triangle" then
-		return out, "The triangle window needs a plain Part wall. Rooms cut by a neighbour are unions.", nil
+		return out, "The triangle window needs a plain Part wall.", nil
 	end
 
 	local localHit = cf:PointToObjectSpace(hit.Position)
@@ -192,7 +192,7 @@ function Openings.Opening(
 			size = Vector3.new(openWidth, openHeight, math.min(reach, size.Z)),
 		}
 
-		return out, "Click to cut this wall. Undo restores it.", p, shown, cutters
+		return out, "Click to cut this wall.", p, shown, cutters
 	end
 
 	add(
@@ -361,7 +361,7 @@ function Openings.Opening(
 		size = Vector3.new(openWidth, openHeight, reach),
 	}
 
-	return out, "Click to replace this wall with an opening. Undo restores the original wall.", p, cut
+	return out, "Click to cut an opening in this wall.", p, cut
 end
 
 --[=[

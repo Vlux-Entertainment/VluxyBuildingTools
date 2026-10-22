@@ -11,6 +11,8 @@
 	@class Kit
 ]=]
 
+local TweenService = game:GetService("TweenService")
+
 local Theme = require("./Theme")
 local vide = require("../Packages/vide")
 
@@ -25,13 +27,74 @@ export type Prop<T> = T | () -> T
 local Kit = {}
 
 local order = 0
+local POP_SCALE = 1.06
+local POP_GROW = TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local POP_SETTLE = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+
+--[=[
+	Whether the panel animates, read at each click and frame; `Panel` points it at the UI animations setting.
+
+	@prop Animate () -> boolean
+	@within Kit
+]=]
+Kit.Animate = function(): boolean
+	return true
+end
+
+--[[
+	@param button GuiButton
+
+	Makes a click grow the button a little and settle back. A see-through button laid over
+	something, such as a prop picture, grows what it covers instead.
+]]
+local function pop(button: GuiButton)
+	button.Activated:Connect(function()
+		if not Kit.Animate() then
+			return
+		end
+
+		local covers = button.BackgroundTransparency >= 1
+			and not (button:IsA("TextButton") and button.Text ~= "")
+			and button.Parent
+			and button.Parent:IsA("GuiObject")
+		local target = (if covers then button.Parent else button) :: GuiObject
+		local scale = target:FindFirstChild("VluxyBT_Pop") :: UIScale?
+
+		if not scale then
+			local made = Instance.new("UIScale")
+
+			made.Name = "VluxyBT_Pop"
+			made.Parent = target
+			scale = made
+		end
+
+		local grow = TweenService:Create(scale :: UIScale, POP_GROW, { Scale = POP_SCALE })
+
+		grow.Completed:Once(function()
+			TweenService:Create(scale :: UIScale, POP_SETTLE, { Scale = 1 }):Play()
+		end)
+		grow:Play()
+	end)
+end
 
 --[=[
 	@param class string
-	@return (props: { [any]: any }) -> any -- makes an instance of the class from vide properties
+	@return (props: { [any]: any }) -> any -- makes an instance of the class from vide properties; buttons pop when clicked
 ]=]
 function Kit.New(class: string): (props: { [any]: any }) -> any
-	return (vide.create :: any)(class)
+	local make = (vide.create :: any)(class)
+
+	if class ~= "TextButton" and class ~= "ImageButton" then
+		return make
+	end
+
+	return function(props: { [any]: any }): any
+		local button = make(props)
+
+		pop(button)
+
+		return button
+	end
 end
 
 --[=[

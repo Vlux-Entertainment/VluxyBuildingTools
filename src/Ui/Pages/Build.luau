@@ -211,7 +211,7 @@ local function brushList(ui: Ui, visible: () -> boolean): Frame
 					Kit.Corner(6),
 					Kit.Stroke(),
 					ui.Popups.Tip({
-						Text = "Click to switch this brush on or off. Every brush that is on is painted at random.",
+						Text = "Click to switch this brush on or off.",
 					}),
 					MouseButton1Click = function()
 						app.Sound("Click")

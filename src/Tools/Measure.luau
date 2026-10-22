@@ -53,7 +53,7 @@ local tool: Types.Tool = {
 		if current and first then
 			Overlay.DrawMeasurement(ctx.Overlay, first, current)
 
-			return Common.Empty("Click to keep this measurement. The number stays in the viewport.")
+			return Common.Empty("Click to keep this measurement.")
 		elseif kept then
 			Overlay.DrawMeasurement(ctx.Overlay, kept.a, kept.b)
 		end
@@ -71,7 +71,7 @@ local tool: Types.Tool = {
 			state.Kept = nil
 			state.First = current
 			Overlay.ClearMeasurement(ctx.Overlay)
-			ctx.Say("Now click the second surface point. Distance is shown beside the line.")
+			ctx.Say("Click the second point.")
 
 			return
 		end
@@ -79,9 +79,7 @@ local tool: Types.Tool = {
 		state.Kept = { a = first, b = current }
 		state.First = nil
 		Overlay.DrawMeasurement(ctx.Overlay, first, current)
-		ctx.Say(
-			string.format("%.2f studs. Click to start another measurement; Esc clears it.", (current - first).Magnitude)
-		)
+		ctx.Say(string.format("%.2f studs; click to measure again, Esc clears it.", (current - first).Magnitude))
 	end,
 	Back = function(ctx: Context, state: MeasureState): string?
 		if not state.First and not state.Kept then
@@ -91,7 +89,7 @@ local tool: Types.Tool = {
 		state.First, state.Kept = nil, nil
 		Overlay.ClearMeasurement(ctx.Overlay)
 
-		return "Point removed. Click to start again, or press Esc again to leave the tool."
+		return "Point removed; Esc again leaves the tool."
 	end,
 	Finish = function(ctx: Context)
 		Overlay.ClearMeasurement(ctx.Overlay)

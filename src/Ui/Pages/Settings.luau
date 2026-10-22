@@ -49,11 +49,14 @@ return function(ui: Ui): { Instance }
 				After = function(on)
 					app.Say(
 						if on
-							then "Blender hotkeys ON. See the Hotkeys tab (F1) for the list."
-							else "Blender hotkeys OFF. Only Esc, Enter and [ ] keep working."
+							then "Blender hotkeys on; see the Hotkeys tab (F1)."
+							else "Blender hotkeys off; Esc, Enter and [ ] still work."
 					)
 				end,
 			}),
+		}),
+		Controls.Card(ui, "INTERFACE", {
+			Controls.Switch(ui, { Title = "UI animations", Key = "UiAnimations" }),
 		}),
 		Controls.Card(ui, "RESET", {
 			Controls.Button(ui, "Reset all settings", function()

@@ -77,7 +77,7 @@ function Arrange.CloneRoots(roots: { Instance }, transform: (CFrame) -> CFrame, 
 	for _, root in roots do
 		local copy = root:Clone()
 
-		assert(copy, "A selected object cannot be cloned. Check Archivable.");
+		assert(copy, "A selected object cannot be copied; check Archivable.");
 		(copy :: any):PivotTo(transform((root :: any):GetPivot()))
 		copy.Parent = parent or root.Parent
 		table.insert(copies, copy)
@@ -173,7 +173,7 @@ function Arrange.new(deps: Deps): Actions
 		end)
 
 		if made then
-			say(string.format("Array applied: %d objects. Ctrl+Z undoes the whole set.", copies + 1))
+			say(string.format("Array applied: %d objects; Ctrl+Z undoes it.", copies + 1))
 		end
 	end
 

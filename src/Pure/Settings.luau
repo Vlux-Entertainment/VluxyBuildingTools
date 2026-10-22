@@ -103,6 +103,7 @@ export type Settings = {
 	Hotkeys: boolean,
 	SoundEnabled: boolean,
 	SoundVolume: number,
+	UiAnimations: boolean,
 	Axis: string,
 }
 
@@ -213,6 +214,7 @@ function Settings.Defaults(): Settings
 		Hotkeys = true,
 		SoundEnabled = true,
 		SoundVolume = 0.5,
+		UiAnimations = true,
 		Axis = "X",
 	}
 end
