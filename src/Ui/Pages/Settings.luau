@@ -50,17 +50,6 @@ return function(ui: Ui): { Instance }
 				end,
 			}),
 			Controls.Slider(ui, "SoundVolume", "Sound volume"),
-			Controls.Switch(ui, {
-				Title = "Blender hotkeys",
-				Key = "Hotkeys",
-				After = function(on)
-					app.Say(
-						if on
-							then "Blender hotkeys on; see the Hotkeys tab (F1)."
-							else "Blender hotkeys off; Esc, Enter and [ ] still work."
-					)
-				end,
-			}),
 		}),
 		Controls.Card(ui, "INTERFACE", {
 			Controls.Switch(ui, { Title = "UI animations", Key = "UiAnimations" }),

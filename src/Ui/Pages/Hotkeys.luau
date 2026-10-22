@@ -98,7 +98,18 @@ end
 	@return { Instance } -- the cards of the Hotkeys tab
 ]=]
 return function(ui: Ui): { Instance }
-	local cards: { Instance } = {}
+	local app = ui.App
+	local cards: { Instance } = {
+		Controls.Card(ui, nil, {
+			Controls.Switch(ui, {
+				Title = "Blender hotkeys",
+				Key = "Hotkeys",
+				After = function(on)
+					app.Say(if on then "Blender hotkeys on." else "Blender hotkeys off; Esc, Enter and [ ] still work.")
+				end,
+			}),
+		}),
+	}
 
 	for _, section in Keymap.Sections() do
 		local rows = {}
