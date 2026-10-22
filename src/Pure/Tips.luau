@@ -145,7 +145,6 @@ Tips.Entries = {
 	["Camera light"] = {
 		Text = "A light that follows the editor camera, so dark rooms are easy to see. It is never saved in the place.",
 	},
-	["Ceiling"] = { Text = "Adds a ceiling to rooms and corridors." },
 	["Random rotation"] = { Text = "Turns each brush copy a random amount around the up axis." },
 	["Set cut depth with mouse"] = {
 		Text = "After clicking a wall, move the mouse to choose how deep the opening goes before you click again.",
