@@ -17,6 +17,9 @@ export type Spec = {
 	name: string,
 	source: BasePart?,
 	class: string,
+	shape: string?,
+	transparency: number?,
+	collide: boolean?,
 }
 
 local MAX_PART_SIZE = 2048
@@ -103,6 +106,18 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 		part.BottomSurface = Enum.SurfaceType.Smooth
 		part.Material = Enum.Material.SmoothPlastic
 		part.Color = Color3.fromRGB(163, 162, 165)
+
+		if spec.shape == "Cylinder" then
+			(part :: Part).Shape = Enum.PartType.Cylinder
+		elseif spec.shape == "Ball" then
+			(part :: Part).Shape = Enum.PartType.Ball
+		end
+
+		if spec.name == "Door_Panel" then
+			part.Transparency = spec.transparency or 0.5
+			part.CanCollide = spec.collide == true
+			part.CanTouch = spec.collide == true
+		end
 
 		local source = spec.source
 

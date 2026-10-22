@@ -27,6 +27,8 @@ local NumericInput = require("../Pure/NumericInput")
 local Overlay = require("./Overlay")
 local Panel = require("../Ui/Panel")
 local Polygon = require("../Pure/Polygon")
+local PropData = require("../Pure/PropData")
+local Props = require("./Props")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
 local Snapper = require("./Snapper")
@@ -74,6 +76,13 @@ local UPDATE_INTERVAL = 0.05
 local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
 local MAP_TAG = "VluxyBT_Map"
 local THEME_ATTRIBUTE = "VluxyBT_ColorTheme"
+local SHARED_SETTINGS = {
+	{ Key = "ColorTheme", Name = "theme" },
+	{ Key = "GhostTransparency", Name = "ghost transparency" },
+	{ Key = "AutoPastel", Name = "pastel" },
+	{ Key = "AutoGrid", Name = "grid" },
+}
+local SHARED_PREFIX = "VluxyBT_"
 local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
@@ -103,10 +112,12 @@ local INSTRUCTIONS: { [string]: string } = {
 	Vent = "Click points to draw a vent along the X or Z axis. Keep clicking to chain it; it turns only at right angles and cuts a hole where it meets a wall, floor or ceiling. Enter starts a new chain.",
 	VentRamp = "Click the start and the end of the run, then move the mouse up or down to set how far the vent climbs or drops, and click.",
 	VentShaft = "Click a floor, wall or ceiling, then move the mouse up or down to set the length of the vertical vent and click.",
+	Prop = "Click to place the prop on a floor, or against a wall for wall props. R turns it 90 degrees. Esc exits.",
 	VentCover = "Click a vent opening or any surface to place a grate over it.",
 	VentCap = "Click a vent opening or any surface to close it with a plain square plate.",
 	VentFan = "Click a vent opening to block it with a fan.",
 	VentPeek = "Click a wall or vent opening to place a small louvred cover for looking out.",
+	VentHole = "Click a wall, room, corridor, stairs, floor, ceiling or vent to cut a vent-sized hole through it.",
 	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
 	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
 	CircleWindow = "Click an undecorated rectangular wall. The round window is centered on the cursor; its size is the smaller of the window width and height.",
@@ -196,8 +207,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushItem: BrushItem? = nil
 	local brushScale = 1
 	local ventEnds: { Vector3 }? = nil
+	local propId: string? = nil
+	local propFrame: CFrame? = nil
+	local othersPresent: () -> boolean
+	local sharedSeen: { [string]: any } = {}
+	local folderWatch: RBXScriptConnection? = nil
+	local conflict: { Folder: Instance, Names: string }? = nil
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
+	local holeCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
 	local ventHost: Vector3? = nil
 	local ventNormal: Vector3? = nil
@@ -294,10 +312,88 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return false
 	end
 
+	--[[
+		@param value any
+		@return string? -- the theme the value names, ignoring case, or nil when it names none
+	]]
+	local function themeName(value: any): string?
+		if type(value) == "string" then
+			for _, name in Colors.Themes do
+				if string.lower(name) == string.lower(value) then
+					return name
+				end
+			end
+		end
+
+		return nil
+	end
+
+	--[[
+		@param target Instance
+
+		Writes the global visual settings onto the folder, so everyone working in it shares them.
+	]]
+	local function publishShared(target: Instance, force: boolean?)
+		for _, entry in SHARED_SETTINGS do
+			local value = (settings :: any)[entry.Key]
+			local stored = target:GetAttribute(SHARED_PREFIX .. entry.Key)
+
+			if
+				stored == nil
+				or (force == true and stored ~= value)
+				or (sharedSeen[entry.Key] ~= value and stored ~= value)
+			then
+				if entry.Key == "ColorTheme" then
+					print(`[VluxyBuildingTools] writing theme {value} to {target.Name}\n{debug.traceback()}`)
+				end
+
+				target:SetAttribute(SHARED_PREFIX .. entry.Key, value)
+			end
+
+			sharedSeen[entry.Key] = value
+		end
+	end
+
+	--[[
+		@param target Instance
+		@param key string -- a shared setting
+
+		Takes a value somebody changed on the folder, by hand or from another user, as this user's own, so the folder always wins and an old local value never writes over it.
+	]]
+	local function adoptShared(target: Instance, key: string)
+		local value = target:GetAttribute(SHARED_PREFIX .. key)
+
+		if key == "ColorTheme" then
+			value = themeName(value)
+		end
+
+		if value == nil or type(value) ~= type((settings :: any)[key]) or (settings :: any)[key] == value then
+			return
+		end
+
+		(settings :: any)[key] = value
+		sharedSeen[key] = value
+		pcall(function()
+			plugin:SetSetting(SETTINGS_KEY, settings)
+		end)
+
+		if key == "ColorTheme" then
+			Colors.Retheme(colors)
+		elseif key == "GhostTransparency" then
+			Hidden.SetGhost(hidden, settings.GhostTransparency)
+		end
+
+		panel.Refresh()
+	end
+
 	local function save()
 		pcall(function()
 			plugin:SetSetting(SETTINGS_KEY, settings)
 		end)
+
+		if folder and folder:IsDescendantOf(workspace) then
+			publishShared(folder)
+		end
 	end
 
 	--[[
@@ -1290,7 +1386,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or mode == "ArchOpening"
 		then
 			local opening = if mode == "Door"
-				then { Width = settings.DoorWidth, Height = settings.DoorHeight, Sill = 0 }
+				then {
+					Width = settings.DoorWidth,
+					Height = settings.DoorHeight,
+					Sill = 0,
+					Panel = settings.DoorPanel,
+					Frame = settings.DoorFrame,
+					FrameWidth = settings.FrameWidth,
+					FrameDepth = settings.FrameDepth,
+					DoorThickness = settings.DoorThickness,
+					DoorTransparency = settings.DoorTransparency,
+					DoorCollide = settings.DoorCollide,
+				}
 				elseif mode == "Window" or mode == "TriangleWindow" then {
 					Width = settings.WindowWidth,
 					Height = settings.WindowHeight,
@@ -1326,6 +1433,40 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						depth
 					)
 					else "Move the mouse to set the cut depth. Click to confirm."
+			end
+		elseif mode == "VentHole" then
+			local hit = hitSurface()
+
+			holeCut = nil
+
+			if hit and hit.Instance:IsA("BasePart") and not hit.Instance:IsA("Terrain") then
+				local part = hit.Instance :: BasePart
+				local normal = hit.Normal
+				local fine = math.max(0.25, settings.FineGrid)
+				local center = Vector3.new(
+					if math.abs(normal.X) < 0.5 then math.round(hit.Position.X / fine) * fine else hit.Position.X,
+					if math.abs(normal.Y) < 0.5 then math.round(hit.Position.Y / fine) * fine else hit.Position.Y,
+					if math.abs(normal.Z) < 0.5 then math.round(hit.Position.Z / fine) * fine else hit.Position.Z
+				)
+				local cf = part.CFrame
+				local size = part.Size
+				local extent = math.abs(normal:Dot(cf.XVector)) * size.X
+					+ math.abs(normal:Dot(cf.YVector)) * size.Y
+					+ math.abs(normal:Dot(cf.ZVector)) * size.Z
+				local depth = extent + 0.2
+				local inner = math.max(0.5, settings.VentSize - 2 * settings.VentThickness)
+				local u = (if math.abs(normal.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis):Cross(normal).Unit
+				local frame = CFrame.fromMatrix(center, u, normal:Cross(u), normal)
+
+				holeCut = {
+					cf = frame * CFrame.new(0, 0, 0.1 - depth / 2),
+					size = Vector3.new(inner, inner, depth),
+					cylinder = false,
+				}
+				out = Builders.VentHoleMark(center + normal * 0.05, normal, inner)
+				message = "Click to cut a vent hole."
+			else
+				message = "Point at a wall, floor, ceiling, stairs or vent."
 			end
 		elseif mode == "VentCover" or mode == "VentCap" or mode == "VentFan" or mode == "VentPeek" then
 			local hit = hitSurface()
@@ -1393,6 +1534,51 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			if base then
 				out = Builders.Pillar(settings, base)
 				message = "Click to place the pillar."
+			end
+		elseif mode == "Prop" then
+			local hit = hitSurface()
+			local def = if propId then PropData.Find(propId) else nil
+
+			if hit and def then
+				local fine = math.max(0.05, settings.FineGrid)
+				local normal = hit.Normal
+				local frame: CFrame? = nil
+
+				if def.Mount == "wall" then
+					if math.abs(normal.Y) < 0.5 then
+						local at = Vector3.new(
+							if math.abs(normal.X) < 0.5
+								then math.round(hit.Position.X / fine) * fine
+								else hit.Position.X,
+							math.round(hit.Position.Y / fine) * fine,
+							if math.abs(normal.Z) < 0.5
+								then math.round(hit.Position.Z / fine) * fine
+								else hit.Position.Z
+						)
+						local flat = Vector3.new(normal.X, 0, normal.Z).Unit
+
+						frame = CFrame.lookAt(at, at + flat)
+					end
+				elseif normal.Y >= 0.7 then
+					local at = Vector3.new(
+						math.round(hit.Position.X / fine) * fine,
+						hit.Position.Y,
+						math.round(hit.Position.Z / fine) * fine
+					)
+
+					frame = CFrame.new(at) * CFrame.Angles(0, math.rad(settings.Yaw), 0)
+				end
+
+				propFrame = frame
+
+				if frame then
+					out = Props.Build(def, frame, settings.PropScale)
+					message = `Click to place the {def.Label}. R turns it 90 degrees.`
+				else
+					message = if def.Mount == "wall" then "Point at a wall." else "Point at a floor or other flat top."
+				end
+			else
+				message = "Pick a prop in the Props tab."
 			end
 		elseif mode == "Place" then
 			local hit = hitSurface()
@@ -2269,7 +2455,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		elseif action == "Extrude" then
 			startExtrude()
-		elseif action == "Rotate" and mode == "Place" then
+		elseif action == "Rotate" and (mode == "Place" or mode == "Prop") then
 			settings.Yaw = (settings.Yaw + 90) % 360
 			panel.SetField("Yaw")
 			save()
@@ -2371,9 +2557,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function currentTheme(): string
 		if folder and folder:IsDescendantOf(workspace) then
-			local shared = folder:GetAttribute(THEME_ATTRIBUTE)
+			local shared = themeName(folder:GetAttribute(THEME_ATTRIBUTE))
 
-			if type(shared) == "string" and table.find(Colors.Themes, shared) then
+			if shared then
 				return shared
 			end
 
@@ -2546,6 +2732,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local previous = folder
 
+		if folderWatch then
+			folderWatch:Disconnect()
+			folderWatch = nil
+		end
+
 		folder = chosen
 		Geometry.SetScope(chosen)
 		redrawBoxes()
@@ -2565,6 +2756,25 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		if chosen then
+			if chosen:IsDescendantOf(workspace) then
+				for _, entry in SHARED_SETTINGS do
+					sharedSeen[entry.Key] = (settings :: any)[entry.Key]
+				end
+
+				publishShared(chosen)
+				folderWatch = chosen.AttributeChanged:Connect(function(name)
+					for _, entry in SHARED_SETTINGS do
+						if name == SHARED_PREFIX .. entry.Key then
+							if entry.Key == "ColorTheme" then
+								print(`[VluxyBuildingTools] folder theme is now {chosen:GetAttribute(name)}`)
+							end
+
+							adoptShared(chosen, entry.Key)
+						end
+					end
+				end)
+			end
+
 			if settings.AutoPastel and not colors.On then
 				Colors.Set(colors, true)
 			end
@@ -2573,8 +2783,100 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				SurfaceGrid.Set(surfaceGrid, true)
 			end
 
+			Colors.Sweep(colors)
+
 			say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
 		end
+	end
+
+	--[[
+		@param chosen Instance
+		@return string -- the names of the shared settings the folder holds a different value for, or "" when none differ
+	]]
+	local function differences(chosen: Instance): string
+		local names: { string } = {}
+
+		for _, entry in SHARED_SETTINGS do
+			local theirs = chosen:GetAttribute(SHARED_PREFIX .. entry.Key)
+			local mine = (settings :: any)[entry.Key]
+
+			if entry.Key == "ColorTheme" then
+				theirs = themeName(theirs) or theirs
+			end
+
+			if theirs ~= nil and type(theirs) == type(mine) then
+				local same = if type(mine) == "number"
+					then math.abs((theirs :: number) - mine) < 1e-6
+					else theirs == mine
+
+				if not same then
+					table.insert(names, entry.Name)
+				end
+			end
+		end
+
+		return table.concat(names, ", ")
+	end
+
+	--[[
+		@param chosen Instance
+
+		Reads the shared settings the folder remembers. When any differ from this user's, asks whether to use the folder's, overwrite them or cancel; otherwise makes the folder the working folder.
+	]]
+	local function offerFolder(chosen: Instance)
+		local names = differences(chosen)
+
+		if names ~= "" then
+			conflict = { Folder = chosen, Names = names }
+			panel.Refresh()
+			say(`"{chosen.Name}" has different settings ({names}). Use the folder's, overwrite them, or cancel.`)
+
+			return
+		end
+
+		setFolder(chosen)
+	end
+
+	--[[
+		@param choice string -- "Use", "Overwrite" or "Cancel"
+
+		Settles whose settings the folder takes.
+	]]
+	local function resolveConflict(choice: string)
+		local pending = conflict
+
+		conflict = nil
+
+		if not pending then
+			return
+		end
+
+		if choice == "Use" then
+			for _, entry in SHARED_SETTINGS do
+				local theirs = pending.Folder:GetAttribute(SHARED_PREFIX .. entry.Key)
+
+				if entry.Key == "ColorTheme" then
+					theirs = themeName(theirs) or theirs
+				end
+
+				if theirs ~= nil and type(theirs) == type((settings :: any)[entry.Key]) then
+					(settings :: any)[entry.Key] = theirs
+				end
+			end
+
+			Hidden.SetGhost(hidden, settings.GhostTransparency)
+			setFolder(pending.Folder)
+			save()
+		elseif choice == "Overwrite" then
+			setFolder(pending.Folder)
+
+			if folder == pending.Folder then
+				publishShared(pending.Folder, true)
+				Colors.Retheme(colors)
+			end
+		end
+
+		panel.Refresh()
 	end
 
 	--[[
@@ -2590,7 +2892,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		picking = false
 		pendingFolder = nil
 		hoverFolder = nil
-		setFolder(chosen)
+		offerFolder(chosen)
 	end
 
 	--[[
@@ -2665,6 +2967,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end,
 		SurfaceGrid = surfaceGrid,
 		Hidden = hidden,
+		GetProp = function()
+			return propId
+		end,
+		GetConflict = function()
+			return if conflict then conflict.Names else nil
+		end,
 		GetFolder = function()
 			return folder
 		end,
@@ -2680,6 +2988,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Actions = {
 			Activate = activate,
 			SetMode = setMode,
+			PickProp = function(id: string)
+				propId = id
+				setMode("Prop")
+				panel.Refresh()
+			end,
 			Stop = function()
 				stop()
 			end,
@@ -2707,6 +3020,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			StartPick = startPicking,
 			CancelPick = cancelPicking,
 			ConfirmPick = confirmPicking,
+			ResolveTheme = resolveConflict,
 			UnhideAll = function()
 				perform("Unhide")
 			end,
@@ -2957,6 +3271,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						say("The wall could not be cut.")
 					end
 
+					if #specs > 0 then
+						Geometry.Materialize(specs, "Wall_" .. active)
+					end
+
 					return
 				end
 
@@ -2990,6 +3308,28 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 			end)
 			resetPoint()
+		elseif active == "VentHole" then
+			local cut = holeCut
+
+			if not previewValid or not cut then
+				return
+			end
+
+			edit("Cut vent hole", function()
+				local params = OverlapParams.new()
+				local scope = Geometry.GetScope()
+
+				if scope then
+					params.FilterType = Enum.RaycastFilterType.Include
+					params.FilterDescendantsInstances = { scope }
+				end
+
+				for _, part in workspace:GetPartBoundsInBox(cut.cf, cut.size, params) do
+					if not part:IsA("Terrain") then
+						Joints.Carve(part, { cut })
+					end
+				end
+			end)
 		elseif active == "VentCover" or active == "VentCap" or active == "VentFan" or active == "VentPeek" then
 			if not previewValid then
 				return
@@ -3027,6 +3367,25 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 			edit("Build pillar", function()
 				Geometry.Place(specs, "Pillar")
+			end)
+		elseif active == "Prop" then
+			if not previewValid or not propId then
+				return
+			end
+
+			local specs, id = previewSpecs, propId
+			local def, frame = PropData.Find(id), propFrame
+
+			if settings.PropRandomRotation and def and frame and def.Mount == "floor" then
+				local turn = (math.random() * 2 - 1) * settings.PropRandomAmount
+
+				specs = Props.Build(def, frame * CFrame.Angles(0, math.rad(turn), 0), settings.PropScale)
+			end
+
+			edit("Place prop", function()
+				local model = Geometry.Materialize(specs, "Vlux_Prop_" .. id)
+
+				model:SetAttribute("VluxyBT_Prop", id)
 			end)
 		elseif active == "Place" then
 			local hit = hitSurface()
@@ -3363,7 +3722,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or string.sub(action, 1, 5) == "Tool:"
 			or string.sub(action, 1, 7) == "Option:"
 
-		local turnsStamp = action == "Rotate" and mode == "Place"
+		local turnsStamp = action == "Rotate" and (mode == "Place" or mode == "Prop")
 
 		if starts and (processed or modal) and not turnsStamp then
 			if string.sub(action, 1, 5) == "Tool:" then
@@ -3401,6 +3760,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Moves to the next or previous tool tile, or option inside the tile, wrapping around.
 	]]
 	local function stepTool(step: number, tiles: boolean)
+		if mode == "Prop" then
+			if tiles then
+				panel.StepSection(step)
+			else
+				panel.StepProp(step)
+			end
+
+			return
+		end
+
 		local grid = Tools.Grid
 		local held = if mode then Tools.TileOf(mode) else nil
 
@@ -3638,7 +4007,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			object:IsA("Folder")
 			and (object:GetAttribute(FOLDER_ATTRIBUTE) == true or object:GetAttribute(OLD_FOLDER_ATTRIBUTE) == true)
 		then
-			setFolder(object)
+			offerFolder(object)
 
 			break
 		end
@@ -3658,7 +4027,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--[[
 		@return boolean -- whether another user has had the plugin open within the last minute
 	]]
-	local function othersPresent(): boolean
+	othersPresent = function(): boolean
 		local mine = PRESENCE_PREFIX .. myId
 
 		for name, stamp in workspace:GetAttributes() do

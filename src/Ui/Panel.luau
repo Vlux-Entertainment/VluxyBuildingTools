@@ -13,6 +13,8 @@ local Colors = require("../Core/Colors")
 local Hidden = require("../Core/Hidden")
 local Keymap = require("../Pure/Keymap")
 local PluginInfo = require("../Pure/PluginInfo")
+local PropData = require("../Pure/PropData")
+local Props = require("../Core/Props")
 local Settings = require("../Pure/Settings")
 local SurfaceGrid = require("../Core/SurfaceGrid")
 local Tips = require("../Pure/Tips")
@@ -23,6 +25,7 @@ type Settings = Settings.Settings
 export type Actions = {
 	Activate: (name: string) -> (),
 	SetMode: (name: string) -> (),
+	PickProp: (id: string) -> (),
 	Stop: () -> (),
 	ResetPoint: () -> (),
 	BrushesChanged: () -> (),
@@ -37,6 +40,7 @@ export type Actions = {
 	StartPick: () -> (),
 	CancelPick: () -> (),
 	ConfirmPick: () -> (),
+	ResolveTheme: (choice: string) -> (),
 	UnhideAll: () -> (),
 	ToggleHiddenView: () -> (),
 }
@@ -51,6 +55,8 @@ export type Deps = {
 	SurfaceGrid: SurfaceGrid.SurfaceGrid,
 	Actions: Actions,
 	GetMode: () -> string?,
+	GetProp: () -> string?,
+	GetConflict: () -> string?,
 	GetFolder: () -> Instance?,
 	GetPending: () -> Instance?,
 	GetPicking: () -> boolean,
@@ -63,6 +69,8 @@ export type Panel = {
 	SetField: (key: string) -> (),
 	CycleTab: (delta: number) -> (),
 	ShowTab: (name: string) -> (),
+	StepSection: (delta: number) -> (),
+	StepProp: (delta: number) -> (),
 }
 
 type Entry = {
@@ -89,13 +97,15 @@ local ACCENT = Color3.fromRGB(255, 138, 36)
 local DANGER = Color3.fromRGB(235, 64, 64)
 local ACCENT_DIM = Color3.fromRGB(62, 40, 22)
 local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
-local TABS = { "Build", "Arrange", "Display", "Hotkeys", "Settings" }
-local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Display = true }
+local TABS = { "Build", "Arrange", "Props", "Display", "Hotkeys", "Settings" }
+local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Props = true, Display = true }
 
 --[[ The setting each switch changes, by its title, so a switch can offer a reset to the default. ]]
 local SWITCH_KEYS: { [string]: string } = {
 	["Railing"] = "PorchRailing",
 	["Random rotation"] = "BrushRandomYaw",
+	["Randomize prop rotation"] = "PropRandomRotation",
+	["Collapse props after picking one"] = "PropAutoCollapse",
 	["Ceiling"] = "Roof",
 	["Snap to parts"] = "SnapToParts",
 	["Join rooms and corridors"] = "ConnectStructures",
@@ -105,6 +115,9 @@ local SWITCH_KEYS: { [string]: string } = {
 	["Construction grid while drawing"] = "ShowGrid",
 	["Allow untagged folders (not recommended)"] = "AllowUntagged",
 	["Blender hotkeys"] = "Hotkeys",
+	["Door"] = "DoorPanel",
+	["Door frame"] = "DoorFrame",
+	["Door blocks movement"] = "DoorCollide",
 }
 
 local Panel = {}
@@ -677,6 +690,11 @@ function Panel.new(deps: Deps): Panel
 
 		style(box, 5, CARD_STROKE)
 		fieldBoxes[key] = box
+		table.insert(refreshers, function()
+			if not box:IsFocused() then
+				box.Text = tostring(values[key])
+			end
+		end)
 
 		local function apply(value: number?)
 			if value and value == value and math.abs(value) < math.huge then
@@ -710,10 +728,24 @@ function Panel.new(deps: Deps): Panel
 			apply(tonumber(box.Text))
 		end)
 		stepperButton(group, "−", 0).MouseButton1Click:Connect(function()
-			apply(values[key] - (step or settings.Grid))
+			apply(
+				values[key]
+					- (
+						if key ~= "FieldStep" and settings.FieldStep > 0
+							then settings.FieldStep
+							else (step or settings.Grid)
+					)
+			)
 		end)
 		stepperButton(group, "+", 128).MouseButton1Click:Connect(function()
-			apply(values[key] + (step or settings.Grid))
+			apply(
+				values[key]
+					+ (
+						if key ~= "FieldStep" and settings.FieldStep > 0
+							then settings.FieldStep
+							else (step or settings.Grid)
+					)
+			)
 		end)
 
 		local initial = (Settings.Defaults() :: any)[key]
@@ -896,6 +928,23 @@ function Panel.new(deps: Deps): Panel
 	}, {
 		Condition = function()
 			return deps.GetPending() ~= nil
+		end,
+	})
+
+	local function resolve(choice: string): () -> ()
+		return function()
+			actions.ResolveTheme(choice)
+			refresh()
+		end
+	end
+
+	buttonRow(folderCard, {
+		{ Text = "Use folder's", Run = resolve("Use"), Primary = true },
+		{ Text = "Overwrite", Run = resolve("Overwrite"), Primary = true },
+		{ Text = "Cancel", Run = resolve("Cancel") },
+	}, {
+		Condition = function()
+			return deps.GetConflict() ~= nil
 		end,
 	})
 
@@ -1153,6 +1202,46 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "OpenHeight", "Archway height", 0.1, 1024, nil, body({ ArchOpening = true }))
 	numeric(scope, "DoorWidth", "Doorway width", 0.1, 1024, nil, body({ Door = true }))
 	numeric(scope, "DoorHeight", "Doorway height", 0.1, 1024, nil, body({ Door = true }))
+	switch(scope, "Door frame", function()
+		return settings.DoorFrame
+	end, function(on)
+		settings.DoorFrame = on
+		deps.Save()
+		refresh()
+	end, body({ Door = true }))
+	local function frameShown()
+		return settings.DoorFrame
+	end
+	local function doorShown()
+		return settings.DoorPanel
+	end
+	local function onlyIf(check: () -> boolean): Scope
+		return {
+			Modes = { Door = true },
+			Condition = function()
+				return toolOpen and check()
+			end,
+		}
+	end
+
+	numeric(scope, "FrameWidth", "Frame width", 0.05, 8, nil, onlyIf(frameShown))
+	numeric(scope, "FrameDepth", "Frame depth", 0.05, 64, nil, onlyIf(frameShown))
+	switch(scope, "Door", function()
+		return settings.DoorPanel
+	end, function(on)
+		settings.DoorPanel = on
+		deps.Save()
+		refresh()
+	end, body({ Door = true }))
+	numeric(scope, "DoorThickness", "Door thickness", 0.05, 8, nil, onlyIf(doorShown))
+	numeric(scope, "DoorTransparency", "Door transparency", 0, 1, 0.1, onlyIf(doorShown))
+	switch(scope, "Door blocks movement", function()
+		return settings.DoorCollide
+	end, function(on)
+		settings.DoorCollide = on
+		deps.Save()
+		refresh()
+	end, onlyIf(doorShown))
 	numeric(
 		scope,
 		"WindowWidth",
@@ -1305,6 +1394,7 @@ function Panel.new(deps: Deps): Panel
 			VentCap = true,
 			VentFan = true,
 			VentPeek = true,
+			VentHole = true,
 		})
 	)
 	numeric(
@@ -1314,7 +1404,7 @@ function Panel.new(deps: Deps): Panel
 		0.05,
 		4,
 		0.05,
-		body({ Vent = true, VentRamp = true, VentShaft = true })
+		body({ Vent = true, VentRamp = true, VentShaft = true, VentHole = true })
 	)
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
@@ -1582,7 +1672,7 @@ function Panel.new(deps: Deps): Panel
 				style(choice, 6, CARD_STROKE)
 				attachTip(choice, {
 					Text = if name == "Unity"
-						then "Unity theme: walls orange, floors dark grey, ceilings lighter grey. Partly see-through parts are purple."
+						then "Unity theme: tall or lopsided parts dark grey, even-sized or tiny parts orange, ceilings lighter grey. Partly see-through parts are purple."
 						else "Pastel theme: a random soft color for every part. Partly see-through parts are purple.",
 				})
 				themeButtons[name] = choice
@@ -1669,6 +1759,397 @@ function Panel.new(deps: Deps): Panel
 				setColor(hexBox.Text)
 			end)
 		end
+	end
+
+	local category = "All"
+	local pictureTheme = deps.GetTheme()
+	local propBrowsers: { { show: () -> (), paint: () -> (), reload: () -> () } } = {}
+	local showAllProps: () -> () = function() end
+	local propChoices = { { Id = "All", Label = "All" } }
+
+	for _, entry in PropData.Categories do
+		table.insert(propChoices, entry)
+	end
+
+	--[[
+		@param prop PropData.Prop
+		@return ViewportFrame -- a picture of the prop. The parts live only inside the viewport, so they are local to this user and never reach the place.
+	]]
+	local function picture(prop: PropData.Prop, parent: Instance): ViewportFrame
+		local view = make("ViewportFrame", {
+			Size = UDim2.new(1, -8, 1, -24),
+			Position = UDim2.fromOffset(4, 4),
+			BackgroundTransparency = 1,
+			Ambient = Color3.fromRGB(150, 150, 160),
+			LightColor = Color3.fromRGB(255, 255, 255),
+			LightDirection = Vector3.new(-0.5, -1, 0.7),
+		}, parent) :: ViewportFrame
+		local low, high = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+		local holder = Instance.new("Model")
+
+		holder:SetAttribute("VluxyBT_Prop", prop.Id)
+		holder.Parent = view
+
+		for _, spec in Props.Build(prop, CFrame.new(), 1) do
+			local part = Instance.new("Part")
+
+			part.Name = spec.name
+			part.Anchored = true
+			part.Size = spec.size
+			part.CFrame = spec.cf
+			part.Material = Enum.Material.SmoothPlastic
+			part.Parent = holder
+			part.Color = Colors.Preview(deps.Colors, part)
+
+			if spec.shape == "Cylinder" then
+				part.Shape = Enum.PartType.Cylinder
+			elseif spec.shape == "Ball" then
+				part.Shape = Enum.PartType.Ball
+			end
+
+			local reach = spec.size.Magnitude / 2
+
+			low = Vector3.new(
+				math.min(low.X, spec.cf.Position.X - reach),
+				math.min(low.Y, spec.cf.Position.Y - reach),
+				math.min(low.Z, spec.cf.Position.Z - reach)
+			)
+			high = Vector3.new(
+				math.max(high.X, spec.cf.Position.X + reach),
+				math.max(high.Y, spec.cf.Position.Y + reach),
+				math.max(high.Z, spec.cf.Position.Z + reach)
+			)
+		end
+
+		local middle = (low + high) / 2
+		local radius = math.max(2, (high - low).Magnitude / 2)
+		local camera = Instance.new("Camera")
+
+		camera.FieldOfView = 40
+		camera.CFrame = CFrame.lookAt(middle + Vector3.new(0.9, 0.7, -1.3).Unit * radius * 2.4, middle)
+		camera.Parent = view
+		view.CurrentCamera = camera
+
+		return view
+	end
+
+	--[[
+		@param parent Instance -- the card to build the browser in
+
+		Builds the row of sections and the grid of prop pictures. Every browser follows the same chosen section.
+	]]
+	local function propsBrowser(parent: Instance, compact: boolean)
+		local expanded = not compact
+		button(parent, "Reload prop pictures", function()
+			for _, browser in propBrowsers do
+				browser.reload()
+			end
+		end, false)
+
+		local categoryButtons: { [string]: TextButton } = {}
+		local cells: { [string]: { frame: Frame, button: TextButton } } = {}
+
+		local sections = make("Frame", {
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = nextOrder(),
+		}, parent)
+
+		make("UIGridLayout", {
+			CellSize = UDim2.new(1 / 3, -4, 0, 26),
+			CellPadding = UDim2.fromOffset(4, 4),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}, sections)
+
+		local shown = make("Frame", {
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = nextOrder(),
+		}, parent)
+		local toggle = button(parent, "Show all props", function()
+			expanded = not expanded
+			refresh()
+		end, false)
+		local toggleRow = toggle.Parent :: GuiObject
+
+		make("UIGridLayout", {
+			CellSize = UDim2.new(1 / 3, -4, 0, 104),
+			CellPadding = UDim2.fromOffset(4, 4),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}, shown)
+
+		local function paint()
+			local theme = deps.GetTheme()
+
+			if theme ~= pictureTheme then
+				pictureTheme = theme
+
+				for _, browser in propBrowsers do
+					browser.reload()
+				end
+
+				return
+			end
+
+			local collapsed = compact and not expanded
+
+			shown.AutomaticSize = if collapsed then Enum.AutomaticSize.None else Enum.AutomaticSize.Y
+			shown.Size = if collapsed then UDim2.new(1, 0, 0, 104) else UDim2.fromScale(1, 0)
+			shown.ClipsDescendants = collapsed
+			toggleRow.Visible = compact
+			toggle.Text = if expanded then "Show first row only" else "Show all props"
+
+			for id, choice in categoryButtons do
+				local active = id == category
+
+				choice.BackgroundColor3 = if active then ACCENT else TILE
+				choice.TextColor3 = if active then BACKGROUND else TEXT
+			end
+
+			local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
+			local row = 0
+			local place = 0
+
+			for _, prop in PropData.Props do
+				if category == "All" or prop.Category == category then
+					if prop.Id == current then
+						row = place // 3
+					end
+
+					place += 1
+				end
+			end
+
+			place = 0
+
+			for _, prop in PropData.Props do
+				local cell = cells[prop.Id]
+
+				if cell and (category == "All" or prop.Category == category) then
+					cell.frame.Visible = not collapsed or place // 3 == row
+					place += 1
+				end
+			end
+
+			for id, cell in cells do
+				cell.frame.BackgroundColor3 = if id == current then ACCENT else TILE
+			end
+		end
+
+		local function show()
+			for _, cell in cells do
+				cell.frame.Visible = false
+			end
+
+			for i, prop in PropData.Props do
+				if category == "All" or prop.Category == category then
+					local cell = cells[prop.Id]
+
+					if not cell then
+						local frame = make("Frame", {
+							BackgroundColor3 = TILE,
+							BorderSizePixel = 0,
+						}, shown)
+
+						style(frame, 6, CARD_STROKE)
+						picture(prop, frame)
+						make("TextLabel", {
+							Size = UDim2.new(1, -4, 0, 18),
+							AnchorPoint = Vector2.new(0, 1),
+							Position = UDim2.new(0, 2, 1, -2),
+							BackgroundTransparency = 1,
+							Text = prop.Label,
+							TextColor3 = TEXT,
+							Font = Enum.Font.GothamMedium,
+							TextSize = 11,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}, frame)
+
+						local click = make("TextButton", {
+							Size = UDim2.fromScale(1, 1),
+							BackgroundTransparency = 1,
+							Text = "",
+							ZIndex = 5,
+						}, frame)
+
+						attachTip(
+							click,
+							{ Text = prop.Label .. if prop.Mount == "wall" then " (hangs on a wall)." else "." }
+						)
+						click.MouseButton1Click:Connect(function()
+							if settings.PropAutoCollapse then
+								expanded = false
+							end
+
+							actions.PickProp(prop.Id)
+						end)
+						cell = { frame = frame, button = click }
+						cells[prop.Id] = cell
+					end
+
+					cell.frame.LayoutOrder = i
+					cell.frame.Visible = true
+				end
+			end
+
+			paint()
+		end
+
+		for i, entry in propChoices do
+			local choice = make("TextButton", {
+				BackgroundColor3 = TILE,
+				BorderSizePixel = 0,
+				Text = entry.Label,
+				TextColor3 = TEXT,
+				Font = Enum.Font.GothamMedium,
+				TextSize = 11,
+				LayoutOrder = i,
+			}, sections)
+
+			style(choice, 6, CARD_STROKE)
+			categoryButtons[entry.Id] = choice
+			choice.MouseButton1Click:Connect(function()
+				category = entry.Id
+				showAllProps()
+			end)
+		end
+
+		local function reload()
+			for _, cell in cells do
+				cell.frame:Destroy()
+			end
+
+			table.clear(cells)
+			show()
+		end
+
+		table.insert(propBrowsers, { show = show, paint = paint, reload = reload })
+		table.insert(refreshers, paint)
+		show()
+	end
+
+	showAllProps = function()
+		for _, browser in propBrowsers do
+			browser.show()
+		end
+	end
+
+	local function propSelected(): boolean
+		return deps.GetMode() == "Prop" and deps.GetProp() ~= nil
+	end
+
+	do
+		local propsCard = card("PROPS", "Props")
+
+		text(
+			propsCard,
+			"Pick a section, then a prop, then click a floor (or a wall for wall props) to place it. R turns it.",
+			MUTED
+		)
+		switch(propsCard, "Collapse props after picking one", function()
+			return settings.PropAutoCollapse
+		end, function(on)
+			settings.PropAutoCollapse = on
+			deps.Save()
+			refresh()
+		end)
+		propsBrowser(propsCard, false)
+		numeric(propsCard, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(
+			propsCard,
+			"PropScale",
+			"Prop size (x)",
+			0.2,
+			5,
+			0.1,
+			{ Modes = { Prop = true }, Condition = propSelected }
+		)
+		switch(propsCard, "Randomize prop rotation", function()
+			return settings.PropRandomRotation
+		end, function(on)
+			settings.PropRandomRotation = on
+			deps.Save()
+			refresh()
+		end, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(propsCard, "PropRandomAmount", "Random rotation (+/- degrees)", 0, 180, 5, {
+			Modes = { Prop = true },
+			Condition = function()
+				return propSelected() and settings.PropRandomRotation
+			end,
+		})
+	end
+
+	do
+		local buildProps = card("PROPS", "Build", { Modes = { Prop = true } })
+
+		propsBrowser(buildProps, true)
+		numeric(buildProps, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(
+			buildProps,
+			"PropScale",
+			"Prop size (x)",
+			0.2,
+			5,
+			0.1,
+			{ Modes = { Prop = true }, Condition = propSelected }
+		)
+		switch(buildProps, "Randomize prop rotation", function()
+			return settings.PropRandomRotation
+		end, function(on)
+			settings.PropRandomRotation = on
+			deps.Save()
+			refresh()
+		end, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(buildProps, "PropRandomAmount", "Random rotation (+/- degrees)", 0, 180, 5, {
+			Modes = { Prop = true },
+			Condition = function()
+				return propSelected() and settings.PropRandomRotation
+			end,
+		})
+	end
+
+	local stepSection = function(delta: number)
+		local at = 1
+
+		for i, entry in propChoices do
+			if entry.Id == category then
+				at = i
+			end
+		end
+
+		category = propChoices[(at - 1 + delta) % #propChoices + 1].Id
+		showAllProps()
+	end
+
+	local stepProp = function(delta: number)
+		local list: { PropData.Prop } = {}
+
+		for _, prop in PropData.Props do
+			if category == "All" or prop.Category == category then
+				table.insert(list, prop)
+			end
+		end
+
+		if #list == 0 then
+			return
+		end
+
+		local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
+		local at = 0
+
+		for i, prop in list do
+			if prop.Id == current then
+				at = i
+			end
+		end
+
+		if at == 0 and delta < 0 then
+			at = #list + 1
+		end
+
+		actions.PickProp(list[(at - 1 + delta) % #list + 1].Id)
 	end
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
@@ -1829,6 +2310,7 @@ function Panel.new(deps: Deps): Panel
 		refresh()
 	end, nil, true)
 
+	numeric(editing, "FieldStep", "Arrow step", 0, 100, 0.05)
 	numeric(editing, "Grid", "Snap increment", 0.05, 128, 0.5)
 	numeric(editing, "FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5)
 	numeric(editing, "StandardHeight", "Standard wall height", 0.1, 2048)
@@ -1965,8 +2447,11 @@ function Panel.new(deps: Deps): Panel
 
 		folderName.Visible = shown ~= nil
 		folderName.Text = if shown then shown:GetFullName() else ""
-		folderText.Text = if pending
-			then "Work in this folder?"
+		local conflictTheme = deps.GetConflict()
+
+		folderText.Text = if conflictTheme
+			then `This folder has different settings ({conflictTheme}). Use the folder's, overwrite them with yours, or cancel?`
+			elseif pending then "Work in this folder?"
 			elseif deps.GetPicking() then "Click a Folder in the viewport or select one."
 			elseif workingFolder then "Working folder. Select it to outline it."
 			else "Press the button, then pick a Folder in Workspace."
@@ -2019,6 +2504,12 @@ function Panel.new(deps: Deps): Panel
 			leavePage()
 			page = TABS[(index - 1 + delta) % #TABS + 1]
 			refresh()
+		end,
+		StepSection = function(delta: number)
+			stepSection(delta)
+		end,
+		StepProp = function(delta: number)
+			stepProp(delta)
 		end,
 		ShowTab = function(name: string)
 			if pages[name] then

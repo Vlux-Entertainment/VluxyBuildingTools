@@ -154,6 +154,13 @@ Tools.List = {
 		Description = "Place a grate over a vent opening, or on any surface.",
 	},
 	{
+		Id = "Prop",
+		Label = "Prop",
+		Glyph = "◧",
+		Key = nil,
+		Description = "Place a built-in prop from the Props tab.",
+	},
+	{
 		Id = "VentCap",
 		Label = "End Cap",
 		Glyph = "■",
@@ -166,6 +173,13 @@ Tools.List = {
 		Glyph = "✲",
 		Key = nil,
 		Description = "Close a vent end with a frame and fan blades that block the way.",
+	},
+	{
+		Id = "VentHole",
+		Label = "Vent Hole",
+		Glyph = "▣",
+		Key = nil,
+		Description = "Cut a square hole the size of a vent through a wall, room, corridor, stairs, floor, ceiling or a vent itself.",
 	},
 	{
 		Id = "VentPeek",
@@ -269,7 +283,7 @@ Tools.Grid = {
 		Glyph = "▯",
 		Key = "3",
 		Description = "Cut a doorway, a window or an archway into a wall. Pick which one in the options.",
-		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "CutShape", "Extend" },
+		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "CutShape", "VentHole", "Extend" },
 	},
 	{
 		Id = "Structures",
@@ -302,6 +316,14 @@ Tools.Grid = {
 		Key = "7",
 		Description = "Paint copies of the selection onto surfaces by clicking or dragging.",
 		Modes = { "Place" },
+	},
+	{
+		Id = "Props",
+		Label = "Props",
+		Glyph = "◧",
+		Key = "8",
+		Description = "Place built-in furniture and props. Pick one in the Props tab.",
+		Modes = { "Prop" },
 	},
 	{
 		Id = "Measure",

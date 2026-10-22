@@ -31,6 +31,12 @@ Tips.Entries = {
 	Yes = {
 		Text = "The plugin may build, move, rotate, recolor and delete Parts inside this Folder. Nothing outside it is changed.",
 	},
+	["Use folder's"] = {
+		Text = "Takes the settings saved on this folder (theme, ghost transparency, pastel, grid) as your own, then starts working in it.",
+	},
+	Overwrite = {
+		Text = "Starts working in this folder and saves your settings onto it, replacing the ones it had. Everyone who uses the folder gets yours.",
+	},
 	Cancel = { Text = "Do not change the working folder.", Key = "Esc" },
 
 	-- Switches
@@ -129,6 +135,43 @@ Tips.Entries = {
 	WindowHeight = { Text = "How tall the window is." },
 	WindowSill = { Text = "How far the bottom of the window is above the bottom of the wall." },
 	Yaw = { Text = "How much to turn painted copies.", Key = "R" },
+	FieldStep = {
+		Text = "Arrow step: how much the + and - buttons beside every number change it. Set 0.1 to move by 0.1 everywhere. 0 lets each field use its own step.",
+	},
+	GhostTransparency = {
+		Text = "How see-through hidden parts look when you show them as ghosts. 0 is solid, 1 is clear.",
+	},
+	PropRandomAmount = {
+		Text = "Each prop is turned a random amount up to this many degrees either way from the Rotation setting.",
+	},
+	["Collapse props after picking one"] = {
+		Text = "After you pick a prop, the browser goes back to showing only its first row so the settings are in view. Turn off to keep it open.",
+	},
+	PropScale = { Text = "Makes the prop bigger or smaller than its normal size. 1 is normal." },
+	["Door frame"] = {
+		Text = "Adds a frame of three bars around the door: two sides and a top. The opening is cut wider and taller to fit it.",
+	},
+	Door = {
+		Text = "Adds a door panel that fills the doorway. It is see-through and can be walked through unless Door blocks movement is on.",
+	},
+	["Door blocks movement"] = { Text = "Makes the door solid so players cannot walk through it. Off by default." },
+	FrameWidth = { Text = "How wide each bar of the door frame is, in studs." },
+	FrameDepth = { Text = "How thick the door frame is through the wall, in studs. It is centred on the wall." },
+	DoorThickness = { Text = "How thick the door panel is, in studs." },
+	DoorTransparency = { Text = "How see-through the door is. 0 is solid, 1 is invisible." },
+	["Allow untagged folders (not recommended)"] = {
+		Text = "Lets the plugin work in any folder. Off by default: a folder needs the VluxyBT_Map tag so the plugin never edits a folder by accident.",
+	},
+	["Camera light"] = {
+		Text = "A light that follows the editor camera, so dark rooms are easy to see. It is never saved in the place.",
+	},
+	["Random rotation"] = { Text = "Turns each brush copy a random amount around the up axis." },
+	["Randomize prop rotation"] = {
+		Text = "Turns each prop a small random amount when you place it, so a row of props looks less uniform. The preview stays straight. Set the amount below.",
+	},
+	["Set cut depth with mouse"] = {
+		Text = "After clicking a wall, move the mouse to choose how deep the opening goes before you click again.",
+	},
 	VentSize = { Text = "The outside width and height of a vent duct, in studs." },
 	VentThickness = { Text = "How thick the sheet metal of a vent is." },
 	BrushRadius = { Text = "How far from the cursor the brush scatters copies, in studs." },

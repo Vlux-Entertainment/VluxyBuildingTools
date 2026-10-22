@@ -1090,7 +1090,18 @@ end
 ]=]
 function Builders.Opening(
 	settings: Settings,
-	dims: { Width: number, Height: number, Sill: number },
+	dims: {
+		Width: number,
+		Height: number,
+		Sill: number,
+		Panel: boolean?,
+		Frame: boolean?,
+		FrameWidth: number?,
+		FrameDepth: number?,
+		DoorThickness: number?,
+		DoorTransparency: number?,
+		DoorCollide: boolean?,
+	},
 	hit: RaycastResult?,
 	shape: string,
 	depth: number?
@@ -1132,6 +1143,13 @@ function Builders.Opening(
 	local arched = shape == "Arch"
 	local w, h = dims.Width, dims.Height
 	local sill = if arched then 0 else dims.Sill
+	local framed = dims.Frame == true and shape == "Rect" and not (depth and depth < size.Z - 0.01)
+	local bar = if framed then math.min(dims.FrameWidth or 0.25, w / 4, h / 4) else 0
+
+	if framed then
+		w += 2 * bar
+		h += bar
+	end
 
 	if arched and h < w / 2 then
 		return out, "Arch height must be at least half the opening width.", nil
@@ -1149,6 +1167,41 @@ function Builders.Opening(
 
 	if left <= -size.X / 2 + 0.01 or right >= size.X / 2 - 0.01 or sill < 0 or top > size.Y / 2 + 0.001 then
 		return out, "Opening must fit inside the wall, with wall remaining on both sides.", nil
+	end
+
+	if (framed or dims.Panel) and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
+		local reach = dims.FrameDepth or 1.095
+		local doorHeight = h - bar
+
+		if framed then
+			local sideX = w / 2 - bar / 2
+
+			add(
+				out,
+				Vector3.new(bar, doorHeight, reach),
+				cf * CFrame.new(x - sideX, bottom + doorHeight / 2, 0),
+				"Door_Frame"
+			)
+			add(
+				out,
+				Vector3.new(bar, doorHeight, reach),
+				cf * CFrame.new(x + sideX, bottom + doorHeight / 2, 0),
+				"Door_Frame"
+			)
+			add(out, Vector3.new(w - bar, bar, reach), cf * CFrame.new(x, bottom + h - bar / 2, 0), "Door_Frame")
+		end
+
+		if dims.Panel then
+			add(
+				out,
+				Vector3.new(w - 2 * bar, doorHeight, math.min(size.Z, dims.DoorThickness or 0.202)),
+				cf * CFrame.new(x, bottom + doorHeight / 2, 0),
+				"Door_Panel"
+			)
+
+			out[#out].transparency = dims.DoorTransparency
+			out[#out].collide = dims.DoorCollide
+		end
 	end
 
 	if carve then
@@ -1812,6 +1865,28 @@ function Builders.VentPeek(settings: Settings, center: Vector3, normal: Vector3)
 			"VentPeekSlat"
 		)
 	end
+
+	return out
+end
+
+--[=[
+	A square outline lying on a surface, showing where a vent hole will be cut.
+
+	@param center Vector3
+	@param normal Vector3
+	@param size number -- the side of the hole
+	@return { Spec }
+]=]
+function Builders.VentHoleMark(center: Vector3, normal: Vector3, size: number): { Spec }
+	local out: { Spec } = {}
+	local frame = surfaceFrame(center, normal)
+	local bar, depth = 0.15, 0.1
+	local half = size / 2 - bar / 2
+
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, half, 0), "VentHoleMark")
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, -half, 0), "VentHoleMark")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(half, 0, 0), "VentHoleMark")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(-half, 0, 0), "VentHoleMark")
 
 	return out
 end

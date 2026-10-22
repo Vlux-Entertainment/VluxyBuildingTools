@@ -79,24 +79,63 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color by what the part is: walls and posts orange, floors and steps dark grey, ceilings and roofs lighter grey
+	@return Color3 -- orange for a part of 1 cubic stud or less or an even-sized one; dark grey for a part taller than it is wide, or much longer in X than Z or the reverse, or one that cannot be judged
+]]
+local function shapeColor(part: BasePart): Color3
+	local size = part.Size
+	local volume = size.X * size.Y * size.Z
+
+	if volume ~= volume or volume == math.huge or math.min(size.X, size.Y, size.Z) <= 0 then
+		return GREY
+	end
+
+	if volume <= 1 then
+		return ORANGE
+	end
+
+	local across = math.max(size.X, size.Z)
+
+	if size.Y > across * 1.25 or across >= math.min(size.X, size.Z) * 2 then
+		return GREY
+	end
+
+	return ORANGE
+end
+
+--[[
+	@param part BasePart
+	@return Color3 -- the Unity theme color: shape decides it, a prop's accent parts take the opposite color, ceilings and roofs are lighter grey, vents have their own colors
 ]]
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
 
-	if named(name, { "ventwall" }) then
-		return ORANGE_DARK
-	elseif named(name, { "vent" }) then
-		return if named(name, { "floor", "ceiling", "duct" }) then GREY else ORANGE
-	elseif named(name, { "floor", "foundation", "stair", "step", "ramp", "porch", "landing" }) then
-		return GREY
+	if named(name, { "prop" }) then
+		local base = shapeColor(part)
+
+		if named(name, { "propaccent" }) then
+			return if base == ORANGE then GREY else ORANGE
+		end
+
+		return base
 	elseif named(name, { "ceiling", "roof", "arched" }) then
 		return GREY_LIGHT
-	elseif named(name, { "wall", "pillar", "opening", "arch", "post", "rail", "fence", "sill", "header", "frame" }) then
-		return ORANGE
+	elseif named(name, { "ventwall" }) then
+		return GREY
+	elseif named(name, { "ventceiling" }) then
+		return GREY_LIGHT
+	elseif named(name, { "vent" }) then
+		return if named(name, { "floor", "duct" }) then ORANGE_DARK else ORANGE
 	end
 
-	return GREY_LIGHT
+	return shapeColor(part)
+end
+
+--[[
+	@param color Color3
+	@return boolean -- whether the color is one the Unity theme paints with
+]]
+local function isUnityColor(color: Color3): boolean
+	return color == ORANGE or color == ORANGE_DARK or color == GREY or color == GREY_LIGHT
 end
 
 --[[
@@ -111,6 +150,19 @@ local function themed(self: Colors, part: BasePart): Color3
 
 	if self._theme() == "Unity" then
 		return unityColor(part)
+	end
+
+	local holder = part.Parent
+
+	if holder and holder:IsA("Model") and holder:GetAttribute("VluxyBT_Prop") ~= nil then
+		local index = holder:GetAttribute("VluxyBT_PropColor")
+
+		if type(index) ~= "number" then
+			index = self._random:NextInteger(1, #PALETTE)
+			holder:SetAttribute("VluxyBT_PropColor", index)
+		end
+
+		return PALETTE[index :: number]
 	end
 
 	return PALETTE[self._random:NextInteger(1, #PALETTE)]
@@ -238,6 +290,15 @@ function Colors.new(
 end
 
 --[=[
+	@param self Colors
+	@param part BasePart
+	@return Color3 -- the color a part would get under the theme picked now, without changing anything; used to draw prop pictures
+]=]
+function Colors.Preview(self: Colors, part: BasePart): Color3
+	return themed(self, part)
+end
+
+--[=[
 	Colors a part that was just built, now, so the color belongs to the same undo step as the part.
 
 	@param self Colors
@@ -269,9 +330,21 @@ function Colors.Sweep(self: Colors)
 		return
 	end
 
+	local unity = self._theme() == "Unity"
+
 	for _, part in scope:GetDescendants() do
-		if part:IsA("BasePart") and typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
-			apply(self, part)
+		if part:IsA("BasePart") then
+			if typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
+				apply(self, part)
+			elseif unity then
+				local want = themed(self, part)
+
+				if part.Color ~= want then
+					part.Color = want
+				end
+			elseif isUnityColor(part.Color) then
+				part.Color = themed(self, part)
+			end
 		end
 	end
 end
