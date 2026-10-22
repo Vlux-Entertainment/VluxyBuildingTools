@@ -30,7 +30,7 @@ Tips.Entries = {
 	VIEW = { Text = "Themes and grid save with the place, so switch them off before publishing." },
 	["HIDDEN PARTS"] = { Text = "Press H to hide selected parts; only you see it.", Key = "H" },
 	PROPS = { Text = "Pick a prop, then click a floor or wall; R turns it.", Key = "R" },
-	BUILDING = { Text = "The standard sizes new builds start from." },
+	BUILDING = { Text = "The grid every tool snaps to, and the standard sizes builds start from." },
 	VIEWPORT = { Text = "What the plugin draws in the 3D view." },
 	SOUND = { Text = "The plugin's sounds." },
 	ADVANCED = { Text = "Folder safety and a reset of this tab; builds are untouched." },

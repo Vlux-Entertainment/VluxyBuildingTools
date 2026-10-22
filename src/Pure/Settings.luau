@@ -256,6 +256,8 @@ Settings.Standards = {
 	@within Settings
 ]=]
 Settings.Page = {
+	"Grid",
+	"FineGrid",
 	"StandardHeight",
 	"StandardThickness",
 	"StandardDoorWidth",

@@ -421,8 +421,6 @@ return function(ui: Ui): { Instance }
 		Controls.Card(ui, nil, {
 			header,
 			variants,
-			number("Grid", "Grid Snap", 0.05, 128, 0.5, when(DRAW)),
-			number("FineGrid", "Precise Grid Snap", 0.05, 128, 0.25, when(DRAW)),
 			number("Height", "Height", 0.1, 2048, nil, when(HEIGHT)),
 			number(
 				"Thickness",

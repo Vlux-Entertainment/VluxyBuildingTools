@@ -41,6 +41,8 @@ return function(ui: Ui): { Instance }
 
 	return {
 		Controls.Card(ui, "BUILDING", {
+			number("Grid", "Grid Snap", 0.05, 128, 0.5),
+			number("FineGrid", "Precise Grid Snap", 0.05, 128, 0.25),
 			number("StandardHeight", "Standard wall height", 0.1, 2048),
 			number("StandardThickness", "Standard wall thickness", 0.05, 512),
 			number("StandardDoorWidth", "Standard doorway width", 0.1, 1024),
