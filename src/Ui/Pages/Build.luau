@@ -417,7 +417,7 @@ return function(ui: Ui): { Instance }
 				return Tools.Instruction(state.Mode())
 			end, Theme.Muted, when(nil)),
 			number("Grid", "Grid snap (studs)", 0.05, 128, 0.5, when(DRAW)),
-			number("FineGrid", "Grid snap with Shift held", 0.05, 128, 0.25, when(DRAW)),
+			number("FineGrid", "Grid snap with Shift hold", 0.05, 128, 0.25, when(DRAW)),
 			number("Height", "Height", 0.1, 2048, nil, when(HEIGHT)),
 			number(
 				"Thickness",
