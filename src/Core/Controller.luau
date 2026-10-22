@@ -76,6 +76,9 @@ local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
 local VENT_TAG = "VluxyBT_Vent"
+local PRESENCE_PREFIX = "VluxyBT_Active_"
+local PRESENCE_TIMEOUT = 45
+local PRESENCE_INTERVAL = 10
 
 local INSTRUCTIONS: { [string]: string } = {
 	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc removes the point, Esc again exits.",
@@ -3259,6 +3262,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 	local cameraLight: Part? = nil
 	local suspended = false
+	local myId = (function(): number
+		local ok, id = pcall(function()
+			return game:GetService("StudioService"):GetUserId()
+		end)
+
+		return if ok and type(id) == "number" then id else 0
+	end)()
 
 	trove:Add(function()
 		if cameraLight then
@@ -3398,12 +3408,49 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--[[
+		@param on boolean
+
+		Records in a Workspace attribute that this user has the plugin open, with the time, so other users can tell the plugin is in use.
+	]]
+	local function markPresent(on: boolean)
+		if RunService:IsEdit() then
+			workspace:SetAttribute(PRESENCE_PREFIX .. myId, if on then os.time() else nil)
+		end
+	end
+
+	--[[
+		@return boolean -- whether another user has had the plugin open within the last minute
+	]]
+	local function othersPresent(): boolean
+		local mine = PRESENCE_PREFIX .. myId
+
+		for name, stamp in workspace:GetAttributes() do
+			if
+				string.sub(name, 1, #PRESENCE_PREFIX) == PRESENCE_PREFIX
+				and name ~= mine
+				and type(stamp) == "number"
+				and math.abs(os.time() - stamp) < PRESENCE_TIMEOUT
+			then
+				return true
+			end
+		end
+
+		return false
+	end
+
+	--[[
 		Puts the place back to normal while the plugin is not in use: the surface grid and pastel colors come off, hidden parts are shown again and the camera light goes out. The choices are remembered, so Resume brings them back.
 	]]
 	local function suspend()
 		stop()
 		suspended = true
 		syncCameraLight()
+		markPresent(false)
+
+		if othersPresent() then
+			return
+		end
+
 		Hidden.UnhideAll(hidden)
 
 		quiet = true
@@ -3424,6 +3471,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function resume()
 		suspended = false
+		markPresent(true)
 
 		if folder then
 			if settings.AutoPastel and not colors.On then
@@ -3435,6 +3483,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 	end
+
+	local alive = true
+
+	trove:Add(function()
+		alive = false
+	end)
+
+	task.spawn(function()
+		while alive do
+			if widget.Enabled then
+				markPresent(true)
+			end
+
+			task.wait(PRESENCE_INTERVAL)
+		end
+	end)
 
 	return {
 		Stop = function()
@@ -3457,7 +3521,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Destroy = function()
 			save()
 			suspend()
-			Colors.RestoreOnUnload(colors)
+
+			if not othersPresent() then
+				Colors.RestoreOnUnload(colors)
+			end
 		end,
 	}
 end
