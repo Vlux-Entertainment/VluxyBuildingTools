@@ -19,6 +19,7 @@
 local RunService = game:GetService("RunService")
 
 local Actions = require("./Actions")
+local Admin = require("../Services/Admin")
 local AppState = require("../State/AppState")
 local AppTypes = require("./Types")
 local Arrange = require("../Core/Arrange")
@@ -31,7 +32,6 @@ local Host = require("../Modal/Host")
 local Input = require("./Input")
 local Overlay = require("../Core/Overlay")
 local Panel = require("../Ui/Panel")
-local Presence = require("../Services/Presence")
 local Runner = require("../Tools/Runner")
 local Sounds = require("../Core/Sounds")
 local Status = require("../Services/Status")
@@ -134,6 +134,18 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		end
 	end
 
+	local admin = Admin.new({
+		State = state,
+		Say = say,
+		IsOpen = function()
+			return widget.Enabled
+		end,
+	}, trove)
+
+	local function isAdmin(): boolean
+		return state.IsAdmin()
+	end
+
 	local edit = Edit.new({
 		Say = say,
 		Sound = sound,
@@ -153,6 +165,7 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		StopTools = function()
 			stopAll()
 		end,
+		IsAdmin = isAdmin,
 	}, trove)
 
 	local folder = WorkingFolder.new({
@@ -169,6 +182,10 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		end,
 		IsOpen = function()
 			return widget.Enabled
+		end,
+		IsAdmin = isAdmin,
+		OthersOn = function(target)
+			return Admin.OthersOn(admin, target)
 		end,
 	}, trove)
 
@@ -233,9 +250,6 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 	})
 
 	local cameraLight = CameraLight.new(settings, trove)
-	local presence = Presence.new(function()
-		return widget.Enabled
-	end, trove)
 
 	local app: AppTypes.App = {
 		Plugin = plugin,
@@ -253,7 +267,7 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Arrange = arrange,
 		Sounds = sounds,
 		CameraLight = cameraLight,
-		Presence = presence,
+		Admin = admin,
 		Say = say,
 		Sound = sound,
 		StopAll = stopAll,
@@ -281,6 +295,7 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		CameraLight.Step(cameraLight)
 		Host.Step(host)
 		WorkingFolder.Step(folder, dt)
+		Admin.Step(admin, dt)
 
 		elapsed += dt
 
@@ -311,26 +326,36 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 	--[[
 		Puts the map back to normal while the plugin is not in use: grid and pastel come off, hidden
 		parts show again and the camera light goes out, unless a teammate still has the plugin open.
+		This user stops being present on the working folder, which hands admin on.
+
+		@return boolean -- whether a teammate still has the plugin open
 	]]
-	local function suspend()
+	local function suspend(): boolean
 		stopAll()
 		cameraLight.Suspended = true
 		CameraLight.Step(cameraLight)
-		Presence.Mark(presence, false)
 
-		if not Presence.OthersHere(presence) then
+		local others = Admin.OthersHere(admin)
+
+		if not others then
 			Display.Suspend(display)
 		end
+
+		Admin.Leave(admin)
+
+		return others
 	end
 
 	return {
 		Stop = function()
 			stopAll()
 		end,
-		Suspend = suspend,
+		Suspend = function()
+			suspend()
+		end,
 		Resume = function()
 			cameraLight.Suspended = false
-			Presence.Mark(presence, true)
+			Admin.Step(admin, 0)
 
 			if WorkingFolder.Get(folder) then
 				Display.RestoreAuto(display)
@@ -345,9 +370,8 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		State = state,
 		Destroy = function()
 			Store.Save(store)
-			suspend()
 
-			if not Presence.OthersHere(presence) then
+			if not suspend() then
 				Display.Unload(display)
 			end
 		end,

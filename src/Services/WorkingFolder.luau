@@ -7,9 +7,9 @@
 	Picking one is a small flow: start picking, click or select a Folder (it is outlined and waits),
 	then confirm. A folder must carry the `VluxyBT_Map` tag unless the user allowed untagged folders.
 	When the folder already holds shared settings (see `Settings.Shared`) that differ from the user's,
-	the user chooses whose to keep before it becomes the working folder. While it is the working
-	folder, the shared settings flow both ways: the user's changes are written to it, and changes
-	written to it by teammates are taken over.
+	the user chooses whose to keep before it becomes the working folder; someone joining teammates
+	already there simply takes the folder's. While it is the working folder, the admin's changes are
+	written to it, and everyone takes over what is written to it.
 
 	@class WorkingFolder
 ]=]
@@ -39,6 +39,10 @@ export type Deps = {
 	StopTools: () -> (),
 	--[=[ True while the panel is open; themes and grid come back only then. ]=]
 	IsOpen: () -> boolean,
+	--[=[ True when this user is the working folder's admin, who alone writes the shared settings. ]=]
+	IsAdmin: () -> boolean,
+	--[=[ Whether a teammate is working in the folder now, which makes this user not its admin. ]=]
+	OthersOn: (folder: Instance) -> boolean,
 }
 
 type Conflict = { Folder: Instance, Names: string }
@@ -209,7 +213,7 @@ local function setFolder(self: WorkingFolder, chosen: Instance?)
 
 	local previous = state.Folder()
 
-	if display.Colors.On and chosen ~= previous then
+	if display.Colors.On and chosen ~= previous and deps.IsAdmin() then
 		Display.Quietly(display, function()
 			Display.SetPastel(display, false)
 		end)
@@ -248,7 +252,10 @@ local function setFolder(self: WorkingFolder, chosen: Instance?)
 			self._seen[entry.Key] = (deps.Store.Values :: any)[entry.Key]
 		end
 
-		publish(self, chosen)
+		if not deps.OthersOn(chosen) then
+			publish(self, chosen)
+		end
+
 		self._watch = chosen.AttributeChanged:Connect(function(name)
 			for _, entry in Settings.Shared do
 				if name == SHARED_PREFIX .. entry.Key then
@@ -258,12 +265,37 @@ local function setFolder(self: WorkingFolder, chosen: Instance?)
 		end)
 	end
 
-	if deps.IsOpen() then
+	if deps.IsOpen() and not deps.OthersOn(chosen) then
 		Display.RestoreAuto(display)
 	end
 
 	Display.Sweep(display)
 	deps.Say(`Working in {chosen:GetFullName()}.`)
+end
+
+--[[
+	@param self WorkingFolder
+	@param chosen Instance
+
+	Takes the folder's shared settings as the user's own and makes it the working folder.
+]]
+local function takeFolders(self: WorkingFolder, chosen: Instance)
+	self._adopting = true
+	Store.Mutate(self._deps.Store, function(values)
+		for _, entry in Settings.Shared do
+			local theirs = chosen:GetAttribute(SHARED_PREFIX .. entry.Key)
+
+			if entry.Key == "ColorTheme" then
+				theirs = Settings.ThemeName(theirs) or theirs
+			end
+
+			if theirs ~= nil and type(theirs) == type((values :: any)[entry.Key]) then
+				(values :: any)[entry.Key] = theirs
+			end
+		end
+	end)
+	self._adopting = false
+	setFolder(self, chosen)
 end
 
 --[[
@@ -280,6 +312,13 @@ local function offer(self: WorkingFolder, chosen: Instance)
 		end),
 		", "
 	)
+
+	if names ~= "" and self._deps.OthersOn(chosen) then
+		takeFolders(self, chosen)
+		self._deps.Say(`Took "{chosen.Name}"'s shared settings; its admin decides them.`)
+
+		return
+	end
 
 	if names ~= "" then
 		self._conflict = { Folder = chosen, Names = names }
@@ -327,8 +366,18 @@ function WorkingFolder.new(deps: Deps, trove: Trove.Trove): WorkingFolder
 	Store.OnSaved(deps.Store, function()
 		local folder = deps.State.Folder()
 
-		if folder and folder:IsDescendantOf(workspace) and not self._adopting then
+		if not folder or not folder:IsDescendantOf(workspace) or self._adopting then
+			return
+		end
+
+		if deps.IsAdmin() then
 			publish(self, folder)
+		else
+			task.defer(function()
+				for _, entry in Settings.Shared do
+					adopt(self, folder, entry.Key)
+				end
+			end)
 		end
 	end)
 
@@ -466,7 +515,6 @@ end
 ]=]
 function WorkingFolder.Resolve(self: WorkingFolder, choice: string)
 	local pending = self._conflict
-	local store = self._deps.Store
 
 	self._conflict = nil
 	self._deps.State.Conflict(nil)
@@ -476,23 +524,12 @@ function WorkingFolder.Resolve(self: WorkingFolder, choice: string)
 	end
 
 	if choice == "Use" then
-		self._adopting = true
-		Store.Mutate(store, function(values)
-			for _, entry in Settings.Shared do
-				local theirs = pending.Folder:GetAttribute(SHARED_PREFIX .. entry.Key)
-
-				if entry.Key == "ColorTheme" then
-					theirs = Settings.ThemeName(theirs) or theirs
-				end
-
-				if theirs ~= nil and type(theirs) == type((values :: any)[entry.Key]) then
-					(values :: any)[entry.Key] = theirs
-				end
-			end
-		end)
-		self._adopting = false
-		setFolder(self, pending.Folder)
+		takeFolders(self, pending.Folder)
 	elseif choice == "Overwrite" then
+		if self._deps.OthersOn(pending.Folder) then
+			return takeFolders(self, pending.Folder)
+		end
+
 		setFolder(self, pending.Folder)
 
 		if self._deps.State.Folder() == pending.Folder then

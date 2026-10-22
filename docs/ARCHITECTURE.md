@@ -29,13 +29,13 @@ Pure/                   plain data and maths, no Roblox API, tested under Lune
 | `App/Input.luau` | Raw input → actions: key presses through `Pure/Keymap`, typed digits, clicks, the wheel. |
 | `State/Store.luau` | The settings. Tools read `store.Values` freely; all writes go through `Store.Set`/`Mutate`. |
 | `State/AppState.luau` | vide sources for what the panel shows: active mode, working folder, status line, tab… |
-| `Services/` | `Cursor` (mouse ray, snapping), `Edit` (undo recording), `Status` (messages), `Display` (pastel, grid, hidden parts), `WorkingFolder`, `CameraLight`, `Presence`. |
+| `Services/` | `Cursor` (mouse ray, snapping), `Edit` (undo recording), `Status` (messages), `Display` (pastel, grid, hidden parts), `WorkingFolder`, `CameraLight`, `Admin` (who works in the folder, and its admin). |
 | `Tools/` | One module per tool family behind the contract in `Tools/Types.luau`; `Runner` runs the active one; `Registry` lists them. |
 | `Tools/Draw/` | The 19 point-to-point tools: `Engine` (the shared drawing flow) and one small file per family of shapes. |
 | `Modal/` | Extrude (T) and Move (G, R, C, D) behind `Modal/Types.luau`; `Host` runs the active one and the armed flip/rotate. |
 | `Ui/` | `Panel` (shell), `Controls` (number field, switch, slider, choice row…), `Popups` (tooltip, reset menu), `Pages/`. |
 | `Core/` | `Builders/` (what each shape is made of, one file per family: Paths, Areas, Railings, Slopes, Openings, Vents, Place, with shared `Shapes`), `Geometry` (specs → parts, unions), `Joints` (cutting holes), `Overlay` (viewport drawing), `Colors`, `SurfaceGrid`, `Snapper`, `Transform`, `Arrange`, `Hidden`, `Brushes`, `Sounds`, `Props`. |
-| `Pure/` | `Settings`, `Keymap`, `Tools` (labels, glyphs, instructions, tiles), `PropData`, `AxisLock`, `NumericInput`, `Polygon`, `Snap`, `Cycle`, `Tips`, `SoundIds`. |
+| `Pure/` | `Settings`, `Keymap`, `Tools` (labels, glyphs, instructions, tiles), `PropData`, `AxisLock`, `NumericInput`, `Polygon`, `Snap`, `Cycle`, `Tips`, `SoundIds`, `AdminRules`. |
 
 ## How a frame flows
 
@@ -100,6 +100,7 @@ one tool does can leak into the next. The runner is the only caller.
 | A panel value is stale | it is not reading `Store.Get` / an `AppState` source reactively, or something wrote around the Store |
 | Pastel colors, surface grid, hidden parts | `Services/Display.luau`, then `Core/Colors`, `Core/SurfaceGrid`, `Core/Hidden` |
 | Working folder, tags, shared settings | `Services/WorkingFolder.luau` |
+| Who is admin, a control greyed for someone | `Services/Admin.luau`, then `Pure/AdminRules.luau` |
 | Undo is wrong or an edit is half-applied | `Services/Edit.luau` and the `ctx.Edit` call in the tool |
 | Something leaks after reloading the plugin | a connection not given to a trove or `vide.cleanup` |
 

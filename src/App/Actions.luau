@@ -11,6 +11,7 @@
 local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
 
+local Admin = require("../Services/Admin")
 local AppState = require("../State/AppState")
 local AppTypes = require("./Types")
 local AxisLock = require("../Pure/AxisLock")
@@ -331,28 +332,37 @@ function Actions.Axis(app: App, axis: AxisLock.Axis, plane: boolean)
 end
 
 --[=[
-	H: hides the selected parts, locally.
+	H: hides the selected parts for everyone. Only the admin may.
 
 	@param app App
 ]=]
 function Actions.Hide(app: App)
+	if not Admin.Allows(app.Admin) then
+		return
+	end
+
 	local parts = Geometry.PartsOf(Geometry.SelectedRoots(true))
 
 	if #parts == 0 then
 		return app.Say("Select something to hide first.")
 	end
 
-	Display.Hide(app.Display, parts)
-	Selection:Set({})
-	app.Say(`Hid {#parts} part(s); Alt+H brings them back.`)
+	if Display.Hide(app.Display, parts) then
+		Selection:Set({})
+		app.Say(`Hid {#parts} part(s) for everyone; Alt+H brings them back.`)
+	end
 end
 
 --[=[
-	Alt+H: shows every hidden part again.
+	Alt+H: shows every hidden part again, for everyone. Only the admin may.
 
 	@param app App
 ]=]
 function Actions.UnhideAll(app: App)
+	if not Admin.Allows(app.Admin) then
+		return
+	end
+
 	local count = Display.UnhideAll(app.Display)
 
 	app.Say(if count > 0 then `Unhid {count} part(s).` else "Nothing was hidden.")
@@ -369,26 +379,39 @@ function Actions.ToggleHiddenView(app: App)
 end
 
 --[=[
+	P or the toolbar: themes on or off. Only the admin may.
+
 	@param app App
 ]=]
 function Actions.TogglePastel(app: App)
-	Display.SetPastel(app.Display, not app.Display.Colors.On)
+	if Admin.Allows(app.Admin) then
+		Display.SetPastel(app.Display, not app.Display.Colors.On)
+	end
 end
 
 --[=[
+	L or the toolbar: the surface grid on or off. Only the admin may.
+
 	@param app App
 ]=]
 function Actions.ToggleGrid(app: App)
-	Display.SetGrid(app.Display, not app.Display.Grid.On)
+	if Admin.Allows(app.Admin) then
+		Display.SetGrid(app.Display, not app.Display.Grid.On)
+	end
 end
 
 --[=[
-	Moves to the next or previous color theme, wrapping around, and switches themes on if they are off.
+	Moves to the next or previous color theme, wrapping around, and switches themes on if they are
+	off. Only the admin may.
 
 	@param app App
 	@param step number -- 1 for the next theme, -1 for the previous
 ]=]
 function Actions.StepTheme(app: App, step: number)
+	if not Admin.Allows(app.Admin) then
+		return
+	end
+
 	local themes = Settings.Themes
 	local at = table.find(themes, Display.Theme(app.Display)) or 1
 	local name = themes[(at - 1 + step) % #themes + 1]
@@ -410,6 +433,35 @@ function Actions.ToggleCameraLight(app: App)
 
 	Store.Set(app.Store, "CameraLight", on)
 	app.Say(if on then "Camera light on." else "Camera light off.")
+end
+
+--[=[
+	Hands admin of the working folder to another user. Only the admin may.
+
+	@param app App
+	@param userId number
+]=]
+function Actions.GiveAdmin(app: App, userId: number)
+	Admin.Give(app.Admin, userId)
+end
+
+--[=[
+	Asks the folder's admin to hand admin over.
+
+	@param app App
+]=]
+function Actions.RequestAdmin(app: App)
+	Admin.Request(app.Admin)
+end
+
+--[=[
+	Turns down the open admin request.
+
+	@param app App
+]=]
+function Actions.IgnoreRequest(app: App)
+	Admin.Ignore(app.Admin)
+	app.Say("Request ignored.")
 end
 
 local SIMPLE: { [string]: (app: App) -> () } = {
