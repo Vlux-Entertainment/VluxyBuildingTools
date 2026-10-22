@@ -22,6 +22,7 @@ export type Session = {
 	Lock: AxisLock.Lock?,
 	Numeric: NumericInput.NumericInput,
 	_original: { [BasePart]: Original },
+	_pivots: { [Model]: CFrame },
 	_center: Vector3,
 	_startMouse: Vector2,
 	_base: Vector3?,
@@ -96,6 +97,7 @@ function Transform.Begin(kind: Kind, parts: { BasePart }, mouse: Vector2, ray: R
 		Lock = nil,
 		Numeric = NumericInput.new(),
 		_original = original,
+		_pivots = Geometry.WholeModels(parts),
 		_center = center,
 		_startMouse = mouse,
 		_base = nil,
@@ -118,6 +120,10 @@ function Transform.Restore(self: Session)
 			part.Size = original.Size
 		end
 	end
+
+	Geometry.MovePivots(self._pivots, function(pivot)
+		return pivot
+	end)
 end
 
 --[=[
@@ -171,6 +177,10 @@ function Transform.Update(self: Session, grid: number, mouse: Vector2, ray: Ray,
 			part.CFrame = original.Cf + delta
 		end
 
+		Geometry.MovePivots(self._pivots, function(pivot)
+			return pivot + delta
+		end)
+
 		return string.format("Move  X %.2f  Y %.2f  Z %.2f", delta.X, delta.Y, delta.Z) .. suffix .. typedSuffix,
 			self._center + delta
 	elseif self.Kind == "Rotate" then
@@ -178,11 +188,16 @@ function Transform.Update(self: Session, grid: number, mouse: Vector2, ray: Ray,
 		local axis = Geometry.FromVec(AxisLock.Unit(if lock then lock.Axis else "Y"))
 		local turn = CFrame.fromAxisAngle(axis, math.rad(degrees))
 
-		for part, original in self._original do
-			local offset = original.Cf.Position - self._center
-
-			part.CFrame = CFrame.new(self._center + turn:VectorToWorldSpace(offset)) * turn * original.Cf.Rotation
+		--[[ Turns a frame about the selection's centre. ]]
+		local function turned(cf: CFrame): CFrame
+			return CFrame.new(self._center + turn:VectorToWorldSpace(cf.Position - self._center)) * turn * cf.Rotation
 		end
+
+		for part, original in self._original do
+			part.CFrame = turned(original.Cf)
+		end
+
+		Geometry.MovePivots(self._pivots, turned)
 
 		return string.format("Rotate  %.1f°", degrees) .. suffix .. typedSuffix, self._center
 	end

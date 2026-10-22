@@ -100,7 +100,7 @@ local function keyPressed(app: App, key: string, processed: boolean): boolean
 		running or runner.Mode ~= nil or modal.Armed ~= nil
 	)
 
-	if not action then
+	if not action or (not app.Widget.Enabled and action ~= "TogglePanel") then
 		return false
 	end
 

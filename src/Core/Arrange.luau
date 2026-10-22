@@ -120,6 +120,37 @@ function Arrange.ArrayOffset(settings: Settings, parts: { BasePart }): Vector3
 end
 
 --[=[
+	The preview boxes for the array: one spec per part per copy, each moved by the array's offset.
+
+	@param settings Settings
+	@param parts { BasePart } -- the selection's parts
+	@return { Geometry.Spec } -- empty when there is nothing to copy
+]=]
+function Arrange.ArraySpecs(settings: Settings, parts: { BasePart }): { Geometry.Spec }
+	local copies = ArrayStep.Copies(settings.ArrayCount)
+	local specs: { Geometry.Spec } = {}
+
+	if #parts == 0 or copies == 0 then
+		return specs
+	end
+
+	local step = Arrange.ArrayOffset(settings, parts)
+
+	for i = 1, copies do
+		for _, part in parts do
+			table.insert(specs, {
+				size = part.Size,
+				cf = part.CFrame + step * i,
+				name = part.Name,
+				class = part.ClassName,
+			})
+		end
+	end
+
+	return specs
+end
+
+--[=[
 	@param deps Deps
 	@return Actions
 ]=]
@@ -183,30 +214,23 @@ function Arrange.new(deps: Deps): Actions
 		Draws where the array's copies would go, or hides the preview once it is not wanted.
 	]]
 	local function previewArray(active: boolean)
-		local _, parts = if active then selection() else nil, {}
-		local copies = ArrayStep.Copies(settings.ArrayCount)
+		local parts: { BasePart } = {}
 
-		if #parts == 0 or copies == 0 then
+		if active then
+			local _, selected = selection()
+
+			parts = selected
+		end
+
+		local specs = Arrange.ArraySpecs(settings, parts)
+
+		if #specs == 0 then
 			if previewing then
 				previewing = false
 				deps.Ghosts({})
 			end
 
 			return
-		end
-
-		local step = Arrange.ArrayOffset(settings, parts)
-		local specs: { Geometry.Spec } = {}
-
-		for i = 1, copies do
-			for _, part in parts do
-				table.insert(specs, {
-					size = part.Size,
-					cf = part.CFrame + step * i,
-					name = part.Name,
-					class = part.ClassName,
-				})
-			end
 		end
 
 		previewing = true
@@ -224,13 +248,19 @@ function Arrange.new(deps: Deps): Actions
 
 		local center = Geometry.Bounds(parts).Position
 
-		local made = deps.Edit("Flip objects", function()
-			for _, part in parts do
-				local cf = part.CFrame
-				local offset = reflectVector(axis, cf.Position - center)
+		--[[ Mirrors a frame across the plane through the centre, keeping it a proper rotation. ]]
+		local function flipped(cf: CFrame): CFrame
+			return CFrame.new(center + reflectVector(axis, cf.Position - center)) * reflectFrame(axis, cf.Rotation)
+		end
 
-				part.CFrame = CFrame.new(center + offset) * reflectFrame(axis, cf.Rotation)
+		local made = deps.Edit("Flip objects", function()
+			local pivots = Geometry.WholeModels(parts)
+
+			for _, part in parts do
+				part.CFrame = flipped(part.CFrame)
 			end
+
+			Geometry.MovePivots(pivots, flipped)
 		end)
 
 		if made then
@@ -251,12 +281,19 @@ function Arrange.new(deps: Deps): Actions
 		local unit = if axis == "X" then Vector3.xAxis elseif axis == "Y" then Vector3.yAxis else Vector3.zAxis
 		local turn = CFrame.fromAxisAngle(unit, math.rad(degrees))
 
-		local made = deps.Edit("Rotate objects", function()
-			for _, part in parts do
-				local cf = part.CFrame
+		--[[ Turns a frame about the selection's centre. ]]
+		local function turned(cf: CFrame): CFrame
+			return CFrame.new(center + turn:VectorToWorldSpace(cf.Position - center)) * turn * cf.Rotation
+		end
 
-				part.CFrame = CFrame.new(center + turn:VectorToWorldSpace(cf.Position - center)) * turn * cf.Rotation
+		local made = deps.Edit("Rotate objects", function()
+			local pivots = Geometry.WholeModels(parts)
+
+			for _, part in parts do
+				part.CFrame = turned(part.CFrame)
 			end
+
+			Geometry.MovePivots(pivots, turned)
 		end)
 
 		if made then

@@ -66,6 +66,84 @@ function Geometry.InScope(object: Instance): boolean
 	return scope ~= nil and object:IsDescendantOf(scope)
 end
 
+--[=[
+	Gives a union or cut result the attributes and tags of the part it was made from, which CSG
+	does not carry over, so a remembered color or group color is not lost.
+
+	@param from BasePart -- the part the result replaces
+	@param to BasePart -- the union or cut result
+]=]
+function Geometry.CarryOver(from: BasePart, to: BasePart)
+	for name, value in from:GetAttributes() do
+		if to:GetAttribute(name) == nil then
+			to:SetAttribute(name, value)
+		end
+	end
+
+	for _, tag in from:GetTags() do
+		to:AddTag(tag)
+	end
+end
+
+--[=[
+	Finds the Models that move as a whole when these parts move, so their pivots can follow. A Model
+	with a PrimaryPart is left out, since its pivot already follows that part.
+
+	@param parts { BasePart } -- every Part that moves
+	@return { [Model]: CFrame } -- each Model whose BaseParts all move, with its pivot now
+]=]
+function Geometry.WholeModels(parts: { BasePart }): { [Model]: CFrame }
+	local moving: { [Instance]: boolean } = {}
+	local checked: { [Instance]: boolean } = {}
+	local out: { [Model]: CFrame } = {}
+
+	for _, part in parts do
+		moving[part] = true
+	end
+
+	for _, part in parts do
+		local node = part.Parent
+
+		while node and node ~= workspace and not checked[node] do
+			checked[node] = true
+
+			if node:IsA("Model") and not node.PrimaryPart then
+				local whole = true
+
+				for _, object in node:GetDescendants() do
+					if object:IsA("BasePart") and not moving[object] then
+						whole = false
+
+						break
+					end
+				end
+
+				if whole then
+					out[node] = node:GetPivot()
+				end
+			end
+
+			node = node.Parent
+		end
+	end
+
+	return out
+end
+
+--[=[
+	Sets each Model's pivot from the pivot it had, so it follows a move, turn or flip of its parts.
+
+	@param pivots { [Model]: CFrame } -- from `WholeModels`
+	@param map (CFrame) -> CFrame -- the same rigid change the parts got
+]=]
+function Geometry.MovePivots(pivots: { [Model]: CFrame }, map: (CFrame) -> CFrame)
+	for model, pivot in pivots do
+		if model.Parent then
+			model.WorldPivot = map(pivot)
+		end
+	end
+end
+
 --[[
 	@param out { Spec } -- added to
 	@param size Vector3
@@ -280,6 +358,7 @@ function Geometry.UnionArchHalves(model: Model): string?
 			end)
 
 			if ok and result then
+				Geometry.CarryOver(base, result)
 				result.Name = name
 				result.Anchored = true
 				result.Parent = model
@@ -360,6 +439,7 @@ function Geometry.UnionSides(model: Model, pieceName: string, prefix: string): s
 			end)
 
 			if ok and result then
+				Geometry.CarryOver(base, result)
 				result.Name = name
 				result.Anchored = true
 				result.Parent = model
@@ -414,6 +494,7 @@ function Geometry.UnionNamed(model: Model, pieceName: string, result: string): s
 		return "Roblox could not join the circle frame: " .. tostring(joined)
 	end
 
+	Geometry.CarryOver(group[1], joined)
 	joined.Name = result
 	joined.Anchored = true
 	joined.Parent = model
@@ -460,6 +541,7 @@ function Geometry.UnionAll(model: Model, name: string): string?
 		return "Roblox could not join the pieces: " .. tostring(result)
 	end
 
+	Geometry.CarryOver(base, result)
 	result.Name = name
 	result.Anchored = true
 	result.Parent = model

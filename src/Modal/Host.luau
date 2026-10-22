@@ -54,15 +54,19 @@ function Host.Running(self: Host): boolean
 end
 
 --[=[
-	Starts an action made by `make`, which returns nil when it cannot start.
+	Starts an action made by `make`, which returns nil when it cannot start. An error while making it
+	is reported instead of thrown.
 
 	@param self Host
 	@param make () -> Modal?
 ]=]
 function Host.Start(self: Host, make: () -> Modal?)
-	local modal = make()
+	local ok, modal = pcall(make)
 
-	if modal then
+	if not ok then
+		self._deps.Say("Could not start: " .. tostring(modal))
+		warn("[VluxyBuildingTools] " .. tostring(modal))
+	elseif modal then
 		self.Active = modal
 		self._deps.Started()
 	end

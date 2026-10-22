@@ -512,17 +512,25 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 		end
 	end
 
-	--[[ Ends the drag on the mouse's release, wherever the panel hears it, and saves the value once. ]]
-	local function ended(input: InputObject)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
+	--[[ Ends the drag and saves the value once. ]]
+	local function stopDrag()
+		if dragging then
 			dragging = false
 			Store.Save(store)
 			ui.App.Sound("Tab")
 		end
 	end
 
+	--[[ Ends the drag on the mouse's release, wherever the panel hears it. ]]
+	local function ended(input: InputObject)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			stopDrag()
+		end
+	end
+
 	vide.cleanup(ui.Root.InputChanged:Connect(moved))
 	vide.cleanup(ui.Root.InputEnded:Connect(ended))
+	vide.cleanup(ui.Root.MouseLeave:Connect(stopDrag))
 
 	local initial = (Settings.Defaults() :: any)[key]
 

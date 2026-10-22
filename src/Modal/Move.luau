@@ -73,17 +73,28 @@ function Move.Start(ctx: Context, kind: Transform.Kind, duplicate: boolean): Mod
 		return nil
 	end
 
-	if duplicate then
-		local copies = Arrange.CloneRoots(roots, function(cf)
-			return cf
-		end)
+	local cursor = ctx.Cursor
+	local ok, began = pcall(function(): Transform.Session
+		if duplicate then
+			local copies = Arrange.CloneRoots(roots, function(cf)
+				return cf
+			end)
 
-		Selection:Set(copies)
-		parts = Geometry.PartsOf(copies)
+			Selection:Set(copies)
+			parts = Geometry.PartsOf(copies)
+		end
+
+		return Transform.Begin(kind, parts, Cursor.Screen(), Cursor.Ray(cursor), Cursor.Look())
+	end)
+
+	if not ok then
+		ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Cancel)
+		ctx.Say("Could not start: " .. tostring(began))
+
+		return nil
 	end
 
-	local cursor = ctx.Cursor
-	local session = Transform.Begin(kind, parts, Cursor.Screen(), Cursor.Ray(cursor), Cursor.Look())
+	local session = began
 	local hints = { { "X Y Z", "Axis" }, { "0-9", "Type value" }, { "Enter", "Confirm" }, { "Esc", "Cancel" } }
 
 	if kind == "Rotate" then
