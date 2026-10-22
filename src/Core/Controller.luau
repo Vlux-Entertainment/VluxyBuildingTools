@@ -186,6 +186,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushItem: BrushItem? = nil
 	local brushScale = 1
 	local ventEnds: { Vector3 }? = nil
+	local ventHitNormal: Vector3? = nil
+	local ventNormal: Vector3? = nil
+	local ventShift = Vector3.zero
+	local ventMarks: { Vector3 } = {}
 	local brushSpecs: { Spec } = {}
 	local quiet = false
 	local lockedHit: RaycastResult? = nil
@@ -388,6 +392,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		first, current = nil, nil
 		cutFace, cutPending, cutPoints, cutSpot = nil, nil, {}, nil
 		ventEnds = nil
+		ventNormal, ventShift = nil, Vector3.zero
 		brushing, brushLast, brushTargets, brushSpecs = false, nil, {}, {}
 		lockedHit, cutDepth = nil, nil
 		prevWall = nil
@@ -915,25 +920,82 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		local size = settings.VentSize
-		local endPoint = Snapper.VentConnect(hit.Position, size * 1.1, math.max(0.5, settings.FineGrid))
+		local step = math.max(0.5, settings.FineGrid)
+		local endPoint, _, owner = Snapper.VentConnect(hit.Position, size * 1.1, step)
 
-		if endPoint then
+		ventHitNormal = nil
+		table.clear(ventMarks)
+
+		if endPoint and owner then
+			local a = owner:GetAttribute("VluxyBT_VentStart")
+			local b = owner:GetAttribute("VluxyBT_VentEnd")
+
+			if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 then
+				local length = (b - a).Magnitude
+
+				for along = 0, length, step do
+					table.insert(ventMarks, a + (b - a).Unit * along)
+				end
+
+				table.insert(ventMarks, b)
+			end
+
 			snapMark = endPoint
 
 			return if shaft then endPoint else endPoint - Vector3.new(0, size / 2, 0)
 		end
 
 		local normal = hit.Normal
-		local center = hit.Position + normal * (size / 2)
-		local x = if math.abs(normal.X) < 0.5 then snap(center.X) else center.X
-		local y = if math.abs(normal.Y) < 0.5 then snap(center.Y) else center.Y
-		local z = if math.abs(normal.Z) < 0.5 then snap(center.Z) else center.Z
+		local onWall = math.abs(normal.Y) < 0.5
+		local y = hit.Position.Y
 
-		if shaft then
-			return Vector3.new(x, if math.abs(normal.Y) < 0.5 then snap(hit.Position.Y) else hit.Position.Y, z)
+		if onWall then
+			local part = hit.Instance :: BasePart
+			local reach = (
+				math.abs(part.CFrame.RightVector.Y) * part.Size.X
+				+ math.abs(part.CFrame.UpVector.Y) * part.Size.Y
+				+ math.abs(part.CFrame.LookVector.Y) * part.Size.Z
+			) / 2
+			local bottom, top = part.Position.Y - reach, part.Position.Y + reach
+			local floorTop = Joints.FloorLevel(part) or bottom
+			local heights = {
+				floorTop + size / 2,
+				bottom + size / 2,
+				(bottom + top) / 2,
+				top - size / 2,
+			}
+			local best = math.huge
+
+			y = snap(hit.Position.Y)
+
+			for _, height in heights do
+				if height >= bottom + size / 2 - 0.01 and height <= top - size / 2 + 0.01 then
+					local gap = math.abs(height - hit.Position.Y)
+
+					if gap < size * 0.75 and gap < best then
+						best, y = gap, height
+					end
+
+					table.insert(
+						ventMarks,
+						Vector3.new(
+							if math.abs(normal.X) < 0.5 then snap(hit.Position.X) else hit.Position.X,
+							height,
+							if math.abs(normal.Z) < 0.5 then snap(hit.Position.Z) else hit.Position.Z
+						)
+					)
+				end
+			end
 		end
 
-		return Vector3.new(x, y - size / 2, z)
+		local x = if math.abs(normal.X) < 0.5 then snap(hit.Position.X) else hit.Position.X
+		local z = if math.abs(normal.Z) < 0.5 then snap(hit.Position.Z) else hit.Position.Z
+		local centre = Vector3.new(x, y, z)
+
+		ventHitNormal = normal
+		snapMark = centre
+
+		return if shaft then centre else centre - Vector3.new(0, size / 2, 0)
 	end
 
 	local function floorPoint(): Vector3?
@@ -1301,6 +1363,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		else
 			local origin = first
 			local height: number? = nil
+
+			if origin and riseStage and (mode == "Vent" or mode == "VentRamp") then
+				origin = origin + ventShift
+			end
 			local signedHeight = 0
 
 			if origin and lock and heightEnd and lock.Axis == "Y" and not lock.Plane then
@@ -1405,6 +1471,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					end
 
 					b = origin + axis * sign * (if alongX then math.abs(d.X) else math.abs(d.Z))
+
+					if not chained and ventNormal then
+						local sideways = math.abs((axis * sign):Dot(ventNormal)) < 0.5
+
+						ventShift = if sideways then ventNormal * (settings.VentSize / 2) else Vector3.zero
+					end
+
+					origin, b = origin + ventShift, b + ventShift
 					current = b
 				end
 
@@ -1552,6 +1626,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			if mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor" then
 				holes =
 					Joints.Preview("Vlux_" .. mode, out, settings.RoomJoin, if prevWall then prevWall.model else nil)
+			end
+		end
+
+		if #holes == 0 and not first and #ventMarks > 0 and mode and string.sub(mode, 1, 4) == "Vent" then
+			for _, mark in ventMarks do
+				table.insert(holes, { cf = CFrame.new(mark), size = Vector3.new(0.45, 0.45, 0.45) })
 			end
 		end
 
@@ -2785,6 +2865,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		elseif current then
 			if not first then
 				first = current
+				ventNormal = if active == "Vent" or active == "VentRamp" then ventHitNormal else nil
+				ventShift = Vector3.zero
 				startDoor = if active == "Corridor" or active == "ArchedCorridor" then hoverDoor else nil
 				NumericInput.Clear(numeric)
 
@@ -2983,6 +3065,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					end)
 				then
 					first = if chain then nextPoint else nil
+					ventNormal, ventShift = nil, Vector3.zero
 					chained = chain
 					lock = nil
 					heightEnd = nil

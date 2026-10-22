@@ -221,8 +221,10 @@ end
 	@param step number -- the spacing of the points along a vent
 	@return Vector3? -- the point on the middle line
 	@return Vector3? -- the way out of the vent when the point is an open end, else nil
+	@return Instance? -- the vent model the point is on
 ]=]
-function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vector3?, Vector3?)
+function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vector3?, Vector3?, Instance?)
+	local bestModel: Instance? = nil
 	local best: Vector3? = nil
 	local bestDirection: Vector3? = nil
 	local bestDistance = radius
@@ -239,7 +241,7 @@ function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vec
 			local distance = (onLine - point).Magnitude
 
 			if distance < bestDistance then
-				bestDistance = distance
+				bestDistance, bestModel = distance, model
 
 				if along < step * 0.75 then
 					best, bestDirection = a, model:GetAttribute("VluxyBT_VentStartDir") :: Vector3
@@ -254,7 +256,7 @@ function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vec
 		end
 	end
 
-	return best, bestDirection
+	return best, bestDirection, bestModel
 end
 
 --[=[
