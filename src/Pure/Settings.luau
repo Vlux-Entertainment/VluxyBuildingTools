@@ -144,7 +144,7 @@ function Settings.Defaults(): Settings
 		DoorPanel = false,
 		PropScale = 1,
 		PropRandomRotation = false,
-		PropRandomAmount = 15,
+		PropRandomAmount = 5,
 		FieldStep = 0,
 		CameraLight = false,
 		AllowUntagged = false,
