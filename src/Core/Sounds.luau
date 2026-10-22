@@ -7,8 +7,6 @@
 	@class Sounds
 ]=]
 
-local SoundService = game:GetService("SoundService")
-
 local SoundIds = require("../Pure/SoundIds")
 local Trove = require("../Packages/Trove")
 
@@ -78,19 +76,15 @@ function Sounds.Play(self: Sounds, name: string)
 	if not found then
 		made.Name = "VluxyBT_" .. name
 		made.SoundId = entry.Id
+		made.Archivable = false
 		made.Parent = self._parent
 		self._made[name] = made
 	end
 
 	made.Volume = entry.Volume * math.clamp(self._volume(), 0, 1)
 
-	local ok = pcall(function()
-		SoundService:PlayLocalSound(made)
-	end)
-
-	if not ok then
-		made:Play()
-	end
+	made.TimePosition = 0
+	made:Play()
 end
 
 return Sounds

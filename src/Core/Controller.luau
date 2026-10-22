@@ -397,7 +397,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 	end
 
-	local sounds = Sounds.new(widget, function()
+	local sounds = Sounds.new(game:GetService("SoundService"), function()
 		return settings.SoundEnabled
 	end, function()
 		return settings.SoundVolume
