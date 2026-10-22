@@ -7,11 +7,15 @@
 	the `Store`, so it always shows the saved value and every change is saved.
 
 	Every control takes a `Visible` that may be a function; the control shows only while it returns
-	true. That is how the panel shows just the options of the active tool.
+	true. That is how the panel shows just the options of the active tool. A control may also take
+	`Locked`: while it returns true the control is greyed, takes no input, and its hover text names
+	the working folder's admin, who alone may change it.
 
 	@class Controls
 ]=]
 
+local Admin = require("../Services/Admin")
+local AdminRules = require("../Pure/AdminRules")
 local AppTypes = require("../App/Types")
 local Kit = require("./Kit")
 local Popups = require("./Popups")
@@ -58,17 +62,48 @@ function Controls.Safe(ui: Ui, run: () -> ()): () -> ()
 	end
 end
 
+--[=[
+	A see-through cover that greys a row and takes its clicks while `locked` returns true; hovering
+	it says who may change the control.
+
+	@param ui Ui
+	@param locked (() -> boolean)?
+	@return TextButton? -- nil when the control never locks
+]=]
+function Controls.Lock(ui: Ui, locked: (() -> boolean)?): TextButton?
+	if not locked then
+		return nil
+	end
+
+	return (vide.create :: any)("TextButton")({
+		Name = "VluxyBT_Lock",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Theme.Card,
+		BackgroundTransparency = 0.4,
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false,
+		ZIndex = 10,
+		Visible = locked,
+		Kit.Corner(5),
+		ui.Popups.Tip(function(): Tips.Tip?
+			return { Text = AdminRules.LockedText(Admin.AdminName(ui.App.Admin)) }
+		end),
+	})
+end
+
 --[[
 	@param ui Ui
 	@param defaultText string -- the default, as shown in the menu
 	@param reset () -> ()
+	@param locked (() -> boolean)? -- no menu while this returns true
 
 	Right-clicking the row offers to put that one setting back to its default.
 ]]
-local function resetMenu(ui: Ui, defaultText: string, reset: () -> ()): any
+local function resetMenu(ui: Ui, defaultText: string, reset: () -> (), locked: (() -> boolean)?): any
 	return vide.action(function(instance: Instance)
 		(instance :: GuiObject).InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton2 then
+			if input.UserInputType == Enum.UserInputType.MouseButton2 and not (locked and locked()) then
 				ui.Popups.Menu(
 					Vector2.new(input.Position.X, input.Position.Y),
 					`Reset to default ({defaultText})`,
@@ -145,10 +180,19 @@ end
 	@param run () -> ()
 	@param primary boolean? -- the orange call to action
 	@param visible Prop<boolean>?
+	@param locked (() -> boolean)? -- greys the button and blocks it while true
 	@return Frame -- a full-width button row
 ]=]
-function Controls.Button(ui: Ui, label: Prop<string>, run: () -> (), primary: boolean?, visible: Prop<boolean>?): Frame
+function Controls.Button(
+	ui: Ui,
+	label: Prop<string>,
+	run: () -> (),
+	primary: boolean?,
+	visible: Prop<boolean>?,
+	locked: (() -> boolean)?
+): Frame
 	return Kit.Row(34, {
+		Controls.Lock(ui, locked),
 		new("TextButton")({
 			Size = UDim2.fromScale(1, 1),
 			BackgroundColor3 = function()
@@ -230,6 +274,7 @@ end
 	.Step number? -- what − and + add; the snap increment by default
 	.Integer boolean? -- round down to a whole number
 	.Visible Prop<boolean>?
+	.Locked (() -> boolean)? -- greys the field and blocks it while true
 ]=]
 export type NumberSpec = {
 	Key: string,
@@ -239,6 +284,7 @@ export type NumberSpec = {
 	Step: number?,
 	Integer: boolean?,
 	Visible: Prop<boolean>?,
+	Locked: (() -> boolean)?,
 }
 
 --[[
@@ -319,6 +365,7 @@ function Controls.Number(ui: Ui, spec: NumberSpec): Frame
 	local initial = (Settings.Defaults() :: any)[key]
 
 	return Kit.Row(36, {
+		Controls.Lock(ui, spec.Locked),
 		new("TextLabel")({
 			Size = UDim2.new(1, -170, 1, 0),
 			BackgroundTransparency = 1,
@@ -347,7 +394,7 @@ function Controls.Number(ui: Ui, spec: NumberSpec): Frame
 		if type(initial) == "number"
 			then resetMenu(ui, tostring(initial), function()
 				apply(initial)
-			end)
+			end, spec.Locked)
 			else nil,
 	}, spec.Visible)
 end
@@ -364,6 +411,7 @@ end
 	.After ((on: boolean) -> ())? -- runs after a change, such as saying what it did
 	.Danger boolean? -- shown in red, for settings that are risky to turn on
 	.Visible Prop<boolean>?
+	.Locked (() -> boolean)? -- greys the switch and blocks it while true
 ]=]
 export type SwitchSpec = {
 	Title: string,
@@ -373,6 +421,7 @@ export type SwitchSpec = {
 	After: ((on: boolean) -> ())?,
 	Danger: boolean?,
 	Visible: Prop<boolean>?,
+	Locked: (() -> boolean)?,
 }
 
 --[=[
@@ -408,6 +457,7 @@ function Controls.Switch(ui: Ui, spec: SwitchSpec): Frame
 	end
 
 	return Kit.Row(36, {
+		Controls.Lock(ui, spec.Locked),
 		new("TextLabel")({
 			Size = UDim2.new(1, -60, 1, 0),
 			BackgroundTransparency = 1,
@@ -449,7 +499,7 @@ function Controls.Switch(ui: Ui, spec: SwitchSpec): Frame
 		if type(initial) == "boolean"
 			then resetMenu(ui, if initial then "on" else "off", function()
 				change(initial)
-			end)
+			end, spec.Locked)
 			else nil,
 	}, spec.Visible)
 end
@@ -459,9 +509,10 @@ end
 	@param key string -- a number setting from 0 to 1
 	@param title string
 	@param visible Prop<boolean>?
+	@param locked (() -> boolean)? -- greys the slider and blocks it while true
 	@return Frame -- a draggable slider showing the value as a percent. It saves when the drag ends.
 ]=]
-function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boolean>?): Frame
+function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boolean>?, locked: (() -> boolean)?): Frame
 	local store = ui.App.Store
 	local dragging = false
 	local bar: Frame
@@ -535,6 +586,7 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 	local initial = (Settings.Defaults() :: any)[key]
 
 	return Kit.Row(36, {
+		Controls.Lock(ui, locked),
 		new("TextLabel")({
 			Size = UDim2.new(1, -190, 1, 0),
 			BackgroundTransparency = 1,
@@ -553,7 +605,7 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 			Active = true,
 			bar,
 			InputBegan = function(input: InputObject)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				if input.UserInputType == Enum.UserInputType.MouseButton1 and not (locked and locked()) then
 					dragging = true
 					setFrom(input.Position.X)
 					Kit.Pop(knob)
@@ -576,7 +628,7 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 		}),
 		resetMenu(ui, tostring(initial), function()
 			Store.Set(store, key, initial)
-		end),
+		end, locked),
 	}, visible)
 end
 
@@ -602,6 +654,7 @@ export type Option = { Value: string, Label: string?, Tip: string?, Key: string?
 	.Get () -> string? -- the picked value, read reactively
 	.Set (value: string) -> ()
 	.Visible Prop<boolean>?
+	.Locked (() -> boolean)? -- greys the row and blocks it while true
 ]=]
 export type ChoiceSpec = {
 	Options: { Option },
@@ -609,6 +662,7 @@ export type ChoiceSpec = {
 	Get: () -> string?,
 	Set: (value: string) -> (),
 	Visible: Prop<boolean>?,
+	Locked: (() -> boolean)?,
 }
 
 --[=[
@@ -659,7 +713,11 @@ function Controls.Choice(ui: Ui, spec: ChoiceSpec): Frame
 		)
 	end
 
-	return Kit.Row(math.ceil(#spec.Options / columns) * 32 - 2, buttons, spec.Visible)
+	return Kit.Row(
+		math.ceil(#spec.Options / columns) * 32 - 2,
+		{ buttons, Controls.Lock(ui, spec.Locked) },
+		spec.Visible
+	)
 end
 
 return Controls

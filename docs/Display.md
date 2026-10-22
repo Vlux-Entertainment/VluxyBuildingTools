@@ -12,6 +12,10 @@ Theme colors and the surface grid are saved with the place. Switch them off befo
 Turning them off puts every part's original color back.
 :::
 
+In Team Create, the themes, the surface grid, ghost transparency and hiding are shared, so only the
+working folder's admin can change them (see [Teams](Teams)). Everyone else sees those controls
+greyed out.
+
 ## Themes
 
 Turn on **Themes** (or press **P**) to color the parts in your working folder. Pick a theme from the
@@ -61,13 +65,15 @@ you see it.
 
 ## Hidden parts
 
-Select parts and press **H** to hide them. Only you see this: hiding never changes the place and
-never reaches teammates.
+Select parts and press **H** to hide them. Hiding is shared: the parts disappear for everyone in
+Team Create, and only the folder's admin can hide or unhide. A hidden part is locked, so clicks and
+the tools pass through it. Hiding and **Unhide all** are each one undo step.
 
 | Control | What it does |
 |---|---|
-| **Show hidden parts (ghosted)** (or **I**) | Show hidden parts as faint ghosts instead of not at all. |
+| **Show hidden parts (ghosted)** (or **I**) | Show hidden parts as faint ghosts instead of not at all. Only on your screen. |
 | **Ghost transparency** | How see-through the ghosts are. |
-| **Unhide all** (or **Alt+H**) | Bring back every part you hid. |
+| **Unhide all** (or **Alt+H**) | Bring back every hidden part, for everyone. |
 
-The card also counts how many parts are hidden.
+The card also counts how many parts are hidden. When the last person working in the folder closes
+the plugin, every hidden part comes back.

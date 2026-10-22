@@ -1,12 +1,13 @@
 --!strict
 
 --[=[
-	The viewport aids that change how the map looks: pastel colors, the surface grid and locally
-	hidden parts. It owns the three Core modules, mirrors their state into `AppState` for the
-	panel, and remembers whether pastel and grid should come back on by themselves.
+	The viewport aids that change how the map looks: pastel colors, the surface grid and hidden
+	parts. It owns the three Core modules, mirrors their state into `AppState` for the panel, and
+	remembers whether pastel and grid should come back on by themselves.
 
 	Settings that restyle what is already in the map (theme, grid color and tile size, ghost
-	transparency) are watched here, so changing them anywhere restyles the map.
+	transparency) are watched here, so changing them anywhere restyles the map. Only the folder's
+	admin restyles it; everyone else sees the admin's changes, which replicate.
 
 	@class Display
 ]=]
@@ -29,6 +30,8 @@ export type Deps = {
 	Say: (text: string) -> (),
 	--[=[ Stops the active tool before the map is restyled. ]=]
 	StopTools: () -> (),
+	--[=[ True when this user is the working folder's admin, who alone restyles the shared map. ]=]
+	IsAdmin: () -> boolean,
 }
 
 export type Display = {
@@ -106,7 +109,9 @@ function Display.new(deps: Deps, trove: Trove.Trove): Display
 			end,
 			Stop = deps.StopTools,
 		}, trove),
-		Hidden = Hidden.new(trove),
+		Hidden = Hidden.new(trove, function()
+			mirror(self)
+		end),
 		_deps = deps,
 		_quiet = false,
 	}
@@ -116,13 +121,19 @@ function Display.new(deps: Deps, trove: Trove.Trove): Display
 		Hidden.SetGhost(self.Hidden, value)
 	end))
 	trove:Add(Store.Watch(store, "GridTextureSize", function()
-		SurfaceGrid.Resize(self.Grid)
+		if deps.IsAdmin() then
+			SurfaceGrid.Resize(self.Grid)
+		end
 	end))
 	trove:Add(Store.Watch(store, "GridColor", function()
-		SurfaceGrid.Recolor(self.Grid)
+		if deps.IsAdmin() then
+			SurfaceGrid.Recolor(self.Grid)
+		end
 	end))
 	trove:Add(Store.Watch(store, "ColorTheme", function()
-		Colors.Retheme(self.Colors)
+		if deps.IsAdmin() then
+			Colors.Retheme(self.Colors)
+		end
 	end))
 
 	local recount = false
@@ -200,12 +211,17 @@ function Display.Retheme(self: Display)
 end
 
 --[=[
-	Turns pastel colors and the grid back on if the user left them on.
+	Turns pastel colors and the grid back on if they were left on. Only the admin switches them,
+	since everyone sees the change.
 
 	@param self Display
 ]=]
 function Display.RestoreAuto(self: Display)
 	local settings = self._deps.Store.Values
+
+	if not self._deps.IsAdmin() then
+		return
+	end
 
 	if settings.AutoPastel and not self.Colors.On then
 		Colors.Set(self.Colors, true)
@@ -218,6 +234,7 @@ end
 
 --[=[
 	Puts the map back to how it looks without the plugin, without forgetting the user's choices.
+	Hidden parts are shown again for everyone; this is not an undo step.
 
 	@param self Display
 ]=]
@@ -257,21 +274,34 @@ function Display.Sweep(self: Display)
 end
 
 --[=[
+	Hides the parts for everyone, as one undo step.
+
 	@param self Display
 	@param parts { BasePart }
+	@return boolean -- whether the edit went through
 ]=]
-function Display.Hide(self: Display, parts: { BasePart })
-	Hidden.Hide(self.Hidden, parts)
+function Display.Hide(self: Display, parts: { BasePart }): boolean
+	local ok = self._deps.Edit("Hide parts", function()
+		Hidden.Hide(self.Hidden, parts)
+	end)
+
 	mirror(self)
+
+	return ok
 end
 
 --[=[
+	Shows every hidden part again for everyone, as one undo step.
+
 	@param self Display
 	@return number -- how many parts were shown again
 ]=]
 function Display.UnhideAll(self: Display): number
-	local count = Hidden.UnhideAll(self.Hidden)
+	local count = 0
 
+	self._deps.Edit("Unhide all", function()
+		count = Hidden.UnhideAll(self.Hidden)
+	end)
 	mirror(self)
 
 	return count

@@ -290,7 +290,8 @@ Settings.Themes = { "Pastel", "Unity", "Levels", "Structures", "Facing", "Size" 
 
 --[=[
 	The settings everyone working in one folder shares, as { Key, Name }. They are kept in
-	attributes on the working folder, so the whole team sees the same viewport.
+	attributes on the working folder, so the whole team sees the same viewport. Only the folder's
+	admin changes them.
 
 	@prop Shared { { Key: string, Name: string } }
 	@within Settings
@@ -300,6 +301,8 @@ Settings.Shared = {
 	{ Key = "GhostTransparency", Name = "ghost transparency" },
 	{ Key = "AutoPastel", Name = "pastel" },
 	{ Key = "AutoGrid", Name = "grid" },
+	{ Key = "GridTextureSize", Name = "grid tile size" },
+	{ Key = "GridColor", Name = "grid color" },
 }
 
 --[=[

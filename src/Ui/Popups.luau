@@ -3,8 +3,8 @@
 
 --[=[
 	The panel's two floating pieces: the hover tooltip (a description and, when there is one, the
-	hotkey) and the one-item right-click menu that resets a setting to its default. There is one of
-	each per panel, drawn above everything else.
+	hotkey) and the one-item menu, such as the right-click reset of a setting or an avatar's admin
+	choice. There is one of each per panel, drawn above everything else.
 
 	@class Popups
 ]=]
@@ -14,10 +14,18 @@ local Theme = require("./Theme")
 local Tips = require("../Pure/Tips")
 local vide = require("../Packages/vide")
 
+--[=[
+	@type TipSource Tips.Tip? | () -> Tips.Tip?
+	@within Popups
+
+	A tip, or a function read each time the mouse comes to rest, for a tip that changes.
+]=]
+export type TipSource = Tips.Tip? | () -> Tips.Tip?
+
 export type Popups = {
 	--[=[ Returns a vide action that shows the tip while the mouse rests on the instance. ]=]
-	Tip: (tip: Tips.Tip?) -> any,
-	--[=[ Shows the reset menu at the mouse. ]=]
+	Tip: (tip: TipSource) -> any,
+	--[=[ Shows the one-item menu at the mouse. ]=]
 	Menu: (position: Vector2, label: string, run: () -> ()) -> (),
 	HideTip: () -> (),
 	Frames: { GuiObject },
@@ -99,11 +107,11 @@ function Popups.new(widget: DockWidgetPluginGui, delay: () -> number?): Popups
 		shown(false)
 	end
 
-	local function tip(info: Tips.Tip?): any
+	local function tip(source: TipSource): any
 		return vide.action(function(instance: Instance)
 			local object = instance :: GuiObject
 
-			if not info then
+			if not source then
 				return
 			end
 
@@ -119,7 +127,9 @@ function Popups.new(widget: DockWidgetPluginGui, delay: () -> number?): Popups
 				end
 
 				task.delay(wait, function()
-					if token == mine then
+					local info = if type(source) == "function" then source() else source
+
+					if token == mine and info then
 						text(info.Text)
 						key(info.Key)
 						at(Vector2.new(x, y))

@@ -19,6 +19,17 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.1.0",
+		Date = "2026-10-22",
+		Changes = {
+			"Each working folder has one admin: whoever has worked in it longest, passed on when they leave.",
+			"Only the admin changes themes, the surface grid and ghost transparency; others see them greyed.",
+			"Hiding is shared: parts the admin hides disappear for everyone, as an undo step.",
+			"Give admin to a teammate, or ask the admin for it, from their face on the folder card.",
+			"A slimmer Working Folder card: the folder, who is in it, and a change button in one row.",
+		},
+	},
+	{
 		Version = "1.0.0",
 		Date = "2026-10-22",
 		Changes = {

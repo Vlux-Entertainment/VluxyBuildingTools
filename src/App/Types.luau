@@ -7,6 +7,7 @@
 	@class AppTypes
 ]=]
 
+local Admin = require("../Services/Admin")
 local AppState = require("../State/AppState")
 local Arrange = require("../Core/Arrange")
 local CameraLight = require("../Services/CameraLight")
@@ -14,7 +15,6 @@ local Cursor = require("../Services/Cursor")
 local Display = require("../Services/Display")
 local Host = require("../Modal/Host")
 local Overlay = require("../Core/Overlay")
-local Presence = require("../Services/Presence")
 local Runner = require("../Tools/Runner")
 local Sounds = require("../Core/Sounds")
 local Status = require("../Services/Status")
@@ -40,7 +40,7 @@ local WorkingFolder = require("../Services/WorkingFolder")
 	.Arrange Arrange.Actions -- the Arrange tab's actions
 	.Sounds Sounds
 	.CameraLight CameraLight
-	.Presence Presence
+	.Admin Admin -- who works in the folder, and who may change what everyone shares
 	.Say (text: string) -> ()
 	.Sound (name: string) -> ()
 	.StopAll (keepActive: boolean?) -> () -- ends any tool or modal action; without keepActive the mouse is given back too
@@ -61,7 +61,7 @@ export type App = {
 	Arrange: Arrange.Actions,
 	Sounds: Sounds.Sounds,
 	CameraLight: CameraLight.CameraLight,
-	Presence: Presence.Presence,
+	Admin: Admin.Admin,
 	Say: (text: string) -> (),
 	Sound: (name: string) -> (),
 	StopAll: (keepActive: boolean?) -> (),

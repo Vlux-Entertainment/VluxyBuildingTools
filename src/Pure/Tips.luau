@@ -28,7 +28,7 @@ Tips.Entries = {
 	FLIP = { Text = "Mirror the selection; Ctrl+M, then X, Y or Z.", Key = "Ctrl+M" },
 	ARRAY = { Text = "Like Blender's Array modifier; copies preview while this tab is open." },
 	VIEW = { Text = "Themes and grid save with the place, so switch them off before publishing." },
-	["HIDDEN PARTS"] = { Text = "Press H to hide selected parts; only you see it.", Key = "H" },
+	["HIDDEN PARTS"] = { Text = "The admin presses H to hide selected parts for everyone.", Key = "H" },
 	PROPS = { Text = "Pick a prop, then click a floor or wall; R turns it.", Key = "R" },
 	SNAPPING = { Text = "How every drawing tool snaps points." },
 	["STANDARD SIZES"] = { Text = "The sizes new builds start from." },
@@ -40,7 +40,7 @@ Tips.Entries = {
 	["Previews use the UI color"] = { Text = "Build previews and folder outlines take the UI color, not orange." },
 	["Prop rotation"] = { Text = "The hovered or picked prop picture slowly turns." },
 	["Hint bar"] = { Text = "Show the active tool's keys at the bottom of the 3D view." },
-	["WORKING FOLDER"] = { Text = "The plugin only edits parts inside this folder." },
+	["WORKING FOLDER"] = { Text = "The plugin only edits this folder; click a face to give or ask for admin." },
 	TOOLS = { Text = "Pick tools and their options without the mouse." },
 	DRAWING = { Text = "Keys that work while you draw or move something." },
 	["MOVE & EDIT"] = { Text = "Act on the selected parts, Blender-style." },
@@ -54,6 +54,8 @@ Tips.Entries = {
 	-- Working folder
 	["Choose working folder"] = { Text = "Click a Folder in the viewport or Explorer to work in." },
 	["Change working folder"] = { Text = "Pick a different Folder to work in." },
+	Give = { Text = "Make them the admin of this folder." },
+	Ignore = { Text = "Turn the request down; it also runs out after a minute." },
 	Yes = { Text = "Let the plugin edit Parts in this Folder only." },
 	["Use folder's"] = { Text = "Use the settings saved on this folder." },
 	Overwrite = { Text = "Save your settings onto this folder." },
@@ -88,7 +90,7 @@ Tips.Entries = {
 	["Tilt copy to surface"] = { Text = "Tilt copies to sit flat on slopes." },
 
 	-- Buttons
-	["Unhide all (Alt+H)"] = { Text = "Bring back every part you hid.", Key = "Alt+H" },
+	["Unhide all (Alt+H)"] = { Text = "Bring back every hidden part, for everyone.", Key = "Alt+H" },
 	["Flip X"] = { Text = "Mirror the selection across X.", Key = "Ctrl+M, then X" },
 	["Flip Y"] = { Text = "Mirror the selection across Y.", Key = "Ctrl+M, then Y" },
 	["Flip Z"] = { Text = "Mirror the selection across Z.", Key = "Ctrl+M, then Z" },

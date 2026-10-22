@@ -12,6 +12,19 @@ local vide = require("../Packages/vide")
 
 type Source<T> = vide.Source<T>
 
+--[=[
+	Someone with the plugin open on the working folder.
+
+	@interface Person
+	@within AppState
+	.UserId number
+	.Name string
+	.Avatar string -- a head shot image, or "" until it loads
+	.Admin boolean
+	.Me boolean
+]=]
+export type Person = { UserId: number, Name: string, Avatar: string, Admin: boolean, Me: boolean }
+
 export type AppState = {
 	--[=[ The active tool mode, such as `Room`, or nil when no tool is on. ]=]
 	Mode: Source<string?>,
@@ -37,6 +50,14 @@ export type AppState = {
 	HiddenCount: Source<number>,
 	--[=[ Goes up every time the brush list changes, so the panel redraws it. ]=]
 	BrushRevision: Source<number>,
+	--[=[ Everyone present on the working folder, longest present first. ]=]
+	People: Source<{ Person }>,
+	--[=[ The working folder's admin, or nil when there is none. ]=]
+	AdminId: Source<number?>,
+	--[=[ True when this user may change the shared settings and hide parts. ]=]
+	IsAdmin: Source<boolean>,
+	--[=[ The user asking this admin to hand over admin, while the request is open. ]=]
+	AdminRequest: Source<number?>,
 }
 
 local AppState = {}
@@ -76,6 +97,10 @@ function AppState.new(): AppState
 		HiddenView = vide.source(false),
 		HiddenCount = vide.source(0),
 		BrushRevision = vide.source(0),
+		People = vide.source({} :: { Person }),
+		AdminId = vide.source(nil :: number?),
+		IsAdmin = vide.source(true),
+		AdminRequest = vide.source(nil :: number?),
 	}
 end
 

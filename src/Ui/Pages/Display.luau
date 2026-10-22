@@ -3,7 +3,8 @@
 
 --[=[
 	The Display tab: the camera light, the color themes, the surface grid and its look, the
-	construction grid that follows it while drawing, and hidden parts.
+	construction grid that follows it while drawing, and hidden parts. Everything but the camera
+	light and the ghost view is shared, so only the working folder's admin may change it.
 
 	@class DisplayPage
 ]=]
@@ -34,9 +35,10 @@ local THEME_TIPS: { [string]: string } = {
 --[[
 	@param ui Ui
 	@param visible () -> boolean
+	@param locked () -> boolean
 	@return Frame -- swatches and a hex box for the grid color
 ]]
-local function gridColor(ui: Ui, visible: () -> boolean): Frame
+local function gridColor(ui: Ui, visible: () -> boolean, locked: () -> boolean): Frame
 	local store = ui.App.Store
 	local hexBox: TextBox
 
@@ -90,7 +92,7 @@ local function gridColor(ui: Ui, visible: () -> boolean): Frame
 		)
 	end
 
-	return Kit.Row(30, { swatches, hexBox }, visible)
+	return Kit.Row(30, { swatches, hexBox, Controls.Lock(ui, locked) }, visible)
 end
 
 --[[
@@ -105,6 +107,11 @@ return function(ui: Ui): { Instance }
 		return function()
 			return Store.Get(store, key) == true
 		end
+	end
+
+	--[[ True while someone else is the admin, which locks the shared controls. ]]
+	local function adminOnly(): boolean
+		return not state.IsAdmin()
 	end
 
 	local themes: { Controls.Option } = {}
@@ -138,6 +145,7 @@ return function(ui: Ui): { Instance }
 				Set = function(on)
 					Display.SetPastel(app.Display, on)
 				end,
+				Locked = adminOnly,
 			}),
 			Controls.Choice(ui, {
 				Options = themes,
@@ -149,6 +157,7 @@ return function(ui: Ui): { Instance }
 					Store.Set(store, "ColorTheme", name)
 				end,
 				Visible = state.PastelOn,
+				Locked = adminOnly,
 			}),
 			Controls.Switch(ui, {
 				Title = "Surface grid",
@@ -156,6 +165,7 @@ return function(ui: Ui): { Instance }
 				Set = function(on)
 					Display.SetGrid(app.Display, on)
 				end,
+				Locked = adminOnly,
 			}),
 			Controls.Number(ui, {
 				Key = "GridTextureSize",
@@ -164,8 +174,9 @@ return function(ui: Ui): { Instance }
 				Max = 512,
 				Step = 1,
 				Visible = state.GridOn,
+				Locked = adminOnly,
 			}),
-			gridColor(ui, state.GridOn),
+			gridColor(ui, state.GridOn, adminOnly),
 		}),
 		Controls.Card(ui, "HIDDEN PARTS", {
 			Controls.Text(ui, function()
@@ -184,10 +195,11 @@ return function(ui: Ui): { Instance }
 				Min = 0.3,
 				Max = 0.98,
 				Step = 0.05,
+				Locked = adminOnly,
 			}),
 			Controls.Button(ui, "Unhide all (Alt+H)", function()
 				Actions.UnhideAll(app)
-			end),
+			end, nil, nil, adminOnly),
 		}),
 	}
 end

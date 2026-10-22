@@ -1,12 +1,14 @@
 --!strict
 
 --[=[
-	Local part hiding. A hidden part is made invisible through `LocalTransparencyModifier`, which is
-	never saved and never reaches teammates, so hiding changes nothing in the place. The list lives in
-	memory only.
+	Part hiding, shared with the whole team. A hidden part carries the `VluxyBT_Hidden` tag and is
+	locked, both of which replicate; every client watches the tag and makes tagged parts invisible on
+	its own screen through `LocalTransparencyModifier`. Showing hidden parts as ghosts stays local.
 
 	@class Hidden
 ]=]
+
+local CollectionService = game:GetService("CollectionService")
 
 local Trove = require("../Packages/Trove")
 
@@ -17,6 +19,7 @@ export type Hidden = {
 }
 
 local LOCK_ATTRIBUTE = "VluxyBT_HiddenLock"
+local TAG = "VluxyBT_Hidden"
 local INVISIBLE = 1
 
 local Hidden = {}
@@ -47,12 +50,66 @@ local function apply(self: Hidden, part: BasePart)
 	setLocal(part, if self.View then self.Ghost else INVISIBLE)
 end
 
+--[[
+	@param self Hidden
+	@param object Instance
+
+	Hides a part a teammate, an undo or this user tagged.
+]]
+local function tagged(self: Hidden, object: Instance)
+	if object:IsA("BasePart") and object:IsDescendantOf(workspace) then
+		self._parts[object] = true
+		apply(self, object)
+	end
+end
+
+--[[
+	@param self Hidden
+	@param object Instance
+
+	Shows a part whose tag was removed, by a teammate, an undo or this user.
+]]
+local function untagged(self: Hidden, object: Instance)
+	if object:IsA("BasePart") and self._parts[object] then
+		self._parts[object] = nil
+		setLocal(object, 0)
+	end
+end
+
 --[=[
-	@param trove Trove -- holds the clean-up connection
+	Watches the hidden tag, so parts hidden by anyone disappear here too. Unloading shows every part
+	on this screen again without changing the place.
+
+	@param trove Trove -- holds the connections and the clean-up
+	@param changed (() -> ())? -- called when the hidden set changes from outside, such as a teammate hiding
 	@return Hidden
 ]=]
-function Hidden.new(trove: Trove.Trove): Hidden
+function Hidden.new(trove: Trove.Trove, changed: (() -> ())?): Hidden
 	local self: Hidden = { View = false, Ghost = 0.82, _parts = {} }
+
+	for _, object in CollectionService:GetTagged(TAG) do
+		tagged(self, object)
+	end
+
+	trove:Connect(CollectionService:GetInstanceAddedSignal(TAG), function(object)
+		tagged(self, object)
+
+		if changed then
+			changed()
+		end
+	end)
+	trove:Connect(CollectionService:GetInstanceRemovedSignal(TAG), function(object)
+		untagged(self, object)
+
+		if changed then
+			changed()
+		end
+	end)
+	trove:Add(function()
+		for part in self._parts do
+			setLocal(part, 0)
+		end
+	end)
 
 	trove:Connect(workspace.DescendantRemoving, function(object)
 		if not object:IsA("BasePart") then
@@ -70,6 +127,9 @@ function Hidden.new(trove: Trove.Trove): Hidden
 end
 
 --[=[
+	Hides the parts for everyone: tags and locks them, remembering the lock they had. Run it inside
+	an edit, so it is one undo step.
+
 	@param self Hidden
 	@param parts { BasePart }
 ]=]
@@ -80,6 +140,7 @@ function Hidden.Hide(self: Hidden, parts: { BasePart })
 		end
 
 		part.Locked = true
+		CollectionService:AddTag(part, TAG)
 		self._parts[part] = true
 		apply(self, part)
 	end
@@ -88,10 +149,11 @@ end
 --[[
 	@param part BasePart
 
-	Makes the part visible and gives it back the Locked state it had before it was hidden.
+	Makes the part visible for everyone and gives it back the Locked state it had before it was hidden.
 ]]
 local function reveal(part: BasePart)
 	setLocal(part, 0)
+	CollectionService:RemoveTag(part, TAG)
 
 	local was = part:GetAttribute(LOCK_ATTRIBUTE)
 
@@ -103,8 +165,9 @@ local function reveal(part: BasePart)
 end
 
 --[=[
-	Brings back every part this plugin hid, including parts hidden in an earlier session or replaced
-	by a union since, which are found by the attribute that remembers their lock.
+	Brings back every hidden part for everyone, including parts hidden by an older version or
+	replaced by a union since, which are found by the attribute that remembers their lock. Run it
+	inside an edit when the user asks for it, so it is one undo step.
 
 	@param self Hidden
 	@return number -- how many were hidden
@@ -120,6 +183,12 @@ function Hidden.UnhideAll(self: Hidden): number
 
 	for _, object in workspace:GetDescendants() do
 		if object:IsA("BasePart") and object:GetAttribute(LOCK_ATTRIBUTE) ~= nil then
+			seen[object] = true
+		end
+	end
+
+	for _, object in CollectionService:GetTagged(TAG) do
+		if object:IsA("BasePart") then
 			seen[object] = true
 		end
 	end
@@ -167,7 +236,7 @@ end
 
 --[=[
 	@param self Hidden
-	@return { Instance } -- the parts hidden this session, for rays to pass through
+	@return { Instance } -- every hidden part, by anyone, for rays to pass through
 ]=]
 function Hidden.Parts(self: Hidden): { Instance }
 	local parts: { Instance } = {}
