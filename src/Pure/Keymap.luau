@@ -103,6 +103,11 @@ function Keymap.Describe(): { { string } }
 		{ "Esc / right-click", "Cancel the action, or stop the tool. Enter then brings the last tool back" },
 		{ "[ and ]", "Lower or raise the active height by one snap step" },
 		{ "Tab / `", "Next or previous panel tab" },
+		{ "Ctrl+Scroll", "Step to the previous or next tool. The camera does not zoom while you do" },
+		{
+			"Alt+Scroll",
+			"Step to the previous or next option inside the current tool. The camera does not zoom while you do",
+		},
 		{ "F1", "Open this Hotkeys tab" },
 		{ "P", "Pastel colors on or off" },
 		{ "L", "Surface grid on or off" },
@@ -160,6 +165,25 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 	end
 
 	return PLAIN_KEYS[keyName]
+end
+
+--[=[
+	@param ctrl boolean
+	@param alt boolean
+	@param shift boolean
+	@param wheel number -- the wheel movement, positive when scrolled up
+	@return Action? -- `Tile:-1` or `Tile:1` for Ctrl+scroll, `Mode:-1` or `Mode:1` for Alt+scroll, else nil.
+		Holding both Ctrl and Alt does nothing.
+		Scrolling up steps back, scrolling down steps forward.
+]=]
+function Keymap.Scroll(ctrl: boolean, alt: boolean, shift: boolean, wheel: number): Action?
+	if shift or wheel == 0 or ctrl == alt then
+		return nil
+	end
+
+	local step = if wheel > 0 then -1 else 1
+
+	return `{if alt then "Mode" else "Tile"}:{step}`
 end
 
 return Keymap

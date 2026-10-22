@@ -152,7 +152,7 @@ function SurfaceGrid.new(
 
 			local scope = self._scope()
 
-			if self.On then
+			if workspace:GetAttribute(ACTIVE) == true then
 				if scope and object:IsDescendantOf(scope) and not object:FindFirstChild(TEXTURE_NAME) then
 					apply(object, self._size(), self._color())
 				end
@@ -169,6 +169,7 @@ function SurfaceGrid.new(
 
 	trove:Connect(ChangeHistoryService.OnUndo, sync)
 	trove:Connect(ChangeHistoryService.OnRedo, sync)
+	trove:Connect(workspace:GetAttributeChangedSignal(ACTIVE), sync)
 
 	return self
 end
@@ -182,7 +183,7 @@ end
 function SurfaceGrid.Adopt(self: SurfaceGrid, part: BasePart)
 	local scope = self._scope()
 
-	if self.On and scope and eligible(part) and part:IsDescendantOf(scope) then
+	if workspace:GetAttribute(ACTIVE) == true and scope and eligible(part) and part:IsDescendantOf(scope) then
 		apply(part, self._size(), self._color())
 	end
 end
@@ -196,7 +197,7 @@ end
 function SurfaceGrid.Sweep(self: SurfaceGrid)
 	local scope = self._scope()
 
-	if not self.On or self._switching or not scope then
+	if workspace:GetAttribute(ACTIVE) ~= true or self._switching or not scope then
 		return
 	end
 

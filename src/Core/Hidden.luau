@@ -12,12 +12,12 @@ local Trove = require("../Packages/Trove")
 
 export type Hidden = {
 	View: boolean,
+	Ghost: number,
 	_parts: { [BasePart]: boolean },
 }
 
 local LOCK_ATTRIBUTE = "VluxyBT_HiddenLock"
 local INVISIBLE = 1
-local GHOST = 0.82
 
 local Hidden = {}
 
@@ -44,7 +44,7 @@ end
 	Shows or ghosts the part, depending on whether hidden parts are being viewed.
 ]]
 local function apply(self: Hidden, part: BasePart)
-	setLocal(part, if self.View then GHOST else INVISIBLE)
+	setLocal(part, if self.View then self.Ghost else INVISIBLE)
 end
 
 --[=[
@@ -52,7 +52,7 @@ end
 	@return Hidden
 ]=]
 function Hidden.new(trove: Trove.Trove): Hidden
-	local self: Hidden = { View = false, _parts = {} }
+	local self: Hidden = { View = false, Ghost = 0.82, _parts = {} }
 
 	trove:Connect(workspace.DescendantRemoving, function(object)
 		if object:IsA("BasePart") then
@@ -140,6 +140,22 @@ function Hidden.ToggleView(self: Hidden)
 
 	for part in self._parts do
 		apply(self, part)
+	end
+end
+
+--[=[
+	Sets how see-through the ghosted hidden parts are, and redraws them if they are shown.
+
+	@param self Hidden
+	@param value number -- 0 solid, 1 clear
+]=]
+function Hidden.SetGhost(self: Hidden, value: number)
+	self.Ghost = value
+
+	if self.View then
+		for part in self._parts do
+			apply(self, part)
+		end
 	end
 end
 

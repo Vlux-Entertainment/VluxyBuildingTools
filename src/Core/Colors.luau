@@ -215,7 +215,7 @@ function Colors.new(
 
 			local scope = self._scope()
 
-			if self.On then
+			if workspace:GetAttribute(ACTIVE) == true then
 				if scope and object:IsDescendantOf(scope) and typeof(object:GetAttribute(ORIGINAL)) ~= "Color3" then
 					apply(self, object)
 				end
@@ -227,21 +227,12 @@ function Colors.new(
 
 	local function sync()
 		self.On = workspace:GetAttribute(ACTIVE) == true
-
-		if not self.On then
-			for _, part in workspace:GetDescendants() do
-				if part:IsA("BasePart") and typeof(part:GetAttribute(ORIGINAL)) == "Color3" then
-					self.On = true
-					break
-				end
-			end
-		end
-
 		self._refresh()
 	end
 
 	trove:Connect(ChangeHistoryService.OnUndo, sync)
 	trove:Connect(ChangeHistoryService.OnRedo, sync)
+	trove:Connect(workspace:GetAttributeChangedSignal(ACTIVE), sync)
 
 	return self
 end
@@ -255,7 +246,12 @@ end
 function Colors.Adopt(self: Colors, part: BasePart)
 	local scope = self._scope()
 
-	if self.On and scope and part:IsDescendantOf(scope) and typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
+	if
+		workspace:GetAttribute(ACTIVE) == true
+		and scope
+		and part:IsDescendantOf(scope)
+		and typeof(part:GetAttribute(ORIGINAL)) ~= "Color3"
+	then
 		apply(self, part)
 	end
 end
@@ -269,7 +265,7 @@ end
 function Colors.Sweep(self: Colors)
 	local scope = self._scope()
 
-	if not self.On or self._switching or not scope then
+	if workspace:GetAttribute(ACTIVE) ~= true or self._switching or not scope then
 		return
 	end
 
