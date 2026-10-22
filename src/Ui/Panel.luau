@@ -1761,6 +1761,7 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	local category = "All"
+	local pictureTheme = deps.GetTheme()
 	local propBrowsers: { { show: () -> (), paint: () -> (), reload: () -> () } } = {}
 	local showAllProps: () -> () = function() end
 	local propChoices = { { Id = "All", Label = "All" } }
@@ -1783,25 +1784,27 @@ function Panel.new(deps: Deps): Panel
 			LightDirection = Vector3.new(-0.5, -1, 0.7),
 		}, parent) :: ViewportFrame
 		local low, high = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+		local holder = Instance.new("Model")
+
+		holder:SetAttribute("VluxyBT_Prop", prop.Id)
+		holder.Parent = view
 
 		for _, spec in Props.Build(prop, CFrame.new(), 1) do
 			local part = Instance.new("Part")
 
+			part.Name = spec.name
 			part.Anchored = true
 			part.Size = spec.size
 			part.CFrame = spec.cf
 			part.Material = Enum.Material.SmoothPlastic
-			part.Color = if spec.name == "PropAccent"
-				then Color3.fromRGB(255, 138, 36)
-				else Color3.fromRGB(176, 179, 188)
+			part.Parent = holder
+			part.Color = Colors.Preview(deps.Colors, part)
 
 			if spec.shape == "Cylinder" then
 				part.Shape = Enum.PartType.Cylinder
 			elseif spec.shape == "Ball" then
 				part.Shape = Enum.PartType.Ball
 			end
-
-			part.Parent = view
 
 			local reach = spec.size.Magnitude / 2
 
@@ -1877,6 +1880,18 @@ function Panel.new(deps: Deps): Panel
 		}, shown)
 
 		local function paint()
+			local theme = deps.GetTheme()
+
+			if theme ~= pictureTheme then
+				pictureTheme = theme
+
+				for _, browser in propBrowsers do
+					browser.reload()
+				end
+
+				return
+			end
+
 			local collapsed = compact and not expanded
 
 			shown.AutomaticSize = if collapsed then Enum.AutomaticSize.None else Enum.AutomaticSize.Y

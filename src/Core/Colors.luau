@@ -282,6 +282,15 @@ function Colors.new(
 end
 
 --[=[
+	@param self Colors
+	@param part BasePart
+	@return Color3 -- the color a part would get under the theme picked now, without changing anything; used to draw prop pictures
+]=]
+function Colors.Preview(self: Colors, part: BasePart): Color3
+	return themed(self, part)
+end
+
+--[=[
 	Colors a part that was just built, now, so the color belongs to the same undo step as the part.
 
 	@param self Colors
