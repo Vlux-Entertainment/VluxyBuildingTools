@@ -109,7 +109,7 @@ local SWITCH_KEYS: { [string]: string } = {
 	["Construction grid while drawing"] = "ShowGrid",
 	["Allow untagged folders (not recommended)"] = "AllowUntagged",
 	["Blender hotkeys"] = "Hotkeys",
-	["Add a door (see-through, no collision)"] = "DoorPanel",
+	["Add a door with frame (see-through, no collision)"] = "DoorPanel",
 }
 
 local Panel = {}
@@ -1172,7 +1172,7 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "OpenHeight", "Archway height", 0.1, 1024, nil, body({ ArchOpening = true }))
 	numeric(scope, "DoorWidth", "Doorway width", 0.1, 1024, nil, body({ Door = true }))
 	numeric(scope, "DoorHeight", "Doorway height", 0.1, 1024, nil, body({ Door = true }))
-	switch(scope, "Add a door (see-through, no collision)", function()
+	switch(scope, "Add a door with frame (see-through, no collision)", function()
 		return settings.DoorPanel
 	end, function(on)
 		settings.DoorPanel = on

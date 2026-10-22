@@ -1152,7 +1152,19 @@ function Builders.Opening(
 	end
 
 	if dims.Panel and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
-		add(out, Vector3.new(w, h, math.min(size.Z, 0.3)), cf * CFrame.new(x, bottom + h / 2, 0), "Door_Panel")
+		local bar = math.min(0.4, w / 4, h / 4)
+		local reach = size.Z + 0.1
+		local middle = bottom + h / 2
+
+		add(out, Vector3.new(bar, h, reach), cf * CFrame.new(x - w / 2 + bar / 2, middle, 0), "Door_Frame")
+		add(out, Vector3.new(bar, h, reach), cf * CFrame.new(x + w / 2 - bar / 2, middle, 0), "Door_Frame")
+		add(out, Vector3.new(w - 2 * bar, bar, reach), cf * CFrame.new(x, bottom + h - bar / 2, 0), "Door_Frame")
+		add(
+			out,
+			Vector3.new(w - 2 * bar, h - bar, math.min(size.Z, 0.3)),
+			cf * CFrame.new(x, bottom + (h - bar) / 2, 0),
+			"Door_Panel"
+		)
 	end
 
 	if carve then
