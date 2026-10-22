@@ -1457,7 +1457,7 @@ function Panel.new(deps: Deps): Panel
 				make("TextLabel", {
 					Size = UDim2.new(1, 0, 0, 30),
 					BackgroundTransparency = 1,
-					Text = "No brushes yet. Select something and press Add selected to brushes. With none, the brush paints the current selection.",
+					Text = "No brushes yet. With the brush on, click an object in the viewport to add it (hold Ctrl to add more), or select it and press Add selected to brushes. With none, the brush paints the current selection.",
 					TextColor3 = MUTED,
 					Font = Enum.Font.Gotham,
 					TextSize = 12,
