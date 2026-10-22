@@ -20,6 +20,15 @@ return {
 		end
 	end,
 
+	["Block tool parts and arch pieces count as walls"] = function(expect)
+		for _, name in { "Block", "Arch_Post", "Arch_Curve", "Arch_Left", "Arch_Right" } do
+			expect.equal(PartRole.Of(name), "Wall", name)
+		end
+
+		expect.falsy(PartRole.Of("BlockOfWood"))
+		expect.equal(PartRole.Of("ArchedCeiling"), "Ceiling")
+	end,
+
 	["floors and ceilings are found by name"] = function(expect)
 		expect.equal(PartRole.Of("Floor"), "Floor")
 		expect.equal(PartRole.Of("VentFloor"), "Floor")

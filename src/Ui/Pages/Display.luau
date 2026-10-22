@@ -24,7 +24,7 @@ local new = Kit.New
 local SWATCHES = { "FFFFFF", "FF8A24", "6CD0E0", "FFB3BA", "BAFFC9", "BAE1FF", "9AA0AA", "000000" }
 local THEME_TIPS: { [string]: string } = {
 	Pastel = "Pastel theme: a random soft color for every part. Partly see-through parts are purple.",
-	Unity = "Unity theme: walls grey, floors and ceilings orange. Other parts are grey, except cubes and rectangular blocks, which are orange. Partly see-through parts are purple.",
+	Unity = "Unity theme: walls, blocks and arches grey, floors and ceilings orange. Other parts are grey, except cubes and rectangular blocks, which are orange. Partly see-through parts are purple.",
 }
 
 --[[
