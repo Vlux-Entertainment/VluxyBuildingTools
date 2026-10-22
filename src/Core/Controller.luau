@@ -1583,7 +1583,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					local lift = Vector3.new(0, settings.VentSize / 2, 0)
 
 					if riseStage then
-						local top = b + Vector3.new(0, signedHeight, 0)
+						local run = Vector3.new(b.X - origin.X, 0, b.Z - origin.Z).Magnitude
+						local top = b + Vector3.new(0, math.clamp(signedHeight, -run, run), 0)
 
 						out = Builders.VentDuct(settings, origin + lift, top + lift)
 						ventEnds = { origin + lift, top + lift }

@@ -1551,11 +1551,25 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	if math.abs(dirN.Y) < 0.99 then
 		local flat = Vector3.new(dirN.X, 0, dirN.Z).Unit
 		local across = flat:Cross(Vector3.yAxis).Unit
-		local tilt = CFrame.lookAt(frame.Position, frame.Position + dirN)
 		local gap = w / 2 - t
 
-		add(out, Vector3.new(w, t, length), tilt * CFrame.new(0, -reach, 0), "VentFloor")
-		add(out, Vector3.new(w, t, length), tilt * CFrame.new(0, reach, 0), "VentCeiling")
+		local cosine = math.max(0.1, Vector3.new(b.X - a.X, 0, b.Z - a.Z).Magnitude / length)
+		local slant = t / cosine
+
+		for _, floor in { true, false } do
+			local y1 = if floor then -gap else gap + slant
+			local y2 = if floor then -gap - slant else gap
+
+			quadPrism(
+				out,
+				a + Vector3.new(0, y1, 0),
+				b + Vector3.new(0, y1, 0),
+				b + Vector3.new(0, y2, 0),
+				a + Vector3.new(0, y2, 0),
+				w,
+				if floor then "VentFloor" else "VentCeiling"
+			)
+		end
 
 		for _, side in { -1, 1 } do
 			local lateral = across * (side * reach)
