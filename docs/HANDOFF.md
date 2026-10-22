@@ -2,9 +2,9 @@
 
 ## State (2026-10-22)
 
-Branch `exp/modular-rewrite`: a rewrite of the plugin into modules, meant to work the same as `main`
-with a few small, listed changes. `npm run verify` is green, including a new strict type check.
-**Nothing on this branch has been run in Studio yet.**
+The modular rewrite (PR #24) is merged into `main`. The owner tested it in Studio and found it as
+stable as the old version; two bugs found in testing were fixed (the Props tab broke vide's scope
+rule, and Esc did not drop a drawn point). `npm run verify` is green, including a strict type check.
 
 The layout, the tool contract and a "where to look when it breaks" table are in
 `docs/ARCHITECTURE.md`.
@@ -33,7 +33,7 @@ The layout, the tool contract and a "where to look when it breaks" table are in
 - The debug prints of the shared theme are gone.
 - Pillar's viewport bar no longer lists Alt and axis-lock hints (Pillar never used them).
 
-## Next: test in Studio
+## Studio test checklist (for future large changes)
 
 Serve this branch (Rojo-Hub `serve_here`, or `rojo serve`), save the plugin as a local plugin from
 ServerStorage, and work through this list. Note anything that differs from `main`.
@@ -58,6 +58,12 @@ ServerStorage, and work through this list. Note anything that differs from `main
 13. Undo/redo after each build; close and reopen the panel (pastel and grid come off and back).
 14. Reload the plugin and check the Output for errors or leaked overlays.
 
-## Open questions
+## Unity color theme (changed after the rewrite)
 
-- Merge into `main` once Studio testing passes, or keep the branch separate for a while?
+Walls, pillars, blocks, arches and every Additive tool part are grey; floors, ceilings and stairs
+are orange (`Pure/PartRole`, by part name). Other parts: grey unless a cube or rectangular block,
+which is orange (`Pure/ShapeClass`). See-through parts are purple.
+
+## Next
+
+- Nothing open. New work starts from `main` on a branch.
