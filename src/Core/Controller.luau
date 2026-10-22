@@ -584,6 +584,35 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return snapped
 	end
 
+	--[[
+		@param level number? -- the height the point must stay at, or nil to take the height of what it lands on
+		@return Vector3? -- the nearest part corner under the cursor, else the grid point on the surface, so a wall starts on the geometry itself instead of on a fixed Y level
+	]]
+	local function vertexPoint(level: number?): Vector3?
+		local hit = hitSurface()
+
+		if not hit then
+			return nil
+		end
+
+		local fine = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+
+		if settings.SnapToParts and not fine then
+			local corner, found = Snapper.Vertex(hit.Position, math.max(settings.SnapRadius, 1.5))
+
+			if found then
+				snapMark = corner
+
+				return if level then Vector3.new(corner.X, level, corner.Z) else corner
+			end
+		end
+
+		local height = level or (if hit.Normal.Y >= 0.7 then hit.Position.Y else snap(hit.Position.Y))
+
+		return Vector3.new(snap(hit.Position.X), height, snap(hit.Position.Z))
+	end
+
 	local function floorPoint(): Vector3?
 		local joins = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor"
 		local doorModes = mode == "Corridor" or mode == "ArchedCorridor"
@@ -928,11 +957,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			elseif origin then
 				if mode == "Railing" or mode == "HalfWall" then
 					current = surfaceTop() or horizontalPoint(origin.Y)
+				elseif mode == "Wall" or mode == "PillaredWall" then
+					current = vertexPoint(origin.Y) or horizontalPoint(origin.Y)
 				else
 					current = horizontalPoint(origin.Y)
 				end
 			else
-				current = floorPoint() or horizontalPoint(settings.Elevation)
+				if mode == "Wall" or mode == "PillaredWall" then
+					current = vertexPoint(nil) or horizontalPoint(settings.Elevation)
+				else
+					current = floorPoint() or horizontalPoint(settings.Elevation)
+				end
 			end
 
 			if startDoor and origin and current and not lock then
