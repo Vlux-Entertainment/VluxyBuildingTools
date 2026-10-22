@@ -150,7 +150,7 @@ Tips.Entries = {
 	},
 	["Random rotation"] = { Text = "Turns each brush copy a random amount around the up axis." },
 	["Randomize prop rotation"] = {
-		Text = "Turns each placed prop a small random amount, so a row of props looks less uniform. Set the amount below.",
+		Text = "Turns each prop a small random amount when you place it, so a row of props looks less uniform. The preview stays straight. Set the amount below.",
 	},
 	["Set cut depth with mouse"] = {
 		Text = "After clicking a wall, move the mouse to choose how deep the opening goes before you click again.",

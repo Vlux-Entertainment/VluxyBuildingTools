@@ -200,7 +200,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushScale = 1
 	local ventEnds: { Vector3 }? = nil
 	local propId: string? = nil
-	local propJitter = math.random() * 2 - 1
+	local propFrame: CFrame? = nil
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
@@ -1430,10 +1430,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						math.round(hit.Position.Z / fine) * fine
 					)
 
-					local jitter = if settings.PropRandomRotation then propJitter * settings.PropRandomAmount else 0
-
-					frame = CFrame.new(at) * CFrame.Angles(0, math.rad(settings.Yaw + jitter), 0)
+					frame = CFrame.new(at) * CFrame.Angles(0, math.rad(settings.Yaw), 0)
 				end
+
+				propFrame = frame
 
 				if frame then
 					out = Props.Build(def, frame, settings.PropScale)
@@ -3096,13 +3096,19 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 
 			local specs, id = previewSpecs, propId
+			local def, frame = PropData.Find(id), propFrame
+
+			if settings.PropRandomRotation and def and frame and def.Mount == "floor" then
+				local turn = (math.random() * 2 - 1) * settings.PropRandomAmount
+
+				specs = Props.Build(def, frame * CFrame.Angles(0, math.rad(turn), 0), settings.PropScale)
+			end
 
 			edit("Place prop", function()
 				local model = Geometry.Materialize(specs, "Vlux_Prop_" .. id)
 
 				model:SetAttribute("VluxyBT_Prop", id)
 			end)
-			propJitter = math.random() * 2 - 1
 		elseif active == "Place" then
 			local hit = hitSurface()
 
