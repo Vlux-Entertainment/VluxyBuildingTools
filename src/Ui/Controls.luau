@@ -119,11 +119,11 @@ end
 --[=[
 	@param ui Ui
 	@param text Prop<string>
-	@param color Color3?
+	@param color Prop<Color3>?
 	@param visible Prop<boolean>?
 	@return TextLabel -- wrapping text, muted by default
 ]=]
-function Controls.Text(_ui: Ui, text: Prop<string>, color: Color3?, visible: Prop<boolean>?): TextLabel
+function Controls.Text(_ui: Ui, text: Prop<string>, color: Prop<Color3>?, visible: Prop<boolean>?): TextLabel
 	return new("TextLabel")({
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
@@ -151,7 +151,9 @@ function Controls.Button(ui: Ui, label: Prop<string>, run: () -> (), primary: bo
 	return Kit.Row(34, {
 		new("TextButton")({
 			Size = UDim2.fromScale(1, 1),
-			BackgroundColor3 = if primary then Theme.Accent else Theme.Tile,
+			BackgroundColor3 = function()
+				return if primary then Theme.Accent() else Theme.Tile
+			end,
 			BorderSizePixel = 0,
 			Text = label,
 			TextColor3 = if primary then Theme.Background else Theme.Text,
@@ -193,7 +195,9 @@ function Controls.ButtonRow(ui: Ui, items: { Item }, visible: Prop<boolean>?): F
 			new("TextButton")({
 				Size = UDim2.new(1 / #items, -4, 1, 0),
 				Position = UDim2.fromScale((i - 1) / #items, 0),
-				BackgroundColor3 = if item.Primary then Theme.Accent else Theme.Tile,
+				BackgroundColor3 = function()
+					return if item.Primary then Theme.Accent() else Theme.Tile
+				end,
 				BorderSizePixel = 0,
 				Text = item.Text,
 				TextColor3 = if item.Primary then Theme.Background else Theme.Text,
@@ -389,7 +393,10 @@ function Controls.Switch(ui: Ui, spec: SwitchSpec): Frame
 			Store.Set(store, key, on)
 		end
 		else spec.Set :: (boolean) -> ()
-	local onColor = if spec.Danger then Theme.Danger else Theme.Accent
+	--[[ The switch's color when on: red for a dangerous switch, else the UI color. ]]
+	local function onColor(): Color3
+		return if spec.Danger then Theme.Danger else Theme.Accent()
+	end
 	local initial = if key then (Settings.Defaults() :: any)[key] else nil
 
 	local function change(on: boolean)
@@ -416,7 +423,7 @@ function Controls.Switch(ui: Ui, spec: SwitchSpec): Frame
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.fromScale(1, 0.5),
 			BackgroundColor3 = function()
-				return if get() then onColor else Theme.SwitchOff
+				return if get() then onColor() else Theme.SwitchOff
 			end,
 			BorderSizePixel = 0,
 			Text = "",

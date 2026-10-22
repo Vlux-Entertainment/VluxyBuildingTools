@@ -115,10 +115,10 @@ function Kit.Corner(radius: number): UICorner
 end
 
 --[=[
-	@param color Color3?
+	@param color Prop<Color3>?
 	@return UIStroke -- a one-pixel border, the card stroke color by default
 ]=]
-function Kit.Stroke(color: Color3?): UIStroke
+function Kit.Stroke(color: Prop<Color3>?): UIStroke
 	return Kit.New("UIStroke")({
 		Color = color or Theme.CardStroke,
 		Thickness = 1,
@@ -205,7 +205,7 @@ end
 function Kit.Lit(active: () -> boolean): { [string]: any }
 	return {
 		BackgroundColor3 = function()
-			return if active() then Theme.Accent else Theme.Tile
+			return if active() then Theme.Accent() else Theme.Tile
 		end,
 		TextColor3 = function()
 			return if active() then Theme.Background else Theme.Text

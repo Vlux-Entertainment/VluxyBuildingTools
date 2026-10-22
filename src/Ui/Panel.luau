@@ -18,6 +18,7 @@ local Controls = require("./Controls")
 local Kit = require("./Kit")
 local PluginInfo = require("../Pure/PluginInfo")
 local Popups = require("./Popups")
+local Store = require("../State/Store")
 local Theme = require("./Theme")
 local Tips = require("../Pure/Tips")
 local vide = require("../Packages/vide")
@@ -98,7 +99,7 @@ local function tabBar(ui: Controls.Ui): Frame
 				Size = UDim2.new(1 / #pages, -4, 1, -8),
 				Position = UDim2.new((i - 1) / #pages, 4, 0, 4),
 				BackgroundColor3 = function()
-					return if active() then Theme.Accent else Theme.Card
+					return if active() then Theme.Accent() else Theme.Card
 				end,
 				TextColor3 = function()
 					return if active() then Theme.Background else Theme.Text
@@ -216,6 +217,9 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 		}
 
 		vide.apply(root)(children)
+		vide.effect(function()
+			Theme.SetAccent(Store.Get(app.Store, "UiAccent"))
+		end)
 		vide.effect(function()
 			app.State.Page()
 			app.State.Mode()

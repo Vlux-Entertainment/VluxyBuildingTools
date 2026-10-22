@@ -104,6 +104,7 @@ export type Settings = {
 	SoundEnabled: boolean,
 	SoundVolume: number,
 	UiAnimations: boolean,
+	UiAccent: string,
 	Axis: string,
 }
 
@@ -215,6 +216,7 @@ function Settings.Defaults(): Settings
 		SoundEnabled = true,
 		SoundVolume = 0.5,
 		UiAnimations = true,
+		UiAccent = "Orange",
 		Axis = "X",
 	}
 end

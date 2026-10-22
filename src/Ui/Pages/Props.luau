@@ -191,7 +191,7 @@ return function(ui: Ui): { Instance }
 			local cell = new("Frame")({
 				BorderSizePixel = 0,
 				BackgroundColor3 = function()
-					return if current() == prop.Id then Theme.Accent else Theme.Tile
+					return if current() == prop.Id then Theme.Accent() else Theme.Tile
 				end,
 				LayoutOrder = function()
 					return table.find(PropData.Shown(state.PropSection()), prop) or 0

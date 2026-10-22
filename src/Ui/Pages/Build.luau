@@ -114,7 +114,7 @@ local function tile(ui: Ui, tool: Tools.Tile, index: number): TextButton
 
 	return new("TextButton")({
 		BackgroundColor3 = function()
-			return if active() then Theme.AccentDim else Theme.Tile
+			return if active() then Theme.AccentDim() else Theme.Tile
 		end,
 		BorderSizePixel = 0,
 		Text = "",
@@ -123,7 +123,7 @@ local function tile(ui: Ui, tool: Tools.Tile, index: number): TextButton
 		Kit.Corner(6),
 		new("UIStroke")({
 			Color = function()
-				return if active() then Theme.Accent else Theme.CardStroke
+				return if active() then Theme.Accent() else Theme.CardStroke
 			end,
 			Thickness = 1,
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -201,7 +201,9 @@ local function brushList(ui: Ui, visible: () -> boolean): Frame
 				LayoutOrder = index,
 				new("TextButton")({
 					Size = UDim2.new(1, -34, 1, 0),
-					BackgroundColor3 = if on then Theme.Accent else Theme.Tile,
+					BackgroundColor3 = function()
+						return if on then Theme.Accent() else Theme.Tile
+					end,
 					BorderSizePixel = 0,
 					Text = entry.Name,
 					TextColor3 = if on then Theme.Background else Theme.Muted,

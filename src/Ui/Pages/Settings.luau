@@ -8,6 +8,7 @@
 
 local Controls = require("../Controls")
 local Store = require("../../State/Store")
+local Theme = require("../Theme")
 
 type Ui = Controls.Ui
 
@@ -20,6 +21,12 @@ return function(ui: Ui): { Instance }
 
 	local function number(key: string, title: string, min: number, max: number, step: number?)
 		return Controls.Number(ui, { Key = key, Title = title, Min = min, Max = max, Step = step })
+	end
+
+	local accents: { Controls.Option } = {}
+
+	for _, entry in Theme.Accents do
+		table.insert(accents, { Value = entry.Name, Tip = entry.Name .. " UI color." })
 	end
 
 	return {
@@ -57,6 +64,16 @@ return function(ui: Ui): { Instance }
 		}),
 		Controls.Card(ui, "INTERFACE", {
 			Controls.Switch(ui, { Title = "UI animations", Key = "UiAnimations" }),
+			Controls.Choice(ui, {
+				Options = accents,
+				Columns = 4,
+				Get = function()
+					return Store.Get(app.Store, "UiAccent")
+				end,
+				Set = function(name)
+					Store.Set(app.Store, "UiAccent", name)
+				end,
+			}),
 		}),
 		Controls.Card(ui, "RESET", {
 			Controls.Button(ui, "Reset all settings", function()
