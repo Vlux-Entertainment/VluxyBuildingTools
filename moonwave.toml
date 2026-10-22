@@ -1,0 +1,137 @@
+title = "VluxyBuildingTools"
+gitRepoUrl = "https://github.com/Vlux-Entertainment/VluxyBuildingTools"
+
+changelog = false
+gitSourceBranch = "main"
+
+[[classOrder]]
+section = "App"
+classes = ["App", "AppTypes", "Actions", "Input"]
+
+[[classOrder]]
+section = "State"
+classes = ["Store", "AppState"]
+
+[[classOrder]]
+section = "Services"
+classes = ["Edit", "Display", "WorkingFolder", "Cursor", "CameraLight", "Status", "Presence"]
+
+[[classOrder]]
+section = "Tools"
+classes = [
+    "Runner",
+    "Registry",
+    "ToolTypes",
+    "Common",
+    "Engine",
+    "Points",
+    "Bends",
+    "DrawWalls",
+    "DrawAreas",
+    "DrawCorridors",
+    "DrawSlopes",
+    "DrawVents",
+    "OpeningTools",
+    "CutShape",
+    "Extend",
+    "Pillar",
+    "VentPieces",
+    "Brush",
+    "Prop",
+    "Measure",
+]
+
+[[classOrder]]
+section = "Modal actions"
+classes = ["Host", "ModalTypes", "Move", "Extrude"]
+
+[[classOrder]]
+section = "Builders"
+classes = ["Areas", "Paths", "Openings", "Slopes", "Railings", "Vents", "Shapes", "Place"]
+
+[[classOrder]]
+section = "Core"
+classes = [
+    "Geometry",
+    "Joints",
+    "Snapper",
+    "Transform",
+    "Arrange",
+    "Colors",
+    "SurfaceGrid",
+    "Hidden",
+    "Overlay",
+    "Props",
+    "Brushes",
+    "Sounds",
+]
+
+[[classOrder]]
+section = "Pure (tested under Lune)"
+classes = [
+    "Settings",
+    "Tools",
+    "Keymap",
+    "Tips",
+    "Snap",
+    "AxisLock",
+    "NumericInput",
+    "Cycle",
+    "Polygon",
+    "ArrayStep",
+    "PartRole",
+    "ShapeClass",
+    "ThemeColors",
+    "PropData",
+    "SoundIds",
+    "Icons",
+    "PluginInfo",
+]
+
+[[classOrder]]
+section = "Panel"
+classes = [
+    "Panel",
+    "Controls",
+    "Kit",
+    "Popups",
+    "Theme",
+    "BuildPage",
+    "PropsPage",
+    "ArrangePage",
+    "DisplayPage",
+    "HotkeysPage",
+    "SettingsPage",
+    "FolderCard",
+]
+
+[docusaurus]
+organizationName = "Vlux-Entertainment"
+projectName = "VluxyBuildingTools"
+deploymentBranch = "gh-pages"
+tagline = "Blender-style building tools for Roblox Studio: draw walls, rooms and doorways in a few clicks."
+favicon = "VluxFavicon.ico"
+
+url = "https://Vlux-Entertainment.github.io"
+baseUrl = "/VluxyBuildingTools/"
+
+[home]
+enabled = true
+includeReadme = false
+
+[[navbar.items]]
+href = "https://discord.gg/Ebbp9UgBUD"
+label = "Discord"
+position = "right"
+
+[[home.features]]
+title = "Draw, don't drag"
+description = "Click a start and an end and get a wall, a room, a corridor or a flight of stairs, with a live preview and exact numbers typed as you go."
+
+[[home.features]]
+title = "Blender hotkeys"
+description = "G, R and C grab, rotate and scale with axis locks and typed values; T extrudes a face; every build is one Studio undo step."
+
+[[home.features]]
+title = "Made for teams"
+description = "Work inside one tagged folder, share themes and the surface grid through the folder, and never touch anything outside it."

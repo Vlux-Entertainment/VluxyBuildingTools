@@ -105,10 +105,10 @@ local function row(binding: Keymap.Binding, striped: boolean): Frame
 	})
 end
 
---[=[
+--[[
 	@param ui Ui
 	@return { Instance } -- the cards of the Hotkeys tab
-]=]
+]]
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local cards: { Instance } = {

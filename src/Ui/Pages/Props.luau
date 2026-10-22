@@ -96,10 +96,10 @@ local function picture(ui: Ui, prop: PropData.Prop): (ViewportFrame, (angle: num
 	return view, turn
 end
 
---[=[
+--[[
 	@param ui Ui
 	@return { Instance } -- the cards of the Props tab
-]=]
+]]
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local state, store = app.State, app.Store

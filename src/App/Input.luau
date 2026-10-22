@@ -118,7 +118,7 @@ local function keyPressed(app: App, key: string, processed: boolean): boolean
 
 	if not app.Store.Values.Hotkeys and not ALWAYS_ON[action] and not turns then
 		if string.sub(action, 1, 5) == "Tool:" then
-			app.Say(`Key {key} is {action}, but Blender hotkeys are switched off in Settings.`)
+			app.Say(`Key {key} is {action}, but Blender hotkeys are switched off on the Hotkeys tab.`)
 		end
 
 		return false

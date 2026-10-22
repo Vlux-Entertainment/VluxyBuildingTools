@@ -1,7 +1,7 @@
 --!strict
 
 --[=[
-	Grab, rotate and scale (G, R, C), and duplicate (D then move), as in Blender. The selection
+	Grab, rotate and scale (G, R, C), and duplicate (V then move), as in Blender. The selection
 	follows the mouse until a click or Enter confirms or Esc cancels; X / Y / Z lock an axis, Alt+X /
 	Y / Z a plane, and a typed number sets an exact value. The whole action is one undo step, and
 	cancelling puts every part back.

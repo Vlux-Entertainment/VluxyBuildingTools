@@ -5,7 +5,7 @@
 	point to the grid, to part corners, to the top of a floor or to a vent opening, depending on what
 	the shape wants. A picker that snapped sets `ctx.Cursor.Mark` so the snap shows.
 
-	@class DrawPoints
+	@class Points
 ]=]
 
 local Cursor = require("../../Services/Cursor")
@@ -21,7 +21,7 @@ type Draw = Engine.Draw
 	How a floor-standing shape picks its first point.
 
 	@interface FloorRule
-	@within DrawPoints
+	@within Points
 	.Raised boolean? -- stand on top of a floor slab: the point is raised by the floor thickness
 	.Joins boolean? -- start level with the floor of a room or corridor the point snaps to
 	.Doors boolean? -- start in the middle of a doorway near the cursor

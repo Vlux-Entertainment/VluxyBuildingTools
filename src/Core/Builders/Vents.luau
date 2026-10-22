@@ -389,6 +389,8 @@ function Vents.VentFan(settings: Settings, center: Vector3, normal: Vector3): { 
 	return out
 end
 
+Vents.PEEK_HEIGHT = 1.35
+
 --[=[
 	A small rectangular louvred cover, for looking out of a vent through a wall.
 
@@ -397,8 +399,6 @@ end
 	@param normal Vector3
 	@return { Spec }
 ]=]
-Vents.PEEK_HEIGHT = 1.35
-
 function Vents.VentPeek(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
 	local frame = surfaceFrame(center, normal)

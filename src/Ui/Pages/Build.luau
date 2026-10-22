@@ -238,10 +238,10 @@ local function brushList(ui: Ui, visible: () -> boolean): Frame
 	})
 end
 
---[=[
+--[[
 	@param ui Ui
 	@return { Instance } -- the cards of the Build tab
-]=]
+]]
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local state, store = app.State, app.Store

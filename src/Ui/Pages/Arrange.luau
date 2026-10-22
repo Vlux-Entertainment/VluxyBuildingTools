@@ -14,10 +14,10 @@ local Store = require("../../State/Store")
 
 type Ui = Controls.Ui
 
---[=[
+--[[
 	@param ui Ui
 	@return { Instance } -- the cards of the Arrange tab
-]=]
+]]
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local arrange = app.Arrange
