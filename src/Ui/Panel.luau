@@ -1180,10 +1180,10 @@ function Panel.new(deps: Deps): Panel
 		local shown = ""
 
 		local function rebuild()
-			local entries = Brushes.List()
+			local brushes = Brushes.List()
 			local key = ""
 
-			for _, entry in entries do
+			for _, entry in brushes do
 				key ..= entry.Name .. (if Brushes.IsOn(entry) then "+" else "-") .. "|"
 			end
 
@@ -1199,7 +1199,7 @@ function Panel.new(deps: Deps): Panel
 				end
 			end
 
-			if #entries == 0 then
+			if #brushes == 0 then
 				make("TextLabel", {
 					Size = UDim2.new(1, 0, 0, 30),
 					BackgroundTransparency = 1,
@@ -1213,7 +1213,7 @@ function Panel.new(deps: Deps): Panel
 				}, list)
 			end
 
-			for index, entry in entries do
+			for index, entry in brushes do
 				local row = make("Frame", {
 					Size = UDim2.new(1, 0, 0, 28),
 					BackgroundTransparency = 1,
