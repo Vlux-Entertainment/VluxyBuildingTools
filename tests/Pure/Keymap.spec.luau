@@ -35,7 +35,7 @@ return {
 	["Ctrl plus digits pick tools"] = function(expect)
 		expect.equal(Keymap.Resolve("One", false, true, false, false), "Tool:Basic")
 		expect.equal(Keymap.Resolve("Zero", false, true, false, false), "Tool:Measure")
-		expect.equal(Keymap.Resolve("Six", false, true, false, false), "Tool:Place")
+		expect.equal(Keymap.Resolve("Seven", false, true, false, false), "Tool:Place")
 	end,
 
 	["V duplicates, Shift is never used"] = function(expect)

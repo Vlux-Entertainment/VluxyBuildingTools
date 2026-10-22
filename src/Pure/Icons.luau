@@ -21,6 +21,7 @@ return {
 		Stairs = "",
 		Additive = "",
 		Structures = "",
+		Vents = "",
 		Railings = "",
 		Place = "",
 		Measure = "",

@@ -10,6 +10,8 @@
 
 local Geometry = require("./Geometry")
 
+local CollectionService = game:GetService("CollectionService")
+
 local MAX_PARTS = 120
 local MIN_SIZE = 0.05
 local EDGE_REACH = 0.9
@@ -176,6 +178,38 @@ function Snapper.Vertex(point: Vector3, radius: number): (Vector3, boolean)
 	end
 
 	return point, false
+end
+
+--[=[
+	Finds the open end of a vent built by this plugin near the point. Each vent model records its
+	two ends in attributes so a new vent, or a cover, can start exactly on one.
+
+	@param point Vector3
+	@param radius number
+	@return Vector3? -- the middle of the opening
+	@return Vector3? -- the direction pointing out of the vent
+]=]
+function Snapper.VentEnd(point: Vector3, radius: number): (Vector3?, Vector3?)
+	local best: Vector3? = nil
+	local bestDirection: Vector3? = nil
+	local bestDistance = radius
+
+	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
+		for _, name in { "Start", "End" } do
+			local at = model:GetAttribute("VluxyBT_Vent" .. name)
+			local out = model:GetAttribute("VluxyBT_Vent" .. name .. "Dir")
+
+			if typeof(at) == "Vector3" and typeof(out) == "Vector3" then
+				local distance = (at - point).Magnitude
+
+				if distance < bestDistance then
+					bestDistance, best, bestDirection = distance, at, out
+				end
+			end
+		end
+	end
+
+	return best, bestDirection
 end
 
 --[=[

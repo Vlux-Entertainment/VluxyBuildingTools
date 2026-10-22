@@ -129,6 +129,8 @@ Tips.Entries = {
 	WindowHeight = { Text = "How tall the window is." },
 	WindowSill = { Text = "How far the bottom of the window is above the bottom of the wall." },
 	Yaw = { Text = "How much to turn painted copies.", Key = "R" },
+	VentSize = { Text = "The outside width and height of a vent duct, in studs." },
+	VentThickness = { Text = "How thick the sheet metal of a vent is." },
 	BrushRadius = { Text = "How far from the cursor the brush scatters copies, in studs." },
 	BrushSizeMin = { Text = "The smallest a painted copy can be, as a multiple of the original size." },
 	BrushSizeMax = { Text = "The biggest a painted copy can be, as a multiple of the original size." },

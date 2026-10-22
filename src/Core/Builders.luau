@@ -1443,6 +1443,189 @@ function Builders.Extend(settings: Settings, part: BasePart, normal: Vector3, di
 end
 
 --[=[
+	@param settings Settings
+	@return { Strip } -- the floor, ceiling and two side sheets of a vent, measured from its bottom
+]=]
+function Builders.VentStrips(settings: Settings): { Strip }
+	local w, t = settings.VentSize, settings.VentThickness
+	local inner = math.max(0.05, w - 2 * t)
+
+	return {
+		{ key = "Floor", name = "VentFloor", low = -w / 2, high = w / 2, rise = t / 2, height = t },
+		{ key = "Ceiling", name = "VentCeiling", low = -w / 2, high = w / 2, rise = w - t / 2, height = t },
+		{ key = "Right", name = "VentWall", low = w / 2 - t, high = w / 2, rise = w / 2, height = inner },
+		{ key = "Left", name = "VentWall", low = -w / 2, high = -w / 2 + t, rise = w / 2, height = inner },
+	}
+end
+
+--[=[
+	A level vent from a to b. Both points are at the bottom of the duct. When it continues another
+	vent its corner is closed the same way a corridor's is.
+
+	@param settings Settings
+	@param a Vector3
+	@param b Vector3
+	@param joinDir Vector3? -- the direction of the vent this one continues
+	@return { Spec }
+]=]
+function Builders.VentRun(settings: Settings, a: Vector3, b: Vector3, joinDir: Vector3?): { Spec }
+	local out: { Spec } = {}
+	local flat = Vector3.new(b.X - a.X, 0, b.Z - a.Z)
+
+	if flat.Magnitude < 0.05 then
+		return out
+	end
+
+	local up = Vector3.yAxis
+	local dir = flat.Unit
+	local across = dir:Cross(up).Unit
+	local strips = Builders.VentStrips(settings)
+	local bend = if joinDir then Builders.Bend(a, joinDir, flat, strips, strips) else nil
+
+	if bend then
+		for _, spec in bend.beginning do
+			table.insert(out, spec)
+		end
+	end
+
+	for _, strip in strips do
+		local late = if bend then bend.start[strip.key] or 0 else 0
+		local run = flat.Magnitude - late
+
+		if run >= 0.05 then
+			local center = a + dir * (late + run / 2) + across * ((strip.low + strip.high) / 2) + up * strip.rise
+
+			add(
+				out,
+				Vector3.new(strip.high - strip.low, strip.height, run),
+				CFrame.lookAt(center, center + dir),
+				strip.name
+			)
+		end
+	end
+
+	return out
+end
+
+--[[
+	@return CFrame -- a frame at the middle of the duct from a to b, looking along it, with Y as the duct's up
+]]
+local function ductFrame(a: Vector3, b: Vector3): CFrame?
+	local d = b - a
+
+	if d.Magnitude < 0.05 then
+		return nil
+	end
+
+	local dir = d.Unit
+	local reference = if math.abs(dir.Y) > 0.99 then Vector3.xAxis else Vector3.yAxis
+	local right = dir:Cross(reference).Unit
+	local up = right:Cross(dir)
+
+	return CFrame.fromMatrix((a + b) * 0.5, right, up, -dir)
+end
+
+--[=[
+	A straight vent in any direction, for slopes and vertical shafts. The points are on the middle
+	line of the duct.
+
+	@param settings Settings
+	@param a Vector3
+	@param b Vector3
+	@return { Spec }
+]=]
+function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
+	local out: { Spec } = {}
+	local frame = ductFrame(a, b)
+
+	if not frame then
+		return out
+	end
+
+	local w, t = settings.VentSize, settings.VentThickness
+	local length = (b - a).Magnitude
+	local inner = math.max(0.05, w - 2 * t)
+	local reach = w / 2 - t / 2
+
+	add(out, Vector3.new(w, t, length), frame * CFrame.new(0, -reach, 0), "VentFloor")
+	add(out, Vector3.new(w, t, length), frame * CFrame.new(0, reach, 0), "VentCeiling")
+	add(out, Vector3.new(t, inner, length), frame * CFrame.new(reach, 0, 0), "VentWall")
+	add(out, Vector3.new(t, inner, length), frame * CFrame.new(-reach, 0, 0), "VentWall")
+
+	return out
+end
+
+--[=[
+	The shapes that are cut out of whatever a vent passes through: a box the size of the duct along
+	its length, and the opening at each end, reaching a little into the wall behind it.
+
+	@param settings Settings
+	@param a Vector3 -- one end, on the middle line
+	@param b Vector3 -- the other end
+	@return { Cutter }
+]=]
+function Builders.VentCutters(settings: Settings, a: Vector3, b: Vector3): { Cutter }
+	local frame = ductFrame(a, b)
+	local cutters: { Cutter } = {}
+
+	if not frame then
+		return cutters
+	end
+
+	local w, t = settings.VentSize, settings.VentThickness
+	local length = (b - a).Magnitude
+	local inner = math.max(0.05, w - 2 * t)
+
+	table.insert(cutters, { cf = frame, size = Vector3.new(w - 0.04, w - 0.04, length), cylinder = false })
+
+	for _, side in { -1, 1 } do
+		table.insert(cutters, {
+			cf = frame * CFrame.new(0, 0, side * length / 2),
+			size = Vector3.new(inner, inner, 2.5),
+			cylinder = false,
+		})
+	end
+
+	return cutters
+end
+
+--[=[
+	A grate: a thin frame with slats, standing on a surface.
+
+	@param settings Settings
+	@param center Vector3 -- the middle of the grate, already lifted off the surface
+	@param normal Vector3 -- the way the surface faces
+	@return { Spec }
+]=]
+function Builders.VentCover(settings: Settings, center: Vector3, normal: Vector3): { Spec }
+	local out: { Spec } = {}
+	local n = normal.Unit
+	local reference = if math.abs(n.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis
+	local u = reference:Cross(n).Unit
+	local v = n:Cross(u)
+	local frame = CFrame.fromMatrix(center, u, v, n)
+	local size = settings.VentSize + 0.4
+	local bar, depth = 0.2, 0.15
+	local edge = size / 2 - bar / 2
+
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, edge, 0), "VentCoverFrame")
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, -edge, 0), "VentCoverFrame")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(edge, 0, 0), "VentCoverFrame")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(-edge, 0, 0), "VentCoverFrame")
+
+	local slats = 5
+	local gap = size - 2 * bar
+
+	for i = 1, slats do
+		local y = -gap / 2 + gap * (i - 0.5) / slats
+
+		add(out, Vector3.new(gap, 0.12, depth * 0.6), frame * CFrame.new(0, y, 0), "VentSlat")
+	end
+
+	return out
+end
+
+--[=[
 	Copies of the source selection, seated flush on the surface under the cursor.
 
 	@param settings Settings

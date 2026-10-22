@@ -967,6 +967,9 @@ function Panel.new(deps: Deps): Panel
 		Roof = true,
 		Railing = true,
 		HalfWall = true,
+		Vent = true,
+		VentRamp = true,
+		VentShaft = true,
 		Block = true,
 		Stairs = true,
 		Ramp = true,
@@ -1153,6 +1156,24 @@ function Panel.new(deps: Deps): Panel
 		body({ Porch = true, Railing = true, HalfWall = true })
 	)
 	numeric(scope, "BalusterSpacing", "Bar spacing", 0.3, 64, nil, body({ Railing = true }))
+	numeric(
+		scope,
+		"VentSize",
+		"Vent size",
+		0.5,
+		64,
+		nil,
+		body({ Vent = true, VentRamp = true, VentShaft = true, VentCover = true })
+	)
+	numeric(
+		scope,
+		"VentThickness",
+		"Vent sheet thickness",
+		0.05,
+		4,
+		0.05,
+		body({ Vent = true, VentRamp = true, VentShaft = true })
+	)
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 	numeric(scope, "BrushRadius", "Brush radius", 0, 200, 1, body({ Place = true }))
@@ -1288,6 +1309,7 @@ function Panel.new(deps: Deps): Panel
 			Fence = true,
 			Railing = true,
 			HalfWall = true,
+			Vent = true,
 		})
 	)
 
