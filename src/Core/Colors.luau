@@ -79,7 +79,7 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color by what the part is: floors, steps and trim orange, walls dark grey, ceilings and roofs lighter grey
+	@return Color3 -- the Unity theme color by what the part is: parts that are tallest up and down dark grey, parts that are longest in any other direction orange, ceilings and roofs lighter grey
 ]]
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
@@ -110,19 +110,13 @@ local function unityColor(part: BasePart): Color3
 		return GREY_LIGHT
 	elseif named(name, { "vent" }) then
 		return if named(name, { "floor", "duct" }) then ORANGE_DARK else ORANGE
-	elseif named(name, { "foundation", "floor", "landing" }) then
-		return ORANGE
 	elseif named(name, { "ceiling", "roof", "arched" }) then
 		return GREY_LIGHT
-	elseif named(name, { "stair", "step", "ramp", "porch" }) then
-		return ORANGE_DARK
-	elseif named(name, { "pillar", "post", "rail", "fence", "sill", "header", "frame", "circle", "triangle" }) then
-		return ORANGE
-	elseif named(name, { "wall", "opening", "arch" }) then
-		return if part.Size.Y < 2 then GREY_LIGHT else GREY
 	end
 
-	return GREY_LIGHT
+	local size = part.Size
+
+	return if size.Y >= math.max(size.X, size.Z) then GREY else ORANGE
 end
 
 --[[
