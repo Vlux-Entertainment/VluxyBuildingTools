@@ -200,6 +200,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushScale = 1
 	local ventEnds: { Vector3 }? = nil
 	local propId: string? = nil
+	local propJitter = math.random() * 2 - 1
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
@@ -1429,7 +1430,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						math.round(hit.Position.Z / fine) * fine
 					)
 
-					frame = CFrame.new(at) * CFrame.Angles(0, math.rad(settings.Yaw), 0)
+					local jitter = if settings.PropRandomRotation then propJitter * settings.PropRandomAmount else 0
+
+					frame = CFrame.new(at) * CFrame.Angles(0, math.rad(settings.Yaw + jitter), 0)
 				end
 
 				if frame then
@@ -3099,6 +3102,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 				model:SetAttribute("VluxyBT_Prop", id)
 			end)
+			propJitter = math.random() * 2 - 1
 		elseif active == "Place" then
 			local hit = hitSurface()
 

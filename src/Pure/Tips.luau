@@ -135,6 +135,9 @@ Tips.Entries = {
 	GhostTransparency = {
 		Text = "How see-through hidden parts look when you show them as ghosts. 0 is solid, 1 is clear.",
 	},
+	PropRandomAmount = {
+		Text = "Each prop is turned a random amount up to this many degrees either way from the Rotation setting.",
+	},
 	PropScale = { Text = "Makes the prop bigger or smaller than its normal size. 1 is normal." },
 	["Add a door with frame (see-through, no collision)"] = {
 		Text = "Also puts a frame and a see-through door panel in the doorway. The panel has no collision, so you can walk through.",
@@ -146,6 +149,9 @@ Tips.Entries = {
 		Text = "A light that follows the editor camera, so dark rooms are easy to see. It is never saved in the place.",
 	},
 	["Random rotation"] = { Text = "Turns each brush copy a random amount around the up axis." },
+	["Randomize prop rotation"] = {
+		Text = "Turns each placed prop a small random amount, so a row of props looks less uniform. Set the amount below.",
+	},
 	["Set cut depth with mouse"] = {
 		Text = "After clicking a wall, move the mouse to choose how deep the opening goes before you click again.",
 	},

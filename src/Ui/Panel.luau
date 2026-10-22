@@ -102,6 +102,7 @@ local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Props = tr
 local SWITCH_KEYS: { [string]: string } = {
 	["Railing"] = "PorchRailing",
 	["Random rotation"] = "BrushRandomYaw",
+	["Randomize prop rotation"] = "PropRandomRotation",
 	["Ceiling"] = "Roof",
 	["Snap to parts"] = "SnapToParts",
 	["Join rooms and corridors"] = "ConnectStructures",
@@ -1946,6 +1947,19 @@ function Panel.new(deps: Deps): Panel
 			0.1,
 			{ Modes = { Prop = true }, Condition = propSelected }
 		)
+		switch(propsCard, "Randomize prop rotation", function()
+			return settings.PropRandomRotation
+		end, function(on)
+			settings.PropRandomRotation = on
+			deps.Save()
+			refresh()
+		end, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(propsCard, "PropRandomAmount", "Random rotation (+/- degrees)", 0, 180, 5, {
+			Modes = { Prop = true },
+			Condition = function()
+				return propSelected() and settings.PropRandomRotation
+			end,
+		})
 	end
 
 	do
@@ -1962,6 +1976,19 @@ function Panel.new(deps: Deps): Panel
 			0.1,
 			{ Modes = { Prop = true }, Condition = propSelected }
 		)
+		switch(buildProps, "Randomize prop rotation", function()
+			return settings.PropRandomRotation
+		end, function(on)
+			settings.PropRandomRotation = on
+			deps.Save()
+			refresh()
+		end, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(buildProps, "PropRandomAmount", "Random rotation (+/- degrees)", 0, 180, 5, {
+			Modes = { Prop = true },
+			Condition = function()
+				return propSelected() and settings.PropRandomRotation
+			end,
+		})
 	end
 
 	local stepSection = function(delta: number)
