@@ -23,28 +23,6 @@ type Modes = { [string]: boolean }
 
 local new = Kit.New
 
-local DRAW: Modes = {
-	Wall = true,
-	Floor = true,
-	PillaredWall = true,
-	Corridor = true,
-	ArchedCorridor = true,
-	Room = true,
-	Foundation = true,
-	Porch = true,
-	Fence = true,
-	Roof = true,
-	Railing = true,
-	HalfWall = true,
-	Vent = true,
-	VentRamp = true,
-	VentShaft = true,
-	Block = true,
-	Stairs = true,
-	Ramp = true,
-	Arch = true,
-	Pillar = true,
-}
 local HEIGHT: Modes = {
 	Wall = true,
 	PillaredWall = true,
@@ -421,8 +399,6 @@ return function(ui: Ui): { Instance }
 		Controls.Card(ui, nil, {
 			header,
 			variants,
-			number("Grid", "Grid Snap", 0.05, 128, 0.5, when(DRAW)),
-			number("FineGrid", "Precise Grid Snap", 0.05, 128, 0.25, when(DRAW)),
 			number("Height", "Height", 0.1, 2048, nil, when(HEIGHT)),
 			number(
 				"Thickness",
@@ -509,8 +485,6 @@ return function(ui: Ui): { Instance }
 				app.Say(message)
 			end, true, when(modes("Place"))),
 			Controls.Switch(ui, { Title = "Ceiling", Key = "Roof", Visible = when(modes("Room", "Corridor")) }),
-			Controls.Switch(ui, { Title = "Snap to parts", Key = "SnapToParts", Visible = when(DRAW) }),
-			number("SnapRadius", "Part snap distance", 0.25, 32, 0.25, when(DRAW, false, setting("SnapToParts"))),
 			Controls.Switch(ui, {
 				Title = "Join rooms and corridors",
 				Key = "ConnectStructures",

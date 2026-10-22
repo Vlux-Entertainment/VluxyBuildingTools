@@ -256,6 +256,10 @@ Settings.Standards = {
 	@within Settings
 ]=]
 Settings.Page = {
+	"Grid",
+	"FineGrid",
+	"SnapToParts",
+	"SnapRadius",
 	"StandardHeight",
 	"StandardThickness",
 	"StandardDoorWidth",

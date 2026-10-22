@@ -63,7 +63,7 @@ return {
 			expect.truthy(defaults[key] ~= nil, key)
 		end
 
-		for _, other in { "Grid", "Height", "ColorTheme", "Hotkeys", "CameraLight", "DoorPanel" } do
+		for _, other in { "Height", "ColorTheme", "Hotkeys", "CameraLight", "DoorPanel" } do
 			expect.falsy(table.find(Settings.Page, other))
 		end
 	end,
