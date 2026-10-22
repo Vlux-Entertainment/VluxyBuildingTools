@@ -909,12 +909,12 @@ function Panel.new(deps: Deps): Panel
 				setFrom(input.Position.X)
 			end
 		end)
-		deps.Widget.InputChanged:Connect(function(input)
+		root.InputChanged:Connect(function(input)
 			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 				setFrom(input.Position.X)
 			end
 		end)
-		deps.Widget.InputEnded:Connect(function(input)
+		root.InputEnded:Connect(function(input)
 			if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
 				dragging = false
 				deps.Save()

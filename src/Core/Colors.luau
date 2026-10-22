@@ -11,6 +11,7 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
+local Settings = require("../Pure/Settings")
 local Trove = require("../Packages/Trove")
 
 export type Colors = {
@@ -53,12 +54,12 @@ local PURPLE = Color3.fromRGB(150, 110, 205)
 local Colors = {}
 
 --[=[
-	The color themes that can be picked.
+	The color themes that can be picked; the list itself lives in `Settings.Themes`.
 
 	@prop Themes { string }
 	@within Colors
 ]=]
-Colors.Themes = { "Pastel", "Unity" }
+Colors.Themes = Settings.Themes
 
 --[[
 	@param name string -- a part's name
