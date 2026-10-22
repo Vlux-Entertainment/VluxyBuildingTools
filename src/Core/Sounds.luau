@@ -17,6 +17,7 @@ export type Sounds = {
 	_output: AudioDeviceOutput,
 	_made: { [string]: AudioPlayer },
 	_last: { [string]: number },
+	_other: number,
 }
 
 local MIN_GAP = 0.05
@@ -38,6 +39,7 @@ function Sounds.new(parent: Instance, enabled: () -> boolean, volume: () -> numb
 		_output = Instance.new("AudioDeviceOutput"),
 		_made = {},
 		_last = {},
+		_other = 0,
 	}
 
 	self._output.Name = "VluxyBT_SoundOutput"
@@ -64,6 +66,29 @@ end
 	Plays the sound once. An unknown name or a switched-off setting does nothing.
 ]=]
 function Sounds.Play(self: Sounds, name: string)
+	if name == "Click" or name == "Tab" or name == "Hotkey" then
+		local asked = os.clock()
+
+		task.delay(0.05, function()
+			if self._other < asked then
+				Sounds.Sound(self, name)
+			end
+		end)
+
+		return
+	end
+
+	self._other = os.clock()
+	Sounds.Sound(self, name)
+end
+
+--[[
+	@param self Sounds
+	@param name string
+
+	Starts the sound now. Clicks go through `Play` first so a click that also does something plays only what it did.
+]]
+function Sounds.Sound(self: Sounds, name: string)
 	local entry = SoundIds[name]
 
 	if not entry or not self._enabled() then

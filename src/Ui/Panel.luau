@@ -2471,8 +2471,11 @@ function Panel.new(deps: Deps): Panel
 
 	refresh()
 
+	local wired: { [Instance]: boolean } = setmetatable({}, { __mode = "k" }) :: any
+
 	local function wireClicks(object: Instance)
-		if object:IsA("GuiButton") then
+		if object:IsA("GuiButton") and not wired[object] then
+			wired[object] = true
 			object.MouseButton1Click:Connect(function()
 				local isTab = false
 
