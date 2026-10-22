@@ -76,14 +76,21 @@ works out each part's box from its rotation instead of eight corners, about eigh
 `Snapper.Doorway` (6 `FindFirstChild` calls on each model) and `Joints.Preview` through
 `structures()`. At 100k parts the folder holds roughly 15 to 25 thousand models.
 
-**Change:**
-- Builders tag what they make: `VluxyBT_Doorway` on a model with an opening that reaches the
-  floor, `VluxyBT_Structure` on rooms and corridors. Both lookups read the tag list instead of the
-  folder.
-- `Joints.Preview` first skips any structure whose bounds do not touch the bounds of the shape
-  being drawn.
-- Places built before the tags existed: the first time a folder becomes the working folder, one
-  walk tags what it finds, then it never walks again.
+**Change (done):** no tags after all. Both lookups ask Roblox's physics index
+(`GetPartBoundsInBox`) for the parts near the space in question, so nothing has to be kept up to
+date and older places need no migration.
+- `Joints`: the room-join preview and `Joints.Connect` search around the new structure and its
+  clear space, plus 4 studs (more than any wall is thick). Stacking (`stackOver`) searches only
+  the footprint of the new floor.
+- `Snapper.Doorway`: searches a column around the cursor, the snap radius plus 16 studs wide, for
+  the sides or header of an opening.
+
+**Behavior changes:**
+- *Probable bug fix:* stacking a room with Shared or Open used to cut the ceiling of *every*
+  structure in the folder whose top sat at the new floor's height, even far away. Now only the
+  ones under the new floor. Needs a Studio check.
+- A doorway wider than about 32 studs with no header, snapped from near its middle, may no
+  longer be found. Doors that wide are unusual.
 
 ## Phase 4: load and switch-off scans
 

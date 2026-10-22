@@ -15,6 +15,11 @@ local CollectionService = game:GetService("CollectionService")
 local MAX_PARTS = 120
 local MIN_SIZE = 0.05
 local EDGE_REACH = 0.9
+--[[ How far past the snap radius a doorway's side or header may be and still be found: half the widest usual doorway. ]]
+local DOOR_REACH = 16
+--[[ How tall a space is searched for doorways; the old search ignored height, and so does this one, within reason. ]]
+local DOOR_SEARCH_HEIGHT = 2048
+local OPENING_PARTS: { [string]: boolean } = { Opening_Left = true, Opening_Right = true, Opening_Header = true }
 
 export type Doorway = {
 	point: Vector3,
@@ -24,6 +29,40 @@ export type Doorway = {
 }
 
 local Snapper = {}
+
+--[[
+	@param point Vector3
+	@param radius number -- the snap radius
+	@return { Instance } -- the opening models in the working folder (or Workspace) with a side or header near the point
+
+	Asks the physics index for the parts nearby instead of going through the whole folder, so the
+	cost does not grow with the size of the map.
+]]
+local function doorwaysNear(point: Vector3, radius: number): { Instance }
+	local holder = Geometry.GetScope() or workspace
+	local params = OverlapParams.new()
+	local reach = 2 * (radius + DOOR_REACH)
+	local seen: { [Instance]: boolean } = {}
+	local out: { Instance } = {}
+
+	if holder ~= workspace then
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { holder }
+	end
+
+	local space = Vector3.new(reach, DOOR_SEARCH_HEIGHT, reach)
+
+	for _, part in workspace:GetPartBoundsInBox(CFrame.new(point), space, params) do
+		local model = part.Parent
+
+		if OPENING_PARTS[part.Name] and model and not seen[model] and model.Parent == holder then
+			seen[model] = true
+			table.insert(out, model)
+		end
+	end
+
+	return out
+end
 
 --[[
 	@param part BasePart
@@ -362,7 +401,7 @@ function Snapper.Doorway(point: Vector3, radius: number): Doorway?
 	local best: Doorway? = nil
 	local bestDistance = math.huge
 
-	for _, model in (Geometry.GetScope() or workspace):GetChildren() do
+	for _, model in doorwaysNear(point, radius) do
 		local left = model:FindFirstChild("Opening_Left")
 		local right = model:FindFirstChild("Opening_Right")
 

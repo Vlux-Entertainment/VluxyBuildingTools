@@ -472,14 +472,15 @@ function Geometry.UnionAll(model: Model, name: string): string?
 end
 
 --[=[
-	The world-aligned box around one part, worked out from its rotation instead of its eight corners.
+	The world-aligned box around a turned box, worked out from its rotation instead of its eight corners.
 
-	@param part BasePart
+	@param cf CFrame -- the centre and turn of the box
+	@param size Vector3
 	@return Vector3 -- the low corner
 	@return Vector3 -- the high corner
 ]=]
-function Geometry.PartBox(part: BasePart): (Vector3, Vector3)
-	local cf, half = part.CFrame, part.Size * 0.5
+function Geometry.BoxOf(cf: CFrame, size: Vector3): (Vector3, Vector3)
+	local half = size * 0.5
 	local right, up, look = cf.RightVector, cf.UpVector, cf.LookVector
 	local reach = Vector3.new(
 		math.abs(right.X) * half.X + math.abs(up.X) * half.Y + math.abs(look.X) * half.Z,
@@ -488,6 +489,15 @@ function Geometry.PartBox(part: BasePart): (Vector3, Vector3)
 	)
 
 	return cf.Position - reach, cf.Position + reach
+end
+
+--[=[
+	@param part BasePart
+	@return Vector3 -- the low corner of the world-aligned box around the part
+	@return Vector3 -- the high corner
+]=]
+function Geometry.PartBox(part: BasePart): (Vector3, Vector3)
+	return Geometry.BoxOf(part.CFrame, part.Size)
 end
 
 --[=[
