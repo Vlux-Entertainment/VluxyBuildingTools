@@ -76,6 +76,13 @@ local UPDATE_INTERVAL = 0.05
 local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
 local MAP_TAG = "VluxyBT_Map"
 local THEME_ATTRIBUTE = "VluxyBT_ColorTheme"
+local SHARED_SETTINGS = {
+	{ Key = "ColorTheme", Name = "theme" },
+	{ Key = "GhostTransparency", Name = "ghost transparency" },
+	{ Key = "AutoPastel", Name = "pastel" },
+	{ Key = "AutoGrid", Name = "grid" },
+}
+local SHARED_PREFIX = "VluxyBT_"
 local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
@@ -202,6 +209,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local propId: string? = nil
 	local propFrame: CFrame? = nil
 	local othersPresent: () -> boolean
+	local conflict: { Folder: Instance, Names: string }? = nil
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
@@ -300,10 +308,29 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return false
 	end
 
+	--[[
+		@param target Instance
+
+		Writes the global visual settings onto the folder, so everyone working in it shares them.
+	]]
+	local function publishShared(target: Instance)
+		for _, entry in SHARED_SETTINGS do
+			local value = (settings :: any)[entry.Key]
+
+			if target:GetAttribute(SHARED_PREFIX .. entry.Key) ~= value then
+				target:SetAttribute(SHARED_PREFIX .. entry.Key, value)
+			end
+		end
+	end
+
 	local function save()
 		pcall(function()
 			plugin:SetSetting(SETTINGS_KEY, settings)
 		end)
+
+		if folder and folder:IsDescendantOf(workspace) then
+			publishShared(folder)
+		end
 	end
 
 	--[[
@@ -2616,8 +2643,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		if chosen then
-			if chosen:IsDescendantOf(workspace) and not othersPresent() then
-				chosen:SetAttribute(THEME_ATTRIBUTE, settings.ColorTheme)
+			if chosen:IsDescendantOf(workspace) then
+				publishShared(chosen)
 			end
 
 			if settings.AutoPastel and not colors.On then
@@ -2633,6 +2660,88 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--[[
+		@param chosen Instance
+		@return string -- the names of the shared settings the folder holds a different value for, or "" when none differ
+	]]
+	local function differences(chosen: Instance): string
+		local names: { string } = {}
+
+		for _, entry in SHARED_SETTINGS do
+			local theirs = chosen:GetAttribute(SHARED_PREFIX .. entry.Key)
+			local mine = (settings :: any)[entry.Key]
+
+			if theirs ~= nil and type(theirs) == type(mine) then
+				local same = if type(mine) == "number"
+					then math.abs((theirs :: number) - mine) < 1e-6
+					else theirs == mine
+
+				if not same then
+					table.insert(names, entry.Name)
+				end
+			end
+		end
+
+		return table.concat(names, ", ")
+	end
+
+	--[[
+		@param chosen Instance
+
+		Reads the shared settings the folder remembers. When any differ from this user's, asks whether to use the folder's, overwrite them or cancel; otherwise makes the folder the working folder.
+	]]
+	local function offerFolder(chosen: Instance)
+		local names = differences(chosen)
+
+		if names ~= "" then
+			conflict = { Folder = chosen, Names = names }
+			panel.Refresh()
+			say(`"{chosen.Name}" has different settings ({names}). Use the folder's, overwrite them, or cancel.`)
+
+			return
+		end
+
+		setFolder(chosen)
+	end
+
+	--[[
+		@param choice string -- "Use", "Overwrite" or "Cancel"
+
+		Settles whose settings the folder takes.
+	]]
+	local function resolveConflict(choice: string)
+		local pending = conflict
+
+		conflict = nil
+
+		if not pending then
+			return
+		end
+
+		if choice == "Use" then
+			for _, entry in SHARED_SETTINGS do
+				local theirs = pending.Folder:GetAttribute(SHARED_PREFIX .. entry.Key)
+
+				if theirs ~= nil and type(theirs) == type((settings :: any)[entry.Key]) then
+					(settings :: any)[entry.Key] = theirs
+				end
+			end
+
+			Hidden.SetGhost(hidden, settings.GhostTransparency)
+			setFolder(pending.Folder)
+			save()
+		elseif choice == "Overwrite" then
+			setFolder(pending.Folder)
+
+			if folder == pending.Folder then
+				publishShared(pending.Folder)
+				Colors.Retheme(colors)
+			end
+		end
+
+		panel.Refresh()
+	end
+
+	--[[
 		Makes the picked folder the working folder.
 	]]
 	local function confirmPicking()
@@ -2645,7 +2754,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		picking = false
 		pendingFolder = nil
 		hoverFolder = nil
-		setFolder(chosen)
+		offerFolder(chosen)
 	end
 
 	--[[
@@ -2723,6 +2832,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		GetProp = function()
 			return propId
 		end,
+		GetConflict = function()
+			return if conflict then conflict.Names else nil
+		end,
 		GetFolder = function()
 			return folder
 		end,
@@ -2770,6 +2882,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			StartPick = startPicking,
 			CancelPick = cancelPicking,
 			ConfirmPick = confirmPicking,
+			ResolveTheme = resolveConflict,
 			UnhideAll = function()
 				perform("Unhide")
 			end,
@@ -3734,7 +3847,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			object:IsA("Folder")
 			and (object:GetAttribute(FOLDER_ATTRIBUTE) == true or object:GetAttribute(OLD_FOLDER_ATTRIBUTE) == true)
 		then
-			setFolder(object)
+			offerFolder(object)
 
 			break
 		end

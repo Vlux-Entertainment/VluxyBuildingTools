@@ -40,6 +40,7 @@ export type Actions = {
 	StartPick: () -> (),
 	CancelPick: () -> (),
 	ConfirmPick: () -> (),
+	ResolveTheme: (choice: string) -> (),
 	UnhideAll: () -> (),
 	ToggleHiddenView: () -> (),
 }
@@ -55,6 +56,7 @@ export type Deps = {
 	Actions: Actions,
 	GetMode: () -> string?,
 	GetProp: () -> string?,
+	GetConflict: () -> string?,
 	GetFolder: () -> Instance?,
 	GetPending: () -> Instance?,
 	GetPicking: () -> boolean,
@@ -924,6 +926,23 @@ function Panel.new(deps: Deps): Panel
 	}, {
 		Condition = function()
 			return deps.GetPending() ~= nil
+		end,
+	})
+
+	local function resolve(choice: string): () -> ()
+		return function()
+			actions.ResolveTheme(choice)
+			refresh()
+		end
+	end
+
+	buttonRow(folderCard, {
+		{ Text = "Use folder's", Run = resolve("Use"), Primary = true },
+		{ Text = "Overwrite", Run = resolve("Overwrite"), Primary = true },
+		{ Text = "Cancel", Run = resolve("Cancel") },
+	}, {
+		Condition = function()
+			return deps.GetConflict() ~= nil
 		end,
 	})
 
@@ -2377,8 +2396,11 @@ function Panel.new(deps: Deps): Panel
 
 		folderName.Visible = shown ~= nil
 		folderName.Text = if shown then shown:GetFullName() else ""
-		folderText.Text = if pending
-			then "Work in this folder?"
+		local conflictTheme = deps.GetConflict()
+
+		folderText.Text = if conflictTheme
+			then `This folder has different settings ({conflictTheme}). Use the folder's, overwrite them with yours, or cancel?`
+			elseif pending then "Work in this folder?"
 			elseif deps.GetPicking() then "Click a Folder in the viewport or select one."
 			elseif workingFolder then "Working folder. Select it to outline it."
 			else "Press the button, then pick a Folder in Workspace."
