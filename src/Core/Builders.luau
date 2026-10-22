@@ -1617,8 +1617,8 @@ function Builders.VentCutters(settings: Settings, a: Vector3, b: Vector3): { Cut
 end
 
 --[=[
-	The openings that let a vent join the side of another vent: a box at each end reaching back
-	along the duct far enough to cut through the wall it ends in.
+	The openings that let a vent join the side of another vent: a box at each end that starts just
+	inside the vent and reaches out past its end, far enough to cut through the wall it ends in.
 
 	@param settings Settings
 	@param a Vector3
@@ -1636,11 +1636,11 @@ function Builders.VentJoinCutters(settings: Settings, a: Vector3, b: Vector3): {
 	local w, t = settings.VentSize, settings.VentThickness
 	local length = (b - a).Magnitude
 	local inner = math.max(0.05, w - 2 * t)
-	local reach = math.min(length, w / 2 + 0.3)
+	local reach = w / 2 + 0.4
 
 	for _, side in { -1, 1 } do
 		table.insert(cutters, {
-			cf = frame * CFrame.new(0, 0, side * (length / 2 - reach / 2 + 0.05)),
+			cf = frame * CFrame.new(0, 0, side * (length / 2 + reach / 2 - 0.1)),
 			size = Vector3.new(inner, inner, reach),
 			cylinder = false,
 		})

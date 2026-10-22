@@ -195,6 +195,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushScale = 1
 	local ventEnds: { Vector3 }? = nil
 	local ventHitNormal: Vector3? = nil
+	local peekCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
 	local ventHost: Vector3? = nil
 	local ventNormal: Vector3? = nil
@@ -1304,11 +1305,37 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local hit = hitSurface()
 
 			if hit then
-				local endPoint, outward = Snapper.VentEnd(hit.Position, math.max(settings.VentSize, 3))
+				local endPoint, outward = nil, nil
+
+				if mode ~= "VentPeek" then
+					endPoint, outward = Snapper.VentEnd(hit.Position, math.max(settings.VentSize, 3))
+				end
+
 				local center = hit.Position
 				local normal = hit.Normal
 
-				if endPoint and outward then
+				peekCut = nil
+
+				if mode == "VentPeek" then
+					local fine = math.max(0.25, settings.FineGrid)
+					local part = hit.Instance :: BasePart
+					local depth = math.max(0.4, math.min(part.Size.X, part.Size.Y, part.Size.Z) + 0.2)
+
+					center = Vector3.new(
+						if math.abs(normal.X) < 0.5 then math.round(center.X / fine) * fine else center.X,
+						if math.abs(normal.Y) < 0.5 then math.round(center.Y / fine) * fine else center.Y,
+						if math.abs(normal.Z) < 0.5 then math.round(center.Z / fine) * fine else center.Z
+					)
+
+					local u = (if math.abs(normal.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis):Cross(normal).Unit
+					local frame = CFrame.fromMatrix(center, u, normal:Cross(u), normal)
+
+					peekCut = {
+						cf = frame * CFrame.new(0, 0, 0.1 - depth / 2),
+						size = Vector3.new(2.4 - 0.5, 0.9 - 0.4, depth),
+						cylinder = false,
+					}
+				elseif endPoint and outward then
 					center, normal = endPoint, outward
 				else
 					center = Vector3.new(
@@ -2860,7 +2887,25 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 			local specs = previewSpecs
 
+			local cut = if active == "VentPeek" then peekCut else nil
+
 			edit("Place vent piece", function()
+				if cut then
+					local params = OverlapParams.new()
+					local scope = Geometry.GetScope()
+
+					if scope then
+						params.FilterType = Enum.RaycastFilterType.Include
+						params.FilterDescendantsInstances = { scope }
+					end
+
+					for _, part in workspace:GetPartBoundsInBox(cut.cf, cut.size, params) do
+						if not part:IsA("Terrain") then
+							Joints.Carve(part, { cut })
+						end
+					end
+				end
+
 				Geometry.Materialize(specs, "Vlux_" .. active)
 			end)
 		elseif active == "Pillar" then
