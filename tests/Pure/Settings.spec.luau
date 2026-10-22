@@ -19,7 +19,7 @@ return {
 	end,
 
 	["a save from before the standard door takes the door defaults once"] = function(expect)
-		local old = Settings.Load({ Version = 3, Grid = 2, DoorPanel = false, FrameDepth = 1.095, DoorCollide = false })
+		local old = Settings.Load({ Version = 3, Grid = 2, DoorPanel = false, FrameDepth = 1.095, DoorCollide = true })
 
 		expect.equal(old.Grid, 2)
 		expect.equal(old.DoorPanel, true)
@@ -27,12 +27,12 @@ return {
 		expect.equal(old.FrameDepth, 1.1)
 		expect.equal(old.DoorThickness, 0.2)
 		expect.equal(old.DoorTransparency, 0.5)
-		expect.equal(old.DoorCollide, true)
+		expect.equal(old.DoorCollide, false)
 
-		local current = Settings.Load({ Version = 4, DoorPanel = false, DoorCollide = false })
+		local current = Settings.Load({ Version = 4, DoorPanel = false, DoorCollide = true })
 
 		expect.equal(current.DoorPanel, false)
-		expect.equal(current.DoorCollide, false)
+		expect.equal(current.DoorCollide, true)
 	end,
 
 	["saved values of the right type win, others are dropped"] = function(expect)

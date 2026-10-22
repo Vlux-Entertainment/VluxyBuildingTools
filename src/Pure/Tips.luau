@@ -156,10 +156,10 @@ Tips.Entries = {
 		Text = "Adds a frame of three bars around the door: two sides and a top. The opening is cut wider and taller to fit it.",
 	},
 	Door = {
-		Text = "Adds a door panel that fills the doorway. It is half see-through, and solid unless Door CanCollide is off.",
+		Text = "Adds a door panel that fills the doorway. It is half see-through, and can be walked through unless Door CanCollide is on.",
 	},
 	["Door CanCollide"] = {
-		Text = "Makes the door solid so players cannot walk through it. On by default; switch off to walk through doors.",
+		Text = "Makes the door solid so players cannot walk through it. Off by default.",
 	},
 	FrameWidth = { Text = "How wide each bar of the door frame is, in studs." },
 	FrameDepth = { Text = "How thick the door frame is through the wall, in studs. It is centred on the wall." },

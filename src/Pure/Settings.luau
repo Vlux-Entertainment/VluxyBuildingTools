@@ -160,7 +160,7 @@ function Settings.Defaults(): Settings
 		FrameDepth = 1.1,
 		DoorThickness = 0.2,
 		DoorTransparency = 0.5,
-		DoorCollide = true,
+		DoorCollide = false,
 		PropScale = 1,
 		PropRandomRotation = false,
 		PropRandomAmount = 5,
