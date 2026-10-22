@@ -675,7 +675,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local target = point
 
 		if settings.SnapToParts then
-			local corner, found = Snapper.Vertex(point, math.max(settings.SnapRadius, 1.5))
+			local corner, found = Snapper.VertexNear(point, UserInputService:GetMouseLocation(), 14)
 
 			if found then
 				target = corner
@@ -772,7 +772,23 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
 
 		if settings.SnapToParts and not fine then
-			local corner, found = Snapper.Vertex(hit.Position, math.max(settings.SnapRadius, 1.5))
+			local part = hit.Instance
+
+			if
+				hit.Normal.Y >= 0.7
+				and part:IsA("BasePart")
+				and (not level or math.abs(hit.Position.Y - level) < 0.05)
+			then
+				local top = Snapper.TopCenter(part, hit.Position, settings.Grid, 1)
+
+				if top then
+					snapMark = top
+
+					return top
+				end
+			end
+
+			local corner, found = Snapper.VertexNear(hit.Position, UserInputService:GetMouseLocation(), 14)
 
 			if found then
 				snapMark = corner
@@ -781,7 +797,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
-		local height = level or (if hit.Normal.Y >= 0.7 then hit.Position.Y else snap(hit.Position.Y))
+		if level then
+			return nil
+		end
+
+		local height = if hit.Normal.Y >= 0.7 then hit.Position.Y else snap(hit.Position.Y)
 
 		return Vector3.new(snap(hit.Position.X), height, snap(hit.Position.Z))
 	end
@@ -1111,7 +1131,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			current = if hit then hit.Position else horizontalPoint(settings.Elevation)
 
 			if current and settings.SnapToParts then
-				local corner, found = Snapper.Vertex(current, math.max(settings.SnapRadius, 1.5))
+				local corner, found = Snapper.VertexNear(current, UserInputService:GetMouseLocation(), 14)
 
 				if found then
 					current = corner
@@ -1148,13 +1168,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			elseif origin then
 				if mode == "Railing" or mode == "HalfWall" then
 					current = surfaceTop() or horizontalPoint(origin.Y)
-				elseif mode == "Wall" or mode == "PillaredWall" then
+				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Stairs" or mode == "Ramp" then
 					current = vertexPoint(origin.Y) or horizontalPoint(origin.Y)
 				else
 					current = horizontalPoint(origin.Y)
 				end
 			else
-				if mode == "Wall" or mode == "PillaredWall" then
+				if mode == "Wall" or mode == "PillaredWall" or mode == "Stairs" or mode == "Ramp" then
 					current = vertexPoint(nil) or horizontalPoint(settings.Elevation)
 				else
 					current = floorPoint() or horizontalPoint(settings.Elevation)

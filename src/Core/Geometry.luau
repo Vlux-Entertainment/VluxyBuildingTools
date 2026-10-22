@@ -551,8 +551,8 @@ function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSi
 	end)
 
 	if not ok or not result then
-		-- Joining failed, so cut each piece on its own and keep what is left of each.
-		local kept = 0
+		-- The joined cut failed, so cut each piece on its own, then join what is left into one piece.
+		local kept: { BasePart } = {}
 
 		for _, piece in parts do
 			local cutOk, cut = pcall(function()
@@ -560,17 +560,42 @@ function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSi
 			end)
 
 			if cutOk and cut then
-				cut.Name = name
 				cut.Anchored = true
 				cut.Parent = model
-				kept += 1
+				table.insert(kept, cut)
 			end
 		end
 
 		tool:Destroy()
 		holder:Destroy()
 
-		return kept > 0
+		if #kept > 1 then
+			local rest = table.clone(kept)
+
+			table.remove(rest, 1)
+
+			local joinOk, joined = pcall(function()
+				return kept[1]:UnionAsync(rest)
+			end)
+
+			if joinOk and joined then
+				joined.Name = name
+				joined.Anchored = true
+				joined.Parent = model
+
+				for _, piece in kept do
+					piece:Destroy()
+				end
+
+				return true
+			end
+		end
+
+		for _, piece in kept do
+			piece.Name = name
+		end
+
+		return #kept > 0
 	end
 
 	tool:Destroy()
