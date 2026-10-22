@@ -3365,6 +3365,81 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		perform(action)
 	end)
 
+	--[[
+		@param step number -- 1 or -1
+		@param tiles boolean -- true to step between tools, false to step between the options of the current tool
+
+		Moves to the next or previous tool tile, or option inside the tile, wrapping around.
+	]]
+	local function stepTool(step: number, tiles: boolean)
+		local grid = Tools.Grid
+		local held = if mode then Tools.TileOf(mode) else nil
+
+		if tiles then
+			local index = if held then table.find(grid, held) :: number else if step > 0 then 0 else #grid + 1
+
+			activate(grid[(index - 1 + step) % #grid + 1].Id)
+
+			return
+		end
+
+		if not held or #held.Modes < 2 then
+			return say("Pick a tool with options first.")
+		end
+
+		local at = table.find(held.Modes, mode :: string) or 1
+
+		setMode(held.Modes[(at - 1 + step) % #held.Modes + 1])
+	end
+
+	local cameraBefore: CFrame? = nil
+	local focusBefore: CFrame? = nil
+	local cameraHeldUntil = 0
+
+	trove:Connect(RunService.RenderStepped, function()
+		local camera = workspace.CurrentCamera
+
+		if not camera then
+			return
+		end
+
+		if os.clock() < cameraHeldUntil and cameraBefore and focusBefore then
+			camera.CFrame = cameraBefore
+			camera.Focus = focusBefore
+		else
+			cameraBefore, focusBefore = camera.CFrame, camera.Focus
+		end
+	end)
+
+	trove:Connect(UserInputService.InputChanged, function(input, processed)
+		if
+			input.UserInputType ~= Enum.UserInputType.MouseWheel
+			or processed
+			or UserInputService:GetFocusedTextBox()
+			or not RunService:IsEdit()
+		then
+			return
+		end
+
+		local action = Keymap.Scroll(
+			UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
+				or UserInputService:IsKeyDown(Enum.KeyCode.RightControl),
+			UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt) or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt),
+			UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift),
+			input.Position.Z
+		)
+
+		if not action then
+			return
+		end
+
+		cameraHeldUntil = os.clock() + 0.25
+
+		local kind, step = string.match(action, "^(%a+):(%-?%d)$")
+
+		stepTool(tonumber(step) :: number, kind == "Tile")
+	end)
+
 	trove:Connect(UserInputService.InputEnded, function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 and extendDrag then
 			task.defer(finishExtension)
