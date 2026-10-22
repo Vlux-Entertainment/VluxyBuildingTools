@@ -2783,6 +2783,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				SurfaceGrid.Set(surfaceGrid, true)
 			end
 
+			Colors.Sweep(colors)
+
 			say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
 		end
 	end
