@@ -149,6 +149,9 @@ return function(ui: Ui): { Instance }
 				Kit.Lit(function()
 					return state.PropSection() == section.Id
 				end),
+				Kit.PopWhen(function()
+					return state.PropSection() == section.Id
+				end),
 				Kit.Corner(6),
 				Kit.Stroke(),
 				MouseButton1Click = function()

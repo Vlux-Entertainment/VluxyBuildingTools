@@ -615,6 +615,9 @@ function Controls.Choice(ui: Ui, spec: ChoiceSpec): Frame
 				Kit.Lit(function()
 					return spec.Get() == option.Value
 				end),
+				Kit.PopWhen(function()
+					return spec.Get() == option.Value
+				end),
 				Kit.Corner(6),
 				Kit.Stroke(),
 				ui.Popups.Tip(if option.Tip then { Text = option.Tip, Key = option.Key } else nil),

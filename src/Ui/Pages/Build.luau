@@ -120,6 +120,7 @@ local function tile(ui: Ui, tool: Tools.Tile, index: number): TextButton
 		Text = "",
 		AutoButtonColor = true,
 		LayoutOrder = index,
+		Kit.PopWhen(active),
 		Kit.Corner(6),
 		new("UIStroke")({
 			Color = function()

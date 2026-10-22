@@ -41,39 +41,71 @@ Kit.Animate = function(): boolean
 	return true
 end
 
---[[
+--[[ When each target last popped, so a click that also selects the button pops it once, not twice. ]]
+local lastPop: { [GuiObject]: number } = setmetatable({}, { __mode = "k" }) :: any
+
+--[=[
+	Grows the button a little and settles it back. A see-through button laid over something, such
+	as a prop picture, grows what it covers instead. Does nothing while UI animations are off.
+
 	@param button GuiButton
+]=]
+function Kit.Pop(button: GuiButton)
+	if not Kit.Animate() then
+		return
+	end
 
-	Makes a click grow the button a little and settle back. A see-through button laid over
-	something, such as a prop picture, grows what it covers instead.
-]]
-local function pop(button: GuiButton)
-	button.Activated:Connect(function()
-		if not Kit.Animate() then
-			return
-		end
+	local covers = button.BackgroundTransparency >= 1
+		and not (button:IsA("TextButton") and button.Text ~= "")
+		and button.Parent
+		and button.Parent:IsA("GuiObject")
+	local target = (if covers then button.Parent else button) :: GuiObject
+	local now = os.clock()
 
-		local covers = button.BackgroundTransparency >= 1
-			and not (button:IsA("TextButton") and button.Text ~= "")
-			and button.Parent
-			and button.Parent:IsA("GuiObject")
-		local target = (if covers then button.Parent else button) :: GuiObject
-		local scale = target:FindFirstChild("VluxyBT_Pop") :: UIScale?
+	if now - (lastPop[target] or -1) < 0.1 then
+		return
+	end
 
-		if not scale then
-			local made = Instance.new("UIScale")
+	lastPop[target] = now
 
-			made.Name = "VluxyBT_Pop"
-			made.Parent = target
-			scale = made
-		end
+	local scale = target:FindFirstChild("VluxyBT_Pop") :: UIScale?
 
-		local grow = TweenService:Create(scale :: UIScale, POP_GROW, { Scale = POP_SCALE })
+	if not scale then
+		local made = Instance.new("UIScale")
 
-		grow.Completed:Once(function()
-			TweenService:Create(scale :: UIScale, POP_SETTLE, { Scale = 1 }):Play()
+		made.Name = "VluxyBT_Pop"
+		made.Parent = target
+		scale = made
+	end
+
+	local grow = TweenService:Create(scale :: UIScale, POP_GROW, { Scale = POP_SCALE })
+
+	grow.Completed:Once(function()
+		TweenService:Create(scale :: UIScale, POP_SETTLE, { Scale = 1 }):Play()
+	end)
+	grow:Play()
+end
+
+--[=[
+	A vide action that pops the button each time it becomes the selected one, however that
+	happened: a click, a hotkey or the wheel.
+
+	@param selected () -> boolean
+	@return any -- the action, to put among the button's properties
+]=]
+function Kit.PopWhen(selected: () -> boolean): any
+	return vide.action(function(instance: Instance)
+		local was = vide.untrack(selected)
+
+		vide.effect(function()
+			local now = selected()
+
+			if now and not was then
+				Kit.Pop(instance :: GuiButton)
+			end
+
+			was = now
 		end)
-		grow:Play()
 	end)
 end
 
@@ -89,9 +121,11 @@ function Kit.New(class: string): (props: { [any]: any }) -> any
 	end
 
 	return function(props: { [any]: any }): any
-		local button = make(props)
+		local button = make(props) :: GuiButton
 
-		pop(button)
+		button.Activated:Connect(function()
+			Kit.Pop(button)
+		end)
 
 		return button
 	end

@@ -105,6 +105,7 @@ local function tabBar(ui: Controls.Ui): Frame
 
 					return if hovered() then color:Lerp(Theme.White, if active() then 0.15 else 0.08) else color
 				end,
+				Kit.PopWhen(active),
 				MouseEnter = function()
 					hovered(true)
 				end,
