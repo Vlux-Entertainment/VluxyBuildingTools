@@ -1494,6 +1494,13 @@ function Panel.new(deps: Deps): Panel
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
 
+	switch(displayCard, "Only work in folders tagged VluxyBT_Map", function()
+		return settings.RequireMapTag
+	end, function(on)
+		settings.RequireMapTag = on
+		deps.Save()
+		refresh()
+	end)
 	switch(displayCard, "Camera light", function()
 		return settings.CameraLight
 	end, function(on)

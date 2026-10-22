@@ -72,6 +72,7 @@ export type Controller = {
 local SETTINGS_KEY = "VluxBlockoutSettings_v2"
 local UPDATE_INTERVAL = 0.05
 local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
+local MAP_TAG = "VluxyBT_Map"
 local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
@@ -2426,6 +2427,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Marks the folder as the one to confirm.
 	]]
 	local function proposeFolder(target: Instance)
+		if settings.RequireMapTag and not CollectionService:HasTag(target, MAP_TAG) then
+			return say(
+				`"{target.Name}" is not a map. Add the tag {MAP_TAG} to the folder first (Tag Editor), or switch the tag requirement off.`
+			)
+		end
+
 		pendingFolder = target
 		redrawBoxes()
 		panel.Refresh()
@@ -2472,6 +2479,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		the old folder is not left recolored.
 	]]
 	local function setFolder(chosen: Instance?)
+		if chosen and settings.RequireMapTag and not CollectionService:HasTag(chosen, MAP_TAG) then
+			return say(
+				`"{chosen.Name}" cannot be the working folder: add the tag {MAP_TAG} to it first, or switch the tag requirement off.`
+			)
+		end
+
 		if colors.On and chosen ~= folder then
 			quiet = true
 			Colors.Set(colors, false)
