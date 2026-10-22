@@ -1,75 +1,17 @@
 --!strict
---# selene: allow(mixed_table)
 
 --[=[
-	The Settings tab, in sections: building defaults, the panel's look, the viewport, sound, sharing
-	settings as text, and the folder safety switch with a reset of every setting.
+	The Settings tab, in sections: building defaults, the panel's look, the viewport, sound, and the
+	folder safety switch with a reset of every setting.
 
 	@class SettingsPage
 ]=]
 
 local Controls = require("../Controls")
-local Kit = require("../Kit")
 local Store = require("../../State/Store")
 local Theme = require("../Theme")
 
 type Ui = Controls.Ui
-
-local new = Kit.New
-
---[[
-	@param ui Ui
-	@return { Instance } -- a box that shows the exported settings, or takes pasted ones, and the Copy and Import buttons
-]]
-local function share(ui: Ui): { Instance }
-	local app = ui.App
-	local box: TextBox
-
-	box = new("TextBox")({
-		Size = UDim2.new(1, 0, 0, 30),
-		BackgroundColor3 = Theme.Field,
-		BorderSizePixel = 0,
-		Text = "",
-		PlaceholderText = "Paste settings here",
-		TextColor3 = Theme.Text,
-		PlaceholderColor3 = Theme.Muted,
-		Font = Enum.Font.Gotham,
-		TextSize = 11,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		ClearTextOnFocus = false,
-		Kit.Corner(5),
-		Kit.Stroke(),
-		Kit.Padding(6, 0),
-	})
-
-	return {
-		Kit.Row(30, { box }),
-		Controls.ButtonRow(ui, {
-			{
-				Text = "Copy settings",
-				Run = function()
-					box.Text = Store.Export(app.Store)
-					box:CaptureFocus()
-					box.SelectionStart = 1
-					box.CursorPosition = #box.Text + 1
-					app.Say("Settings are in the box; press Ctrl+C to copy them.")
-				end,
-			},
-			{
-				Text = "Import settings",
-				Primary = true,
-				Run = function()
-					if Store.Import(app.Store, box.Text) then
-						box.Text = ""
-						app.Say("Settings imported.")
-					else
-						app.Say("Paste settings copied from this plugin first.")
-					end
-				end,
-			},
-		}),
-	}
-end
 
 --[=[
 	@param ui Ui
@@ -137,7 +79,6 @@ return function(ui: Ui): { Instance }
 			}),
 			Controls.Slider(ui, "SoundVolume", "Sound volume"),
 		}),
-		Controls.Card(ui, "SHARE SETTINGS", share(ui)),
 		Controls.Card(ui, "ADVANCED", {
 			Controls.Switch(ui, {
 				Title = "Allow untagged folders (not recommended)",

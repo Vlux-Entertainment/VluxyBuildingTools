@@ -11,8 +11,6 @@
 	@class Store
 ]=]
 
-local HttpService = game:GetService("HttpService")
-
 local Settings = require("../Pure/Settings")
 local vide = require("../Packages/vide")
 
@@ -178,40 +176,6 @@ function Store.Reset(self: Store)
 			(values :: any)[key] = default
 		end
 	end)
-end
-
---[=[
-	@param self Store
-	@return string -- every setting as one line of text, to copy to another computer or a teammate
-]=]
-function Store.Export(self: Store): string
-	return HttpService:JSONEncode(self.Values)
-end
-
---[=[
-	Takes every setting from text made by `Export`, as one change. Values that are missing or of the
-	wrong type get their default, as when the plugin loads.
-
-	@param self Store
-	@param text string
-	@return boolean -- false when the text is not exported settings
-]=]
-function Store.Import(self: Store, text: string): boolean
-	local ok, decoded = pcall(HttpService.JSONDecode, HttpService, text)
-
-	if not ok or type(decoded) ~= "table" or decoded.Version == nil then
-		return false
-	end
-
-	local loaded = Settings.Load(decoded) :: any
-
-	Store.Mutate(self, function(values)
-		for key, value in loaded do
-			(values :: any)[key] = value
-		end
-	end)
-
-	return true
 end
 
 --[=[
