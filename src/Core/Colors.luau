@@ -12,6 +12,7 @@ local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
 local Settings = require("../Pure/Settings")
+local ShapeClass = require("../Pure/ShapeClass")
 local Trove = require("../Packages/Trove")
 
 export type Colors = {
@@ -80,27 +81,12 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- orange for a part of 1 cubic stud or less or an even-sized one; dark grey for a part taller than it is wide, or much longer in X than Z or the reverse, or one that cannot be judged
+	@return Color3 -- orange for a cube or rectangular block, dark grey for a thin plane or a pipe (see `ShapeClass`)
 ]]
 local function shapeColor(part: BasePart): Color3
 	local size = part.Size
-	local volume = size.X * size.Y * size.Z
 
-	if volume ~= volume or volume == math.huge or math.min(size.X, size.Y, size.Z) <= 0 then
-		return GREY
-	end
-
-	if volume <= 1 then
-		return ORANGE
-	end
-
-	local across = math.max(size.X, size.Z)
-
-	if size.Y > across * 1.25 or across >= math.min(size.X, size.Z) * 2 then
-		return GREY
-	end
-
-	return ORANGE
+	return if ShapeClass.Of(size.X, size.Y, size.Z) == "Block" then ORANGE else GREY
 end
 
 --[[
