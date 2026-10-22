@@ -1,17 +1,17 @@
 --!strict
 
 --[=[
-	The Arrange tab's actions: repeated copies, snapping, dimensions and anchoring.
-	Each works on the current selection and is one undo step.
+	The Arrange tab's actions: the array (Blender's Array modifier: a live preview of the copies,
+	then Apply), flipping and turning. Each works on the current selection and is one undo step.
 
 	@class Arrange
 ]=]
 
 local Selection = game:GetService("Selection")
 
+local ArrayStep = require("../Pure/ArrayStep")
 local Geometry = require("./Geometry")
 local Settings = require("../Pure/Settings")
-local Snap = require("../Pure/Snap")
 
 type Settings = Settings.Settings
 
@@ -21,16 +21,15 @@ export type Deps = {
 	Edit: (action: string, callback: () -> ()) -> boolean,
 	Say: (text: string) -> (),
 	Stop: () -> (),
-	Readout: (position: Vector3, text: string) -> (),
+	--[=[ Shows the array's preview boxes, or hides them for an empty list. ]=]
+	Ghosts: (specs: { Geometry.Spec }) -> (),
 }
 
 local MAX_COPIED_PARTS = 10000
 
 export type Actions = {
-	RepeatCopies: () -> (),
-	SnapSelection: () -> (),
-	ShowDimensions: () -> (),
-	AnchorSelection: () -> (),
+	ApplyArray: () -> (),
+	PreviewArray: (active: boolean) -> (),
 	Flip: (axis: string) -> (),
 	RotateBy: (axis: string, degrees: number) -> (),
 }
@@ -103,11 +102,30 @@ local function allArchivable(roots: { Instance }): boolean
 end
 
 --[=[
+	@param settings Settings
+	@param parts { BasePart } -- the selection's parts
+	@return Vector3 -- how far each copy of the array moves from the one before it
+]=]
+function Arrange.ArrayOffset(settings: Settings, parts: { BasePart }): Vector3
+	local _, size = Geometry.Bounds(parts)
+	local step = ArrayStep.Offset(
+		{ size.X, size.Y, size.Z },
+		settings.ArrayRelative,
+		{ settings.ArrayRelX, settings.ArrayRelY, settings.ArrayRelZ },
+		settings.ArrayConstant,
+		{ settings.ArrayConstX, settings.ArrayConstY, settings.ArrayConstZ }
+	)
+
+	return Vector3.new(step[1], step[2], step[3])
+end
+
+--[=[
 	@param deps Deps
-	@return { [string]: () -> () } -- RepeatCopies, SnapSelection, ShowDimensions, AnchorSelection
+	@return Actions
 ]=]
 function Arrange.new(deps: Deps): Actions
 	local settings, say = deps.Settings, deps.Say
+	local previewing = false
 
 	local function selection(): ({ Instance }, { BasePart })
 		local roots = Geometry.SelectedRoots()
@@ -115,29 +133,33 @@ function Arrange.new(deps: Deps): Actions
 		return roots, Geometry.PartsOf(roots)
 	end
 
-	local function repeatCopies()
+	--[[ Makes the array's copies of the selection, as one undo step, and selects the whole array. ]]
+	local function applyArray()
 		deps.Stop()
 
 		local roots, parts = selection()
+		local copies = ArrayStep.Copies(settings.ArrayCount)
 
 		if #parts == 0 then
-			return say("Select Parts or Models first.")
-		elseif #parts * settings.Copies > MAX_COPIED_PARTS then
-			return say("Limit: 10,000 copied Parts per action.")
+			return say("Select Parts or Models inside the working folder first.")
+		elseif copies == 0 then
+			return say("Set Count to 2 or more to make copies.")
+		elseif #parts * copies > MAX_COPIED_PARTS then
+			return say("Limit: 10,000 copied Parts per array.")
 		elseif not allArchivable(roots) then
 			return say("Enable Archivable on selected objects first.")
 		end
 
-		local step = Vector3.new(settings.DX, settings.DY, settings.DZ)
+		local step = Arrange.ArrayOffset(settings, parts)
 
 		if step.Magnitude < 0.001 then
-			return say("Give the copies some X, Y, or Z spacing first.")
+			return say("Give the array an offset first: Relative or Constant, on X, Y or Z.")
 		end
 
-		local made = deps.Edit("Repeat objects", function()
-			local all: { Instance } = {}
+		local made = deps.Edit("Apply array", function()
+			local all: { Instance } = table.clone(roots)
 
-			for i = 1, settings.Copies do
+			for i = 1, copies do
 				for _, copy in
 					Arrange.CloneRoots(roots, function(cf)
 						return cf + step * i
@@ -151,60 +173,44 @@ function Arrange.new(deps: Deps): Actions
 		end)
 
 		if made then
-			say("Copies created. Ctrl+Z undoes the whole set.")
+			say(string.format("Array applied: %d objects. Ctrl+Z undoes the whole set.", copies + 1))
 		end
 	end
 
-	local function snapSelection()
-		local roots = Geometry.SelectedRoots()
+	--[[
+		@param active boolean -- true while the Arrange tab is open and no tool runs
 
-		if #roots == 0 then
-			return say("Select objects first.")
-		end
+		Draws where the array's copies would go, or hides the preview once it is not wanted.
+	]]
+	local function previewArray(active: boolean)
+		local _, parts = if active then selection() else nil, {}
+		local copies = ArrayStep.Copies(settings.ArrayCount)
 
-		deps.Edit("Snap objects", function()
-			for _, root in roots do
-				local cf = (root :: any):GetPivot() :: CFrame
-				local p = cf.Position;
-				(root :: any):PivotTo(
-					CFrame.new(
-						Snap.Round(p.X, settings.Grid),
-						Snap.Round(p.Y, settings.Grid),
-						Snap.Round(p.Z, settings.Grid)
-					) * cf.Rotation
-				)
+		if #parts == 0 or copies == 0 then
+			if previewing then
+				previewing = false
+				deps.Ghosts({})
 			end
-		end)
-	end
 
-	local function showDimensions()
-		local _, parts = selection()
-
-		if #parts == 0 then
-			return say("Select objects first.")
+			return
 		end
 
-		local cf, size = Geometry.Bounds(parts)
+		local step = Arrange.ArrayOffset(settings, parts)
+		local specs: { Geometry.Spec } = {}
 
-		deps.Readout(
-			cf.Position + Vector3.new(0, size.Y / 2, 0),
-			string.format("X %.1f  Y %.1f  Z %.1f", size.X, size.Y, size.Z)
-		)
-		say(string.format("%.2f × %.2f × %.2f studs. X / Y / Z.", size.X, size.Y, size.Z))
-	end
-
-	local function anchorSelection()
-		local _, parts = selection()
-
-		if #parts == 0 then
-			return say("Select objects first.")
-		end
-
-		deps.Edit("Anchor objects", function()
+		for i = 1, copies do
 			for _, part in parts do
-				part.Anchored = true
+				table.insert(specs, {
+					size = part.Size,
+					cf = part.CFrame + step * i,
+					name = part.Name,
+					class = part.ClassName,
+				})
 			end
-		end)
+		end
+
+		previewing = true
+		deps.Ghosts(specs)
 	end
 
 	local function flip(axis: string)
@@ -261,10 +267,8 @@ function Arrange.new(deps: Deps): Actions
 	return {
 		Flip = flip,
 		RotateBy = rotateBy,
-		RepeatCopies = repeatCopies,
-		SnapSelection = snapSelection,
-		ShowDimensions = showDimensions,
-		AnchorSelection = anchorSelection,
+		ApplyArray = applyArray,
+		PreviewArray = previewArray,
 	}
 end
 

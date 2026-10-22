@@ -320,12 +320,14 @@ function Engine.Preview(ctx: Context, draw: Draw): Types.Preview
 		draw.Current = current
 	end
 
-	if current and settings.ShowGrid and not lock then
+	if current and ctx.State.GridOn() and not lock then
 		Overlay.DrawPlaneGrid(
 			ctx.Overlay,
 			Vector3.new(Cursor.Snap(cursor, current.X), current.Y, Cursor.Snap(cursor, current.Z)),
 			math.max(0.05, Cursor.Grid(cursor))
 		)
+	elseif not ctx.State.GridOn() then
+		Overlay.ClearPlaneGrid(ctx.Overlay)
 	end
 
 	if current and origin then

@@ -45,11 +45,8 @@ Tips.Entries = {
 		Key = "P",
 	},
 	["Surface grid"] = {
-		Text = "Puts a grid texture on every face of the Parts in the working folder. Saved with the place and visible to your team. Switching it off removes it.",
+		Text = "Puts a grid texture on every face of the Parts in the working folder. Saved with the place and visible to your team. Switching it off removes it. While it is on, the snap grid also shows under the cursor as you draw.",
 		Key = "L",
-	},
-	["Construction grid while drawing"] = {
-		Text = "Shows the snap grid under the cursor while you draw. Only you see it.",
 	},
 	["Show hidden parts (ghosted)"] = {
 		Text = "Show the parts you hid as faint ghosts, or hide them completely again.",
@@ -189,10 +186,18 @@ Tips.Entries = {
 	Floor = { Text = "How thick floors and ceilings are." },
 	ArchSegments = { Text = "More segments make a smoother curve." },
 	Offset = { Text = "A gap between a stamped copy and the surface." },
-	Copies = { Text = "How many extra copies to make." },
-	DX = { Text = "Distance between repeated copies along X." },
-	DY = { Text = "Distance between repeated copies along Y." },
-	DZ = { Text = "Distance between repeated copies along Z." },
+	ArrayCount = { Text = "How many objects the array has, the original included. 2 makes one copy." },
+	ArrayRelX = {
+		Text = "Each copy moves this many times the selection's own width along X. 1 puts copies side by side.",
+	},
+	ArrayRelY = { Text = "Each copy moves this many times the selection's own height along Y." },
+	ArrayRelZ = { Text = "Each copy moves this many times the selection's own depth along Z." },
+	ArrayConstX = { Text = "Each copy moves this many studs along X, on top of any relative offset." },
+	ArrayConstY = { Text = "Each copy moves this many studs along Y, on top of any relative offset." },
+	ArrayConstZ = { Text = "Each copy moves this many studs along Z, on top of any relative offset." },
+	["Relative Offset"] = { Text = "Space copies by the selection's own size, like Blender's Relative Offset." },
+	["Constant Offset"] = { Text = "Space copies by a fixed distance in studs, like Blender's Constant Offset." },
+	["Apply Array"] = { Text = "Make the copies shown in the preview, as one undo step." },
 	Extend = { Text = "How far a face extend grows by default." },
 	GridTextureSize = { Text = "How many studs one tile of the surface grid covers." },
 } :: { [string]: Tip }

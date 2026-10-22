@@ -3,7 +3,7 @@
 
 --[=[
 	The Display tab: the camera light, the color themes, the surface grid and its look, the
-	construction grid, and hidden parts.
+	construction grid that follows it while drawing, and hidden parts.
 
 	@class DisplayPage
 ]=]
@@ -166,7 +166,6 @@ return function(ui: Ui): { Instance }
 				Visible = state.GridOn,
 			}),
 			gridColor(ui, state.GridOn),
-			Controls.Switch(ui, { Title = "Construction grid while drawing", Key = "ShowGrid" }),
 			Controls.Text(
 				ui,
 				"Themes and the surface grid both change the Parts inside your working folder, so your team sees them and they are saved with the place. Each switch undoes itself completely, even after Studio was closed and reopened. Switch them off before publishing."
