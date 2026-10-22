@@ -64,6 +64,21 @@ Walls, pillars, blocks, arches and every Additive tool part are grey; floors, ce
 are orange (`Pure/PartRole`, by part name). Other parts: grey unless a cube or rectangular block,
 which is orange (`Pure/ShapeClass`). See-through parts are purple.
 
+## Performance at 100k parts (branch `perf/100k-parts`)
+
+Plan, reasoning and results: `docs/OPTIMIZATION.md`. Done: permanent MicroProfiler labels
+(`VluxyBT/...`, see `Core/Profile`), the post-edit sweep handles only new parts, folder outlines are
+measured a little each frame (`Core/BoundsScan`), joins and doorway snap search near the cursor
+through the physics index, and the surface grid uses one or two faces per part (`Pure/GridFaces`).
+Measured at 100k: per-frame work about 0.1 ms, a build's sweep under 0.6 ms. Each undo step costs
+about 245 ms at 60k parts inside Studio (`FinishRecording` and `SetWaypoint` alike); that is
+Studio's, not the plugin's. A stacking bug went with it: stacking a room used to cut the ceilings of
+every same-height structure in the folder.
+
+`Commands/StressPlace.luau` builds a 100k-part test folder from the command bar. MicroProfiler
+dumps (`%LOCALAPPDATA%\Roblox\logs\microprofile-*.html`) are LibMP binary; read them with Roblox's
+`libmp.js` in Node (`Session.OpenFromBuffer`, then a log iterator; struct fields are methods).
+
 ## Next
 
-- Nothing open. New work starts from `main` on a branch.
+- Improvements and a bug hunt, from `main` on a new branch.
