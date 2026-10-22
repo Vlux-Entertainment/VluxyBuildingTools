@@ -550,12 +550,31 @@ function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSi
 		return joined:SubtractAsync({ tool })
 	end)
 
+	if not ok or not result then
+		-- Joining failed, so cut each piece on its own and keep what is left of each.
+		local kept = 0
+
+		for _, piece in parts do
+			local cutOk, cut = pcall(function()
+				return piece:SubtractAsync({ tool })
+			end)
+
+			if cutOk and cut then
+				cut.Name = name
+				cut.Anchored = true
+				cut.Parent = model
+				kept += 1
+			end
+		end
+
+		tool:Destroy()
+		holder:Destroy()
+
+		return kept > 0
+	end
+
 	tool:Destroy()
 	holder:Destroy()
-
-	if not ok or not result then
-		return false
-	end
 
 	result.Name = name
 	result.Anchored = true

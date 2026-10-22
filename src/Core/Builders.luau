@@ -74,7 +74,8 @@ local function trianglePrism(
 	c: Vector3,
 	depth: number,
 	name: string,
-	source: BasePart?
+	source: BasePart?,
+	overlap: number?
 )
 	if (b - a).Magnitude < (c - a).Magnitude then
 		b, c = c, b
@@ -106,11 +107,12 @@ local function trianglePrism(
 
 		if run.Magnitude > 0.001 then
 			local back = run.Unit
-			local center = (foot + endPoint) * 0.5 + rise * 0.5
+			local extra = overlap or 0
+			local center = (foot + endPoint) * 0.5 + rise * 0.5 + back * (extra / 2)
 
 			add(
 				out,
-				Vector3.new(depth, height, run.Magnitude),
+				Vector3.new(depth, height, run.Magnitude + extra),
 				CFrame.fromMatrix(center, up:Cross(back), up, back),
 				name,
 				source,
@@ -1384,7 +1386,7 @@ function Builders.CutShape(corners: { Vector3 }, triangles: { { number } }, dept
 			return if away.Magnitude > 0.001 then p + away.Unit * 0.03 else p
 		end
 
-		trianglePrism(out, grow(a), grow(b), grow(c), depth, "Cut")
+		trianglePrism(out, grow(a), grow(b), grow(c), depth, "Cut", nil, 0.03)
 	end
 
 	return out
