@@ -93,13 +93,23 @@ local function tabBar(ui: Controls.Ui): Frame
 			return app.State.Page() == name
 		end
 
+		local hovered = vide.source(false)
+
 		table.insert(
 			buttons,
 			new("TextButton")({
 				Size = UDim2.new(1 / #pages, -4, 1, -8),
 				Position = UDim2.new((i - 1) / #pages, 4, 0, 4),
 				BackgroundColor3 = function()
-					return if active() then Theme.Accent() else Theme.Card
+					local color = if active() then Theme.Accent() else Theme.Card
+
+					return if hovered() then color:Lerp(Theme.White, if active() then 0.15 else 0.08) else color
+				end,
+				MouseEnter = function()
+					hovered(true)
+				end,
+				MouseLeave = function()
+					hovered(false)
 				end,
 				TextColor3 = function()
 					return if active() then Theme.Background else Theme.Text
