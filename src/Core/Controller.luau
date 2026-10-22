@@ -342,8 +342,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				or (sharedSeen[entry.Key] ~= value and stored ~= value)
 			then
 				if entry.Key == "ColorTheme" then
-					print(`[VluxyBuildingTools] writing theme {value} to {target.Name}
-{debug.traceback()}`)
+					print(`[VluxyBuildingTools] writing theme {value} to {target.Name}\n{debug.traceback()}`)
 				end
 
 				target:SetAttribute(SHARED_PREFIX .. entry.Key, value)

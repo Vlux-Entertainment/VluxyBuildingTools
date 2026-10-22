@@ -79,7 +79,7 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color by what the part is: walls and posts orange, floors and steps dark grey, ceilings and roofs lighter grey
+	@return Color3 -- the Unity theme color by what the part is: floors, steps and trim orange, walls dark grey, ceilings and roofs lighter grey
 ]]
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
@@ -105,23 +105,21 @@ local function unityColor(part: BasePart): Color3
 
 		return if orange then ORANGE_DARK else GREY_LIGHT
 	elseif named(name, { "ventwall" }) then
-		return ORANGE_DARK
+		return GREY
 	elseif named(name, { "ventceiling" }) then
 		return GREY_LIGHT
 	elseif named(name, { "vent" }) then
-		return if named(name, { "floor", "duct" }) then GREY else ORANGE
+		return if named(name, { "floor", "duct" }) then ORANGE_DARK else ORANGE
 	elseif named(name, { "foundation", "floor", "landing" }) then
-		return GREY
+		return ORANGE
 	elseif named(name, { "ceiling", "roof", "arched" }) then
 		return GREY_LIGHT
 	elseif named(name, { "stair", "step", "ramp", "porch" }) then
 		return ORANGE_DARK
 	elseif named(name, { "pillar", "post", "rail", "fence", "sill", "header", "frame", "circle", "triangle" }) then
-		return GREY
-	elseif named(name, { "wall" }) then
-		return if part.Size.Y < 2 then GREY_LIGHT else ORANGE
-	elseif named(name, { "opening", "arch" }) then
 		return ORANGE
+	elseif named(name, { "wall", "opening", "arch" }) then
+		return if part.Size.Y < 2 then GREY_LIGHT else GREY
 	end
 
 	return GREY_LIGHT
