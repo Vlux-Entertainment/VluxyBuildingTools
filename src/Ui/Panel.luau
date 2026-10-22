@@ -1225,7 +1225,7 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	numeric(scope, "FrameWidth", "Frame width", 0.05, 8, nil, onlyIf(frameShown))
-	numeric(scope, "FrameOverhang", "Frame overhang", 0, 8, nil, onlyIf(frameShown))
+	numeric(scope, "FrameDepth", "Frame depth", 0.05, 64, nil, onlyIf(frameShown))
 	switch(scope, "Door", function()
 		return settings.DoorPanel
 	end, function(on)

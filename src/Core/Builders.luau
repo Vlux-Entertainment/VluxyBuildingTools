@@ -1097,7 +1097,7 @@ function Builders.Opening(
 		Panel: boolean?,
 		Frame: boolean?,
 		FrameWidth: number?,
-		FrameOverhang: number?,
+		FrameDepth: number?,
 		DoorThickness: number?,
 		DoorTransparency: number?,
 		DoorCollide: boolean?,
@@ -1143,6 +1143,13 @@ function Builders.Opening(
 	local arched = shape == "Arch"
 	local w, h = dims.Width, dims.Height
 	local sill = if arched then 0 else dims.Sill
+	local framed = dims.Frame == true and shape == "Rect" and not (depth and depth < size.Z - 0.01)
+	local bar = if framed then math.min(dims.FrameWidth or 0.25, w / 4, h / 4) else 0
+
+	if framed then
+		w += 2 * bar
+		h += bar
+	end
 
 	if arched and h < w / 2 then
 		return out, "Arch height must be at least half the opening width.", nil
@@ -1162,22 +1169,33 @@ function Builders.Opening(
 		return out, "Opening must fit inside the wall, with wall remaining on both sides.", nil
 	end
 
-	if (dims.Panel or dims.Frame) and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
-		local bar = if dims.Frame then math.min(dims.FrameWidth or 0.4, w / 4, h / 4) else 0
-		local reach = size.Z + (dims.FrameOverhang or 0.1)
-		local middle = bottom + h / 2
+	if (framed or dims.Panel) and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
+		local reach = dims.FrameDepth or 1.095
+		local doorHeight = h - bar
 
-		if dims.Frame then
-			add(out, Vector3.new(bar, h, reach), cf * CFrame.new(x - w / 2 + bar / 2, middle, 0), "Door_Frame")
-			add(out, Vector3.new(bar, h, reach), cf * CFrame.new(x + w / 2 - bar / 2, middle, 0), "Door_Frame")
-			add(out, Vector3.new(w - 2 * bar, bar, reach), cf * CFrame.new(x, bottom + h - bar / 2, 0), "Door_Frame")
+		if framed then
+			local sideX = w / 2 - bar / 2
+
+			add(
+				out,
+				Vector3.new(bar, doorHeight, reach),
+				cf * CFrame.new(x - sideX, bottom + doorHeight / 2, 0),
+				"Door_Frame"
+			)
+			add(
+				out,
+				Vector3.new(bar, doorHeight, reach),
+				cf * CFrame.new(x + sideX, bottom + doorHeight / 2, 0),
+				"Door_Frame"
+			)
+			add(out, Vector3.new(w - bar, bar, reach), cf * CFrame.new(x, bottom + h - bar / 2, 0), "Door_Frame")
 		end
 
 		if dims.Panel then
 			add(
 				out,
-				Vector3.new(w - 2 * bar, h - bar, math.min(size.Z, dims.DoorThickness or 0.3)),
-				cf * CFrame.new(x, bottom + (h - bar) / 2, 0),
+				Vector3.new(w - 2 * bar, doorHeight, math.min(size.Z, dims.DoorThickness or 0.202)),
+				cf * CFrame.new(x, bottom + doorHeight / 2, 0),
 				"Door_Panel"
 			)
 

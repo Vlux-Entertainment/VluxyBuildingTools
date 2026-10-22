@@ -1391,7 +1391,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					Panel = settings.DoorPanel,
 					Frame = settings.DoorFrame,
 					FrameWidth = settings.FrameWidth,
-					FrameOverhang = settings.FrameOverhang,
+					FrameDepth = settings.FrameDepth,
 					DoorThickness = settings.DoorThickness,
 					DoorTransparency = settings.DoorTransparency,
 					DoorCollide = settings.DoorCollide,

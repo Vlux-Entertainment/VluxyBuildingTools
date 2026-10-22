@@ -148,13 +148,15 @@ Tips.Entries = {
 		Text = "After you pick a prop, the browser goes back to showing only its first row so the settings are in view. Turn off to keep it open.",
 	},
 	PropScale = { Text = "Makes the prop bigger or smaller than its normal size. 1 is normal." },
-	["Door frame"] = { Text = "Adds a frame of three bars around the doorway: two sides and a top." },
+	["Door frame"] = {
+		Text = "Adds a frame of three bars around the door: two sides and a top. The opening is cut wider and taller to fit it.",
+	},
 	Door = {
 		Text = "Adds a door panel that fills the doorway. It is see-through and can be walked through unless Door blocks movement is on.",
 	},
 	["Door blocks movement"] = { Text = "Makes the door solid so players cannot walk through it. Off by default." },
 	FrameWidth = { Text = "How wide each bar of the door frame is, in studs." },
-	FrameOverhang = { Text = "How far the frame sticks out past the wall faces, in studs. 0 keeps it flush." },
+	FrameDepth = { Text = "How thick the door frame is through the wall, in studs. It is centred on the wall." },
 	DoorThickness = { Text = "How thick the door panel is, in studs." },
 	DoorTransparency = { Text = "How see-through the door is. 0 is solid, 1 is invisible." },
 	["Allow untagged folders (not recommended)"] = {
