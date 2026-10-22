@@ -201,6 +201,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local ventEnds: { Vector3 }? = nil
 	local propId: string? = nil
 	local propFrame: CFrame? = nil
+	local othersPresent: () -> boolean
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
@@ -2615,6 +2616,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		if chosen then
+			if chosen:IsDescendantOf(workspace) and not othersPresent() then
+				chosen:SetAttribute(THEME_ATTRIBUTE, settings.ColorTheme)
+			end
+
 			if settings.AutoPastel and not colors.On then
 				Colors.Set(colors, true)
 			end
@@ -3749,7 +3754,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--[[
 		@return boolean -- whether another user has had the plugin open within the last minute
 	]]
-	local function othersPresent(): boolean
+	othersPresent = function(): boolean
 		local mine = PRESENCE_PREFIX .. myId
 
 		for name, stamp in workspace:GetAttributes() do
