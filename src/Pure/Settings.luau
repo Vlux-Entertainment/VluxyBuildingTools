@@ -105,6 +105,7 @@ export type Settings = {
 	SoundVolume: number,
 	UiAnimations: boolean,
 	UiAccent: string,
+	ZebraRows: boolean,
 	Axis: string,
 }
 
@@ -217,6 +218,7 @@ function Settings.Defaults(): Settings
 		SoundVolume = 0.5,
 		UiAnimations = true,
 		UiAccent = "Orange",
+		ZebraRows = true,
 		Axis = "X",
 	}
 end

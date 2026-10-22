@@ -39,6 +39,7 @@ Tips.Entries = {
 	["SHOW & HIDE"] = { Text = "Themes, grid, camera light and hidden parts." },
 	PANEL = { Text = "Move around this panel; Studio keeps its camera keys." },
 	INTERFACE = { Text = "How the panel looks, moves and sounds." },
+	["Zebra rows"] = { Text = "Shade every other row so values line up with their labels." },
 	["UI animations"] = { Text = "Buttons pop when clicked and prop pictures spin." },
 
 	-- Working folder

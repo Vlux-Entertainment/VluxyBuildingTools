@@ -45,6 +45,7 @@ return function(ui: Ui): { Instance }
 		}),
 		Controls.Card(ui, "INTERFACE", {
 			Controls.Switch(ui, { Title = "UI animations", Key = "UiAnimations" }),
+			Controls.Switch(ui, { Title = "Zebra rows", Key = "ZebraRows" }),
 			Controls.Choice(ui, {
 				Options = accents,
 				Columns = 4,

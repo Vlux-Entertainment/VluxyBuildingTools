@@ -69,7 +69,9 @@ local function row(binding: Keymap.Binding, striped: boolean): Frame
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Tile,
-		BackgroundTransparency = if striped then 0 else 1,
+		BackgroundTransparency = function()
+			return if striped and Kit.Zebra() then 0 else 1
+		end,
 		BorderSizePixel = 0,
 		LayoutOrder = Kit.Next(),
 		Kit.Corner(5),

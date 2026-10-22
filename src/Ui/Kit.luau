@@ -41,6 +41,105 @@ Kit.Animate = function(): boolean
 	return true
 end
 
+--[=[
+	Whether lists of rows are striped; `Panel` points it at the zebra rows setting.
+
+	@prop Zebra vide.Source<boolean>
+	@within Kit
+]=]
+Kit.Zebra = vide.source(true)
+
+local ROW = "Row"
+local BAND = "VluxyBT_Band"
+
+--[[
+	@param container Instance
+
+	Puts a faint band behind every other row that shows, in LayoutOrder, so a value lines up with its
+	label at a glance; hidden rows are skipped so the stripes never double up.
+]]
+local function stripe(container: Instance)
+	local rows: { GuiObject } = {}
+
+	for _, child in container:GetChildren() do
+		if child.Name == ROW and child:IsA("GuiObject") and child.Visible then
+			table.insert(rows, child)
+		end
+	end
+
+	table.sort(rows, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+
+	local on = Kit.Zebra()
+
+	for index, row in rows do
+		local band = row:FindFirstChild(BAND) :: Frame?
+
+		if not band then
+			local made = Instance.new("Frame")
+
+			made.Name = BAND
+			made.Size = UDim2.new(1, 8, 1, 0)
+			made.Position = UDim2.fromOffset(-4, 0)
+			made.BackgroundColor3 = Theme.Tile
+			made.BorderSizePixel = 0
+			made.ZIndex = 0
+
+			local corner = Instance.new("UICorner")
+
+			corner.CornerRadius = UDim.new(0, 5)
+			corner.Parent = made
+			made.Parent = row
+			band = made
+		end
+
+		(band :: Frame).Visible = on and index % 2 == 1
+	end
+end
+
+--[=[
+	A vide action that stripes the container's rows (see `Kit.Row`), and keeps the stripes right as
+	rows show, hide or come and go, and as the zebra rows setting changes.
+
+	@return any -- the action, to put among the container's properties
+]=]
+function Kit.Striped(): any
+	return vide.action(function(instance: Instance)
+		local queued = false
+
+		local function later()
+			if queued then
+				return
+			end
+
+			queued = true
+			task.defer(function()
+				queued = false
+				stripe(instance)
+			end)
+		end
+
+		local function watch(child: Instance)
+			if child.Name == ROW and child:IsA("GuiObject") then
+				child:GetPropertyChangedSignal("Visible"):Connect(later)
+				later()
+			end
+		end
+
+		for _, child in instance:GetChildren() do
+			watch(child)
+		end
+
+		instance.ChildAdded:Connect(watch)
+		instance.ChildRemoved:Connect(later)
+		vide.effect(function()
+			Kit.Zebra()
+			later()
+		end)
+	end)
+end
+
 --[[ When each target last popped, so a click that also selects the button pops it once, not twice. ]]
 local lastPop: { [GuiObject]: number } = setmetatable({}, { __mode = "k" }) :: any
 
@@ -213,6 +312,7 @@ function Kit.Group(children: { any }, visible: Prop<boolean>?): Frame
 		LayoutOrder = Kit.Next(),
 		Visible = visible or true,
 		Kit.List(4),
+		Kit.Striped(),
 		children,
 	})
 end
@@ -225,6 +325,7 @@ end
 ]=]
 function Kit.Row(height: number, children: { any }, visible: Prop<boolean>?): Frame
 	return Kit.New("Frame")({
+		Name = ROW,
 		Size = UDim2.new(1, 0, 0, height),
 		BackgroundTransparency = 1,
 		LayoutOrder = Kit.Next(),

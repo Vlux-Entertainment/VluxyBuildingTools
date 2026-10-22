@@ -99,6 +99,7 @@ function Controls.Card(ui: Ui, title: string?, children: { any }, visible: Prop<
 		Kit.Stroke(),
 		Kit.Padding(10, 8),
 		Kit.List(4),
+		Kit.Striped(),
 		if title
 			then new("TextLabel")({
 				Size = UDim2.new(1, 0, 0, 22),
