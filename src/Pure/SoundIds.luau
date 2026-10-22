@@ -14,7 +14,7 @@ export type Entry = {
 
 local SoundIds: { [string]: Entry } = {
 	Click = { Id = "rbxassetid://15675032796", Volume = 0.5 },
-	Tab = { Id = "rbxassetid://10128766965", Volume = 0.4 },
+	Tab = { Id = "rbxassetid://15675037413", Volume = 0.4 },
 	ToggleOn = { Id = "rbxassetid://10128760939", Volume = 0.5 },
 	ToggleOff = { Id = "rbxassetid://10066968815", Volume = 0.5 },
 	Hotkey = { Id = "rbxassetid://15675059323", Volume = 0.4 },
