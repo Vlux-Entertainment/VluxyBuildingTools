@@ -21,7 +21,18 @@ return {
 	end,
 
 	["Block tool parts and arch pieces count as walls"] = function(expect)
-		for _, name in { "Block", "Arch_Post", "Arch_Curve", "Arch_Left", "Arch_Right" } do
+		for _, name in
+			{
+				"Block",
+				"Arch_Post",
+				"Arch_Curve",
+				"Arch_Left",
+				"Arch_Right",
+				"Pillar",
+				"HalfWallPillar",
+				"RailingPillar",
+			}
+		do
 			expect.equal(PartRole.Of(name), "Wall", name)
 		end
 
@@ -37,8 +48,7 @@ return {
 		expect.equal(PartRole.Of("VentCeiling"), "Ceiling")
 	end,
 
-	["pillars and unknown parts have no role"] = function(expect)
-		expect.falsy(PartRole.Of("HalfWallPillar"))
+	["unknown parts have no role"] = function(expect)
 		expect.falsy(PartRole.Of("Part"))
 		expect.falsy(PartRole.Of("Roof"))
 		expect.falsy(PartRole.Of("Door_Frame"))

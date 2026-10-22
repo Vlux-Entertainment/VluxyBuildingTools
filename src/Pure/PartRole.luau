@@ -24,8 +24,8 @@ local PartRole = {}
 --[=[
 	@param name string -- the part's name
 	@return Role? -- what the part is: `Ceiling` for any name with "ceiling", `Floor` for "floor", `Wall`
-		for "wall" (but not a wall's pillar), a wall piece left by an opening, an arch piece or a Block
-		tool part; nil when it cannot tell
+		for "wall" or "pillar", a wall piece left by an opening, an arch piece or a Block tool part, so
+		everything the Basic tools make but floors is grey; nil when it cannot tell
 ]=]
 function PartRole.Of(name: string): Role?
 	local lower = string.lower(name)
@@ -34,7 +34,7 @@ function PartRole.Of(name: string): Role?
 		return "Ceiling"
 	elseif string.find(lower, "floor", 1, true) then
 		return "Floor"
-	elseif WALL_NAMES[lower] or (string.find(lower, "wall", 1, true) and not string.find(lower, "pillar", 1, true)) then
+	elseif WALL_NAMES[lower] or string.find(lower, "wall", 1, true) or string.find(lower, "pillar", 1, true) then
 		return "Wall"
 	end
 
