@@ -67,6 +67,8 @@ export type Panel = {
 	SetField: (key: string) -> (),
 	CycleTab: (delta: number) -> (),
 	ShowTab: (name: string) -> (),
+	StepSection: (delta: number) -> (),
+	StepProp: (delta: number) -> (),
 }
 
 type Entry = {
@@ -1698,6 +1700,9 @@ function Panel.new(deps: Deps): Panel
 		end
 	end
 
+	local stepSection: (number) -> () = function(_) end
+	local stepProp: (number) -> () = function(_) end
+
 	do
 		local propsCard = card("PROPS", "Props")
 		local category = "All"
@@ -1890,6 +1895,48 @@ function Panel.new(deps: Deps): Panel
 				category = entry.Id
 				showCategory()
 			end)
+		end
+
+		stepSection = function(delta: number)
+			local ids: { string } = {}
+
+			for _, entry in choices do
+				table.insert(ids, entry.Id)
+			end
+
+			local at = table.find(ids, category) or 1
+
+			category = ids[(at - 1 + delta) % #ids + 1]
+			showCategory()
+		end
+
+		stepProp = function(delta: number)
+			local list: { PropData.Prop } = {}
+
+			for _, prop in PropData.Props do
+				if category == "All" or prop.Category == category then
+					table.insert(list, prop)
+				end
+			end
+
+			if #list == 0 then
+				return
+			end
+
+			local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
+			local at = 0
+
+			for i, prop in list do
+				if prop.Id == current then
+					at = i
+				end
+			end
+
+			if at == 0 and delta < 0 then
+				at = #list + 1
+			end
+
+			actions.PickProp(list[(at - 1 + delta) % #list + 1].Id)
 		end
 
 		table.insert(refreshers, paintProps)
@@ -2245,6 +2292,12 @@ function Panel.new(deps: Deps): Panel
 			leavePage()
 			page = TABS[(index - 1 + delta) % #TABS + 1]
 			refresh()
+		end,
+		StepSection = function(delta: number)
+			stepSection(delta)
+		end,
+		StepProp = function(delta: number)
+			stepProp(delta)
 		end,
 		ShowTab = function(name: string)
 			if pages[name] then

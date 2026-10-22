@@ -3472,6 +3472,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Moves to the next or previous tool tile, or option inside the tile, wrapping around.
 	]]
 	local function stepTool(step: number, tiles: boolean)
+		if mode == "Prop" then
+			if tiles then
+				panel.StepSection(step)
+			else
+				panel.StepProp(step)
+			end
+
+			return
+		end
+
 		local grid = Tools.Grid
 		local held = if mode then Tools.TileOf(mode) else nil
 

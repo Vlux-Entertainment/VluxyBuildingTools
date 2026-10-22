@@ -104,7 +104,10 @@ function Keymap.Describe(): { { string } }
 		{ "Esc / right-click", "Cancel the action, or stop the tool. Enter then brings the last tool back" },
 		{ "[ and ]", "Lower or raise the active height by one snap step" },
 		{ "Tab / `", "Next or previous panel tab" },
-		{ "Ctrl+Scroll", "Step to the previous or next tool. The camera does not zoom while you do" },
+		{
+			"Ctrl+Scroll",
+			"Step to the previous or next tool. With the Props tool, step through its sections. The camera does not zoom while you do",
+		},
 		{
 			"Alt+Scroll",
 			"Step to the previous or next option inside the current tool. The camera does not zoom while you do",
