@@ -1502,13 +1502,6 @@ function Panel.new(deps: Deps): Panel
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
 
-	switch(displayCard, "Allow untagged folders (not recommended)", function()
-		return settings.AllowUntagged
-	end, function(on)
-		settings.AllowUntagged = on
-		deps.Save()
-		refresh()
-	end, nil, true)
 	switch(displayCard, "Camera light", function()
 		return settings.CameraLight
 	end, function(on)
@@ -1655,6 +1648,14 @@ function Panel.new(deps: Deps): Panel
 	--
 
 	local editing = card("EDITING", "Settings")
+
+	switch(editing, "Allow untagged folders (not recommended)", function()
+		return settings.AllowUntagged
+	end, function(on)
+		settings.AllowUntagged = on
+		deps.Save()
+		refresh()
+	end, nil, true)
 
 	numeric(editing, "Grid", "Snap increment", 0.05, 128, 0.5)
 	numeric(editing, "FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5)
