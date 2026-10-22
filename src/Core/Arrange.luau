@@ -16,13 +16,15 @@ local Snap = require("../Pure/Snap")
 type Settings = Settings.Settings
 
 export type Deps = {
+	--[=[ The live settings, read only; write through `SetSetting`. ]=]
 	Settings: Settings,
-	Save: () -> (),
+	SetSetting: (key: string, value: any) -> (),
 	Edit: (action: string, callback: () -> ()) -> boolean,
 	Say: (text: string) -> (),
 	Stop: () -> (),
 	Readout: (position: Vector3, text: string) -> (),
-	FloorField: () -> (),
+	--[=[ Drops the active tool's points, so a new floor level takes effect at once. ]=]
+	ResetTool: () -> (),
 }
 
 local MAX_COPIED_PARTS = 10000
@@ -218,9 +220,8 @@ function Arrange.new(deps: Deps): Actions
 
 		local cf, size = Geometry.Bounds(parts)
 
-		settings.Elevation = cf.Y + size.Y / 2
-		deps.Save()
-		deps.FloorField()
+		deps.SetSetting("Elevation", cf.Y + size.Y / 2)
+		deps.ResetTool()
 		say("Drawing floor is now Y = " .. settings.Elevation .. ".")
 	end
 

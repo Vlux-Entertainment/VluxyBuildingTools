@@ -29,6 +29,8 @@ export type AppState = {
 	Status: Source<string>,
 	--[=[ The panel tab on show. ]=]
 	Page: Source<string>,
+	--[=[ The section of the Props tab on show: `All` or a category id. ]=]
+	PropSection: Source<string>,
 	PastelOn: Source<boolean>,
 	GridOn: Source<boolean>,
 	HiddenView: Source<boolean>,
@@ -38,6 +40,22 @@ export type AppState = {
 }
 
 local AppState = {}
+
+--[=[
+	The panel tabs, in order.
+
+	@prop Pages { string }
+	@within AppState
+]=]
+AppState.Pages = { "Build", "Props", "Arrange", "Display", "Hotkeys", "Settings" }
+
+--[=[
+	The tabs that only open once a working folder is set.
+
+	@prop Locked { [string]: boolean }
+	@within AppState
+]=]
+AppState.Locked = { Build = true, Arrange = true, Props = true, Display = true } :: { [string]: boolean }
 
 --[=[
 	@return AppState -- every value at its starting state
@@ -52,6 +70,7 @@ function AppState.new(): AppState
 		Prop = vide.source(nil :: string?),
 		Status = vide.source("Pick a tool, or press a number key. Everything is in studs."),
 		Page = vide.source("Build"),
+		PropSection = vide.source("All"),
 		PastelOn = vide.source(false),
 		GridOn = vide.source(false),
 		HiddenView = vide.source(false),

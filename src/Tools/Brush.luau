@@ -299,11 +299,12 @@ local tool: Types.Tool = {
 	Preview = function(ctx: Context, state: BrushState): Types.Preview?
 		local hit = Cursor.Hit(ctx.Cursor, exclude(state))
 		local item = state.Item
-		local out, message = Builders.Place(ctx.Settings, hit, if item then item.source else nil, state.Scale)
+		local out, placeMessage = Builders.Place(ctx.Settings, hit, if item then item.source else nil, state.Scale)
+		local message: string? = placeMessage
 
 		if not item then
 			out = {}
-			message = if reload(ctx, state) then "Click an object to add it to the brushes." else message
+			message = if reload(ctx, state) then "Click an object to add it to the brushes." else nil
 		end
 
 		if state.Stroke then

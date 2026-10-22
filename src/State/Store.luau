@@ -153,6 +153,19 @@ function Store.Set(self: Store, key: string, value: any)
 end
 
 --[=[
+	Writes one setting and updates its readers without saving, for a value that changes many times a
+	second, such as a slider being dragged. Call `Save` when it settles.
+
+	@param self Store
+	@param key string
+	@param value any
+]=]
+function Store.Hold(self: Store, key: string, value: any)
+	(self.Values :: any)[key] = value
+	sourceOf(self, key)(value)
+end
+
+--[=[
 	Puts every setting back to its default and saves.
 
 	@param self Store
