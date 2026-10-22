@@ -38,13 +38,13 @@ type StepButton = { Text: string, Width: number, Run: () -> (), Primary: boolean
 local new = Kit.New
 
 local ROW_HEIGHT = 34
-local AVATAR = 18
+local AVATAR = 27
 local AVATAR_GAP = 5
 local CHANGE_WIDTH = 30
 local GAP = 6
 
---[[ How far above the folder row the card's title line sits: its height plus the card's row gap. ]]
-local TITLE_LIFT = 26
+--[[ How far above the folder row the avatars start: the card's top (34 px up) plus about a third of an avatar, which overhangs the card's top edge on purpose. ]]
+local TITLE_LIFT = 42
 
 --[[
 	@param ui Ui
