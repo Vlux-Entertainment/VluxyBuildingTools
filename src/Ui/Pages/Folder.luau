@@ -60,16 +60,22 @@ return function(ui: Ui): Frame
 			Kit.Stroke(Theme.Accent),
 			Kit.New("UIPadding")({ PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
 		}),
-		Controls.Text(ui, function()
-			local conflict = state.Conflict()
+		Controls.Text(
+			ui,
+			function()
+				local conflict = state.Conflict()
 
-			return if conflict
-				then `This folder has different settings ({conflict}). Use the folder's, overwrite them with yours, or cancel?`
-				elseif state.Pending() then "Work in this folder?"
-				elseif state.Picking() then "Click a Folder in the viewport or select one."
-				elseif state.Folder() then "Working folder. Select it to outline it."
-				else "Press the button, then pick a Folder in Workspace."
-		end),
+				return if conflict
+					then `This folder's settings differ: {conflict}.`
+					elseif state.Pending() then "Work in this folder?"
+					elseif state.Picking() then "Click a Folder."
+					else ""
+			end,
+			nil,
+			function()
+				return state.Conflict() ~= nil or state.Pending() ~= nil or state.Picking()
+			end
+		),
 		Controls.Button(
 			ui,
 			function()

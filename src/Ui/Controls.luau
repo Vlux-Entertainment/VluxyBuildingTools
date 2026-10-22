@@ -82,12 +82,12 @@ end
 
 --[=[
 	@param ui Ui
-	@param title string? -- shown small and muted at the top
+	@param title string? -- shown small and muted at the top; hovering it shows its description from `Tips`
 	@param children { any }
 	@param visible Prop<boolean>?
 	@return Frame -- a rounded card holding rows
 ]=]
-function Controls.Card(_ui: Ui, title: string?, children: { any }, visible: Prop<boolean>?): Frame
+function Controls.Card(ui: Ui, title: string?, children: { any }, visible: Prop<boolean>?): Frame
 	return new("Frame")({
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
@@ -109,6 +109,7 @@ function Controls.Card(_ui: Ui, title: string?, children: { any }, visible: Prop
 				TextSize = 11,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = -1,
+				ui.Popups.Tip(Tips.Find(title)),
 			})
 			else nil,
 		children,

@@ -114,7 +114,7 @@ return function(ui: Ui): { Instance }
 	end
 
 	return {
-		Controls.Card(ui, "VIEWPORT DISPLAY", {
+		Controls.Card(ui, "VIEW", {
 			Controls.Switch(ui, { Title = "Camera light", Key = "CameraLight" }),
 			Controls.Number(ui, {
 				Key = "CameraLightRange",
@@ -166,10 +166,6 @@ return function(ui: Ui): { Instance }
 				Visible = state.GridOn,
 			}),
 			gridColor(ui, state.GridOn),
-			Controls.Text(
-				ui,
-				"Themes and the surface grid both change the Parts inside your working folder, so your team sees them and they are saved with the place. Each switch undoes itself completely, even after Studio was closed and reopened. Switch them off before publishing."
-			),
 		}),
 		Controls.Card(ui, "HIDDEN PARTS", {
 			Controls.Text(ui, function()
@@ -192,10 +188,6 @@ return function(ui: Ui): { Instance }
 			Controls.Button(ui, "Unhide all (Alt+H)", function()
 				Actions.UnhideAll(app)
 			end),
-			Controls.Text(
-				ui,
-				"Select parts and press H to hide them. Hiding is local to you: nothing in the place changes and nothing is saved."
-			),
 		}),
 	}
 end

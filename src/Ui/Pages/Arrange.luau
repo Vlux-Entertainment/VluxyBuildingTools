@@ -52,15 +52,10 @@ return function(ui: Ui): { Instance }
 	local relative, constant = setting("ArrayRelative"), setting("ArrayConstant")
 
 	return {
-		Controls.Card(ui, "FLIP SELECTION  (Ctrl+M, then X / Y / Z)", {
-			Controls.Text(ui, "Mirrors the selection in place, around its own centre."),
+		Controls.Card(ui, "FLIP", {
 			Controls.ButtonRow(ui, { flip("X"), flip("Y"), flip("Z") }),
 		}),
 		Controls.Card(ui, "ARRAY", {
-			Controls.Text(
-				ui,
-				"Like Blender's Array modifier: select objects and the copies show as a preview. Apply Array makes them."
-			),
 			Controls.Number(ui, {
 				Key = "ArrayCount",
 				Title = "Count",

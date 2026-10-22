@@ -2,7 +2,7 @@
 --# selene: allow(mixed_table)
 
 --[=[
-	The Hotkeys tab: every key binding from `Pure/Keymap`, and a few tips.
+	The Hotkeys tab: every key binding from `Pure/Keymap`.
 
 	@class HotkeysPage
 ]=]
@@ -15,13 +15,6 @@ local Theme = require("../Theme")
 type Ui = Controls.Ui
 
 local new = Kit.New
-
-local TIPS = {
-	"Draw tools: click the first point, move the mouse, then click again. The preview shows the size before you build.",
-	"Walls and corridors continue from the last point. Press Enter to begin somewhere else.",
-	"Door and arch openings replace a childless rectangular wall with separate Parts. Undo restores the original.",
-	"Every completed build supports Studio Undo and Redo. The plugin adds no scripts to your game.",
-}
 
 --[=[
 	@param ui Ui
@@ -54,14 +47,7 @@ return function(ui: Ui): { Instance }
 		)
 	end
 
-	local tips = {}
-
-	for _, tip in TIPS do
-		table.insert(tips, Controls.Text(ui, tip))
-	end
-
 	return {
 		Controls.Card(ui, "HOTKEYS", bindings),
-		Controls.Card(ui, "TIPS", tips),
 	}
 end

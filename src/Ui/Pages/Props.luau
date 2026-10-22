@@ -222,10 +222,6 @@ return function(ui: Ui): { Instance }
 
 	return {
 		Controls.Card(ui, "PROPS", {
-			Controls.Text(
-				ui,
-				"Pick a section, then a prop, then click a floor (or a wall for wall props) to place it. R turns it."
-			),
 			Controls.Switch(ui, { Title = "Collapse props after picking one", Key = "PropAutoCollapse" }),
 			Controls.Button(ui, "Reload prop pictures", function()
 				pictures(pictures() + 1)

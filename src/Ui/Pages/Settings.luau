@@ -56,10 +56,6 @@ return function(ui: Ui): { Instance }
 			}),
 		}),
 		Controls.Card(ui, "RESET", {
-			Controls.Text(
-				ui,
-				"Puts every number and switch on this panel back to its default. Your builds are not touched."
-			),
 			Controls.Button(ui, "Reset all settings", function()
 				Store.Reset(app.Store)
 				app.Say("Settings reset to the defaults.")

@@ -14,6 +14,7 @@ local Controls = require("../Controls")
 local Kit = require("../Kit")
 local Store = require("../../State/Store")
 local Theme = require("../Theme")
+local Tips = require("../../Pure/Tips")
 local Tools = require("../../Pure/Tools")
 local vide = require("../../Packages/vide")
 
@@ -185,10 +186,7 @@ local function brushList(ui: Ui, visible: () -> boolean): Frame
 		local out: { Instance } = {}
 
 		if #brushes == 0 then
-			local empty = Controls.Text(
-				ui,
-				"No brushes yet. With the brush on, click an object in the viewport to add it (hold Ctrl to add more), or select it and press Add selected to brushes. With none, the brush paints the current selection."
-			)
+			local empty = Controls.Text(ui, "No brushes yet.")
 
 			vide.cleanup(empty)
 			table.insert(out, empty)
@@ -310,12 +308,19 @@ return function(ui: Ui): { Instance }
 		table.insert(tiles, tile(ui, entry, index))
 	end
 
+	local howTo: Tips.Tip = { Text = "" }
+
+	vide.effect(function()
+		howTo.Text = Tools.Instruction(state.Mode())
+	end)
+
 	local header = Kit.Row(34, {
 		new("TextButton")({
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 			Text = "",
 			AutoButtonColor = false,
+			ui.Popups.Tip(howTo),
 			MouseButton1Click = function()
 				app.Sound("Click")
 				toolOpen(not toolOpen())
@@ -413,9 +418,6 @@ return function(ui: Ui): { Instance }
 		Controls.Card(ui, nil, {
 			header,
 			variants,
-			Controls.Text(ui, function()
-				return Tools.Instruction(state.Mode())
-			end, Theme.Muted, when(nil)),
 			number("Grid", "Grid Snap", 0.05, 128, 0.5, when(DRAW)),
 			number("FineGrid", "Precise Grid Snap", 0.05, 128, 0.25, when(DRAW)),
 			number("Height", "Height", 0.1, 2048, nil, when(HEIGHT)),
