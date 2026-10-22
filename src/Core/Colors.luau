@@ -63,58 +63,17 @@ local Colors = {}
 Colors.Themes = Settings.Themes
 
 --[[
-	@param name string -- a part's name
-	@param words { string }
-	@return boolean -- whether the lowercase name contains any of the words
-]]
-local function named(name: string, words: { string }): boolean
-	local lower = string.lower(name)
-
-	for _, word in words do
-		if string.find(lower, word, 1, true) then
-			return true
-		end
-	end
-
-	return false
-end
-
---[[
 	@param part BasePart
-	@return Color3 -- orange for a cube or rectangular block, dark grey for a thin plane or a pipe (see `ShapeClass`)
-]]
-local function shapeColor(part: BasePart): Color3
-	local size = part.Size
-
-	return if ShapeClass.Of(size.X, size.Y, size.Z) == "Block" then ORANGE else GREY
-end
-
---[[
-	@param part BasePart
-	@return Color3 -- the Unity theme color: shape decides it, a prop's accent parts take the opposite color, ceilings and roofs are lighter grey, vents have their own colors
+	@return Color3 -- the Unity theme color: grey by default; orange only for a cube or rectangular block (see `ShapeClass`). See-through parts are purple before this is asked.
 ]]
 local function unityColor(part: BasePart): Color3
-	local name = part.Name
+	local size = part.Size
 
-	if named(name, { "prop" }) then
-		local base = shapeColor(part)
-
-		if named(name, { "propaccent" }) then
-			return if base == ORANGE then GREY else ORANGE
-		end
-
-		return base
-	elseif named(name, { "ceiling", "roof", "arched" }) then
-		return GREY_LIGHT
-	elseif named(name, { "ventwall" }) then
-		return GREY
-	elseif named(name, { "ventceiling" }) then
-		return GREY_LIGHT
-	elseif named(name, { "vent" }) then
-		return if named(name, { "floor", "duct" }) then ORANGE_DARK else ORANGE
+	if ShapeClass.Of(size.X, size.Y, size.Z) == "Block" then
+		return ORANGE
 	end
 
-	return shapeColor(part)
+	return GREY
 end
 
 --[[
