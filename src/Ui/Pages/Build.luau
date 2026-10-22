@@ -451,9 +451,9 @@ return function(ui: Ui): { Instance }
 			number("FrameDepth", "Frame depth", 0.05, 64, nil, when(door, false, setting("DoorFrame"))),
 			Controls.Switch(ui, { Title = "Door", Key = "DoorPanel", Visible = when(door) }),
 			number("DoorThickness", "Door thickness", 0.05, 8, nil, when(door, false, setting("DoorPanel"))),
-			number("DoorTransparency", "Door transparency", 0, 1, 0.1, when(door, false, setting("DoorPanel"))),
+			Controls.Slider(ui, "DoorTransparency", "Door transparency", when(door, false, setting("DoorPanel"))),
 			Controls.Switch(ui, {
-				Title = "Door blocks movement",
+				Title = "Door CanCollide",
 				Key = "DoorCollide",
 				Visible = when(door, false, setting("DoorPanel")),
 			}),
