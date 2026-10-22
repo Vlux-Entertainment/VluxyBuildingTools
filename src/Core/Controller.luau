@@ -1332,7 +1332,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 					peekCut = {
 						cf = frame * CFrame.new(0, 0, 0.1 - depth / 2),
-						size = Vector3.new(2.4 - 0.5, 0.9 - 0.4, depth),
+						size = Vector3.new(2.4 - 0.5, Builders.PEEK_HEIGHT - 0.4, depth),
 						cylinder = false,
 					}
 				elseif endPoint and outward then

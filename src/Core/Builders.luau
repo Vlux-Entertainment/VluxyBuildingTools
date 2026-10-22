@@ -1525,6 +1525,21 @@ local function ductFrame(a: Vector3, b: Vector3): CFrame?
 	return CFrame.fromMatrix((a + b) * 0.5, right, up, -dir)
 end
 
+--[[
+	@return CFrame -- a frame looking along the duct for the cuts at its ends: a sloped duct gets an upright one that looks along its horizontal direction, so the hole it cuts is not tilted
+]]
+local function ductEndFrame(a: Vector3, b: Vector3): CFrame
+	local d = b - a
+
+	if math.abs(d.Unit.Y) > 0.99 then
+		return ductFrame(a, b) :: CFrame
+	end
+
+	local flat = Vector3.new(d.X, 0, d.Z).Unit
+
+	return CFrame.lookAt((a + b) * 0.5, (a + b) * 0.5 + flat)
+end
+
 --[=[
 	A straight vent in any direction, for slopes and vertical shafts. The points are on the middle
 	line of the duct.
@@ -1620,8 +1635,11 @@ function Builders.VentCutters(settings: Settings, a: Vector3, b: Vector3): { Cut
 	table.insert(cutters, { cf = frame, size = Vector3.new(w - 0.04, w - 0.04, length), cylinder = false })
 
 	for _, side in { -1, 1 } do
+		local endPoint = if side == 1 then b else a
+		local level = ductEndFrame(a, b)
+
 		table.insert(cutters, {
-			cf = frame * CFrame.new(0, 0, side * length / 2),
+			cf = level + (endPoint - level.Position),
 			size = Vector3.new(inner, inner, 2.5),
 			cylinder = false,
 		})
@@ -1648,13 +1666,15 @@ function Builders.VentJoinCutters(settings: Settings, a: Vector3, b: Vector3): {
 	end
 
 	local w, t = settings.VentSize, settings.VentThickness
-	local length = (b - a).Magnitude
 	local inner = math.max(0.05, w - 2 * t)
 	local reach = w / 2 + 0.4
 
 	for _, side in { -1, 1 } do
+		local endPoint = if side == 1 then b else a
+		local level = ductEndFrame(a, b)
+
 		table.insert(cutters, {
-			cf = frame * CFrame.new(0, 0, side * (length / 2 + reach / 2 - 0.1)),
+			cf = level + level.LookVector * side * (reach / 2 - 0.1) + (endPoint - level.Position),
 			size = Vector3.new(inner, inner, reach),
 			cylinder = false,
 		})
@@ -1771,10 +1791,12 @@ end
 	@param normal Vector3
 	@return { Spec }
 ]=]
+Builders.PEEK_HEIGHT = 1.35
+
 function Builders.VentPeek(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
 	local frame = surfaceFrame(center, normal)
-	local width, height, bar, depth = 2.4, 0.9, 0.12, 0.12
+	local width, height, bar, depth = 2.4, Builders.PEEK_HEIGHT, 0.12, 0.12
 	local halfH, halfW = height / 2 - bar / 2, width / 2 - bar / 2
 
 	add(out, Vector3.new(width, bar, depth), frame * CFrame.new(0, halfH, 0), "VentPeekFrame")
@@ -1782,7 +1804,7 @@ function Builders.VentPeek(settings: Settings, center: Vector3, normal: Vector3)
 	add(out, Vector3.new(bar, height - 2 * bar, depth), frame * CFrame.new(halfW, 0, 0), "VentPeekFrame")
 	add(out, Vector3.new(bar, height - 2 * bar, depth), frame * CFrame.new(-halfW, 0, 0), "VentPeekFrame")
 
-	for _, y in { -0.18, 0.18 } do
+	for _, y in { -0.27, 0, 0.27 } do
 		add(
 			out,
 			Vector3.new(width - 2 * bar, 0.07, depth * 1.5),
