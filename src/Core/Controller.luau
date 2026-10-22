@@ -15,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Arrange = require("./Arrange")
 local AxisLock = require("../Pure/AxisLock")
+local Brushes = require("./Brushes")
 local Builders = require("./Builders")
 local Colors = require("./Colors")
 local Geometry = require("./Geometry")
@@ -34,6 +35,8 @@ local Transform = require("./Transform")
 local Trove = require("../Packages/Trove")
 
 type Spec = Geometry.Spec
+
+type BrushItem = { roots: { Instance }, source: Builders.Source }
 
 type Face = {
 	part: BasePart,
@@ -169,7 +172,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local cutSpot: Vector3? = nil
 	local brushing = false
 	local brushLast: Vector3? = nil
-	local brushTargets: { CFrame } = {}
+	local brushTargets: { { cf: CFrame, item: BrushItem, scale: number } } = {}
+	local brushPool: { BrushItem } = {}
+	local brushItem: BrushItem? = nil
+	local brushScale = 1
 	local brushSpecs: { Spec } = {}
 	local quiet = false
 	local lockedHit: RaycastResult? = nil
@@ -498,15 +504,89 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--[[
+		@return string? -- why the brush has nothing to paint with, or nil when the pool is ready
+
+		Fills the pool from the brushes that are switched on, or from the selection when there are none.
+	]]
+	local function buildBrushPool(): string?
+		local sets: { { Instance } } = {}
+
+		for _, entry in Brushes.Enabled() do
+			table.insert(sets, { entry })
+		end
+
+		if #sets == 0 then
+			local roots = Geometry.SelectedRoots()
+
+			if #roots > 0 then
+				table.insert(sets, roots)
+			end
+		end
+
+		if #sets == 0 then
+			return "Add something to the brushes first: select it, then press Add selected to brushes."
+		end
+
+		local pool: { BrushItem } = {}
+
+		for _, roots in sets do
+			local parts = Geometry.PartsOf(roots)
+
+			if #parts > MAX_STAMP_PARTS then
+				return "A brush supports up to 600 Parts."
+			end
+
+			for _, root in roots do
+				if not root.Archivable then
+					return "Enable Archivable on each brush object before painting."
+				end
+			end
+
+			if #parts > 0 then
+				local pivot, size = Geometry.Bounds(parts)
+
+				table.insert(pool, { roots = roots, source = { Parts = parts, Pivot = pivot, Size = size } })
+			end
+		end
+
+		if #pool == 0 then
+			return "Those objects have no Parts to paint with."
+		end
+
+		brushPool = pool
+
+		return nil
+	end
+
+	--[[
+		Chooses which brush and what size the next copy will be, so the preview shows it.
+	]]
+	local function rollBrush()
+		local item = brushPool[math.random(1, math.max(1, #brushPool))]
+
+		if not item then
+			return
+		end
+
+		local low = math.max(0.05, math.min(settings.BrushSizeMin, settings.BrushSizeMax))
+		local high = math.max(low, settings.BrushSizeMax)
+
+		brushItem = item
+		source = item.source
+		sourceRoots = item.roots
+		brushScale = low + math.random() * (high - low)
+	end
+
+	--[[
 		@param hit RaycastResult -- the surface the brush is over
 
 		Adds one copy to the stroke: the first right under the cursor, the rest scattered within the brush radius.
 	]]
 	local function brushStep(hit: RaycastResult)
-		local pivot = source
+		local pivot, item = source, brushItem
 		local spot, normal = hit.Position, hit.Normal
 
-		if not pivot then
+		if not pivot or not item then
 			return
 		end
 
@@ -533,33 +613,55 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		brushLast = hit.Position
 
 		local yaw = if settings.BrushRandomYaw then math.random() * 360 else settings.Yaw
-		local specs, target = Builders.PlaceAt(settings, spot, normal, pivot, yaw)
+		local specs, target = Builders.PlaceAt(settings, spot, normal, pivot, yaw, brushScale)
 
-		table.insert(brushTargets, target)
+		table.insert(brushTargets, { cf = target, item = item, scale = brushScale })
 
 		for _, spec in specs do
 			table.insert(brushSpecs, spec)
 		end
+
+		rollBrush()
 	end
 
 	--[[
 		Makes every copy of the stroke as one undo step and clears the stroke.
 	]]
 	local function finishBrush()
-		local targets, pivot = brushTargets, source
+		local targets = brushTargets
 
 		brushing, brushLast, brushTargets, brushSpecs = false, nil, {}, {}
 		Overlay.ClearGhosts(overlay)
 
-		if #targets == 0 or not pivot then
+		if #targets == 0 then
 			return
 		end
 
 		edit("Brush copies", function()
-			for _, target in targets do
-				Arrange.CloneRoots(sourceRoots, function(cf)
-					return target * pivot.Pivot:ToObjectSpace(cf)
-				end)
+			local parent = Geometry.GetScope() or workspace
+
+			for _, stamp in targets do
+				local pivot = stamp.item.source.Pivot
+
+				for _, root in stamp.item.roots do
+					local copy = root:Clone()
+
+					if copy then
+						if stamp.scale ~= 1 then
+							if copy:IsA("Model") then
+								copy:ScaleTo(stamp.scale)
+							elseif copy:IsA("BasePart") then
+								copy.Size *= stamp.scale
+							end
+						end
+
+						local relative = pivot:ToObjectSpace((root :: any):GetPivot())
+						local scaled = CFrame.new(relative.Position * stamp.scale) * (relative - relative.Position)
+
+						copy.Parent = parent;
+						(copy :: any):PivotTo(stamp.cf * scaled)
+					end
+				end
 			end
 		end)
 	end
@@ -986,7 +1088,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		elseif mode == "Place" then
 			local hit = hitSurface()
 
-			out, message = Builders.Place(settings, hit, source)
+			out, message = Builders.Place(settings, hit, source, brushScale)
 
 			if brushing then
 				if not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
@@ -1540,25 +1642,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		if name == "Place" then
-			local roots = Geometry.SelectedRoots()
-			local parts = Geometry.PartsOf(roots)
+			local problem = buildBrushPool()
 
-			if #parts == 0 then
-				return say("Select an object first, then choose Brush.")
-			elseif #parts > MAX_STAMP_PARTS then
-				return say("Stamp copies supports up to 600 Parts in the source selection.")
+			if problem then
+				return say(problem)
 			end
 
-			for _, root in roots do
-				if not root.Archivable then
-					return say("Enable Archivable on each selected root before copying.")
-				end
-			end
-
-			local pivot, size = Geometry.Bounds(parts)
-
-			sourceRoots = roots
-			source = { Parts = parts, Pivot = pivot, Size = size }
+			rollBrush()
 		end
 
 		mode = name
@@ -2123,6 +2213,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				stop()
 			end,
 			ResetPoint = resetPoint,
+			BrushesChanged = function()
+				if mode == "Place" and buildBrushPool() == nil then
+					rollBrush()
+				end
+			end,
 			UseSelectedFloor = guarded(arrange.UseSelectedFloor),
 			RepeatCopies = guarded(arrange.RepeatCopies),
 			SnapSelection = guarded(arrange.SnapSelection),

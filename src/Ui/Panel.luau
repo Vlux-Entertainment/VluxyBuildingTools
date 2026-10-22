@@ -8,6 +8,7 @@
 	@class Panel
 ]=]
 
+local Brushes = require("../Core/Brushes")
 local Colors = require("../Core/Colors")
 local Hidden = require("../Core/Hidden")
 local Keymap = require("../Pure/Keymap")
@@ -24,6 +25,7 @@ export type Actions = {
 	SetMode: (name: string) -> (),
 	Stop: () -> (),
 	ResetPoint: () -> (),
+	BrushesChanged: () -> (),
 	UseSelectedFloor: () -> (),
 	RepeatCopies: () -> (),
 	SnapSelection: () -> (),
@@ -1155,12 +1157,120 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 	numeric(scope, "BrushRadius", "Brush radius", 0, 200, 1, body({ Place = true }))
 	numeric(scope, "BrushSpacing", "Brush spacing", 0.5, 100, 0.5, body({ Place = true }))
+	numeric(scope, "BrushSizeMin", "Smallest size (x)", 0.05, 20, 0.1, body({ Place = true }))
+	numeric(scope, "BrushSizeMax", "Biggest size (x)", 0.05, 20, 0.1, body({ Place = true }))
 	switch(scope, "Random rotation", function()
 		return settings.BrushRandomYaw
 	end, function(on)
 		settings.BrushRandomYaw = on
 		deps.Save()
 	end, body({ Place = true }))
+
+	do
+		local list = make("Frame", {
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = nextOrder(),
+		}, scope)
+
+		make("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, list)
+		register(list, body({ Place = true }))
+
+		local shown = ""
+
+		local function rebuild()
+			local entries = Brushes.List()
+			local key = ""
+
+			for _, entry in entries do
+				key ..= entry.Name .. (if Brushes.IsOn(entry) then "+" else "-") .. "|"
+			end
+
+			if key == shown then
+				return
+			end
+
+			shown = key
+
+			for _, child in list:GetChildren() do
+				if child:IsA("GuiObject") then
+					child:Destroy()
+				end
+			end
+
+			if #entries == 0 then
+				make("TextLabel", {
+					Size = UDim2.new(1, 0, 0, 30),
+					BackgroundTransparency = 1,
+					Text = "No brushes yet. Select something and press Add selected to brushes. With none, the brush paints the current selection.",
+					TextColor3 = MUTED,
+					Font = Enum.Font.Gotham,
+					TextSize = 12,
+					TextWrapped = true,
+					AutomaticSize = Enum.AutomaticSize.Y,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}, list)
+			end
+
+			for index, entry in entries do
+				local row = make("Frame", {
+					Size = UDim2.new(1, 0, 0, 28),
+					BackgroundTransparency = 1,
+					LayoutOrder = index,
+				}, list)
+				local on = Brushes.IsOn(entry)
+				local pick = make("TextButton", {
+					Size = UDim2.new(1, -34, 1, 0),
+					BackgroundColor3 = if on then ACCENT else TILE,
+					BorderSizePixel = 0,
+					Text = entry.Name,
+					TextColor3 = if on then BACKGROUND else MUTED,
+					Font = Enum.Font.GothamMedium,
+					TextSize = 12,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+				}, row)
+				local remove = make("TextButton", {
+					Size = UDim2.fromOffset(28, 28),
+					Position = UDim2.new(1, -28, 0, 0),
+					BackgroundColor3 = TILE,
+					BorderSizePixel = 0,
+					Text = "✕",
+					TextColor3 = TEXT,
+					Font = Enum.Font.GothamMedium,
+					TextSize = 12,
+				}, row)
+
+				style(pick, 6, CARD_STROKE)
+				style(remove, 6, CARD_STROKE)
+				attachTip(
+					pick,
+					{ Text = "Click to switch this brush on or off. Every brush that is on is painted at random." }
+				)
+				attachTip(remove, { Text = "Remove this brush from the list." })
+				pick.MouseButton1Click:Connect(function()
+					Brushes.Toggle(entry)
+					deps.Actions.BrushesChanged()
+					refresh()
+				end)
+				remove.MouseButton1Click:Connect(function()
+					Brushes.Remove(entry)
+					deps.Actions.BrushesChanged()
+					refresh()
+				end)
+			end
+		end
+
+		table.insert(refreshers, rebuild)
+	end
+
+	button(scope, "Add selected to brushes", function()
+		local _, message = Brushes.AddSelected()
+
+		deps.Actions.BrushesChanged()
+		say(message)
+		refresh()
+	end, true, body({ Place = true }))
 
 	button(
 		scope,

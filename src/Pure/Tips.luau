@@ -130,6 +130,8 @@ Tips.Entries = {
 	WindowSill = { Text = "How far the bottom of the window is above the bottom of the wall." },
 	Yaw = { Text = "How much to turn painted copies.", Key = "R" },
 	BrushRadius = { Text = "How far from the cursor the brush scatters copies, in studs." },
+	BrushSizeMin = { Text = "The smallest a painted copy can be, as a multiple of the original size." },
+	BrushSizeMax = { Text = "The biggest a painted copy can be, as a multiple of the original size." },
 	BrushSpacing = { Text = "How far the cursor travels before the brush adds the next copy, in studs." },
 	CameraLightRange = { Text = "How far the light on the editor camera reaches." },
 	CameraLightBrightness = { Text = "How bright the light on the editor camera is." },

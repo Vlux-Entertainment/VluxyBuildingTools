@@ -1452,7 +1452,12 @@ end
 	@return string -- what to tell the user
 	@return CFrame? -- where the source's pivot lands
 ]=]
-function Builders.Place(settings: Settings, hit: RaycastResult?, source: Source?): ({ Spec }, string, CFrame?)
+function Builders.Place(
+	settings: Settings,
+	hit: RaycastResult?,
+	source: Source?,
+	scale: number?
+): ({ Spec }, string, CFrame?)
 	local out: { Spec } = {}
 
 	if not hit or not source then
@@ -1460,12 +1465,12 @@ function Builders.Place(settings: Settings, hit: RaycastResult?, source: Source?
 	end
 
 	for _, part in source.Parts do
-		if not part:IsDescendantOf(workspace) then
+		if not part:IsDescendantOf(game) then
 			return out, "Selection changed or was removed. Choose Brush again.", nil
 		end
 	end
 
-	local specs, target = Builders.PlaceAt(settings, hit.Position, hit.Normal, source, settings.Yaw)
+	local specs, target = Builders.PlaceAt(settings, hit.Position, hit.Normal, source, settings.Yaw, scale)
 
 	return specs, "Click or drag to paint copies onto surfaces. Radius, spacing and rotation are in the panel.", target
 end
@@ -1478,6 +1483,7 @@ end
 	@param normal Vector3 -- which way the surface faces
 	@param source Source
 	@param yaw number -- turn about the surface normal, in degrees
+	@param scale number? -- how much bigger or smaller than the original, 1 when left out
 	@return { Spec }
 	@return CFrame -- where the source's pivot lands
 ]=]
@@ -1486,9 +1492,11 @@ function Builders.PlaceAt(
 	position: Vector3,
 	normal: Vector3,
 	source: Source,
-	yaw: number
+	yaw: number,
+	scale: number?
 ): ({ Spec }, CFrame)
 	local out: { Spec } = {}
+	local grow = scale or 1
 	local rot = CFrame.Angles(0, math.rad(yaw), 0)
 
 	if settings.Align then
@@ -1503,11 +1511,16 @@ function Builders.PlaceAt(
 		math.abs(normal:Dot(rot.RightVector)) * source.Size.X
 		+ math.abs(normal:Dot(rot.UpVector)) * source.Size.Y
 		+ math.abs(normal:Dot(rot.LookVector)) * source.Size.Z
-	) / 2
+	)
+		/ 2
+		* grow
 	local target = CFrame.new(position + normal * (radius + settings.Offset)) * rot
 
 	for _, part in source.Parts do
-		add(out, part.Size, target * source.Pivot:ToObjectSpace(part.CFrame), part.Name)
+		local relative = source.Pivot:ToObjectSpace(part.CFrame)
+		local scaled = CFrame.new(relative.Position * grow) * (relative - relative.Position)
+
+		add(out, part.Size * grow, target * scaled, part.Name)
 	end
 
 	return out, target
