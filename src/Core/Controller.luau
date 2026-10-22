@@ -1585,6 +1585,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 			out, message = Builders.Place(settings, hit, source, brushScale)
 
+			if not source then
+				local problem = buildBrushPool()
+
+				out = {}
+				message = problem
+
+				if not problem then
+					rollBrush()
+				end
+			end
+
 			if brushing then
 				if not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
 					finishBrush()
@@ -2259,10 +2270,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local problem = buildBrushPool()
 
 			if problem then
-				return say(problem)
+				brushPool, brushItem, source, sourceRoots = {}, nil, nil, {}
+			else
+				rollBrush()
 			end
-
-			rollBrush()
 		end
 
 		mode = name
@@ -3002,8 +3013,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end,
 			ResetPoint = resetPoint,
 			BrushesChanged = function()
-				if mode == "Place" and buildBrushPool() == nil then
-					rollBrush()
+				if mode == "Place" then
+					if buildBrushPool() == nil then
+						rollBrush()
+					else
+						brushPool, brushItem, source, sourceRoots = {}, nil, nil, {}
+					end
 				end
 			end,
 			UseSelectedFloor = guarded(arrange.UseSelectedFloor),
