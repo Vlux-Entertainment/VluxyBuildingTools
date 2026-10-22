@@ -112,7 +112,7 @@ function Keymap.Describe(): { { string } }
 			"Step to the previous or next option inside the current tool. The camera does not zoom while you do",
 		},
 		{ "F1", "Open this Hotkeys tab" },
-		{ "P", "Pastel colors on or off" },
+		{ "P", "Themes on or off" },
 		{ "L", "Surface grid on or off" },
 		{ "N", "Show or hide the panel" },
 		{ "Ctrl+M, then X / Y / Z", "Flip (mirror) the selection in place across that axis" },

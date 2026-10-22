@@ -1,9 +1,9 @@
 --!strict
 
 --[=[
-	The reversible pastel toggle. It gives every Part a pastel color and remembers the original in an
-	attribute, so the colors survive a crash and can always be restored. The attribute names match
-	the old standalone Greybox plugin on purpose.
+	The reversible color theme toggle. It gives every Part a color from the picked theme and
+	remembers the original in an attribute, so the colors survive a crash and can always be restored.
+	The attribute names match the old standalone Greybox plugin on purpose.
 
 	@class Colors
 ]=]
@@ -14,6 +14,7 @@ local RunService = game:GetService("RunService")
 local PartRole = require("../Pure/PartRole")
 local Settings = require("../Pure/Settings")
 local ShapeClass = require("../Pure/ShapeClass")
+local ThemeColors = require("../Pure/ThemeColors")
 local Trove = require("../Packages/Trove")
 
 export type Colors = {
@@ -27,6 +28,7 @@ export type Colors = {
 	_stop: () -> (),
 	_scope: () -> Instance?,
 	_theme: () -> string,
+	_level: () -> (number, number),
 	_switching: boolean,
 }
 
@@ -52,6 +54,7 @@ local ORANGE_DARK = Color3.fromRGB(214, 108, 20)
 local GREY = Color3.fromRGB(52, 54, 60)
 local GREY_LIGHT = Color3.fromRGB(80, 83, 90)
 local PURPLE = Color3.fromRGB(150, 110, 205)
+local GROUP = "VluxyBT_GroupColor"
 
 local Colors = {}
 
@@ -94,6 +97,65 @@ local function isUnityColor(color: Color3): boolean
 end
 
 --[[
+	@param rgb { number }
+	@return Color3
+]]
+local function fromRgb(rgb: { number }): Color3
+	return Color3.fromRGB(rgb[1], rgb[2], rgb[3])
+end
+
+--[[
+	@param self Colors
+	@param part BasePart
+	@return Color3 -- the Structures theme color: the structure is the part's ancestor right under the working folder, or the part itself, and it keeps the color it was first given
+]]
+local function groupColor(self: Colors, part: BasePart): Color3
+	local scope = self._scope()
+	local holder: Instance = part
+
+	while scope and holder.Parent and holder.Parent ~= scope and holder.Parent:IsDescendantOf(scope) do
+		holder = holder.Parent
+	end
+
+	local index = holder:GetAttribute(GROUP)
+
+	if type(index) ~= "number" then
+		index = self._random:NextInteger(1, #ThemeColors.GroupColors)
+		holder:SetAttribute(GROUP, index)
+	end
+
+	return fromRgb(ThemeColors.Group(index :: number))
+end
+
+--[[
+	@param self Colors
+	@param part BasePart
+	@return Color3? -- the color one of the place-reading themes (Levels, Structures, Facing, Size) gives the part, or nil for another theme
+]]
+local function ruleColor(self: Colors, part: BasePart): Color3?
+	local theme = self._theme()
+	local cf, size = part.CFrame, part.Size
+	local sizes = { size.X, size.Y, size.Z }
+
+	if theme == "Levels" then
+		local pitch, below = self._level()
+
+		return fromRgb(ThemeColors.Level(cf.Position.Y, pitch, below))
+	elseif theme == "Structures" then
+		return groupColor(self, part)
+	elseif theme == "Facing" then
+		local ups = { cf.RightVector.Y, cf.UpVector.Y, -cf.LookVector.Y }
+		local easts = { cf.RightVector.X, cf.UpVector.X, -cf.LookVector.X }
+
+		return fromRgb(ThemeColors.Facing(sizes, ups, easts))
+	elseif theme == "Size" then
+		return fromRgb(ThemeColors.Size(sizes))
+	end
+
+	return nil
+end
+
+--[[
 	@param self Colors
 	@param part BasePart
 	@return Color3 -- the color the current theme gives the part; a part that is partly see-through is purple in every theme
@@ -105,6 +167,12 @@ local function themed(self: Colors, part: BasePart): Color3
 
 	if self._theme() == "Unity" then
 		return unityColor(part)
+	end
+
+	local rule = ruleColor(self, part)
+
+	if rule then
+		return rule
 	end
 
 	local holder = part.Parent
@@ -164,6 +232,10 @@ local function restore(part: BasePart)
 		part.UsePartColor = union
 		part:SetAttribute(UNION, nil)
 	end
+
+	if part:GetAttribute(GROUP) ~= nil then
+		part:SetAttribute(GROUP, nil)
+	end
 end
 
 --[=[
@@ -182,6 +254,7 @@ function Colors.new(
 		GetScope: () -> Instance?,
 		Remember: ((boolean) -> ())?,
 		GetTheme: () -> string,
+		GetLevel: () -> (number, number),
 	},
 	trove: Trove.Trove
 ): Colors
@@ -196,6 +269,7 @@ function Colors.new(
 		_stop = deps.Stop,
 		_scope = deps.GetScope,
 		_theme = deps.GetTheme,
+		_level = deps.GetLevel,
 		_switching = false,
 	}
 
@@ -285,13 +359,13 @@ function Colors.Sweep(self: Colors)
 		return
 	end
 
-	local unity = self._theme() == "Unity"
+	local ruled = self._theme() ~= "Pastel"
 
 	for _, part in scope:GetDescendants() do
 		if part:IsA("BasePart") then
 			if typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
 				apply(self, part)
-			elseif unity then
+			elseif ruled then
 				local want = themed(self, part)
 
 				if part.Color ~= want then
@@ -326,7 +400,7 @@ function Colors.Retheme(self: Colors)
 end
 
 --[=[
-	Turns the pastel colors on or off as one undoable edit.
+	Turns the theme colors on or off as one undoable edit.
 
 	@param self Colors
 	@param value boolean
@@ -335,13 +409,13 @@ function Colors.Set(self: Colors, value: boolean)
 	local scope = self._scope()
 
 	if value and not scope then
-		return self._say("Pick a working folder first. Pastel colors only recolors Parts inside it.")
+		return self._say("Pick a working folder first. Themes only recolor Parts inside it.")
 	end
 
 	self._stop()
 	self._switching = true
 
-	local ok = self._edit(if value then "Show pastel colors" else "Restore original colors", function()
+	local ok = self._edit(if value then "Show theme colors" else "Restore original colors", function()
 		if value then
 			workspace:SetAttribute(ACTIVE, true)
 
@@ -378,8 +452,8 @@ function Colors.Set(self: Colors, value: boolean)
 		self._refresh()
 		self._say(
 			if value
-				then "Pastel colors ON. Click again to restore originals. Your teammates see these colors too."
-				else "Pastel colors OFF. Original colors restored."
+				then "Themes ON. Click again to restore originals. Your teammates see these colors too."
+				else "Themes OFF. Original colors restored."
 		)
 	end
 end

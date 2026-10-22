@@ -19,7 +19,7 @@ Tips.Entries = {
 	-- Tabs
 	Build = { Text = "Pick a building tool and set its numbers.", Key = "Tab" },
 	Arrange = { Text = "Copy, flip, rotate and snap what you have selected.", Key = "Tab" },
-	Display = { Text = "Pastel colors, the surface grid and hidden parts.", Key = "Tab" },
+	Display = { Text = "Color themes, the surface grid and hidden parts.", Key = "Tab" },
 	Settings = { Text = "Snap size, hotkeys and resetting the panel.", Key = "Tab" },
 	Hotkeys = { Text = "Every hotkey, explained.", Key = "F1" },
 
@@ -27,12 +27,12 @@ Tips.Entries = {
 	["Choose working folder"] = {
 		Text = "Then click a Folder in the viewport, or select one in the Explorer. The plugin only works inside the Folder you confirm.",
 	},
-	["Change working folder"] = { Text = "Pick a different Folder to work in. Pastel colors is switched off first." },
+	["Change working folder"] = { Text = "Pick a different Folder to work in. Themes are switched off first." },
 	Yes = {
 		Text = "The plugin may build, move, rotate, recolor and delete Parts inside this Folder. Nothing outside it is changed.",
 	},
 	["Use folder's"] = {
-		Text = "Takes the settings saved on this folder (theme, ghost transparency, pastel, grid) as your own, then starts working in it.",
+		Text = "Takes the settings saved on this folder (theme, ghost transparency, themes on or off, grid) as your own, then starts working in it.",
 	},
 	Overwrite = {
 		Text = "Starts working in this folder and saves your settings onto it, replacing the ones it had. Everyone who uses the folder gets yours.",
@@ -40,8 +40,8 @@ Tips.Entries = {
 	Cancel = { Text = "Do not change the working folder.", Key = "Esc" },
 
 	-- Switches
-	["Pastel colors"] = {
-		Text = "Gives every Part in the working folder a random pastel color. Saved with the place and visible to your team. Switching it off restores each original color.",
+	Themes = {
+		Text = "Colors every Part in the working folder by the theme picked below. Saved with the place and visible to your team. Switching it off restores each original color.",
 		Key = "P",
 	},
 	["Surface grid"] = {

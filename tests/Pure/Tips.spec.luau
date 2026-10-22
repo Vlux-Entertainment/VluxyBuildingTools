@@ -17,7 +17,7 @@ return {
 	end,
 
 	["finds a tip by label"] = function(expect)
-		expect.equal((Tips.Find("Pastel colors") :: Tips.Tip).Key, "P")
+		expect.equal((Tips.Find("Themes") :: Tips.Tip).Key, "P")
 		expect.falsy(Tips.Find("No such control"))
 	end,
 }

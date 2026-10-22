@@ -78,6 +78,9 @@ function Display.new(deps: Deps, trove: Trove.Trove): Display
 			GetTheme = function()
 				return Display.Theme(self)
 			end,
+			GetLevel = function()
+				return settings.StandardHeight + 2 * settings.Floor, settings.Floor
+			end,
 			Remember = remember("AutoPastel"),
 			GetScope = Geometry.GetScope,
 			Edit = deps.Edit,
