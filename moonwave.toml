@@ -14,7 +14,7 @@ classes = ["Store", "AppState"]
 
 [[classOrder]]
 section = "Services"
-classes = ["Edit", "Display", "WorkingFolder", "Cursor", "CameraLight", "Status", "Admin"]
+classes = ["Edit", "Display", "WorkingFolder", "Cursor", "CameraLight", "Status", "Admin", "EditSounds"]
 
 [[classOrder]]
 section = "Tools"

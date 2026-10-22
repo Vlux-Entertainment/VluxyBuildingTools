@@ -3,6 +3,13 @@
 local ShapeClass = require("../../src/Pure/ShapeClass")
 
 return {
+	["a slab lying flat is a floor, a standing one a wall"] = function(expect)
+		expect.truthy(ShapeClass.LiesFlat({ 24, 1, 24 }, { 0, 1, 0 }), "floor")
+		expect.truthy(ShapeClass.LiesFlat({ 1, 24, 24 }, { 1, 0, 0 }), "floor lying on its side")
+		expect.falsy(ShapeClass.LiesFlat({ 24, 12, 1 }, { 0, 1, 0 }), "wall along X")
+		expect.falsy(ShapeClass.LiesFlat({ 1, 12, 24 }, { 0, 1, 0 }), "wall along Z")
+	end,
+
 	["cubes and chunky boxes are blocks"] = function(expect)
 		expect.equal(ShapeClass.Of(4, 4, 4), "Block")
 		expect.equal(ShapeClass.Of(4, 2, 8), "Block")

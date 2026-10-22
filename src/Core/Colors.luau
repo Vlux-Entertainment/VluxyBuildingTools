@@ -68,7 +68,7 @@ Colors.Themes = Settings.Themes
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color. Walls (everything Basic and Additive make but floors) are grey and floors, ceilings and stairs orange, whatever their shape (see `PartRole`); any other part is grey unless it is a cube or rectangular block, which is orange (see `ShapeClass`). See-through parts are purple before this is asked.
+	@return Color3 -- the Unity theme color. Walls are grey and floors, ceilings and stairs orange: by name for what the plugin builds (see `PartRole`), and by shape for anything else, where a thin slab lying flat is a floor or ceiling, a standing one a wall, a chunky block orange and a beam or post grey (see `ShapeClass`). See-through parts are purple before this is asked.
 ]]
 local function unityColor(part: BasePart): Color3
 	local role = PartRole.Of(part.Name)
@@ -79,10 +79,18 @@ local function unityColor(part: BasePart): Color3
 		return ORANGE
 	end
 
-	local size = part.Size
+	local size, cf = part.Size, part.CFrame
+	local kind = ShapeClass.Of(size.X, size.Y, size.Z)
 
-	if ShapeClass.Of(size.X, size.Y, size.Z) == "Block" then
+	if kind == "Block" then
 		return ORANGE
+	elseif kind == "Plane" then
+		local flat = ShapeClass.LiesFlat(
+			{ size.X, size.Y, size.Z },
+			{ cf.RightVector.Y, cf.UpVector.Y, -cf.LookVector.Y }
+		)
+
+		return if flat then ORANGE else GREY
 	end
 
 	return GREY

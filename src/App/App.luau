@@ -27,6 +27,7 @@ local CameraLight = require("../Services/CameraLight")
 local Cursor = require("../Services/Cursor")
 local Display = require("../Services/Display")
 local Edit = require("../Services/Edit")
+local EditSounds = require("../Services/EditSounds")
 local Hidden = require("../Core/Hidden")
 local Host = require("../Modal/Host")
 local Input = require("./Input")
@@ -65,6 +66,9 @@ export type Handle = {
 }
 
 local UPDATE_INTERVAL = 0.05
+
+--[[ How long after the plugin changes parts itself the Studio-tool sounds stay quiet. ]]
+local PLUGIN_QUIET = 0.5
 
 local App = {}
 
@@ -146,6 +150,9 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		return state.IsAdmin()
 	end
 
+	--[[ When the plugin last changed parts itself, so Studio-tool sounds do not also play for it. ]]
+	local pluginBusyAt = 0
+
 	local edit = Edit.new({
 		Say = say,
 		Sound = sound,
@@ -153,6 +160,7 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 			Display.Adopt(display, part)
 		end,
 		Sweep = function()
+			pluginBusyAt = os.clock()
 			Display.Sweep(display)
 		end,
 	})
@@ -249,6 +257,16 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		end,
 	})
 
+	EditSounds.new({
+		Sound = sound,
+		Busy = function()
+			return os.clock() - pluginBusyAt < PLUGIN_QUIET
+		end,
+		Open = function()
+			return widget.Enabled
+		end,
+	}, trove)
+
 	local cameraLight = CameraLight.new(settings, trove)
 
 	local app: AppTypes.App = {
@@ -291,6 +309,10 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 	local elapsed = 0
 
 	trove:Connect(RunService.Heartbeat, function(dt)
+		if Host.Running(host) or runner.Mode ~= nil then
+			pluginBusyAt = os.clock()
+		end
+
 		Overlay.PositionReadout(overlay)
 		CameraLight.Step(cameraLight)
 		Host.Step(host)

@@ -55,4 +55,21 @@ function ShapeClass.Of(x: number, y: number, z: number): Kind
 	return "Block"
 end
 
+--[=[
+	@param size { number } -- the part's size along its own X, Y and Z
+	@param ups { number } -- how much each of the part's own X, Y and Z axes points up in the world
+	@return boolean -- true when the part's thinnest side faces up or down, as a floor or ceiling does, rather than sideways as a wall does
+]=]
+function ShapeClass.LiesFlat(size: { number }, ups: { number }): boolean
+	local thin = 1
+
+	for axis = 2, 3 do
+		if size[axis] < size[thin] then
+			thin = axis
+		end
+	end
+
+	return math.abs(ups[thin]) > 0.7
+end
+
 return ShapeClass
