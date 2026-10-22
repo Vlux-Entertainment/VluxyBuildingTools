@@ -111,6 +111,7 @@ export type Settings = {
 	PreviewsFollowUi: boolean,
 	HintBar: boolean,
 	PropSpin: boolean,
+	AnimationIntensity: number,
 	Axis: string,
 }
 
@@ -229,6 +230,7 @@ function Settings.Defaults(): Settings
 		PreviewsFollowUi = true,
 		HintBar = true,
 		PropSpin = true,
+		AnimationIntensity = 0.5,
 		Axis = "X",
 	}
 end

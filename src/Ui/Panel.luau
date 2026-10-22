@@ -164,6 +164,9 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 	Kit.Animate = function()
 		return app.Store.Values.UiAnimations
 	end
+	Kit.Intensity = function()
+		return app.Store.Values.AnimationIntensity
+	end
 
 	local root = new("ScrollingFrame")({
 		Size = UDim2.fromScale(1, 1),

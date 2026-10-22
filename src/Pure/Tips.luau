@@ -48,6 +48,7 @@ Tips.Entries = {
 	INTERFACE = { Text = "How the panel looks and moves." },
 	["Zebra rows"] = { Text = "Shade every other row so values line up with their labels." },
 	["UI animations"] = { Text = "Buttons pop when clicked or picked." },
+	AnimationIntensity = { Text = "How big the button pops are." },
 
 	-- Working folder
 	["Choose working folder"] = { Text = "Click a Folder in the viewport or Explorer to work in." },

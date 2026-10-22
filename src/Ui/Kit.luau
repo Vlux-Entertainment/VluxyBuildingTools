@@ -27,7 +27,7 @@ export type Prop<T> = T | () -> T
 local Kit = {}
 
 local order = 0
-local POP_SCALE = 1.06
+local POP_GROWTH = 0.12
 local POP_GROW = TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local POP_SETTLE = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 
@@ -39,6 +39,17 @@ local POP_SETTLE = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirecti
 ]=]
 Kit.Animate = function(): boolean
 	return true
+end
+
+--[=[
+	How strong the pops are, from 0 to 1, read at each pop; `Panel` points it at the animation
+	intensity setting. 0.5 grows a button by 6 percent.
+
+	@prop Intensity () -> number
+	@within Kit
+]=]
+Kit.Intensity = function(): number
+	return 0.5
 end
 
 --[=[
@@ -147,7 +158,9 @@ local lastPop: { [GuiObject]: number } = setmetatable({}, { __mode = "k" }) :: a
 	@param button GuiObject
 ]=]
 function Kit.Pop(button: GuiObject)
-	if not Kit.Animate() then
+	local intensity = math.clamp(Kit.Intensity(), 0, 1)
+
+	if not Kit.Animate() or intensity <= 0 then
 		return
 	end
 
@@ -175,7 +188,7 @@ function Kit.Pop(button: GuiObject)
 		scale = made
 	end
 
-	local grow = TweenService:Create(scale :: UIScale, POP_GROW, { Scale = POP_SCALE })
+	local grow = TweenService:Create(scale :: UIScale, POP_GROW, { Scale = 1 + POP_GROWTH * intensity })
 
 	grow.Completed:Once(function()
 		TweenService:Create(scale :: UIScale, POP_SETTLE, { Scale = 1 }):Play()

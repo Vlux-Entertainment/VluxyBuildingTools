@@ -59,6 +59,9 @@ return function(ui: Ui): { Instance }
 				end,
 			}),
 			Controls.Switch(ui, { Title = "UI animations", Key = "UiAnimations" }),
+			Controls.Slider(ui, "AnimationIntensity", "Animation intensity", function()
+				return Store.Get(store, "UiAnimations") == true
+			end),
 			Controls.Switch(ui, { Title = "Zebra rows", Key = "ZebraRows" }),
 			Controls.Switch(ui, { Title = "Tooltips", Key = "Tooltips" }),
 			number("TooltipDelay", "Tooltip delay (seconds)", 0, 3, 0.1, function()
