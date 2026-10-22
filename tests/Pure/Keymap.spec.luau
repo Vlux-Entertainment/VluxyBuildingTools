@@ -46,6 +46,7 @@ return {
 		expect.equal(Keymap.Resolve("One", false, true, false, false), "Tool:Basic")
 		expect.equal(Keymap.Resolve("Zero", false, true, false, false), "Tool:Measure")
 		expect.equal(Keymap.Resolve("Seven", false, true, false, false), "Tool:Place")
+		expect.equal(Keymap.Resolve("Eight", false, true, false, false), "Tool:Props")
 	end,
 
 	["V duplicates, Shift is never used"] = function(expect)
