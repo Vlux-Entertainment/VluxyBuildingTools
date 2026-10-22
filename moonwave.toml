@@ -84,6 +84,7 @@ classes = [
     "ThemeColors",
     "PropData",
     "SoundIds",
+    "Changelog",
     "Icons",
     "PluginInfo",
 ]

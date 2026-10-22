@@ -1,0 +1,61 @@
+--!strict
+
+--[=[
+	What changed in each version, newest first, for the panel's version list. The first entry is
+	the version the plugin reports, and a test keeps it equal to `PluginInfo.Version`, so add a new
+	entry at the top for every release.
+
+	@class Changelog
+]=]
+
+--[=[
+	@interface Release
+	@within Changelog
+	.Version string
+	.Date string -- year-month-day
+	.Changes { string } -- one short line each
+]=]
+export type Release = { Version: string, Date: string, Changes: { string } }
+
+local Changelog: { Release } = {
+	{
+		Version = "1.0.0",
+		Date = "2026-10-22",
+		Changes = {
+			"First release.",
+			"Six color themes: Pastel, Unity, Levels, Structures, Facing and Size; hold P and scroll to switch.",
+			"Doors are a standard door and frame by default, with a transparency slider and CanCollide switch.",
+			"Arrange has a Blender-style Array with a live preview.",
+			"A calmer panel: one-line help, hover descriptions, zebra rows, a UI color and button animations.",
+			"Snapping settings live once, under Settings.",
+			"Alt+L switches the camera light.",
+			"Sounds play only for you, also in Team Create.",
+			"Room joins follow structures you move.",
+			"Docs site and automated tests.",
+		},
+	},
+	{
+		Version = "0.2.0",
+		Date = "2026-10-22",
+		Changes = {
+			"The plugin was rebuilt in modules, with one contract for every tool.",
+			"The panel was rebuilt on vide.",
+			"Plugin sounds and a sound volume slider.",
+			"Click objects in the viewport to add them to the brush.",
+			"Props got their own tab.",
+		},
+	},
+	{
+		Version = "0.1.0",
+		Date = "2026-10-21",
+		Changes = {
+			"Walls, floors, rooms, corridors, stairs, roofs, railings and vents.",
+			"Doorways, windows and archways cut into walls.",
+			"Blender hotkeys: grab, rotate, scale, extrude and typed values.",
+			"A working folder with the VluxyBT_Map tag.",
+			"Pastel and Unity colors, the surface grid and hidden parts.",
+		},
+	},
+}
+
+return Changelog
