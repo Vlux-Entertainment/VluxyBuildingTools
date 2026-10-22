@@ -944,7 +944,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
-		if joins then
+		if joins and hit.Normal.Y < 0.7 then
 			local level = Joints.FloorLevel(hit.Instance)
 
 			if level then
