@@ -40,6 +40,20 @@ return {
 		expect.equal(PartRole.Of("ArchedCeiling"), "Ceiling")
 	end,
 
+	["every Additive tool piece counts as a wall"] = function(expect)
+		for _, name in
+			{ "Door_Frame", "Door_Panel", "Triangle_Frame", "Circle_Frame", "Circle_Upper", "Arch", "FaceExtension" }
+		do
+			expect.equal(PartRole.Of(name), "Wall", name)
+		end
+	end,
+
+	["stairs and ramps are stairs"] = function(expect)
+		for _, name in { "Stairs", "Ramp", "Landing", "Step_1", "Step_12" } do
+			expect.equal(PartRole.Of(name), "Stairs", name)
+		end
+	end,
+
 	["floors and ceilings are found by name"] = function(expect)
 		expect.equal(PartRole.Of("Floor"), "Floor")
 		expect.equal(PartRole.Of("VentFloor"), "Floor")
@@ -51,6 +65,6 @@ return {
 	["unknown parts have no role"] = function(expect)
 		expect.falsy(PartRole.Of("Part"))
 		expect.falsy(PartRole.Of("Roof"))
-		expect.falsy(PartRole.Of("Door_Frame"))
+		expect.falsy(PartRole.Of("Prop_Seat"))
 	end,
 }
