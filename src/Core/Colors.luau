@@ -11,6 +11,7 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
+local PartRole = require("../Pure/PartRole")
 local Settings = require("../Pure/Settings")
 local ShapeClass = require("../Pure/ShapeClass")
 local Trove = require("../Packages/Trove")
@@ -64,9 +65,17 @@ Colors.Themes = Settings.Themes
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color: grey by default; orange only for a cube or rectangular block (see `ShapeClass`). See-through parts are purple before this is asked.
+	@return Color3 -- the Unity theme color. Walls are grey and floors and ceilings orange, whatever their shape (see `PartRole`); any other part is grey unless it is a cube or rectangular block, which is orange (see `ShapeClass`). See-through parts are purple before this is asked.
 ]]
 local function unityColor(part: BasePart): Color3
+	local role = PartRole.Of(part.Name)
+
+	if role == "Wall" then
+		return GREY
+	elseif role == "Floor" or role == "Ceiling" then
+		return ORANGE
+	end
+
 	local size = part.Size
 
 	if ShapeClass.Of(size.X, size.Y, size.Z) == "Block" then
