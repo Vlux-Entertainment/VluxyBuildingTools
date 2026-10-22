@@ -27,6 +27,8 @@ local NumericInput = require("../Pure/NumericInput")
 local Overlay = require("./Overlay")
 local Panel = require("../Ui/Panel")
 local Polygon = require("../Pure/Polygon")
+local PropData = require("../Pure/PropData")
+local Props = require("./Props")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
 local Snapper = require("./Snapper")
@@ -103,6 +105,7 @@ local INSTRUCTIONS: { [string]: string } = {
 	Vent = "Click points to draw a vent along the X or Z axis. Keep clicking to chain it; it turns only at right angles and cuts a hole where it meets a wall, floor or ceiling. Enter starts a new chain.",
 	VentRamp = "Click the start and the end of the run, then move the mouse up or down to set how far the vent climbs or drops, and click.",
 	VentShaft = "Click a floor, wall or ceiling, then move the mouse up or down to set the length of the vertical vent and click.",
+	Prop = "Click to place the prop on a floor, or against a wall for wall props. R turns it 90 degrees. Esc exits.",
 	VentCover = "Click a vent opening or any surface to place a grate over it.",
 	VentCap = "Click a vent opening or any surface to close it with a plain square plate.",
 	VentFan = "Click a vent opening to block it with a fan.",
@@ -196,6 +199,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushItem: BrushItem? = nil
 	local brushScale = 1
 	local ventEnds: { Vector3 }? = nil
+	local propId: string? = nil
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
 	local ventHitHost: Vector3? = nil
@@ -1394,6 +1398,49 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				out = Builders.Pillar(settings, base)
 				message = "Click to place the pillar."
 			end
+		elseif mode == "Prop" then
+			local hit = hitSurface()
+			local def = if propId then PropData.Find(propId) else nil
+
+			if hit and def then
+				local fine = math.max(0.05, settings.FineGrid)
+				local normal = hit.Normal
+				local frame: CFrame? = nil
+
+				if def.Mount == "wall" then
+					if math.abs(normal.Y) < 0.5 then
+						local at = Vector3.new(
+							if math.abs(normal.X) < 0.5
+								then math.round(hit.Position.X / fine) * fine
+								else hit.Position.X,
+							math.round(hit.Position.Y / fine) * fine,
+							if math.abs(normal.Z) < 0.5
+								then math.round(hit.Position.Z / fine) * fine
+								else hit.Position.Z
+						)
+						local flat = Vector3.new(normal.X, 0, normal.Z).Unit
+
+						frame = CFrame.lookAt(at, at + flat)
+					end
+				elseif normal.Y >= 0.7 then
+					local at = Vector3.new(
+						math.round(hit.Position.X / fine) * fine,
+						hit.Position.Y,
+						math.round(hit.Position.Z / fine) * fine
+					)
+
+					frame = CFrame.new(at) * CFrame.Angles(0, math.rad(settings.Yaw), 0)
+				end
+
+				if frame then
+					out = Props.Build(def, frame, settings.PropScale)
+					message = `Click to place the {def.Label}. R turns it 90 degrees.`
+				else
+					message = if def.Mount == "wall" then "Point at a wall." else "Point at a floor or other flat top."
+				end
+			else
+				message = "Pick a prop in the Props tab."
+			end
 		elseif mode == "Place" then
 			local hit = hitSurface()
 
@@ -2269,7 +2316,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		elseif action == "Extrude" then
 			startExtrude()
-		elseif action == "Rotate" and mode == "Place" then
+		elseif action == "Rotate" and (mode == "Place" or mode == "Prop") then
 			settings.Yaw = (settings.Yaw + 90) % 360
 			panel.SetField("Yaw")
 			save()
@@ -2665,6 +2712,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end,
 		SurfaceGrid = surfaceGrid,
 		Hidden = hidden,
+		GetProp = function()
+			return propId
+		end,
 		GetFolder = function()
 			return folder
 		end,
@@ -2680,6 +2730,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Actions = {
 			Activate = activate,
 			SetMode = setMode,
+			PickProp = function(id: string)
+				propId = id
+				setMode("Prop")
+				panel.Refresh()
+			end,
 			Stop = function()
 				stop()
 			end,
@@ -3032,6 +3087,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			edit("Build pillar", function()
 				Geometry.Place(specs, "Pillar")
 			end)
+		elseif active == "Prop" then
+			if not previewValid or not propId then
+				return
+			end
+
+			local specs, id = previewSpecs, propId
+
+			edit("Place prop", function()
+				local model = Geometry.Materialize(specs, "Vlux_Prop_" .. id)
+
+				model:SetAttribute("VluxyBT_Prop", id)
+			end)
 		elseif active == "Place" then
 			local hit = hitSurface()
 
@@ -3367,7 +3434,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			or string.sub(action, 1, 5) == "Tool:"
 			or string.sub(action, 1, 7) == "Option:"
 
-		local turnsStamp = action == "Rotate" and mode == "Place"
+		local turnsStamp = action == "Rotate" and (mode == "Place" or mode == "Prop")
 
 		if starts and (processed or modal) and not turnsStamp then
 			if string.sub(action, 1, 5) == "Tool:" then

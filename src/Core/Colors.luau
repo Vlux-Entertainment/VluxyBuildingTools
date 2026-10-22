@@ -84,7 +84,9 @@ end
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
 
-	if named(name, { "ventwall" }) then
+	if named(name, { "propaccent" }) then
+		return ORANGE
+	elseif named(name, { "ventwall" }) then
 		return ORANGE_DARK
 	elseif named(name, { "vent" }) then
 		return if named(name, { "floor", "ceiling", "duct" }) then GREY else ORANGE
@@ -111,6 +113,19 @@ local function themed(self: Colors, part: BasePart): Color3
 
 	if self._theme() == "Unity" then
 		return unityColor(part)
+	end
+
+	local holder = part.Parent
+
+	if holder and holder:IsA("Model") and holder:GetAttribute("VluxyBT_Prop") ~= nil then
+		local index = holder:GetAttribute("VluxyBT_PropColor")
+
+		if type(index) ~= "number" then
+			index = self._random:NextInteger(1, #PALETTE)
+			holder:SetAttribute("VluxyBT_PropColor", index)
+		end
+
+		return PALETTE[index :: number]
 	end
 
 	return PALETTE[self._random:NextInteger(1, #PALETTE)]

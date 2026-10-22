@@ -154,6 +154,13 @@ Tools.List = {
 		Description = "Place a grate over a vent opening, or on any surface.",
 	},
 	{
+		Id = "Prop",
+		Label = "Prop",
+		Glyph = "◧",
+		Key = nil,
+		Description = "Place a built-in prop from the Props tab.",
+	},
+	{
 		Id = "VentCap",
 		Label = "End Cap",
 		Glyph = "■",
@@ -302,6 +309,14 @@ Tools.Grid = {
 		Key = "7",
 		Description = "Paint copies of the selection onto surfaces by clicking or dragging.",
 		Modes = { "Place" },
+	},
+	{
+		Id = "Props",
+		Label = "Props",
+		Glyph = "◧",
+		Key = nil,
+		Description = "Place built-in furniture and props. Pick one in the Props tab.",
+		Modes = { "Prop" },
 	},
 	{
 		Id = "Measure",

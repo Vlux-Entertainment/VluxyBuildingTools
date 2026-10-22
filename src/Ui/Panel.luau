@@ -13,6 +13,7 @@ local Colors = require("../Core/Colors")
 local Hidden = require("../Core/Hidden")
 local Keymap = require("../Pure/Keymap")
 local PluginInfo = require("../Pure/PluginInfo")
+local PropData = require("../Pure/PropData")
 local Settings = require("../Pure/Settings")
 local SurfaceGrid = require("../Core/SurfaceGrid")
 local Tips = require("../Pure/Tips")
@@ -23,6 +24,7 @@ type Settings = Settings.Settings
 export type Actions = {
 	Activate: (name: string) -> (),
 	SetMode: (name: string) -> (),
+	PickProp: (id: string) -> (),
 	Stop: () -> (),
 	ResetPoint: () -> (),
 	BrushesChanged: () -> (),
@@ -51,6 +53,7 @@ export type Deps = {
 	SurfaceGrid: SurfaceGrid.SurfaceGrid,
 	Actions: Actions,
 	GetMode: () -> string?,
+	GetProp: () -> string?,
 	GetFolder: () -> Instance?,
 	GetPending: () -> Instance?,
 	GetPicking: () -> boolean,
@@ -89,8 +92,8 @@ local ACCENT = Color3.fromRGB(255, 138, 36)
 local DANGER = Color3.fromRGB(235, 64, 64)
 local ACCENT_DIM = Color3.fromRGB(62, 40, 22)
 local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
-local TABS = { "Build", "Arrange", "Display", "Hotkeys", "Settings" }
-local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Display = true }
+local TABS = { "Build", "Arrange", "Props", "Display", "Hotkeys", "Settings" }
+local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Props = true, Display = true }
 
 --[[ The setting each switch changes, by its title, so a switch can offer a reset to the default. ]]
 local SWITCH_KEYS: { [string]: string } = {
@@ -711,10 +714,24 @@ function Panel.new(deps: Deps): Panel
 			apply(tonumber(box.Text))
 		end)
 		stepperButton(group, "−", 0).MouseButton1Click:Connect(function()
-			apply(values[key] - (step or settings.Grid))
+			apply(
+				values[key]
+					- (
+						if key ~= "FieldStep" and settings.FieldStep > 0
+							then settings.FieldStep
+							else (step or settings.Grid)
+					)
+			)
 		end)
 		stepperButton(group, "+", 128).MouseButton1Click:Connect(function()
-			apply(values[key] + (step or settings.Grid))
+			apply(
+				values[key]
+					+ (
+						if key ~= "FieldStep" and settings.FieldStep > 0
+							then settings.FieldStep
+							else (step or settings.Grid)
+					)
+			)
 		end)
 
 		local initial = (Settings.Defaults() :: any)[key]
@@ -1325,7 +1342,8 @@ function Panel.new(deps: Deps): Panel
 		body({ Vent = true, VentRamp = true, VentShaft = true })
 	)
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
-	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
+	numeric(scope, "Yaw", "Rotation", -360, 360, 90, body({ Place = true, Prop = true }))
+	numeric(scope, "PropScale", "Prop size (x)", 0.2, 5, 0.1, body({ Prop = true }))
 	numeric(scope, "BrushRadius", "Brush radius", 0, 200, 1, body({ Place = true }))
 	numeric(scope, "BrushSpacing", "Brush spacing", 0.5, 100, 0.5, body({ Place = true }))
 	numeric(scope, "BrushSizeMin", "Smallest size (x)", 0.05, 20, 0.1, body({ Place = true }))
@@ -1679,6 +1697,116 @@ function Panel.new(deps: Deps): Panel
 		end
 	end
 
+	do
+		local propsCard = card("PROPS", "Props")
+		local category = PropData.Categories[1].Id
+		local categoryButtons: { [string]: TextButton } = {}
+		local propButtons: { [string]: TextButton } = {}
+
+		text(
+			propsCard,
+			"Pick a section, then a prop, then click a floor (or a wall for wall props) to place it. R turns it.",
+			MUTED
+		)
+
+		local sections = make("Frame", {
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = nextOrder(),
+		}, propsCard)
+
+		make("UIGridLayout", {
+			CellSize = UDim2.new(0.5, -3, 0, 28),
+			CellPadding = UDim2.fromOffset(4, 4),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}, sections)
+
+		local shown = make("Frame", {
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = nextOrder(),
+		}, propsCard)
+
+		make("UIGridLayout", {
+			CellSize = UDim2.new(0.5, -3, 0, 34),
+			CellPadding = UDim2.fromOffset(4, 4),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}, shown)
+
+		local function paintProps()
+			for id, choice in categoryButtons do
+				local active = id == category
+
+				choice.BackgroundColor3 = if active then ACCENT else TILE
+				choice.TextColor3 = if active then BACKGROUND else TEXT
+			end
+
+			local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
+
+			for id, choice in propButtons do
+				local active = id == current
+
+				choice.BackgroundColor3 = if active then ACCENT else TILE
+				choice.TextColor3 = if active then BACKGROUND else TEXT
+			end
+		end
+
+		local function showCategory()
+			for _, child in shown:GetChildren() do
+				if child:IsA("TextButton") then
+					child:Destroy()
+				end
+			end
+
+			table.clear(propButtons)
+
+			for i, prop in PropData.InCategory(category) do
+				local choice = make("TextButton", {
+					BackgroundColor3 = TILE,
+					BorderSizePixel = 0,
+					Text = prop.Label,
+					TextColor3 = TEXT,
+					Font = Enum.Font.GothamMedium,
+					TextSize = 12,
+					LayoutOrder = i,
+				}, shown)
+
+				style(choice, 6, CARD_STROKE)
+				attachTip(choice, { Text = prop.Label .. if prop.Mount == "wall" then " (hangs on a wall)." else "." })
+				propButtons[prop.Id] = choice
+				choice.MouseButton1Click:Connect(function()
+					actions.PickProp(prop.Id)
+				end)
+			end
+
+			paintProps()
+		end
+
+		for i, entry in PropData.Categories do
+			local choice = make("TextButton", {
+				BackgroundColor3 = TILE,
+				BorderSizePixel = 0,
+				Text = entry.Label,
+				TextColor3 = TEXT,
+				Font = Enum.Font.GothamMedium,
+				TextSize = 12,
+				LayoutOrder = i,
+			}, sections)
+
+			style(choice, 6, CARD_STROKE)
+			categoryButtons[entry.Id] = choice
+			choice.MouseButton1Click:Connect(function()
+				category = entry.Id
+				showCategory()
+			end)
+		end
+
+		table.insert(refreshers, paintProps)
+		showCategory()
+	end
+
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
 
 	switch(displayCard, "Camera light", function()
@@ -1837,6 +1965,7 @@ function Panel.new(deps: Deps): Panel
 		refresh()
 	end, nil, true)
 
+	numeric(editing, "FieldStep", "Field +/- step (0 = automatic)", 0, 100, 0.05)
 	numeric(editing, "Grid", "Snap increment", 0.05, 128, 0.5)
 	numeric(editing, "FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5)
 	numeric(editing, "StandardHeight", "Standard wall height", 0.1, 2048)
