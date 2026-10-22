@@ -2427,9 +2427,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Marks the folder as the one to confirm.
 	]]
 	local function proposeFolder(target: Instance)
-		if settings.RequireMapTag and not CollectionService:HasTag(target, MAP_TAG) then
+		if not settings.AllowUntagged and not CollectionService:HasTag(target, MAP_TAG) then
 			return say(
-				`"{target.Name}" is not a map. Add the tag {MAP_TAG} to the folder first (Tag Editor), or switch the tag requirement off.`
+				`"{target.Name}" is not a map. Add the tag {MAP_TAG} to the folder first (Tag Editor), or turn on Allow untagged folders (not recommended).`
 			)
 		end
 
@@ -2479,9 +2479,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		the old folder is not left recolored.
 	]]
 	local function setFolder(chosen: Instance?)
-		if chosen and settings.RequireMapTag and not CollectionService:HasTag(chosen, MAP_TAG) then
+		if chosen and not settings.AllowUntagged and not CollectionService:HasTag(chosen, MAP_TAG) then
 			return say(
-				`"{chosen.Name}" cannot be the working folder: add the tag {MAP_TAG} to it first, or switch the tag requirement off.`
+				`"{chosen.Name}" cannot be the working folder: add the tag {MAP_TAG} to it first, or turn on Allow untagged folders (not recommended).`
 			)
 		end
 
