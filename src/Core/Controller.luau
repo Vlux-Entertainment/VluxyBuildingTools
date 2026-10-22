@@ -60,6 +60,8 @@ type Extrude = {
 
 export type Controller = {
 	Stop: () -> (),
+	Suspend: () -> (),
+	Resume: () -> (),
 	TogglePastel: () -> (),
 	ToggleGrid: () -> (),
 	PastelOn: () -> boolean,
@@ -3218,6 +3220,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local elapsed = 0
 
 	local cameraLight: Part? = nil
+	local suspended = false
 
 	trove:Add(function()
 		if cameraLight then
@@ -3231,7 +3234,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function syncCameraLight()
 		local camera = workspace.CurrentCamera
 
-		if not settings.CameraLight or not camera or not RunService:IsEdit() then
+		if suspended or not settings.CameraLight or not camera or not RunService:IsEdit() then
 			if cameraLight then
 				cameraLight:Destroy()
 				cameraLight = nil
@@ -3356,10 +3359,51 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 	end
 
+	--[[
+		Puts the place back to normal while the plugin is not in use: the surface grid and pastel colors come off, hidden parts are shown again and the camera light goes out. The choices are remembered, so Resume brings them back.
+	]]
+	local function suspend()
+		stop()
+		suspended = true
+		syncCameraLight()
+		Hidden.UnhideAll(hidden)
+
+		quiet = true
+
+		if colors.On then
+			Colors.Set(colors, false)
+		end
+
+		if surfaceGrid.On then
+			SurfaceGrid.Set(surfaceGrid, false)
+		end
+
+		quiet = false
+	end
+
+	--[[
+		Puts back the pastel colors and the surface grid that Suspend took off, if they were on.
+	]]
+	local function resume()
+		suspended = false
+
+		if folder then
+			if settings.AutoPastel and not colors.On then
+				Colors.Set(colors, true)
+			end
+
+			if settings.AutoGrid and not surfaceGrid.On then
+				SurfaceGrid.Set(surfaceGrid, true)
+			end
+		end
+	end
+
 	return {
 		Stop = function()
 			stop()
 		end,
+		Suspend = suspend,
+		Resume = resume,
 		TogglePastel = function()
 			perform("TogglePastel")
 		end,
@@ -3373,9 +3417,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return surfaceGrid.On
 		end,
 		Destroy = function()
-			stop()
 			save()
-			Hidden.UnhideAll(hidden)
+			suspend()
 			Colors.RestoreOnUnload(colors)
 		end,
 	}
