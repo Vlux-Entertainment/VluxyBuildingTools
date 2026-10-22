@@ -455,6 +455,15 @@ function Actions.RequestAdmin(app: App)
 end
 
 --[=[
+	Takes admin from an admin who has been idle too long.
+
+	@param app App
+]=]
+function Actions.TakeOverAdmin(app: App)
+	Admin.TakeOver(app.Admin)
+end
+
+--[=[
 	Turns down the open admin request.
 
 	@param app App

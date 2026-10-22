@@ -7,6 +7,7 @@
 
 	The admin is whoever the folder names while they are present. When they are gone, the user
 	present the longest takes over (ties go to the lower user id), and a user alone is always admin.
+	An idle admin keeps admin until another present user takes it over.
 
 	@class AdminRules
 ]=]
@@ -19,8 +20,9 @@
 	.UserId number
 	.Joined number -- os.time() when they started working in the folder
 	.Seen number -- os.time() of their last heartbeat
+	.Active number? -- os.time() of their last input, camera move, selection or edit, if they published one
 ]=]
-export type Entry = { UserId: number, Joined: number, Seen: number }
+export type Entry = { UserId: number, Joined: number, Seen: number, Active: number? }
 
 local AdminRules = {}
 
@@ -39,6 +41,14 @@ AdminRules.HERE_PREFIX = "VluxyBT_Here_"
 	@within AdminRules
 ]=]
 AdminRules.JOINED_PREFIX = "VluxyBT_Joined_"
+
+--[=[
+	The attribute prefix for a user's last activity, followed by their user id.
+
+	@prop ACTIVE_PREFIX string
+	@within AdminRules
+]=]
+AdminRules.ACTIVE_PREFIX = "VluxyBT_Active_"
 
 --[=[
 	The attribute naming the admin's user id.
@@ -89,6 +99,22 @@ AdminRules.FORGET_AFTER = 600
 AdminRules.REQUEST_FOR = 60
 
 --[=[
+	Seconds without activity after which a user counts as idle, and an idle admin may be taken over.
+
+	@prop IDLE_AFTER number
+	@within AdminRules
+]=]
+AdminRules.IDLE_AFTER = 15 * 60
+
+--[=[
+	Least seconds between two writes of a user's activity stamp.
+
+	@prop ACTIVE_EVERY number
+	@within AdminRules
+]=]
+AdminRules.ACTIVE_EVERY = 60
+
+--[=[
 	Reads the presence entries out of a folder's attributes. A user with a heartbeat but no joined
 	time counts as joining at their heartbeat.
 
@@ -104,11 +130,13 @@ function AdminRules.Read(attributes: { [string]: any }): { Entry }
 
 		if id and type(value) == "number" then
 			local joined = attributes[AdminRules.JOINED_PREFIX .. id]
+			local active = attributes[AdminRules.ACTIVE_PREFIX .. id]
 
 			table.insert(entries, {
 				UserId = id,
 				Joined = if type(joined) == "number" then joined else value,
 				Seen = value,
+				Active = if type(active) == "number" then active else nil,
 			})
 		end
 	end
@@ -198,6 +226,54 @@ function AdminRules.Forgotten(entries: { Entry }, now: number): { number }
 	end
 
 	return ids
+end
+
+--[=[
+	@param entry Entry
+	@param now number
+	@return number -- seconds since the user's last activity, or since they joined when they published none
+]=]
+function AdminRules.IdleSeconds(entry: Entry, now: number): number
+	return math.max(0, now - (entry.Active or entry.Joined))
+end
+
+--[=[
+	@param entry Entry
+	@param now number
+	@return boolean -- whether the user has done nothing for more than `IDLE_AFTER` seconds
+]=]
+function AdminRules.IsIdle(entry: Entry, now: number): boolean
+	return AdminRules.IdleSeconds(entry, now) > AdminRules.IDLE_AFTER
+end
+
+--[=[
+	Idle never hands admin on by itself; another present user may only take it over.
+
+	@param meId number
+	@param adminId number? -- the admin now, if any
+	@param people { Entry }
+	@param now number
+	@return boolean -- whether someone else is admin, both are present, and the admin is idle
+]=]
+function AdminRules.CanTakeOver(meId: number, adminId: number?, people: { Entry }, now: number): boolean
+	if not adminId or adminId == meId then
+		return false
+	end
+
+	local admin: Entry? = nil
+	local meHere = false
+
+	for _, entry in people do
+		if AdminRules.IsHere(entry, now) then
+			if entry.UserId == adminId then
+				admin = entry
+			elseif entry.UserId == meId then
+				meHere = true
+			end
+		end
+	end
+
+	return meHere and admin ~= nil and AdminRules.IsIdle(admin, now)
 end
 
 --[=[

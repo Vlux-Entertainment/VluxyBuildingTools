@@ -74,6 +74,47 @@ return {
 		expect.equal(AdminRules.ParseRequest(nil, NOW), nil)
 	end,
 
+	["reads the activity stamp"] = function(expect)
+		local entries = AdminRules.Read({ VluxyBT_Here_5 = NOW - 1, VluxyBT_Active_5 = NOW - 30 })
+
+		expect.equal(entries[1].Active, NOW - 30)
+		expect.equal(AdminRules.IdleSeconds(entries[1], NOW), 30)
+	end,
+
+	["idle counts from the last activity, else from joining"] = function(expect)
+		local quiet = entry(1, 2000, 1)
+		local busy = entry(2, 2000, 1)
+		busy.Active = NOW - 60
+
+		expect.equal(AdminRules.IdleSeconds(quiet, NOW), 2000)
+		expect.truthy(AdminRules.IsIdle(quiet, NOW))
+		expect.falsy(AdminRules.IsIdle(busy, NOW))
+		expect.falsy(AdminRules.IsIdle(entry(3, AdminRules.IDLE_AFTER, 1), NOW))
+		expect.truthy(AdminRules.IsIdle(entry(3, AdminRules.IDLE_AFTER + 1, 1), NOW))
+	end,
+
+	["an idle admin can be taken over by someone present"] = function(expect)
+		local admin = entry(1, 2000, 1)
+		local me = entry(2, 100, 1)
+		me.Active = NOW - 5
+		local people = { admin, me }
+
+		expect.truthy(AdminRules.CanTakeOver(2, 1, people, NOW))
+		expect.falsy(AdminRules.CanTakeOver(1, 1, people, NOW))
+		expect.falsy(AdminRules.CanTakeOver(2, nil, people, NOW))
+		expect.falsy(AdminRules.CanTakeOver(3, 1, people, NOW))
+
+		admin.Active = NOW - 60
+		expect.falsy(AdminRules.CanTakeOver(2, 1, people, NOW))
+	end,
+
+	["a gone admin cannot be taken over, and idle never passes admin by itself"] = function(expect)
+		local people = { entry(1, 2000, 100), entry(2, 100, 1) }
+
+		expect.falsy(AdminRules.CanTakeOver(2, 1, people, NOW))
+		expect.equal(AdminRules.Choose({ entry(1, 2000, 1), entry(2, 100, 1) }, 1, NOW), 1)
+	end,
+
 	["long-gone users are forgotten"] = function(expect)
 		local gone = AdminRules.Forgotten({ entry(1, 5000, AdminRules.FORGET_AFTER), entry(2, 10, 1) }, NOW)
 

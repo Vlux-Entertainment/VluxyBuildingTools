@@ -4,7 +4,8 @@
 	Who is working in the working folder, and which of them is its admin. While the panel is open,
 	this user leaves a heartbeat and a joined time as attributes on the folder (`AdminRules` names
 	them); the admin alone changes the shared map settings and hides parts. These attributes are not
-	undoable edits, so they are written outside any recording and cleared on leaving.
+	undoable edits, so they are written outside any recording and cleared on leaving. This user's
+	last activity is published too, about once a minute, so teammates may take over an idle admin.
 
 	The rules live in `Pure/AdminRules`. Only the user who should become admin writes the change,
 	so two clients never race to claim it. The result is mirrored into `AppState` for the panel.
@@ -12,8 +13,11 @@
 	@class Admin
 ]=]
 
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Selection = game:GetService("Selection")
+local UserInputService = game:GetService("UserInputService")
 
 local AdminRules = require("../Pure/AdminRules")
 local AppState = require("../State/AppState")
@@ -35,6 +39,10 @@ export type Admin = {
 	_beat: number,
 	_clock: number,
 	_alive: boolean,
+	_activeAt: number,
+	_wroteAt: number,
+	_fresh: boolean,
+	_camera: RBXScriptConnection?,
 	_shown: string,
 	_names: { [number]: string },
 	_avatars: { [number]: string },
@@ -64,6 +72,7 @@ end
 local function isOurs(name: string): boolean
 	return string.sub(name, 1, #AdminRules.HERE_PREFIX) == AdminRules.HERE_PREFIX
 		or string.sub(name, 1, #AdminRules.JOINED_PREFIX) == AdminRules.JOINED_PREFIX
+		or string.sub(name, 1, #AdminRules.ACTIVE_PREFIX) == AdminRules.ACTIVE_PREFIX
 		or name == AdminRules.ADMIN
 		or name == AdminRules.REQUEST
 end
@@ -103,9 +112,83 @@ local function lookup(self: Admin, id: number)
 	end)
 end
 
+--[[
+	@param self Admin
+
+	Notes that this user did something just now; `Admin.Step` publishes it.
+]]
+local function markActive(self: Admin)
+	self._activeAt = os.time()
+	self._fresh = true
+end
+
+--[[
+	@param self Admin
+
+	Follows the current camera, so moving it counts as activity; called again when the camera changes.
+]]
+local function watchCamera(self: Admin)
+	if self._camera then
+		self._camera:Disconnect()
+		self._camera = nil
+	end
+
+	local camera = workspace.CurrentCamera
+
+	if camera and self._alive then
+		self._camera = camera:GetPropertyChangedSignal("CFrame"):Connect(function()
+			markActive(self)
+		end)
+	end
+end
+
+--[[
+	@param self Admin
+	@param trove Trove
+
+	Counts keys, mouse buttons, mouse moves and wheel, camera moves, script typing, selection
+	changes, undo, redo and finished edits as this user's activity.
+]]
+local function watchActivity(self: Admin, trove: Trove.Trove)
+	local function mark()
+		markActive(self)
+	end
+
+	trove:Connect(UserInputService.InputBegan, function(input: InputObject)
+		local kind = input.UserInputType
+
+		if
+			kind == Enum.UserInputType.Keyboard
+			or kind == Enum.UserInputType.MouseButton1
+			or kind == Enum.UserInputType.MouseButton2
+			or kind == Enum.UserInputType.MouseButton3
+		then
+			mark()
+		end
+	end)
+	trove:Connect(UserInputService.InputChanged, function(input: InputObject)
+		local kind = input.UserInputType
+
+		if kind == Enum.UserInputType.MouseMovement or kind == Enum.UserInputType.MouseWheel then
+			mark()
+		end
+	end)
+	pcall(function()
+		trove:Connect(game:GetService("ScriptEditorService").TextDocumentDidChange, mark)
+	end)
+	trove:Connect(Selection.SelectionChanged, mark)
+	trove:Connect(ChangeHistoryService.OnUndo, mark)
+	trove:Connect(ChangeHistoryService.OnRedo, mark)
+	trove:Connect(ChangeHistoryService.OnRecordingFinished, mark)
+	trove:Connect(workspace:GetPropertyChangedSignal("CurrentCamera"), function()
+		watchCamera(self)
+	end)
+	watchCamera(self)
+end
+
 --[=[
 	@param deps Deps
-	@param trove Trove -- stops the lookups and drops the folder watch when the plugin unloads
+	@param trove Trove -- stops the lookups and drops the folder and activity watches when the plugin unloads
 	@return Admin
 ]=]
 function Admin.new(deps: Deps, trove: Trove.Trove): Admin
@@ -117,18 +200,28 @@ function Admin.new(deps: Deps, trove: Trove.Trove): Admin
 		_beat = 0,
 		_clock = 0,
 		_alive = true,
+		_activeAt = os.time(),
+		_wroteAt = 0,
+		_fresh = false,
+		_camera = nil,
 		_shown = "",
 		_names = {},
 		_avatars = {},
 		_asked = {},
 	}
 
+	watchActivity(self, trove)
 	trove:Add(function()
 		self._alive = false
 
 		if self._watch then
 			self._watch:Disconnect()
 			self._watch = nil
+		end
+
+		if self._camera then
+			self._camera:Disconnect()
+			self._camera = nil
 		end
 	end)
 
@@ -210,6 +303,7 @@ function Admin.Refresh(self: Admin)
 		for _, id in AdminRules.Forgotten(entries, now) do
 			folder:SetAttribute(AdminRules.HERE_PREFIX .. id, nil)
 			folder:SetAttribute(AdminRules.JOINED_PREFIX .. id, nil)
+			folder:SetAttribute(AdminRules.ACTIVE_PREFIX .. id, nil)
 		end
 	end
 
@@ -218,16 +312,22 @@ function Admin.Refresh(self: Admin)
 
 	for _, entry in present do
 		local id = entry.UserId
+		local idle = AdminRules.IsIdle(entry, now)
 		local person: AppState.Person = {
 			UserId = id,
 			Name = Admin.NameOf(self, id),
 			Avatar = self._avatars[id] or "",
 			Admin = id == admin,
 			Me = id == me,
+			Idle = idle,
+			IdleMinutes = AdminRules.IdleSeconds(entry, now) // 60,
 		}
 
 		table.insert(people, person)
-		table.insert(keys, `{id}|{person.Name}|{person.Avatar}|{person.Admin}`)
+		table.insert(
+			keys,
+			`{id}|{person.Name}|{person.Avatar}|{person.Admin}|{if idle then person.IdleMinutes else -1}`
+		)
 	end
 
 	local shown = table.concat(keys, ",")
@@ -272,6 +372,7 @@ function Admin.Leave(self: Admin)
 	if folder and folder.Parent and RunService:IsEdit() then
 		folder:SetAttribute(AdminRules.HERE_PREFIX .. me, nil)
 		folder:SetAttribute(AdminRules.JOINED_PREFIX .. me, nil)
+		folder:SetAttribute(AdminRules.ACTIVE_PREFIX .. me, nil)
 
 		if folder:GetAttribute(AdminRules.ADMIN) == me then
 			folder:SetAttribute(AdminRules.ADMIN, nil)
@@ -283,6 +384,18 @@ function Admin.Leave(self: Admin)
 	end
 
 	Admin.Refresh(self)
+end
+
+--[[
+	@param self Admin
+	@param folder Instance
+
+	Writes this user's last activity onto the folder, so teammates can tell when they went idle.
+]]
+local function publishActive(self: Admin, folder: Instance)
+	folder:SetAttribute(AdminRules.ACTIVE_PREFIX .. self.UserId, self._activeAt)
+	self._wroteAt = os.time()
+	self._fresh = false
 end
 
 --[[
@@ -305,6 +418,8 @@ local function enter(self: Admin, folder: Instance)
 	end
 
 	folder:SetAttribute(AdminRules.HERE_PREFIX .. me, now)
+	markActive(self)
+	publishActive(self, folder)
 	self._beat = 0
 	self._watch = folder.AttributeChanged:Connect(function(name)
 		if isOurs(name) then
@@ -315,7 +430,8 @@ end
 
 --[=[
 	Runs every frame: follows the working folder and the panel being open, beats every
-	`AdminRules.HEARTBEAT` seconds, and rereads the folder once a second or when it changes.
+	`AdminRules.HEARTBEAT` seconds, and publishes new activity at most every `AdminRules.ACTIVE_EVERY`
+	seconds. Rereads the folder once a second or when it changes.
 
 	@param self Admin
 	@param dt number
@@ -348,6 +464,10 @@ function Admin.Step(self: Admin, dt: number)
 	if here and self._beat >= AdminRules.HEARTBEAT then
 		self._beat = 0
 		here:SetAttribute(AdminRules.HERE_PREFIX .. self.UserId, os.time())
+	end
+
+	if here and self._fresh and os.time() - self._wroteAt >= AdminRules.ACTIVE_EVERY then
+		publishActive(self, here)
 	end
 
 	self._clock += dt
@@ -450,6 +570,62 @@ function Admin.Request(self: Admin)
 
 	folder:SetAttribute(AdminRules.REQUEST, AdminRules.FormatRequest(self.UserId, os.time()))
 	self._deps.Say(`Asked {Admin.AdminName(self)} for admin.`)
+end
+
+--[[
+	@param self Admin
+	@param folder Instance
+	@return boolean -- whether this user may take admin from an idle admin now
+]]
+local function canTakeOver(self: Admin, folder: Instance): boolean
+	local now = os.time()
+	local entries = AdminRules.Read(folder:GetAttributes())
+	local named = folder:GetAttribute(AdminRules.ADMIN)
+	local admin = AdminRules.Choose(entries, if type(named) == "number" then named else nil, now)
+
+	return AdminRules.CanTakeOver(self.UserId, admin, entries, now)
+end
+
+--[=[
+	@param self Admin
+	@return boolean -- whether someone else is admin, present and idle, so this user may take over
+]=]
+function Admin.CanTakeOver(self: Admin): boolean
+	local folder = self._folder
+
+	return folder ~= nil and canTakeOver(self, folder)
+end
+
+--[=[
+	Takes admin from an idle admin, after checking again that they are still idle.
+
+	@param self Admin
+]=]
+function Admin.TakeOver(self: Admin)
+	local folder = self._folder
+
+	if not folder or not RunService:IsEdit() then
+		return self._deps.Say("Pick a working folder first.")
+	end
+
+	if self._deps.State.IsAdmin() then
+		return self._deps.Say("You are already the admin.")
+	end
+
+	if not canTakeOver(self, folder) then
+		return self._deps.Say(`{Admin.AdminName(self)} is not idle any more; request admin instead.`)
+	end
+
+	markActive(self)
+	publishActive(self, folder)
+	folder:SetAttribute(AdminRules.ADMIN, self.UserId)
+
+	if AdminRules.ParseRequest(folder:GetAttribute(AdminRules.REQUEST), os.time()) == self.UserId then
+		folder:SetAttribute(AdminRules.REQUEST, nil)
+	end
+
+	Admin.Refresh(self)
+	self._deps.Say("You are now the admin.")
 end
 
 --[=[

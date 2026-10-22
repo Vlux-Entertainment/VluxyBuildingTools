@@ -40,7 +40,9 @@ Tips.Entries = {
 	["Previews use the UI color"] = { Text = "Build previews and folder outlines take the UI color, not orange." },
 	["Prop rotation"] = { Text = "The hovered or picked prop picture slowly turns." },
 	["Hint bar"] = { Text = "Show the active tool's keys at the bottom of the 3D view." },
-	["WORKING FOLDER"] = { Text = "The plugin only edits this folder; click a face to give or ask for admin." },
+	["WORKING FOLDER"] = {
+		Text = "The plugin only edits this folder; click a face to give, ask for or take over admin.",
+	},
 	TOOLS = { Text = "Pick tools and their options without the mouse." },
 	DRAWING = { Text = "Keys that work while you draw or move something." },
 	["MOVE & EDIT"] = { Text = "Act on the selected parts, Blender-style." },
