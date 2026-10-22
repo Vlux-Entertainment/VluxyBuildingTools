@@ -106,6 +106,10 @@ export type Settings = {
 	UiAnimations: boolean,
 	UiAccent: string,
 	ZebraRows: boolean,
+	Tooltips: boolean,
+	TooltipDelay: number,
+	PreviewsFollowUi: boolean,
+	HintBar: boolean,
 	Axis: string,
 }
 
@@ -219,6 +223,10 @@ function Settings.Defaults(): Settings
 		UiAnimations = true,
 		UiAccent = "Orange",
 		ZebraRows = true,
+		Tooltips = true,
+		TooltipDelay = 0.35,
+		PreviewsFollowUi = true,
+		HintBar = true,
 		Axis = "X",
 	}
 end

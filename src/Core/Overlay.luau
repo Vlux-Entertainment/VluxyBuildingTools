@@ -33,6 +33,8 @@ export type Overlay = {
 	_barText: TextLabel,
 	_barHints: Frame,
 	_readoutPosition: Vector3?,
+	_accent: Color3,
+	_barAllowed: boolean,
 }
 
 local ACCENT = Color3.fromRGB(255, 138, 36)
@@ -256,7 +258,44 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		_barText = barText,
 		_barHints = barHints,
 		_readoutPosition = nil,
+		_accent = ACCENT,
+		_barAllowed = true,
 	}
+end
+
+--[=[
+	Recolors the previews, the measurement line and the working folder outlines.
+
+	@param self Overlay
+	@param color Color3
+]=]
+function Overlay.SetAccent(self: Overlay, color: Color3)
+	self._accent = color
+	self._previewWire.Color3 = color
+	self._measureLine.Color3 = color
+
+	for _, ghost in self._ghosts do
+		ghost.Color3 = color
+	end
+
+	for _, name in { "Working", "Pending" } do
+		self._boxes[name].Color3 = color
+		self._fills[name].Color3 = color
+	end
+end
+
+--[=[
+	Lets the hint bar at the bottom of the viewport show, or keeps it hidden.
+
+	@param self Overlay
+	@param allowed boolean
+]=]
+function Overlay.AllowBar(self: Overlay, allowed: boolean)
+	self._barAllowed = allowed
+
+	if not allowed then
+		self._bar.Enabled = false
+	end
 end
 
 --[=[
@@ -419,7 +458,7 @@ function Overlay.DrawGhosts(self: Overlay, specs: { Geometry.Spec })
 			ghost.AlwaysOnTop = true
 			ghost.ZIndex = 1
 			ghost.Transparency = 0.7
-			ghost.Color3 = ACCENT
+			ghost.Color3 = self._accent
 			ghost.Parent = self._folder
 			tag(ghost)
 			self._ghosts[i] = ghost
@@ -513,7 +552,7 @@ end
 	@param self Overlay
 ]=]
 function Overlay.ResetWireColor(self: Overlay)
-	self._previewWire.Color3 = ACCENT
+	self._previewWire.Color3 = self._accent
 end
 
 --[=[
@@ -659,7 +698,7 @@ function Overlay.SetBar(self: Overlay, glyph: string, name: string, message: str
 		meaning.Parent = group
 	end
 
-	self._bar.Enabled = true
+	self._bar.Enabled = self._barAllowed
 end
 
 --[=[

@@ -16,6 +16,7 @@ local AppState = require("../State/AppState")
 local AppTypes = require("../App/Types")
 local Controls = require("./Controls")
 local Kit = require("./Kit")
+local Overlay = require("../Core/Overlay")
 local PluginInfo = require("../Pure/PluginInfo")
 local Popups = require("./Popups")
 local Store = require("../State/Store")
@@ -177,7 +178,11 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 	local popups: Popups.Popups
 
 	local destroy = vide.root(function()
-		popups = Popups.new(widget)
+		popups = Popups.new(widget, function()
+			local values = app.Store.Values
+
+			return if values.Tooltips then values.TooltipDelay else nil
+		end)
 
 		local ui: Controls.Ui = { App = app, Popups = popups, Root = root }
 		local pages = {}
@@ -233,6 +238,14 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 		end)
 		vide.effect(function()
 			Kit.Zebra(Store.Get(app.Store, "ZebraRows") == true)
+		end)
+		vide.effect(function()
+			local follow = Store.Get(app.Store, "PreviewsFollowUi") == true
+
+			Overlay.SetAccent(app.Overlay, if follow then Theme.Accent() else Theme.Accents[1].Color)
+		end)
+		vide.effect(function()
+			Overlay.AllowBar(app.Overlay, Store.Get(app.Store, "HintBar") == true)
 		end)
 		vide.effect(function()
 			app.State.Page()
