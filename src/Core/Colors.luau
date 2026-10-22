@@ -79,7 +79,7 @@ end
 
 --[[
 	@param part BasePart
-	@return Color3 -- dark grey for a part that is disproportionately thin on at least one side or cannot be judged, orange for an even or tiny part
+	@return Color3 -- dark grey for a part whose longest side is at least about 6.5 times its thinnest or that cannot be judged, orange for anything chunkier or shorter than 2 studs
 ]]
 local function shapeColor(part: BasePart): Color3
 	local size = part.Size
@@ -89,25 +89,31 @@ local function shapeColor(part: BasePart): Color3
 		return GREY
 	end
 
-	if volume <= 1 then
-		return ORANGE
-	end
-
 	local thinnest = math.min(size.X, size.Y, size.Z)
 	local longest = math.max(size.X, size.Y, size.Z)
 
-	return if longest >= thinnest * 2 then GREY else ORANGE
+	if longest < 2 then
+		return ORANGE
+	end
+
+	return if longest >= thinnest * 6.5 then GREY else ORANGE
 end
 
 --[[
 	@param part BasePart
-	@return Color3 -- the Unity theme color: shape decides it, props included, ceilings and roofs are lighter grey, vents have their own colors
+	@return Color3 -- the Unity theme color: shape decides it, a prop's accent parts take the opposite color so they stand out, ceilings and roofs are lighter grey, vents have their own colors
 ]]
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
 
 	if named(name, { "prop" }) then
-		return shapeColor(part)
+		local base = shapeColor(part)
+
+		if named(name, { "propaccent" }) then
+			return if base == ORANGE then GREY else ORANGE
+		end
+
+		return base
 	elseif named(name, { "ventwall" }) then
 		return GREY
 	elseif named(name, { "ventceiling" }) then
