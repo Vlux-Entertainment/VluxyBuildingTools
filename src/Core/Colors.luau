@@ -115,8 +115,13 @@ local function unityColor(part: BasePart): Color3
 	end
 
 	local size = part.Size
+	local volume = size.X * size.Y * size.Z
 
-	if size.X * size.Y * size.Z <= 1 then
+	if volume ~= volume or volume == math.huge or math.min(size.X, size.Y, size.Z) <= 0 then
+		return GREY
+	end
+
+	if volume <= 1 then
 		return ORANGE
 	end
 
