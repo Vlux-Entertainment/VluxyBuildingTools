@@ -898,8 +898,7 @@ function Panel.new(deps: Deps): Panel
 		local dragging = false
 
 		local function setFrom(x: number)
-			local value = math.clamp((x - bar.AbsolutePosition.X) / math.max(1, bar.AbsoluteSize.X), 0, 1)
-;
+			local value = math.clamp((x - bar.AbsolutePosition.X) / math.max(1, bar.AbsoluteSize.X), 0, 1);
 			(settings :: any)[key] = math.round(value * 100) / 100
 			refresh()
 		end
