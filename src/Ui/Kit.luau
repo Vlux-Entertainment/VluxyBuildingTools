@@ -51,12 +51,13 @@ Kit.Zebra = vide.source(true)
 
 local ROW = "Row"
 local BAND = "VluxyBT_Band"
+local ROW_INSET = 6
 
 --[[
 	@param container Instance
 
-	Puts a faint band behind every other row that shows, in LayoutOrder, so a value lines up with its
-	label at a glance; hidden rows are skipped so the stripes never double up.
+	Shades every other row that shows, in LayoutOrder, so a value lines up with its label at a
+	glance; hidden rows are skipped so the stripes never double up.
 ]]
 local function stripe(container: Instance)
 	local rows: { GuiObject } = {}
@@ -74,27 +75,23 @@ local function stripe(container: Instance)
 	local on = Kit.Zebra()
 
 	for index, row in rows do
-		local band = row:FindFirstChild(BAND) :: Frame?
-
-		if not band then
-			local made = Instance.new("Frame")
-
-			made.Name = BAND
-			made.Size = UDim2.new(1, 8, 1, 0)
-			made.Position = UDim2.fromOffset(-4, 0)
-			made.BackgroundColor3 = Theme.Tile
-			made.BorderSizePixel = 0
-			made.ZIndex = 0
-
+		if not row:FindFirstChild(BAND) then
 			local corner = Instance.new("UICorner")
 
+			corner.Name = BAND
 			corner.CornerRadius = UDim.new(0, 5)
-			corner.Parent = made
-			made.Parent = row
-			band = made
+			corner.Parent = row
+
+			local inset = Instance.new("UIPadding")
+
+			inset.PaddingLeft = UDim.new(0, ROW_INSET)
+			inset.PaddingRight = UDim.new(0, ROW_INSET)
+			inset.Parent = row
+			row.BackgroundColor3 = Theme.Tile
+			row.BorderSizePixel = 0
 		end
 
-		(band :: Frame).Visible = on and index % 2 == 1
+		row.BackgroundTransparency = if on and index % 2 == 1 then 0 else 1
 	end
 end
 
