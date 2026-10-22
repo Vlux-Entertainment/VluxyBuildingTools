@@ -1672,7 +1672,7 @@ function Panel.new(deps: Deps): Panel
 				style(choice, 6, CARD_STROKE)
 				attachTip(choice, {
 					Text = if name == "Unity"
-						then "Unity theme: floors and trim orange, walls dark grey, ceilings lighter grey. Other parts follow their shape: very thin or long ones grey, chunky or small ones orange. Partly see-through parts are purple."
+						then "Unity theme: tall or lopsided parts dark grey, even-sized or tiny parts orange, ceilings lighter grey. Partly see-through parts are purple."
 						else "Pastel theme: a random soft color for every part. Partly see-through parts are purple.",
 				})
 				themeButtons[name] = choice
