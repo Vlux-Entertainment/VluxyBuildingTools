@@ -638,6 +638,82 @@ function Joints.FloorLevel(instance: Instance): number?
 	return nil
 end
 
+--[[
+	@return number -- the highest point of any part of the model
+]]
+local function topOf(model: Instance): number
+	local top = -math.huge
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") then
+			local cf, size = child.CFrame, child.Size
+			local reach = (
+				math.abs(cf.RightVector.Y) * size.X
+				+ math.abs(cf.UpVector.Y) * size.Y
+				+ math.abs(cf.LookVector.Y) * size.Z
+			) / 2
+
+			top = math.max(top, cf.Position.Y + reach)
+		end
+	end
+
+	return top
+end
+
+--[[
+	@param model Model -- a structure that was just built
+	@param roomJoin string -- Open, Shared or Separate
+	@return number -- how many parts could not be cut
+
+	Handles a structure whose floor sits on the top of another one. Separate leaves both slabs, Shared takes the lower ceiling away so one slab is left, and Open also cuts the floor away so the two levels are one space.
+]]
+local function stackOver(model: Model, roomJoin: string): number
+	local floor = model:FindFirstChild("Floor")
+
+	if roomJoin == "Separate" or not floor or not floor:IsA("BasePart") then
+		return 0
+	end
+
+	local thick = floor.Size.Y
+	local bottom = floor.Position.Y - thick / 2
+	local failed = 0
+
+	for _, lower in structures() do
+		if lower ~= model and math.abs(topOf(lower) - bottom) < 0.25 then
+			local wall = lower:FindFirstChild("CorridorWall") or lower:FindFirstChild("Wall_North")
+			local cut: { Cutter } = {}
+
+			for _, clear in stored(lower) do
+				if not clear.cylinder then
+					local trim = 0
+
+					if wall and wall:IsA("BasePart") and lower.Name ~= "Vlux_Room" then
+						trim = wall.Size.X
+					end
+
+					local yaw = clear.cf - clear.cf.Position
+
+					table.insert(cut, {
+						cf = CFrame.new(clear.cf.Position.X, bottom + thick / 2, clear.cf.Position.Z) * yaw,
+						size = Vector3.new(clear.size.X, thick * 2 + 2, math.max(0.1, clear.size.Z - 2 * trim)),
+						cylinder = false,
+					})
+				end
+			end
+
+			if #cut > 0 then
+				failed += carveModel(lower, cut)
+
+				if roomJoin == "Open" and not Joints.Carve(floor, cut) then
+					failed += 1
+				end
+			end
+		end
+	end
+
+	return failed
+end
+
 --[=[
 	Remembers the clear space of a freshly built structure on the model, and cuts openings between
 	it and the structures already built. Call it inside the undo recording, right after the build.
@@ -710,6 +786,8 @@ function Joints.Connect(model: Model, roomJoin: string, skip: Instance?): number
 			end
 		end
 	end
+
+	failed += stackOver(model, roomJoin)
 
 	return failed
 end

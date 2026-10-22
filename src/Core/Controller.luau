@@ -9,6 +9,7 @@
 ]=]
 
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
+local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
@@ -59,6 +60,8 @@ type Extrude = {
 
 export type Controller = {
 	Stop: () -> (),
+	Suspend: () -> (),
+	Resume: () -> (),
 	TogglePastel: () -> (),
 	ToggleGrid: () -> (),
 	PastelOn: () -> boolean,
@@ -69,9 +72,14 @@ export type Controller = {
 local SETTINGS_KEY = "VluxBlockoutSettings_v2"
 local UPDATE_INTERVAL = 0.05
 local FOLDER_ATTRIBUTE = "VluxyBT_WorkingFolder"
+local MAP_TAG = "VluxyBT_Map"
 local OLD_FOLDER_ATTRIBUTE = "VluxWorkingFolder"
 local MAX_LENGTH = 2048
 local MAX_STAMP_PARTS = 600
+local VENT_TAG = "VluxyBT_Vent"
+local PRESENCE_PREFIX = "VluxyBT_Active_"
+local PRESENCE_TIMEOUT = 45
+local PRESENCE_INTERVAL = 10
 
 local INSTRUCTIONS: { [string]: string } = {
 	PillaredWall = "Click start and end points. A pillar goes at the start and at the end of every section. Keep clicking to connect walls. Enter starts a new chain; Esc removes the point, Esc again exits.",
@@ -91,6 +99,13 @@ local INSTRUCTIONS: { [string]: string } = {
 	Ramp = "Click the bottom and top footprint point. Drag distance sets length; Height sets the rise.",
 	Arch = "Click the two inner edges at ground level. Height is the arch clearance; Depth is the frame depth.",
 	ArchOpening = "Hover over a plain wall and click to cut an archway. Adjust width/height below.",
+	Vent = "Click points to draw a vent along the X or Z axis. Keep clicking to chain it; it turns only at right angles and cuts a hole where it meets a wall, floor or ceiling. Enter starts a new chain.",
+	VentRamp = "Click the start and the end of the run, then move the mouse up or down to set how far the vent climbs or drops, and click.",
+	VentShaft = "Click a floor, wall or ceiling, then move the mouse up or down to set the length of the vertical vent and click.",
+	VentCover = "Click a vent opening or any surface to place a grate over it.",
+	VentCap = "Click a vent opening or any surface to close it with a plain square plate.",
+	VentFan = "Click a vent opening to block it with a fan.",
+	VentPeek = "Click a wall or vent opening to place a small louvred cover for looking out.",
 	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
 	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
 	CircleWindow = "Click an undecorated rectangular wall. The round window is centered on the cursor; its size is the smaller of the window width and height.",
@@ -126,6 +141,9 @@ local DRAW_MODES: { [string]: boolean } = {
 	Roof = true,
 	Railing = true,
 	HalfWall = true,
+	Vent = true,
+	VentRamp = true,
+	VentShaft = true,
 }
 
 -- Hotkeys that keep working when Blender hotkeys are switched off, as they did before.
@@ -176,6 +194,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushPool: { BrushItem } = {}
 	local brushItem: BrushItem? = nil
 	local brushScale = 1
+	local ventEnds: { Vector3 }? = nil
+	local ventHitNormal: Vector3? = nil
+	local peekCut: Builders.Cutter? = nil
+	local ventHitHost: Vector3? = nil
+	local ventHost: Vector3? = nil
+	local ventNormal: Vector3? = nil
+	local ventShift = Vector3.zero
+	local ventMarks: { Vector3 } = {}
 	local brushSpecs: { Spec } = {}
 	local quiet = false
 	local lockedHit: RaycastResult? = nil
@@ -377,6 +403,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function resetPoint()
 		first, current = nil, nil
 		cutFace, cutPending, cutPoints, cutSpot = nil, nil, {}, nil
+		ventEnds = nil
+		ventNormal, ventShift, ventHost = nil, Vector3.zero, nil
 		brushing, brushLast, brushTargets, brushSpecs = false, nil, {}, {}
 		lockedHit, cutDepth = nil, nil
 		prevWall = nil
@@ -693,6 +721,92 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--[[
+		@param model Model -- the vent that was just built
+		@param a Vector3 -- one end of the duct, on its middle line
+		@param b Vector3 -- the other end
+		@param skip Instance? -- the vent this one continues, left uncut
+
+		Records the vent's two open ends so later vents and covers can find them, then cuts the duct and its openings out of every other part the vent passes through.
+	]]
+	local function finishVent(model: Model, a: Vector3, b: Vector3, skip: Instance?)
+		if (b - a).Magnitude < 0.05 then
+			return
+		end
+
+		local dir = (b - a).Unit
+
+		model:SetAttribute("VluxyBT_VentStart", a)
+		model:SetAttribute("VluxyBT_VentStartDir", -dir)
+		model:SetAttribute("VluxyBT_VentEnd", b)
+		model:SetAttribute("VluxyBT_VentEndDir", dir)
+		CollectionService:AddTag(model, VENT_TAG)
+
+		local cutters = Builders.VentCutters(settings, a, b)
+		local params = OverlapParams.new()
+		local scope = Geometry.GetScope()
+
+		if scope then
+			params.FilterType = Enum.RaycastFilterType.Include
+			params.FilterDescendantsInstances = { scope }
+		end
+
+		local targets: { [BasePart]: boolean } = {}
+
+		for _, cutter in cutters do
+			for _, part in workspace:GetPartBoundsInBox(cutter.cf, cutter.size, params) do
+				local vent = false
+
+				for _, ancestor in { part.Parent, part.Parent and part.Parent.Parent } do
+					if ancestor and CollectionService:HasTag(ancestor, VENT_TAG) then
+						vent = true
+					end
+				end
+
+				if not vent and not part:IsA("Terrain") then
+					targets[part] = true
+				end
+			end
+		end
+
+		local failed = 0
+
+		for part in targets do
+			if not Joints.Carve(part, cutters) then
+				failed += 1
+			end
+		end
+
+		local joins = Builders.VentJoinCutters(settings, a, b)
+		local others: { [BasePart]: boolean } = {}
+
+		for _, cutter in joins do
+			for _, part in workspace:GetPartBoundsInBox(cutter.cf, cutter.size, params) do
+				local owner = part.Parent
+
+				if
+					owner
+					and owner ~= model
+					and owner ~= skip
+					and owner:IsA("Model")
+					and CollectionService:HasTag(owner, VENT_TAG)
+				then
+					others[part] = true
+				end
+			end
+		end
+
+		for part in others do
+			if not Joints.Carve(part, joins) then
+				failed += 1
+			end
+		end
+
+		if failed > 0 then
+			say(string.format("%d part(s) could not be cut for the vent.", failed))
+		end
+	end
+
+	--[[
 		Cuts the outlined shape out of the wall as one undo step, then clears the outline.
 	]]
 	local function finishCut()
@@ -806,6 +920,101 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		return Vector3.new(snap(hit.Position.X), height, snap(hit.Position.Z))
 	end
 
+	--[[
+		@param shaft boolean -- true for a vertical vent, whose point is on the surface itself
+		@return Vector3? -- where a vent starts: on an open vent end, else against the surface under the cursor so the duct sits beside it, on top of it or under it
+	]]
+	local function ventPoint(shaft: boolean): Vector3?
+		local hit = hitSurface()
+
+		if not hit then
+			return nil
+		end
+
+		local size = settings.VentSize
+		local step = math.max(0.5, settings.FineGrid)
+		local endPoint, openEnd, owner = Snapper.VentConnect(hit.Position, size * 1.1, step)
+
+		ventHitNormal = nil
+		ventHitHost = nil
+		table.clear(ventMarks)
+
+		if endPoint and owner then
+			local a = owner:GetAttribute("VluxyBT_VentStart")
+			local b = owner:GetAttribute("VluxyBT_VentEnd")
+
+			if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 then
+				local length = (b - a).Magnitude
+
+				for along = 0, length, step do
+					table.insert(ventMarks, a + (b - a).Unit * along)
+				end
+
+				table.insert(ventMarks, b)
+
+				if not openEnd then
+					ventHitHost = (b - a).Unit
+				end
+			end
+
+			snapMark = endPoint
+
+			return if shaft then endPoint else endPoint - Vector3.new(0, size / 2, 0)
+		end
+
+		local normal = hit.Normal
+		local onWall = math.abs(normal.Y) < 0.5
+		local y = hit.Position.Y
+
+		if onWall then
+			local part = hit.Instance :: BasePart
+			local reach = (
+				math.abs(part.CFrame.RightVector.Y) * part.Size.X
+				+ math.abs(part.CFrame.UpVector.Y) * part.Size.Y
+				+ math.abs(part.CFrame.LookVector.Y) * part.Size.Z
+			) / 2
+			local bottom, top = part.Position.Y - reach, part.Position.Y + reach
+			local floorTop = Joints.FloorLevel(part) or bottom
+			local heights = {
+				floorTop + size / 2,
+				bottom + size / 2,
+				(bottom + top) / 2,
+				top - size / 2,
+			}
+			local best = math.huge
+
+			y = snap(hit.Position.Y)
+
+			for _, height in heights do
+				if height >= bottom + size / 2 - 0.01 and height <= top - size / 2 + 0.01 then
+					local gap = math.abs(height - hit.Position.Y)
+
+					if gap < size * 0.75 and gap < best then
+						best, y = gap, height
+					end
+
+					table.insert(
+						ventMarks,
+						Vector3.new(
+							if math.abs(normal.X) < 0.5 then snap(hit.Position.X) else hit.Position.X,
+							height,
+							if math.abs(normal.Z) < 0.5 then snap(hit.Position.Z) else hit.Position.Z
+						)
+					)
+				end
+			end
+		end
+
+		local x = if math.abs(normal.X) < 0.5 then snap(hit.Position.X) else hit.Position.X
+		local z = if math.abs(normal.Z) < 0.5 then snap(hit.Position.Z) else hit.Position.Z
+		local centre = Vector3.new(x, y, z)
+
+		ventHitNormal = normal
+		snapMark = centre
+
+		return if shaft then centre else centre - Vector3.new(0, size / 2, 0)
+	end
+
 	local function floorPoint(): Vector3?
 		local joins = mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor"
 		local doorModes = mode == "Corridor" or mode == "ArchedCorridor"
@@ -840,7 +1049,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
-		if joins then
+		if joins and hit.Normal.Y < 0.7 then
 			local level = Joints.FloorLevel(hit.Instance)
 
 			if level then
@@ -915,7 +1124,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		Looking straight down, the mouse cannot be projected onto a vertical line, so the height follows the mouse on screen instead.
 	]]
-	local function screenHeight(from: Vector3): number
+	local function screenHeight(from: Vector3, signed: boolean?): number
 		local camera = workspace.CurrentCamera
 
 		if not camera or not heightMouse then
@@ -925,7 +1134,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local distance = (camera.CFrame.Position - from).Magnitude
 		local perPixel = 2 * distance * math.tan(math.rad(camera.FieldOfView) / 2) / math.max(1, camera.ViewportSize.Y)
 
-		return math.max(gridNow(), snap((heightMouse.Y - UserInputService:GetMouseLocation().Y) * perPixel))
+		local raw = snap((heightMouse.Y - UserInputService:GetMouseLocation().Y) * perPixel)
+
+		return if signed then raw else math.max(gridNow(), raw)
 	end
 
 	local function lookVector(): Vector3
@@ -1091,6 +1302,59 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					)
 					else "Move the mouse to set the cut depth. Click to confirm."
 			end
+		elseif mode == "VentCover" or mode == "VentCap" or mode == "VentFan" or mode == "VentPeek" then
+			local hit = hitSurface()
+
+			if hit then
+				local endPoint, outward = nil, nil
+
+				if mode ~= "VentPeek" then
+					endPoint, outward = Snapper.VentEnd(hit.Position, math.max(settings.VentSize, 3))
+				end
+
+				local center = hit.Position
+				local normal = hit.Normal
+
+				peekCut = nil
+
+				if mode == "VentPeek" then
+					local fine = math.max(0.25, settings.FineGrid)
+					local part = hit.Instance :: BasePart
+					local depth = math.max(0.4, math.min(part.Size.X, part.Size.Y, part.Size.Z) + 0.2)
+
+					center = Vector3.new(
+						if math.abs(normal.X) < 0.5 then math.round(center.X / fine) * fine else center.X,
+						if math.abs(normal.Y) < 0.5 then math.round(center.Y / fine) * fine else center.Y,
+						if math.abs(normal.Z) < 0.5 then math.round(center.Z / fine) * fine else center.Z
+					)
+
+					local u = (if math.abs(normal.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis):Cross(normal).Unit
+					local frame = CFrame.fromMatrix(center, u, normal:Cross(u), normal)
+
+					peekCut = {
+						cf = frame * CFrame.new(0, 0, 0.1 - depth / 2),
+						size = Vector3.new(2.4 - 0.5, Builders.PEEK_HEIGHT - 0.4, depth),
+						cylinder = false,
+					}
+				elseif endPoint and outward then
+					center, normal = endPoint, outward
+				else
+					center = Vector3.new(
+						if math.abs(normal.X) < 0.5 then snap(center.X) else center.X,
+						if math.abs(normal.Y) < 0.5 then snap(center.Y) else center.Y,
+						if math.abs(normal.Z) < 0.5 then snap(center.Z) else center.Z
+					)
+				end
+
+				local build: (typeof(settings), Vector3, Vector3) -> { Geometry.Spec } = if mode == "VentCap"
+					then Builders.VentCap
+					elseif mode == "VentFan" then Builders.VentFan
+					elseif mode == "VentPeek" then Builders.VentPeek
+					else Builders.VentCover
+
+				out = build(settings, center + normal * 0.075, normal)
+				message = "Click to place it."
+			end
 		elseif mode == "Pillar" then
 			local hit = hitSurface()
 			local base: Vector3? = nil
@@ -1149,16 +1413,23 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local origin = first
 			local height: number? = nil
 
+			if origin and riseStage and (mode == "Vent" or mode == "VentRamp") then
+				origin = origin + ventShift
+			end
+			local signedHeight = 0
+
 			if origin and lock and heightEnd and lock.Axis == "Y" and not lock.Plane then
 				local camera = workspace.CurrentCamera
 
 				if camera and heightMouse and math.abs(camera.CFrame.LookVector.Y) > 0.8 then
 					height = screenHeight(origin)
+					signedHeight = screenHeight(origin, true)
 				else
 					local top = lockedPoint(heightEnd, lock)
 
 					if top then
 						height = math.max(gridNow(), math.abs(top.Y - origin.Y))
+						signedHeight = top.Y - origin.Y
 					end
 				end
 
@@ -1174,7 +1445,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					current = horizontalPoint(origin.Y)
 				end
 			else
-				if mode == "Wall" or mode == "PillaredWall" or mode == "Stairs" or mode == "Ramp" then
+				if mode == "Vent" or mode == "VentRamp" or mode == "VentShaft" then
+					current = ventPoint(mode == "VentShaft") or horizontalPoint(settings.Elevation)
+				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Stairs" or mode == "Ramp" then
 					current = vertexPoint(nil) or horizontalPoint(settings.Elevation)
 				else
 					current = floorPoint() or horizontalPoint(settings.Elevation)
@@ -1234,6 +1507,74 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					current = b
 				end
 
+				if (mode == "Vent" or mode == "VentRamp") and not riseStage then
+					local d = b - origin
+					local alongX = math.abs(d.X) >= math.abs(d.Z)
+					local sign = if alongX then (if d.X >= 0 then 1 else -1) else (if d.Z >= 0 then 1 else -1)
+					local axis = if alongX then Vector3.xAxis else Vector3.zAxis
+
+					if chained and prevWall and (axis * sign):Dot(prevWall.dir) < -0.5 then
+						alongX = not alongX
+						axis = if alongX then Vector3.xAxis else Vector3.zAxis
+						sign = if alongX then (if d.X >= 0 then 1 else -1) else (if d.Z >= 0 then 1 else -1)
+					end
+
+					b = origin + axis * sign * (if alongX then math.abs(d.X) else math.abs(d.Z))
+
+					local aim = hitSurface()
+					local _, _, owner =
+						if aim then Snapper.VentConnect(aim.Position, settings.VentSize * 1.1, 1) else nil, nil, nil
+					local hostA = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
+					local hostB = if owner then owner:GetAttribute("VluxyBT_VentEnd") else nil
+
+					if
+						typeof(hostA) == "Vector3"
+						and typeof(hostB) == "Vector3"
+						and math.abs(hostB.Y - hostA.Y) < 0.05
+					then
+						local along = Vector3.new(hostB.X - hostA.X, 0, hostB.Z - hostA.Z)
+						local direction = axis * sign
+
+						if along.Magnitude > 0.05 then
+							local hostDir = along.Unit
+							local cross = direction.X * hostDir.Z - direction.Z * hostDir.X
+							local reachTo = Vector3.new(hostA.X - origin.X, 0, hostA.Z - origin.Z)
+							local s = (reachTo.X * hostDir.Z - reachTo.Z * hostDir.X)
+								/ (if cross == 0 then 1 else cross)
+							local meet = origin + direction * s
+							local position = Vector3.new(meet.X - hostA.X, 0, meet.Z - hostA.Z):Dot(hostDir)
+							local centreY = origin.Y + settings.VentSize / 2
+
+							if
+								math.abs(cross) > 0.9
+								and math.abs(hostA.Y - centreY) < settings.VentSize * 0.5
+								and position > -0.1
+								and position < along.Magnitude + 0.1
+								and s - settings.VentSize / 2 > 0.1
+							then
+								b = origin + direction * (s - settings.VentSize / 2)
+							end
+						end
+					end
+
+					if not chained and ventNormal then
+						local sideways = math.abs((axis * sign):Dot(ventNormal)) < 0.5
+
+						ventShift = if sideways then ventNormal * (settings.VentSize / 2) else Vector3.zero
+					end
+
+					if not chained and ventHost then
+						local along = axis * sign
+						local into = math.abs(along:Dot(ventHost)) < 0.5
+
+						ventShift = if into then along * (settings.VentSize / 2) else Vector3.zero
+						origin = origin + ventShift
+					else
+						origin, b = origin + ventShift, b + ventShift
+						current = b
+					end
+				end
+
 				local drawn = live
 
 				if height then
@@ -1269,6 +1610,38 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					local joinDir = if chained and prevWall then prevWall.dir else nil
 
 					out = Builders.ArchedCorridor(drawn, origin, b, joinDir)
+				elseif mode == "Vent" then
+					local joinDir = if chained and prevWall then prevWall.dir else nil
+					local lift = Vector3.new(0, settings.VentSize / 2, 0)
+
+					out = Builders.VentRun(settings, origin, b, joinDir)
+					ventEnds = { origin + lift, b + lift }
+				elseif mode == "VentRamp" then
+					local lift = Vector3.new(0, settings.VentSize / 2, 0)
+
+					if riseStage then
+						local run = Vector3.new(b.X - origin.X, 0, b.Z - origin.Z).Magnitude
+						local top = b + Vector3.new(0, math.clamp(signedHeight, -run, run), 0)
+
+						out = Builders.VentDuct(settings, origin + lift, top + lift)
+						ventEnds = { origin + lift, top + lift }
+					else
+						out = Builders.VentRun(settings, origin, b, nil)
+					end
+				elseif mode == "VentShaft" then
+					local top = origin + Vector3.new(0, signedHeight, 0)
+					local start = origin
+
+					if
+						ventHost
+						and math.abs(ventHost.Y) < 0.5
+						and math.abs(signedHeight) > settings.VentSize / 2 + 0.1
+					then
+						start = origin + Vector3.new(0, math.sign(signedHeight) * settings.VentSize / 2, 0)
+					end
+
+					out = Builders.VentDuct(settings, start, top)
+					ventEnds = { start, top }
 				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Corridor" then
 					local path = table.clone(drawn)
 
@@ -1356,6 +1729,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			if mode == "Room" or mode == "Corridor" or mode == "ArchedCorridor" then
 				holes =
 					Joints.Preview("Vlux_" .. mode, out, settings.RoomJoin, if prevWall then prevWall.model else nil)
+			end
+		end
+
+		if #holes == 0 and not first and #ventMarks > 0 and mode and string.sub(mode, 1, 4) == "Vent" then
+			for _, mark in ventMarks do
+				table.insert(holes, { cf = CFrame.new(mark), size = Vector3.new(0.45, 0.45, 0.45) })
 			end
 		end
 
@@ -2048,6 +2427,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Marks the folder as the one to confirm.
 	]]
 	local function proposeFolder(target: Instance)
+		if not settings.AllowUntagged and not CollectionService:HasTag(target, MAP_TAG) then
+			return say(
+				`"{target.Name}" is not a map. Add the tag {MAP_TAG} to the folder first (Tag Editor), or turn on Allow untagged folders (not recommended).`
+			)
+		end
+
 		pendingFolder = target
 		redrawBoxes()
 		panel.Refresh()
@@ -2094,6 +2479,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		the old folder is not left recolored.
 	]]
 	local function setFolder(chosen: Instance?)
+		if chosen and not settings.AllowUntagged and not CollectionService:HasTag(chosen, MAP_TAG) then
+			return say(
+				`"{chosen.Name}" cannot be the working folder: add the tag {MAP_TAG} to it first, or turn on Allow untagged folders (not recommended).`
+			)
+		end
+
 		if colors.On and chosen ~= folder then
 			quiet = true
 			Colors.Set(colors, false)
@@ -2539,6 +2930,34 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 			end)
 			resetPoint()
+		elseif active == "VentCover" or active == "VentCap" or active == "VentFan" or active == "VentPeek" then
+			if not previewValid then
+				return
+			end
+
+			local specs = previewSpecs
+
+			local cut = if active == "VentPeek" then peekCut else nil
+
+			edit("Place vent piece", function()
+				if cut then
+					local params = OverlapParams.new()
+					local scope = Geometry.GetScope()
+
+					if scope then
+						params.FilterType = Enum.RaycastFilterType.Include
+						params.FilterDescendantsInstances = { scope }
+					end
+
+					for _, part in workspace:GetPartBoundsInBox(cut.cf, cut.size, params) do
+						if not part:IsA("Terrain") then
+							Joints.Carve(part, { cut })
+						end
+					end
+				end
+
+				Geometry.Materialize(specs, "Vlux_" .. active)
+			end)
 		elseif active == "Pillar" then
 			if not previewValid then
 				return
@@ -2579,10 +2998,30 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		elseif current then
 			if not first then
 				first = current
+				ventNormal = if active == "Vent" or active == "VentRamp" then ventHitNormal else nil
+				ventHost = if active == "Vent"
+						or active == "VentRamp"
+						or active == "VentShaft"
+					then ventHitHost
+					else nil
+				ventShift = Vector3.zero
 				startDoor = if active == "Corridor" or active == "ArchedCorridor" then hoverDoor else nil
 				NumericInput.Clear(numeric)
-				say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
-			elseif previewValid and (active == "Stairs" or active == "Ramp") and not riseStage then
+
+				if active == "VentShaft" then
+					riseStage = true
+					heightEnd = current
+					heightMouse = mouseLocation()
+					lock = AxisLock.Toggle(nil, "Y", false)
+					say("Move the mouse up or down to set the length of the vent. Click to place.")
+				else
+					say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
+				end
+			elseif
+				previewValid
+				and (active == "Stairs" or active == "Ramp" or active == "VentRamp")
+				and not riseStage
+			then
 				riseStage = true
 				heightEnd = current
 				heightMouse = mouseLocation()
@@ -2596,7 +3035,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					or active == "Railing"
 					or active == "HalfWall"
 					or active == "ArchedCorridor"
+					or active == "Vent"
 				local nextPoint = current
+				local ends = ventEnds
 				local specs = previewSpecs
 				local segment = Vector3.new(current.X - first.X, 0, current.Z - first.Z)
 				local joint = first
@@ -2616,16 +3057,23 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						local archCut: { Builders.Cutter } = {}
 						local archBefore: Model? = nil
 
-						if active == "Wall" or active == "Corridor" or active == "ArchedCorridor" then
+						if
+							active == "Wall"
+							or active == "Corridor"
+							or active == "ArchedCorridor"
+							or active == "Vent"
+						then
 							local before = prevWall
 							local strips = if active == "Wall"
 								then Builders.WallStrips(settings)
 								elseif active == "Corridor" then Builders.CorridorStrips(settings)
+								elseif active == "Vent" then Builders.VentStrips(settings)
 								else Builders.ArchedStrips(settings)
 
 							if before and before.model.Parent and segment.Magnitude > 0.001 then
 								local bend = Builders.Bend(joint, before.dir, segment, before.strips, strips)
 								local floor = before.model:FindFirstChild("Floor")
+									or before.model:FindFirstChild("VentFloor")
 								local across = before.dir:Cross(Vector3.yAxis)
 
 								local pieces: { Instance } = if before.model:IsA("BasePart")
@@ -2634,9 +3082,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 								for _, child in pieces do
 									if child:IsA("Part") then
-										local key = child.Name
+										local key = if child.Name == "VentFloor"
+											then "Floor"
+											elseif child.Name == "VentCeiling" then "Ceiling"
+											else child.Name
 
-										if key == "CorridorWall" then
+										if key == "CorridorWall" or key == "VentWall" then
 											local lateral = if floor and floor:IsA("BasePart")
 												then (child.Position - floor.Position):Dot(across)
 												else 0
@@ -2684,6 +3135,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 							prevWall = if segment.Magnitude > 0.001
 								then { model = placed, dir = segment.Unit, strips = strips }
 								else nil
+						end
+
+						if (active == "Vent" or active == "VentRamp" or active == "VentShaft") and ends and model then
+							finishVent(model, ends[1], ends[2], previousModel)
 						end
 
 						if active == "Floor" and settings.FloorTransparency > 0 then
@@ -2748,6 +3203,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					end)
 				then
 					first = if chain then nextPoint else nil
+					ventNormal, ventShift, ventHost = nil, Vector3.zero, nil
 					chained = chain
 					lock = nil
 					heightEnd = nil
@@ -2900,6 +3356,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local elapsed = 0
 
 	local cameraLight: Part? = nil
+	local suspended = false
+	local myId = (function(): number
+		local ok, id = pcall(function()
+			return game:GetService("StudioService"):GetUserId()
+		end)
+
+		return if ok and type(id) == "number" then id else 0
+	end)()
 
 	trove:Add(function()
 		if cameraLight then
@@ -2913,7 +3377,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function syncCameraLight()
 		local camera = workspace.CurrentCamera
 
-		if not settings.CameraLight or not camera or not RunService:IsEdit() then
+		if suspended or not settings.CameraLight or not camera or not RunService:IsEdit() then
 			if cameraLight then
 				cameraLight:Destroy()
 				cameraLight = nil
@@ -3038,10 +3502,105 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 	end
 
+	--[[
+		@param on boolean
+
+		Records in a Workspace attribute that this user has the plugin open, with the time, so other users can tell the plugin is in use.
+	]]
+	local function markPresent(on: boolean)
+		if RunService:IsEdit() then
+			workspace:SetAttribute(PRESENCE_PREFIX .. myId, if on then os.time() else nil)
+		end
+	end
+
+	--[[
+		@return boolean -- whether another user has had the plugin open within the last minute
+	]]
+	local function othersPresent(): boolean
+		local mine = PRESENCE_PREFIX .. myId
+
+		for name, stamp in workspace:GetAttributes() do
+			if
+				string.sub(name, 1, #PRESENCE_PREFIX) == PRESENCE_PREFIX
+				and name ~= mine
+				and type(stamp) == "number"
+				and math.abs(os.time() - stamp) < PRESENCE_TIMEOUT
+			then
+				return true
+			end
+		end
+
+		return false
+	end
+
+	--[[
+		Puts the place back to normal while the plugin is not in use: the surface grid and pastel colors come off, hidden parts are shown again and the camera light goes out. The choices are remembered, so Resume brings them back.
+	]]
+	local function suspend()
+		stop()
+		suspended = true
+		syncCameraLight()
+		markPresent(false)
+
+		if othersPresent() then
+			return
+		end
+
+		Hidden.UnhideAll(hidden)
+
+		quiet = true
+
+		if colors.On then
+			Colors.Set(colors, false)
+		end
+
+		if surfaceGrid.On then
+			SurfaceGrid.Set(surfaceGrid, false)
+		end
+
+		quiet = false
+	end
+
+	--[[
+		Puts back the pastel colors and the surface grid that Suspend took off, if they were on.
+	]]
+	local function resume()
+		suspended = false
+		markPresent(true)
+
+		if folder then
+			if settings.AutoPastel and not colors.On then
+				Colors.Set(colors, true)
+			end
+
+			if settings.AutoGrid and not surfaceGrid.On then
+				SurfaceGrid.Set(surfaceGrid, true)
+			end
+		end
+	end
+
+	local alive = true
+
+	trove:Add(function()
+		alive = false
+	end)
+
+	task.spawn(function()
+		while alive do
+			if widget.Enabled then
+				markPresent(true)
+			end
+
+			task.wait(PRESENCE_INTERVAL)
+		end
+	end)
+
 	return {
 		Stop = function()
 			stop()
 		end,
+		Suspend = suspend,
+		Resume = resume,
 		TogglePastel = function()
 			perform("TogglePastel")
 		end,
@@ -3055,10 +3614,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return surfaceGrid.On
 		end,
 		Destroy = function()
-			stop()
 			save()
-			Hidden.UnhideAll(hidden)
-			Colors.RestoreOnUnload(colors)
+			suspend()
+
+			if not othersPresent() then
+				Colors.RestoreOnUnload(colors)
+			end
 		end,
 	}
 end

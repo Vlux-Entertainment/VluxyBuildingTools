@@ -84,6 +84,7 @@ local FIELD = Color3.fromRGB(21, 22, 26)
 local TEXT = Color3.fromRGB(236, 237, 240)
 local MUTED = Color3.fromRGB(139, 142, 150)
 local ACCENT = Color3.fromRGB(255, 138, 36)
+local DANGER = Color3.fromRGB(235, 64, 64)
 local ACCENT_DIM = Color3.fromRGB(62, 40, 22)
 local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
 local TABS = { "Build", "Arrange", "Display", "Hotkeys", "Settings" }
@@ -607,7 +608,14 @@ function Panel.new(deps: Deps): Panel
 		end)
 	end
 
-	local function switch(parent: Instance, title: string, get: () -> boolean, set: (boolean) -> (), scope: Scope?)
+	local function switch(
+		parent: Instance,
+		title: string,
+		get: () -> boolean,
+		set: (boolean) -> (),
+		scope: Scope?,
+		danger: boolean?
+	)
 		local frame = newRow(parent, 36)
 
 		register(frame, scope)
@@ -615,7 +623,7 @@ function Panel.new(deps: Deps): Panel
 			Size = UDim2.new(1, -60, 1, 0),
 			BackgroundTransparency = 1,
 			Text = title,
-			TextColor3 = TEXT,
+			TextColor3 = if danger then DANGER else TEXT,
 			Font = Enum.Font.Gotham,
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -643,7 +651,7 @@ function Panel.new(deps: Deps): Panel
 		table.insert(refreshers, function()
 			local on = get()
 
-			track.BackgroundColor3 = if on then ACCENT else SWITCH_OFF
+			track.BackgroundColor3 = if on then (if danger then DANGER else ACCENT) else SWITCH_OFF
 			knob.Position = UDim2.new(0, if on then 23 else 3, 0.5, 0)
 		end)
 		track.MouseButton1Click:Connect(function()
@@ -967,6 +975,9 @@ function Panel.new(deps: Deps): Panel
 		Roof = true,
 		Railing = true,
 		HalfWall = true,
+		Vent = true,
+		VentRamp = true,
+		VentShaft = true,
 		Block = true,
 		Stairs = true,
 		Ramp = true,
@@ -1153,6 +1164,32 @@ function Panel.new(deps: Deps): Panel
 		body({ Porch = true, Railing = true, HalfWall = true })
 	)
 	numeric(scope, "BalusterSpacing", "Bar spacing", 0.3, 64, nil, body({ Railing = true }))
+	numeric(
+		scope,
+		"VentSize",
+		"Vent size",
+		0.5,
+		64,
+		nil,
+		body({
+			Vent = true,
+			VentRamp = true,
+			VentShaft = true,
+			VentCover = true,
+			VentCap = true,
+			VentFan = true,
+			VentPeek = true,
+		})
+	)
+	numeric(
+		scope,
+		"VentThickness",
+		"Vent sheet thickness",
+		0.05,
+		4,
+		0.05,
+		body({ Vent = true, VentRamp = true, VentShaft = true })
+	)
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 	numeric(scope, "BrushRadius", "Brush radius", 0, 200, 1, body({ Place = true }))
@@ -1288,6 +1325,7 @@ function Panel.new(deps: Deps): Panel
 			Fence = true,
 			Railing = true,
 			HalfWall = true,
+			Vent = true,
 		})
 	)
 
@@ -1464,6 +1502,13 @@ function Panel.new(deps: Deps): Panel
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
 
+	switch(displayCard, "Allow untagged folders (not recommended)", function()
+		return settings.AllowUntagged
+	end, function(on)
+		settings.AllowUntagged = on
+		deps.Save()
+		refresh()
+	end, nil, true)
 	switch(displayCard, "Camera light", function()
 		return settings.CameraLight
 	end, function(on)

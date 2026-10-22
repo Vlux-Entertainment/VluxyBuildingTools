@@ -38,14 +38,21 @@ widget.Title = PluginInfo.Name
 
 local controller = Controller.new(plugin, widget, trove :: any)
 
+if not widget.Enabled then
+	task.defer(controller.Suspend)
+end
+
 trove:Connect(button.Click, function()
 	widget.Enabled = not widget.Enabled
 end)
 trove:Connect(widget:GetPropertyChangedSignal("Enabled"), function()
 	button:SetActive(widget.Enabled)
 
-	if not widget.Enabled then
+	if widget.Enabled then
+		controller.Resume()
+	else
 		controller.Stop()
+		controller.Suspend()
 	end
 end)
 button:SetActive(widget.Enabled)

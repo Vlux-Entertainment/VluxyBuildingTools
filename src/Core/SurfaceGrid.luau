@@ -78,6 +78,7 @@ local function apply(part: BasePart, studs: number, color: Color3)
 		grid.StudsPerTileU = studs
 		grid.StudsPerTileV = studs
 		grid.Color3 = color
+		grid.LocalTransparencyModifier = part.LocalTransparencyModifier
 		grid.Parent = part
 	end
 end

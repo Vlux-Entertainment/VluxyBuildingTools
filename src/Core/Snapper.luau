@@ -10,6 +10,8 @@
 
 local Geometry = require("./Geometry")
 
+local CollectionService = game:GetService("CollectionService")
+
 local MAX_PARTS = 120
 local MIN_SIZE = 0.05
 local EDGE_REACH = 0.9
@@ -176,6 +178,85 @@ function Snapper.Vertex(point: Vector3, radius: number): (Vector3, boolean)
 	end
 
 	return point, false
+end
+
+--[=[
+	Finds the open end of a vent built by this plugin near the point. Each vent model records its
+	two ends in attributes so a new vent, or a cover, can start exactly on one.
+
+	@param point Vector3
+	@param radius number
+	@return Vector3? -- the middle of the opening
+	@return Vector3? -- the direction pointing out of the vent
+]=]
+function Snapper.VentEnd(point: Vector3, radius: number): (Vector3?, Vector3?)
+	local best: Vector3? = nil
+	local bestDirection: Vector3? = nil
+	local bestDistance = radius
+
+	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
+		for _, name in { "Start", "End" } do
+			local at = model:GetAttribute("VluxyBT_Vent" .. name)
+			local out = model:GetAttribute("VluxyBT_Vent" .. name .. "Dir")
+
+			if typeof(at) == "Vector3" and typeof(out) == "Vector3" then
+				local distance = (at - point).Magnitude
+
+				if distance < bestDistance then
+					bestDistance, best, bestDirection = distance, at, out
+				end
+			end
+		end
+	end
+
+	return best, bestDirection
+end
+
+--[=[
+	Finds a connection point on a vent built by this plugin: either open end, or any spot along
+	its middle line, snapped to the step. A new vent or a shaft can start from any of them.
+
+	@param point Vector3 -- where the cursor hit
+	@param radius number -- how far from the middle line still counts
+	@param step number -- the spacing of the points along a vent
+	@return Vector3? -- the point on the middle line
+	@return Vector3? -- the way out of the vent when the point is an open end, else nil
+	@return Instance? -- the vent model the point is on
+]=]
+function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vector3?, Vector3?, Instance?)
+	local bestModel: Instance? = nil
+	local best: Vector3? = nil
+	local bestDirection: Vector3? = nil
+	local bestDistance = radius
+
+	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
+		local a = model:GetAttribute("VluxyBT_VentStart")
+		local b = model:GetAttribute("VluxyBT_VentEnd")
+
+		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 then
+			local d = b - a
+			local length = d.Magnitude
+			local along = math.clamp((point - a):Dot(d) / length, 0, length)
+			local onLine = a + d.Unit * along
+			local distance = (onLine - point).Magnitude
+
+			if distance < bestDistance then
+				bestDistance, bestModel = distance, model
+
+				if along < step * 0.75 then
+					best, bestDirection = a, model:GetAttribute("VluxyBT_VentStartDir") :: Vector3
+				elseif length - along < step * 0.75 then
+					best, bestDirection = b, model:GetAttribute("VluxyBT_VentEndDir") :: Vector3
+				else
+					local snapped = math.clamp(math.round(along / step) * step, 0, length)
+
+					best, bestDirection = a + d.Unit * snapped, nil
+				end
+			end
+		end
+	end
+
+	return best, bestDirection, bestModel
 end
 
 --[=[
