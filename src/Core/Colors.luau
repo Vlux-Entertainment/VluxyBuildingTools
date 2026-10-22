@@ -104,19 +104,27 @@ local function unityColor(part: BasePart): Color3
 		end
 
 		return if orange then ORANGE_DARK else GREY_LIGHT
-	elseif named(name, { "ventwall", "ventceiling" }) then
+	elseif named(name, { "ventwall" }) then
 		return ORANGE_DARK
+	elseif named(name, { "ventceiling" }) then
+		return GREY_LIGHT
 	elseif named(name, { "vent" }) then
 		return if named(name, { "floor", "duct" }) then GREY else ORANGE
 	elseif named(name, { "foundation", "floor", "landing" }) then
 		return GREY
+	elseif named(name, { "ceiling", "roof", "arched" }) then
+		return GREY_LIGHT
 	elseif named(name, { "stair", "step", "ramp", "porch" }) then
 		return ORANGE_DARK
-	elseif named(name, { "ceiling", "roof", "arched" }) then
-		return ORANGE_DARK
+	elseif named(name, { "pillar", "post", "rail", "fence", "sill", "header", "frame", "circle", "triangle" }) then
+		return GREY
+	elseif named(name, { "wall" }) then
+		return if part.Size.Y < 2 then GREY_LIGHT else ORANGE
+	elseif named(name, { "opening", "arch" }) then
+		return ORANGE
 	end
 
-	return ORANGE
+	return GREY_LIGHT
 end
 
 --[[
