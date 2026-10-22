@@ -37,6 +37,7 @@ local function archRoof(out: { Spec }, cf: CFrame, settings: Settings, length: n
 	local h = math.max(0.1, settings.Height - radius)
 	local count = math.max(2, math.floor(settings.ArchSegments))
 
+	--[[ A point on the arch at radius r and an angle from the springing line, in world space. ]]
 	local function point(r: number, angle: number): Vector3
 		return cf:PointToWorldSpace(Vector3.new(r * math.cos(angle), h + r * math.sin(angle), 0))
 	end
@@ -415,6 +416,7 @@ function Paths.Path(
 		add(out, Vector3.new(width, height, run), CFrame.lookAt(center, center + d), name)
 	end
 
+	--[[ How far a part starts late on this segment, so it does not overlap the bend before it. ]]
 	local function late(key: string): number
 		return if bend then bend.start[key] or 0 else 0
 	end

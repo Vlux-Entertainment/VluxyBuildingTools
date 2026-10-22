@@ -1,6 +1,29 @@
 # Handoff
 
-## State (2026-10-22)
+## State (2026-10-22, 1.0.0)
+
+The owner tested the plugin and called it ready for **1.0.0**. Since the rewrite, merged into
+`main`: the door standard (#26), six color themes (#27), the panel cleanup (#30: one-sentence
+wording, hover descriptions on card titles, Array in Arrange, sectioned Hotkeys and Settings tabs,
+zebra rows, UI color, button pops, prop spin), local-only sounds played from a hidden widget
+(#29, #31) and the Moonwave docs (#32). The docs site is
+https://vlux-entertainment.github.io/VluxyBuildingTools/ and rebuilds on every push to `main`
+(`.github/workflows/docs.yml`); `moonwave.toml` holds the API sidebar order, so a new `@class`
+needs adding there.
+
+Known concerns, for later: performance at large part counts, snapping and placement feel, and
+bugs. PR #25 (100k-part performance, `perf/100k-parts`) is still open and conflicts with `main` in
+`Core/Colors` (the post-edit sweep); merge `main` into it before merging.
+
+Tests: `npm test` runs the Lune specs (Pure, and Core through `tests/Support/Harness`, which loads
+`src/` modules with `@lune/roblox` datatypes; it cannot raycast or query parts), `npm run perf` the
+benchmarks against budgets, and `tests/Studio/Smoke.luau` is a command-bar check for what needs
+real Studio. See `docs/Testing.md`.
+
+Sounds: Studio only plays a Sound in Edit mode inside a plugin widget, and anything in
+SoundService replicates in Team Create; see `Core/Sounds`.
+
+## Earlier state
 
 The modular rewrite (PR #24) is merged into `main`. The owner tested it in Studio and found it as
 stable as the old version; two bugs found in testing were fixed (the Props tab broke vide's scope
