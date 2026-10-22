@@ -38,7 +38,7 @@ Tips.Entries = {
 	["MOVE & EDIT"] = { Text = "Act on the selected parts, Blender-style." },
 	["SHOW & HIDE"] = { Text = "Themes, grid, camera light and hidden parts." },
 	PANEL = { Text = "Move around this panel; Studio keeps its camera keys." },
-	INTERFACE = { Text = "How the panel looks and moves." },
+	INTERFACE = { Text = "How the panel looks, moves and sounds." },
 	["UI animations"] = { Text = "Buttons pop when clicked and prop pictures spin." },
 
 	-- Working folder

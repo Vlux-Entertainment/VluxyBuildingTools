@@ -42,14 +42,6 @@ return function(ui: Ui): { Instance }
 			number("StandardDoorWidth", "Standard doorway width", 0.1, 1024),
 			number("StandardDoorHeight", "Standard doorway height", 0.1, 1024),
 			number("Extend", "Face extend length", 0.1, 2048),
-			Controls.Switch(ui, {
-				Title = "Play sounds",
-				Key = "SoundEnabled",
-				After = function()
-					app.Sound("ToggleOn")
-				end,
-			}),
-			Controls.Slider(ui, "SoundVolume", "Sound volume"),
 		}),
 		Controls.Card(ui, "INTERFACE", {
 			Controls.Switch(ui, { Title = "UI animations", Key = "UiAnimations" }),
@@ -63,6 +55,14 @@ return function(ui: Ui): { Instance }
 					Store.Set(app.Store, "UiAccent", name)
 				end,
 			}),
+			Controls.Switch(ui, {
+				Title = "Play sounds",
+				Key = "SoundEnabled",
+				After = function()
+					app.Sound("ToggleOn")
+				end,
+			}),
+			Controls.Slider(ui, "SoundVolume", "Sound volume"),
 		}),
 		Controls.Card(ui, "RESET", {
 			Controls.Button(ui, "Reset all settings", function()
