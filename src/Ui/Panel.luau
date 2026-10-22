@@ -820,6 +820,116 @@ function Panel.new(deps: Deps): Panel
 		end
 	end
 
+	--[[
+		@param parent Instance
+		@param key string -- a number setting from 0 to 1
+		@param title string
+		@param scope Scope?
+
+		A row with a draggable slider for a 0 to 1 setting, and its value as a percent.
+	]]
+	local function slider(parent: Instance, key: string, title: string, scope: Scope?)
+		local frame = newRow(parent, 36)
+
+		register(frame, scope)
+
+		local rowLabel = make("TextLabel", {
+			Size = UDim2.new(1, -190, 1, 0),
+			BackgroundTransparency = 1,
+			Text = title,
+			TextColor3 = TEXT,
+			Font = Enum.Font.Gotham,
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		}, frame)
+
+		attach(rowLabel, key)
+
+		local percent = make("TextLabel", {
+			Size = UDim2.fromOffset(40, 36),
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.fromScale(1, 0),
+			BackgroundTransparency = 1,
+			TextColor3 = TEXT,
+			Font = Enum.Font.GothamMedium,
+			TextSize = 13,
+			Text = "",
+		}, frame)
+		local hit = make("TextButton", {
+			Size = UDim2.fromOffset(130, 28),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -46, 0.5, 0),
+			BackgroundTransparency = 1,
+			Text = "",
+			AutoButtonColor = false,
+		}, frame)
+		local bar = make("Frame", {
+			Size = UDim2.new(1, 0, 0, 6),
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.fromScale(0, 0.5),
+			BackgroundColor3 = SWITCH_OFF,
+			BorderSizePixel = 0,
+		}, hit)
+		local fill = make("Frame", {
+			Size = UDim2.fromScale(0, 1),
+			BackgroundColor3 = ACCENT,
+			BorderSizePixel = 0,
+		}, bar)
+		local knob = make("Frame", {
+			Size = UDim2.fromOffset(14, 14),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0, 0.5),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BorderSizePixel = 0,
+		}, bar)
+
+		style(bar, 3)
+		style(fill, 3)
+		style(knob, 7)
+
+		table.insert(refreshers, function()
+			local value = math.clamp((values :: any)[key] :: number, 0, 1)
+
+			fill.Size = UDim2.fromScale(value, 1)
+			knob.Position = UDim2.fromScale(value, 0.5)
+			percent.Text = string.format("%d%%", math.round(value * 100))
+		end)
+
+		local dragging = false
+
+		local function setFrom(x: number)
+			local value = math.clamp((x - bar.AbsolutePosition.X) / math.max(1, bar.AbsoluteSize.X), 0, 1)
+;
+			(settings :: any)[key] = math.round(value * 100) / 100
+			refresh()
+		end
+
+		hit.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = true
+				setFrom(input.Position.X)
+			end
+		end)
+		deps.Widget.InputChanged:Connect(function(input)
+			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+				setFrom(input.Position.X)
+			end
+		end)
+		deps.Widget.InputEnded:Connect(function(input)
+			if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+				deps.Save()
+				deps.Sound("Tab")
+			end
+		end)
+
+		resetMenu(frame, function()
+			(settings :: any)[key] = (Settings.Defaults() :: any)[key]
+			deps.Save()
+			refresh()
+		end, tostring((Settings.Defaults() :: any)[key]))
+	end
+
 	--
 	-- Tabs and pages
 	--
@@ -2300,7 +2410,7 @@ function Panel.new(deps: Deps): Panel
 		refresh()
 		deps.Sound("ToggleOn")
 	end)
-	numeric(editing, "SoundVolume", "Sound volume", 0, 1, 0.1)
+	slider(editing, "SoundVolume", "Sound volume")
 	switch(editing, "Blender hotkeys", function()
 		return settings.Hotkeys
 	end, function(on)
