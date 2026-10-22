@@ -209,6 +209,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local propId: string? = nil
 	local propFrame: CFrame? = nil
 	local othersPresent: () -> boolean
+	local folderWatch: RBXScriptConnection? = nil
 	local conflict: { Folder: Instance, Names: string }? = nil
 	local ventHitNormal: Vector3? = nil
 	local peekCut: Builders.Cutter? = nil
@@ -309,6 +310,22 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	end
 
 	--[[
+		@param value any
+		@return string? -- the theme the value names, ignoring case, or nil when it names none
+	]]
+	local function themeName(value: any): string?
+		if type(value) == "string" then
+			for _, name in Colors.Themes do
+				if string.lower(name) == string.lower(value) then
+					return name
+				end
+			end
+		end
+
+		return nil
+	end
+
+	--[[
 		@param target Instance
 
 		Writes the global visual settings onto the folder, so everyone working in it shares them.
@@ -321,6 +338,37 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				target:SetAttribute(SHARED_PREFIX .. entry.Key, value)
 			end
 		end
+	end
+
+	--[[
+		@param target Instance
+		@param key string -- a shared setting
+
+		Takes a value somebody changed on the folder, by hand or from another user, as this user's own, so the folder always wins and an old local value never writes over it.
+	]]
+	local function adoptShared(target: Instance, key: string)
+		local value = target:GetAttribute(SHARED_PREFIX .. key)
+
+		if key == "ColorTheme" then
+			value = themeName(value)
+		end
+
+		if value == nil or type(value) ~= type((settings :: any)[key]) or (settings :: any)[key] == value then
+			return
+		end
+
+		(settings :: any)[key] = value
+		pcall(function()
+			plugin:SetSetting(SETTINGS_KEY, settings)
+		end)
+
+		if key == "ColorTheme" then
+			Colors.Retheme(colors)
+		elseif key == "GhostTransparency" then
+			Hidden.SetGhost(hidden, settings.GhostTransparency)
+		end
+
+		panel.Refresh()
 	end
 
 	local function save()
@@ -2449,9 +2497,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function currentTheme(): string
 		if folder and folder:IsDescendantOf(workspace) then
-			local shared = folder:GetAttribute(THEME_ATTRIBUTE)
+			local shared = themeName(folder:GetAttribute(THEME_ATTRIBUTE))
 
-			if type(shared) == "string" and table.find(Colors.Themes, shared) then
+			if shared then
 				return shared
 			end
 
@@ -2624,6 +2672,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local previous = folder
 
+		if folderWatch then
+			folderWatch:Disconnect()
+			folderWatch = nil
+		end
+
 		folder = chosen
 		Geometry.SetScope(chosen)
 		redrawBoxes()
@@ -2645,6 +2698,13 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if chosen then
 			if chosen:IsDescendantOf(workspace) then
 				publishShared(chosen)
+				folderWatch = chosen.AttributeChanged:Connect(function(name)
+					for _, entry in SHARED_SETTINGS do
+						if name == SHARED_PREFIX .. entry.Key then
+							adoptShared(chosen, entry.Key)
+						end
+					end
+				end)
 			end
 
 			if settings.AutoPastel and not colors.On then
@@ -2669,6 +2729,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		for _, entry in SHARED_SETTINGS do
 			local theirs = chosen:GetAttribute(SHARED_PREFIX .. entry.Key)
 			local mine = (settings :: any)[entry.Key]
+
+			if entry.Key == "ColorTheme" then
+				theirs = themeName(theirs) or theirs
+			end
 
 			if theirs ~= nil and type(theirs) == type(mine) then
 				local same = if type(mine) == "number"
@@ -2720,6 +2784,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		if choice == "Use" then
 			for _, entry in SHARED_SETTINGS do
 				local theirs = pending.Folder:GetAttribute(SHARED_PREFIX .. entry.Key)
+
+				if entry.Key == "ColorTheme" then
+					theirs = themeName(theirs) or theirs
+				end
 
 				if theirs ~= nil and type(theirs) == type((settings :: any)[entry.Key]) then
 					(settings :: any)[entry.Key] = theirs
