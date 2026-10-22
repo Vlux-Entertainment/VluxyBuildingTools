@@ -1163,7 +1163,15 @@ function Panel.new(deps: Deps): Panel
 		0.5,
 		64,
 		nil,
-		body({ Vent = true, VentRamp = true, VentShaft = true, VentCover = true })
+		body({
+			Vent = true,
+			VentRamp = true,
+			VentShaft = true,
+			VentCover = true,
+			VentCap = true,
+			VentFan = true,
+			VentPeek = true,
+		})
 	)
 	numeric(
 		scope,

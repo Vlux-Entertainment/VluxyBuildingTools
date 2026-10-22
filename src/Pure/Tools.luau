@@ -154,6 +154,27 @@ Tools.List = {
 		Description = "Place a grate over a vent opening, or on any surface.",
 	},
 	{
+		Id = "VentCap",
+		Label = "End Cap",
+		Glyph = "■",
+		Key = nil,
+		Description = "Close a vent end with a plain square plate.",
+	},
+	{
+		Id = "VentFan",
+		Label = "Fan End",
+		Glyph = "✲",
+		Key = nil,
+		Description = "Close a vent end with a frame and fan blades that block the way.",
+	},
+	{
+		Id = "VentPeek",
+		Label = "Peek Cover",
+		Glyph = "▭",
+		Key = nil,
+		Description = "A small rectangular louvred cover, for looking out of a vent through a wall.",
+	},
+	{
 		Id = "Roof",
 		Label = "Roof",
 		Glyph = "⌂",
@@ -263,8 +284,8 @@ Tools.Grid = {
 		Label = "Vents",
 		Glyph = "▤",
 		Key = "5",
-		Description = "Build duct networks: a square vent that turns at right angles, a sloped vent, a vertical shaft and a grate cover. Pick which one in the options.",
-		Modes = { "Vent", "VentRamp", "VentShaft", "VentCover" },
+		Description = "Build duct networks: a square vent that turns at right angles, a sloped vent, a vertical shaft, and end pieces: a grate cover, a plain cap, a fan and a small peek cover. Pick which one in the options.",
+		Modes = { "Vent", "VentRamp", "VentShaft", "VentCover", "VentCap", "VentFan", "VentPeek" },
 	},
 	{
 		Id = "Railings",

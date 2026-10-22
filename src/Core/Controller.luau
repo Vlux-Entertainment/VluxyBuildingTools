@@ -99,6 +99,9 @@ local INSTRUCTIONS: { [string]: string } = {
 	VentRamp = "Click the start and the end of the run, then move the mouse up or down to set how far the vent climbs or drops, and click.",
 	VentShaft = "Click a floor, wall or ceiling, then move the mouse up or down to set the length of the vertical vent and click.",
 	VentCover = "Click a vent opening or any surface to place a grate over it.",
+	VentCap = "Click a vent opening or any surface to close it with a plain square plate.",
+	VentFan = "Click a vent opening to block it with a fan.",
+	VentPeek = "Click a wall or vent opening to place a small louvred cover for looking out.",
 	Pillar = "Click to place a pillar. Width and height are in the options. Esc exits.",
 	Door = "Click an undecorated rectangular wall. The doorway is centered on the cursor and starts at the bottom of the wall.",
 	CircleWindow = "Click an undecorated rectangular wall. The round window is centered on the cursor; its size is the smaller of the window width and height.",
@@ -189,6 +192,8 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local brushScale = 1
 	local ventEnds: { Vector3 }? = nil
 	local ventHitNormal: Vector3? = nil
+	local ventHitHost: Vector3? = nil
+	local ventHost: Vector3? = nil
 	local ventNormal: Vector3? = nil
 	local ventShift = Vector3.zero
 	local ventMarks: { Vector3 } = {}
@@ -394,7 +399,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		first, current = nil, nil
 		cutFace, cutPending, cutPoints, cutSpot = nil, nil, {}, nil
 		ventEnds = nil
-		ventNormal, ventShift = nil, Vector3.zero
+		ventNormal, ventShift, ventHost = nil, Vector3.zero, nil
 		brushing, brushLast, brushTargets, brushSpecs = false, nil, {}, {}
 		lockedHit, cutDepth = nil, nil
 		prevWall = nil
@@ -923,9 +928,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		local size = settings.VentSize
 		local step = math.max(0.5, settings.FineGrid)
-		local endPoint, _, owner = Snapper.VentConnect(hit.Position, size * 1.1, step)
+		local endPoint, openEnd, owner = Snapper.VentConnect(hit.Position, size * 1.1, step)
 
 		ventHitNormal = nil
+		ventHitHost = nil
 		table.clear(ventMarks)
 
 		if endPoint and owner then
@@ -940,6 +946,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 
 				table.insert(ventMarks, b)
+
+				if not openEnd then
+					ventHitHost = (b - a).Unit
+				end
 			end
 
 			snapMark = endPoint
@@ -1287,7 +1297,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					)
 					else "Move the mouse to set the cut depth. Click to confirm."
 			end
-		elseif mode == "VentCover" then
+		elseif mode == "VentCover" or mode == "VentCap" or mode == "VentFan" or mode == "VentPeek" then
 			local hit = hitSurface()
 
 			if hit then
@@ -1305,8 +1315,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					)
 				end
 
-				out = Builders.VentCover(settings, center + normal * 0.075, normal)
-				message = "Click to place the vent cover."
+				local build: (typeof(settings), Vector3, Vector3) -> { Geometry.Spec } = if mode == "VentCap"
+					then Builders.VentCap
+					elseif mode == "VentFan" then Builders.VentFan
+					elseif mode == "VentPeek" then Builders.VentPeek
+					else Builders.VentCover
+
+				out = build(settings, center + normal * 0.075, normal)
+				message = "Click to place it."
 			end
 		elseif mode == "Pillar" then
 			local hit = hitSurface()
@@ -1480,8 +1496,16 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						ventShift = if sideways then ventNormal * (settings.VentSize / 2) else Vector3.zero
 					end
 
-					origin, b = origin + ventShift, b + ventShift
-					current = b
+					if not chained and ventHost then
+						local along = axis * sign
+						local into = math.abs(along:Dot(ventHost)) < 0.5
+
+						ventShift = if into then along * (settings.VentSize / 2) else Vector3.zero
+						origin = origin + ventShift
+					else
+						origin, b = origin + ventShift, b + ventShift
+						current = b
+					end
 				end
 
 				local drawn = live
@@ -1538,9 +1562,18 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					end
 				elseif mode == "VentShaft" then
 					local top = origin + Vector3.new(0, signedHeight, 0)
+					local start = origin
 
-					out = Builders.VentDuct(settings, origin, top)
-					ventEnds = { origin, top }
+					if
+						ventHost
+						and math.abs(ventHost.Y) < 0.5
+						and math.abs(signedHeight) > settings.VentSize / 2 + 0.1
+					then
+						start = origin + Vector3.new(0, math.sign(signedHeight) * settings.VentSize / 2, 0)
+					end
+
+					out = Builders.VentDuct(settings, start, top)
+					ventEnds = { start, top }
 				elseif mode == "Wall" or mode == "PillaredWall" or mode == "Corridor" then
 					local path = table.clone(drawn)
 
@@ -2817,15 +2850,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				end
 			end)
 			resetPoint()
-		elseif active == "VentCover" then
+		elseif active == "VentCover" or active == "VentCap" or active == "VentFan" or active == "VentPeek" then
 			if not previewValid then
 				return
 			end
 
 			local specs = previewSpecs
 
-			edit("Place vent cover", function()
-				Geometry.Materialize(specs, "Vlux_VentCover")
+			edit("Place vent piece", function()
+				Geometry.Materialize(specs, "Vlux_" .. active)
 			end)
 		elseif active == "Pillar" then
 			if not previewValid then
@@ -2868,6 +2901,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			if not first then
 				first = current
 				ventNormal = if active == "Vent" or active == "VentRamp" then ventHitNormal else nil
+				ventHost = if active == "Vent"
+						or active == "VentRamp"
+						or active == "VentShaft"
+					then ventHitHost
+					else nil
 				ventShift = Vector3.zero
 				startDoor = if active == "Corridor" or active == "ArchedCorridor" then hoverDoor else nil
 				NumericInput.Clear(numeric)
@@ -3067,7 +3105,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 					end)
 				then
 					first = if chain then nextPoint else nil
-					ventNormal, ventShift = nil, Vector3.zero
+					ventNormal, ventShift, ventHost = nil, Vector3.zero, nil
 					chained = chain
 					lock = nil
 					heightEnd = nil

@@ -1685,6 +1685,101 @@ function Builders.VentCover(settings: Settings, center: Vector3, normal: Vector3
 	return out
 end
 
+--[[
+	@return CFrame -- a frame on a surface: X and Y lie in the surface, Z points out of it
+]]
+local function surfaceFrame(center: Vector3, normal: Vector3): CFrame
+	local n = normal.Unit
+	local reference = if math.abs(n.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis
+	local u = reference:Cross(n).Unit
+
+	return CFrame.fromMatrix(center, u, n:Cross(u), n)
+end
+
+--[=[
+	A plain square plate that closes the end of a vent.
+
+	@param settings Settings
+	@param center Vector3 -- the middle of the opening, lifted a little off the surface
+	@param normal Vector3 -- the way the opening faces
+	@return { Spec }
+]=]
+function Builders.VentCap(settings: Settings, center: Vector3, normal: Vector3): { Spec }
+	local out: { Spec } = {}
+	local size = settings.VentSize
+
+	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, 0.05), "VentCap")
+
+	return out
+end
+
+--[=[
+	A frame with four fan blades set at an angle, closing the end of a vent.
+
+	@param settings Settings
+	@param center Vector3
+	@param normal Vector3
+	@return { Spec }
+]=]
+function Builders.VentFan(settings: Settings, center: Vector3, normal: Vector3): { Spec }
+	local out: { Spec } = {}
+	local frame = surfaceFrame(center, normal)
+	local size = settings.VentSize
+	local bar, depth = 0.25, 0.35
+	local edge = size / 2 - bar / 2
+	local hub = 0.6
+	local reach = size / 2 - bar
+	local length = reach - hub / 2 + 0.05
+
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, edge, 0), "VentFanFrame")
+	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, -edge, 0), "VentFanFrame")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(edge, 0, 0), "VentFanFrame")
+	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(-edge, 0, 0), "VentFanFrame")
+	add(out, Vector3.new(hub, hub, depth), frame, "VentFanHub")
+
+	local pitch = math.rad(28)
+	local middle = hub / 2 + length / 2 - 0.05
+
+	for turn = 0, 3 do
+		local spin = frame * CFrame.Angles(0, 0, turn * math.pi / 2) * CFrame.new(middle, 0, 0)
+
+		add(out, Vector3.new(length, 0.7, 0.06), spin * CFrame.Angles(pitch, 0, 0), "VentFanBlade")
+	end
+
+	return out
+end
+
+--[=[
+	A small rectangular louvred cover, for looking out of a vent through a wall.
+
+	@param settings Settings
+	@param center Vector3
+	@param normal Vector3
+	@return { Spec }
+]=]
+function Builders.VentPeek(settings: Settings, center: Vector3, normal: Vector3): { Spec }
+	local out: { Spec } = {}
+	local frame = surfaceFrame(center, normal)
+	local width, height, bar, depth = 2.4, 0.9, 0.12, 0.12
+	local halfH, halfW = height / 2 - bar / 2, width / 2 - bar / 2
+
+	add(out, Vector3.new(width, bar, depth), frame * CFrame.new(0, halfH, 0), "VentPeekFrame")
+	add(out, Vector3.new(width, bar, depth), frame * CFrame.new(0, -halfH, 0), "VentPeekFrame")
+	add(out, Vector3.new(bar, height - 2 * bar, depth), frame * CFrame.new(halfW, 0, 0), "VentPeekFrame")
+	add(out, Vector3.new(bar, height - 2 * bar, depth), frame * CFrame.new(-halfW, 0, 0), "VentPeekFrame")
+
+	for _, y in { -0.18, 0.18 } do
+		add(
+			out,
+			Vector3.new(width - 2 * bar, 0.07, depth * 1.5),
+			frame * CFrame.new(0, y, 0) * CFrame.Angles(math.rad(-30), 0, 0),
+			"VentPeekSlat"
+		)
+	end
+
+	return out
+end
+
 --[=[
 	Copies of the source selection, seated flush on the surface under the cursor.
 
