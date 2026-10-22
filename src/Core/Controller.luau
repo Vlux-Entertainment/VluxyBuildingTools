@@ -664,7 +664,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		if #sets == 0 then
-			return "Add something to the brushes first: select it, then press Add selected to brushes."
+			return "Add something to the brushes first: click an object in the viewport, or select it and press Add selected to brushes."
 		end
 
 		local pool: { BrushItem } = {}
@@ -1589,7 +1589,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				local problem = buildBrushPool()
 
 				out = {}
-				message = problem
+				message = problem and "Click an object to add it to the brushes."
 
 				if not problem then
 					rollBrush()
@@ -3408,6 +3408,29 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end)
 		elseif active == "Place" then
 			local hit = hitSurface()
+			local ctrl = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
+				or UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
+
+			if hit and (ctrl or not source) then
+				local object: Instance = hit.Instance
+
+				while object.Parent and object.Parent:IsA("Model") and object.Parent ~= workspace do
+					object = object.Parent
+				end
+
+				Selection:Set({ object })
+
+				local _, added = Brushes.AddSelected()
+
+				if buildBrushPool() == nil then
+					rollBrush()
+				end
+
+				panel.Refresh()
+				say(added)
+
+				return
+			end
 
 			if not previewValid or not hit or not source then
 				return
