@@ -1707,7 +1707,6 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	local category = "All"
-	local propsExpanded = false
 	local propBrowsers: { { show: () -> (), paint: () -> (), reload: () -> () } } = {}
 	local showAllProps: () -> () = function() end
 	local propChoices = { { Id = "All", Label = "All" } }
@@ -1781,7 +1780,8 @@ function Panel.new(deps: Deps): Panel
 
 		Builds the row of sections and the grid of prop pictures. Every browser follows the same chosen section.
 	]]
-	local function propsBrowser(parent: Instance)
+	local function propsBrowser(parent: Instance, compact: boolean)
+		local expanded = not compact
 		button(parent, "Reload prop pictures", function()
 			for _, browser in propBrowsers do
 				browser.reload()
@@ -1811,7 +1811,7 @@ function Panel.new(deps: Deps): Panel
 			LayoutOrder = nextOrder(),
 		}, parent)
 		local toggle = button(parent, "Show all props", function()
-			propsExpanded = not propsExpanded
+			expanded = not expanded
 			refresh()
 		end, false)
 		local toggleRow = toggle.Parent :: GuiObject
@@ -1823,13 +1823,13 @@ function Panel.new(deps: Deps): Panel
 		}, shown)
 
 		local function paint()
-			local collapsed = deps.GetMode() == "Prop" and deps.GetProp() ~= nil and not propsExpanded
+			local collapsed = compact and not expanded
 
 			shown.AutomaticSize = if collapsed then Enum.AutomaticSize.None else Enum.AutomaticSize.Y
 			shown.Size = if collapsed then UDim2.new(1, 0, 0, 104) else UDim2.fromScale(1, 0)
 			shown.ClipsDescendants = collapsed
-			toggleRow.Visible = deps.GetMode() == "Prop" and deps.GetProp() ~= nil
-			toggle.Text = if propsExpanded then "Show first row only" else "Show all props"
+			toggleRow.Visible = compact
+			toggle.Text = if expanded then "Show first row only" else "Show all props"
 
 			for id, choice in categoryButtons do
 				local active = id == category
@@ -1910,7 +1910,7 @@ function Panel.new(deps: Deps): Panel
 						)
 						click.MouseButton1Click:Connect(function()
 							if settings.PropAutoCollapse then
-								propsExpanded = false
+								expanded = false
 							end
 
 							actions.PickProp(prop.Id)
@@ -1985,7 +1985,7 @@ function Panel.new(deps: Deps): Panel
 			deps.Save()
 			refresh()
 		end)
-		propsBrowser(propsCard)
+		propsBrowser(propsCard, false)
 		numeric(propsCard, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
 		numeric(
 			propsCard,
@@ -2014,7 +2014,7 @@ function Panel.new(deps: Deps): Panel
 	do
 		local buildProps = card("PROPS", "Build", { Modes = { Prop = true } })
 
-		propsBrowser(buildProps)
+		propsBrowser(buildProps, true)
 		numeric(buildProps, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
 		numeric(
 			buildProps,
