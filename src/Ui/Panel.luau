@@ -684,6 +684,11 @@ function Panel.new(deps: Deps): Panel
 
 		style(box, 5, CARD_STROKE)
 		fieldBoxes[key] = box
+		table.insert(refreshers, function()
+			if not box:IsFocused() then
+				box.Text = tostring(values[key])
+			end
+		end)
 
 		local function apply(value: number?)
 			if value and value == value and math.abs(value) < math.huge then
@@ -1345,8 +1350,7 @@ function Panel.new(deps: Deps): Panel
 		body({ Vent = true, VentRamp = true, VentShaft = true })
 	)
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
-	numeric(scope, "Yaw", "Rotation", -360, 360, 90, body({ Place = true, Prop = true }))
-	numeric(scope, "PropScale", "Prop size (x)", 0.2, 5, 0.1, body({ Prop = true }))
+	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
 	numeric(scope, "BrushRadius", "Brush radius", 0, 200, 1, body({ Place = true }))
 	numeric(scope, "BrushSpacing", "Brush spacing", 0.5, 100, 0.5, body({ Place = true }))
 	numeric(scope, "BrushSizeMin", "Smallest size (x)", 0.05, 20, 0.1, body({ Place = true }))
@@ -1700,27 +1704,96 @@ function Panel.new(deps: Deps): Panel
 		end
 	end
 
-	local stepSection: (number) -> () = function(_) end
-	local stepProp: (number) -> () = function(_) end
+	local category = "All"
+	local propBrowsers: { { show: () -> (), paint: () -> (), reload: () -> () } } = {}
+	local showAllProps: () -> () = function() end
+	local propChoices = { { Id = "All", Label = "All" } }
 
-	do
-		local propsCard = card("PROPS", "Props")
-		local category = "All"
+	for _, entry in PropData.Categories do
+		table.insert(propChoices, entry)
+	end
+
+	--[[
+		@param prop PropData.Prop
+		@return ViewportFrame -- a picture of the prop. The parts live only inside the viewport, so they are local to this user and never reach the place.
+	]]
+	local function picture(prop: PropData.Prop, parent: Instance): ViewportFrame
+		local view = make("ViewportFrame", {
+			Size = UDim2.new(1, -8, 1, -24),
+			Position = UDim2.fromOffset(4, 4),
+			BackgroundTransparency = 1,
+			Ambient = Color3.fromRGB(150, 150, 160),
+			LightColor = Color3.fromRGB(255, 255, 255),
+			LightDirection = Vector3.new(-0.5, -1, 0.7),
+		}, parent) :: ViewportFrame
+		local low, high = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+
+		for _, spec in Props.Build(prop, CFrame.new(), 1) do
+			local part = Instance.new("Part")
+
+			part.Anchored = true
+			part.Size = spec.size
+			part.CFrame = spec.cf
+			part.Material = Enum.Material.SmoothPlastic
+			part.Color = if spec.name == "PropAccent"
+				then Color3.fromRGB(255, 138, 36)
+				else Color3.fromRGB(176, 179, 188)
+
+			if spec.shape == "Cylinder" then
+				part.Shape = Enum.PartType.Cylinder
+			elseif spec.shape == "Ball" then
+				part.Shape = Enum.PartType.Ball
+			end
+
+			part.Parent = view
+
+			local reach = spec.size.Magnitude / 2
+
+			low = Vector3.new(
+				math.min(low.X, spec.cf.Position.X - reach),
+				math.min(low.Y, spec.cf.Position.Y - reach),
+				math.min(low.Z, spec.cf.Position.Z - reach)
+			)
+			high = Vector3.new(
+				math.max(high.X, spec.cf.Position.X + reach),
+				math.max(high.Y, spec.cf.Position.Y + reach),
+				math.max(high.Z, spec.cf.Position.Z + reach)
+			)
+		end
+
+		local middle = (low + high) / 2
+		local radius = math.max(2, (high - low).Magnitude / 2)
+		local camera = Instance.new("Camera")
+
+		camera.FieldOfView = 40
+		camera.CFrame = CFrame.lookAt(middle + Vector3.new(0.9, 0.7, -1.3).Unit * radius * 2.4, middle)
+		camera.Parent = view
+		view.CurrentCamera = camera
+
+		return view
+	end
+
+	--[[
+		@param parent Instance -- the card to build the browser in
+
+		Builds the row of sections and the grid of prop pictures. Every browser follows the same chosen section.
+	]]
+	local function propsBrowser(parent: Instance)
+		button(parent, "Reload prop pictures", function()
+			for _, browser in propBrowsers do
+				browser.reload()
+			end
+		end, false)
+
 		local categoryButtons: { [string]: TextButton } = {}
 		local cells: { [string]: { frame: Frame, button: TextButton } } = {}
-
-		text(
-			propsCard,
-			"Pick a section, then a prop, then click a floor (or a wall for wall props) to place it. R turns it.",
-			MUTED
-		)
 
 		local sections = make("Frame", {
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			LayoutOrder = nextOrder(),
-		}, propsCard)
+		}, parent)
 
 		make("UIGridLayout", {
 			CellSize = UDim2.new(1 / 3, -4, 0, 26),
@@ -1733,7 +1806,7 @@ function Panel.new(deps: Deps): Panel
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			LayoutOrder = nextOrder(),
-		}, propsCard)
+		}, parent)
 
 		make("UIGridLayout", {
 			CellSize = UDim2.new(1 / 3, -4, 0, 104),
@@ -1741,68 +1814,7 @@ function Panel.new(deps: Deps): Panel
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}, shown)
 
-		--[[
-			@param prop PropData.Prop
-			@return ViewportFrame -- a picture of the prop. The parts live only inside the viewport, so they are local to this user and never reach the place.
-		]]
-		local function picture(prop: PropData.Prop, parent: Instance): ViewportFrame
-			local view = make("ViewportFrame", {
-				Size = UDim2.new(1, -8, 1, -24),
-				Position = UDim2.fromOffset(4, 4),
-				BackgroundTransparency = 1,
-				Ambient = Color3.fromRGB(150, 150, 160),
-				LightColor = Color3.fromRGB(255, 255, 255),
-				LightDirection = Vector3.new(-0.5, -1, 0.7),
-			}, parent) :: ViewportFrame
-			local low, high =
-				Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
-
-			for _, spec in Props.Build(prop, CFrame.new(), 1) do
-				local part = Instance.new("Part")
-
-				part.Anchored = true
-				part.Size = spec.size
-				part.CFrame = spec.cf
-				part.Material = Enum.Material.SmoothPlastic
-				part.Color = if spec.name == "PropAccent"
-					then Color3.fromRGB(255, 138, 36)
-					else Color3.fromRGB(176, 179, 188)
-
-				if spec.shape == "Cylinder" then
-					part.Shape = Enum.PartType.Cylinder
-				elseif spec.shape == "Ball" then
-					part.Shape = Enum.PartType.Ball
-				end
-
-				part.Parent = view
-
-				local reach = spec.size.Magnitude / 2
-
-				low = Vector3.new(
-					math.min(low.X, spec.cf.Position.X - reach),
-					math.min(low.Y, spec.cf.Position.Y - reach),
-					math.min(low.Z, spec.cf.Position.Z - reach)
-				)
-				high = Vector3.new(
-					math.max(high.X, spec.cf.Position.X + reach),
-					math.max(high.Y, spec.cf.Position.Y + reach),
-					math.max(high.Z, spec.cf.Position.Z + reach)
-				)
-			end
-
-			local middle = (low + high) / 2
-			local radius = math.max(2, (high - low).Magnitude / 2)
-			local camera = Instance.new("Camera")
-
-			camera.FieldOfView = 40
-			camera.CFrame = CFrame.lookAt(middle + Vector3.new(0.9, 0.7, -1.3).Unit * radius * 2.4, middle)
-			camera.Parent = view
-			view.CurrentCamera = camera
-
-			return view
-		end
-
-		local function paintProps()
+		local function paint()
 			for id, choice in categoryButtons do
 				local active = id == category
 
@@ -1817,7 +1829,7 @@ function Panel.new(deps: Deps): Panel
 			end
 		end
 
-		local function showCategory()
+		local function show()
 			for _, cell in cells do
 				cell.frame.Visible = false
 			end
@@ -1869,16 +1881,10 @@ function Panel.new(deps: Deps): Panel
 				end
 			end
 
-			paintProps()
+			paint()
 		end
 
-		local choices = { { Id = "All", Label = "All" } }
-
-		for _, entry in PropData.Categories do
-			table.insert(choices, entry)
-		end
-
-		for i, entry in choices do
+		for i, entry in propChoices do
 			local choice = make("TextButton", {
 				BackgroundColor3 = TILE,
 				BorderSizePixel = 0,
@@ -1893,54 +1899,111 @@ function Panel.new(deps: Deps): Panel
 			categoryButtons[entry.Id] = choice
 			choice.MouseButton1Click:Connect(function()
 				category = entry.Id
-				showCategory()
+				showAllProps()
 			end)
 		end
 
-		stepSection = function(delta: number)
-			local ids: { string } = {}
-
-			for _, entry in choices do
-				table.insert(ids, entry.Id)
+		local function reload()
+			for _, cell in cells do
+				cell.frame:Destroy()
 			end
 
-			local at = table.find(ids, category) or 1
-
-			category = ids[(at - 1 + delta) % #ids + 1]
-			showCategory()
+			table.clear(cells)
+			show()
 		end
 
-		stepProp = function(delta: number)
-			local list: { PropData.Prop } = {}
+		table.insert(propBrowsers, { show = show, paint = paint, reload = reload })
+		table.insert(refreshers, paint)
+		show()
+	end
 
-			for _, prop in PropData.Props do
-				if category == "All" or prop.Category == category then
-					table.insert(list, prop)
-				end
+	showAllProps = function()
+		for _, browser in propBrowsers do
+			browser.show()
+		end
+	end
+
+	local function propSelected(): boolean
+		return deps.GetMode() == "Prop" and deps.GetProp() ~= nil
+	end
+
+	do
+		local propsCard = card("PROPS", "Props")
+
+		text(
+			propsCard,
+			"Pick a section, then a prop, then click a floor (or a wall for wall props) to place it. R turns it.",
+			MUTED
+		)
+		propsBrowser(propsCard)
+		numeric(propsCard, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(
+			propsCard,
+			"PropScale",
+			"Prop size (x)",
+			0.2,
+			5,
+			0.1,
+			{ Modes = { Prop = true }, Condition = propSelected }
+		)
+	end
+
+	do
+		local buildProps = card("PROPS", "Build", { Modes = { Prop = true } })
+
+		propsBrowser(buildProps)
+		numeric(buildProps, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
+		numeric(
+			buildProps,
+			"PropScale",
+			"Prop size (x)",
+			0.2,
+			5,
+			0.1,
+			{ Modes = { Prop = true }, Condition = propSelected }
+		)
+	end
+
+	local stepSection = function(delta: number)
+		local at = 1
+
+		for i, entry in propChoices do
+			if entry.Id == category then
+				at = i
 			end
-
-			if #list == 0 then
-				return
-			end
-
-			local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
-			local at = 0
-
-			for i, prop in list do
-				if prop.Id == current then
-					at = i
-				end
-			end
-
-			if at == 0 and delta < 0 then
-				at = #list + 1
-			end
-
-			actions.PickProp(list[(at - 1 + delta) % #list + 1].Id)
 		end
 
-		table.insert(refreshers, paintProps)
-		showCategory()
+		category = propChoices[(at - 1 + delta) % #propChoices + 1].Id
+		showAllProps()
+	end
+
+	local stepProp = function(delta: number)
+		local list: { PropData.Prop } = {}
+
+		for _, prop in PropData.Props do
+			if category == "All" or prop.Category == category then
+				table.insert(list, prop)
+			end
+		end
+
+		if #list == 0 then
+			return
+		end
+
+		local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
+		local at = 0
+
+		for i, prop in list do
+			if prop.Id == current then
+				at = i
+			end
+		end
+
+		if at == 0 and delta < 0 then
+			at = #list + 1
+		end
+
+		actions.PickProp(list[(at - 1 + delta) % #list + 1].Id)
 	end
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
