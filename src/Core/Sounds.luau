@@ -70,7 +70,7 @@ function Sounds.Play(self: Sounds, name: string)
 		local asked = os.clock()
 
 		task.delay(0.05, function()
-			if self._other < asked then
+			if self._other < asked - 0.1 then
 				Sounds.Sound(self, name)
 			end
 		end)
@@ -89,6 +89,12 @@ end
 	Starts the sound now. Clicks go through `Play` first so a click that also does something plays only what it did.
 ]]
 function Sounds.Sound(self: Sounds, name: string)
+	if game:GetService("SoundService"):GetAttribute("VluxyBT_SoundDebug") == true then
+		print(
+			`[VluxyBuildingTools] sound {name} from {tostring(self._output)} {tostring(self):sub(-8)} at {os.clock()}`
+		)
+	end
+
 	local entry = SoundIds[name]
 
 	if not entry or not self._enabled() then
