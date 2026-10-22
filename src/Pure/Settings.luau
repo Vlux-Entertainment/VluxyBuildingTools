@@ -104,12 +104,16 @@ export type Settings = {
 
 local Settings = {}
 
+--[[ The door settings a save from before version 4 takes fresh, so it gets the standard door. ]]
+local DOOR_KEYS =
+	{ "DoorPanel", "DoorFrame", "FrameWidth", "FrameDepth", "DoorThickness", "DoorTransparency", "DoorCollide" }
+
 --[[
 	@return Settings -- a fresh table of the default values
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Version = 3,
+		Version = 4,
 		Grid = 4,
 		FineGrid = 1,
 		Elevation = 0,
@@ -150,13 +154,13 @@ function Settings.Defaults(): Settings
 		BrushSizeMin = 1,
 		BrushSizeMax = 1,
 		GhostTransparency = 0.82,
-		DoorPanel = false,
-		DoorFrame = false,
+		DoorPanel = true,
+		DoorFrame = true,
 		FrameWidth = 0.25,
-		FrameDepth = 1.095,
-		DoorThickness = 0.202,
+		FrameDepth = 1.1,
+		DoorThickness = 0.2,
 		DoorTransparency = 0.5,
-		DoorCollide = false,
+		DoorCollide = true,
 		PropScale = 1,
 		PropRandomRotation = false,
 		PropRandomAmount = 5,
@@ -372,12 +376,20 @@ function Settings.Load(saved: any): Settings
 		end
 	end
 
-	-- The snap steps changed in version 2, so a save from before it takes the new ones.
-	if source.Version ~= settings.Version then
-		local fresh = Settings.Defaults()
+	local version = if type(source.Version) == "number" then source.Version else 0
+	local fresh = Settings.Defaults()
 
+	-- The snap steps changed in version 2, so a save from before it takes the new ones.
+	if version < 2 then
 		settings.Grid, settings.FineGrid = fresh.Grid, fresh.FineGrid
 		settings.SnapRadius = fresh.SnapRadius
+	end
+
+	-- The door defaults became the standard door and frame in version 4.
+	if version < 4 then
+		for _, key in DOOR_KEYS do
+			target[key] = (fresh :: any)[key]
+		end
 	end
 
 	Settings.Sync(settings)

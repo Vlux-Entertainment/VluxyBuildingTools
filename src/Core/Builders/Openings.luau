@@ -119,7 +119,7 @@ function Openings.Opening(
 	end
 
 	if (framed or dims.Panel) and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
-		local reach = dims.FrameDepth or 1.095
+		local reach = dims.FrameDepth or 1.1
 		local doorHeight = h - bar
 
 		if framed then
@@ -143,7 +143,7 @@ function Openings.Opening(
 		if dims.Panel then
 			add(
 				out,
-				Vector3.new(w - 2 * bar, doorHeight, math.min(size.Z, dims.DoorThickness or 0.202)),
+				Vector3.new(w - 2 * bar, doorHeight, math.min(size.Z, dims.DoorThickness or 0.2)),
 				cf * CFrame.new(x, bottom + doorHeight / 2, 0),
 				"Door_Panel"
 			)

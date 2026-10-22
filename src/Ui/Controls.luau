@@ -450,9 +450,10 @@ end
 	@param ui Ui
 	@param key string -- a number setting from 0 to 1
 	@param title string
+	@param visible Prop<boolean>?
 	@return Frame -- a draggable slider showing the value as a percent. It saves when the drag ends.
 ]=]
-function Controls.Slider(ui: Ui, key: string, title: string): Frame
+function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boolean>?): Frame
 	local store = ui.App.Store
 	local dragging = false
 	local bar: Frame
@@ -550,7 +551,7 @@ function Controls.Slider(ui: Ui, key: string, title: string): Frame
 		resetMenu(ui, tostring(initial), function()
 			Store.Set(store, key, initial)
 		end),
-	})
+	}, visible)
 end
 
 --[=[
