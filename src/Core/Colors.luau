@@ -84,21 +84,39 @@ end
 local function unityColor(part: BasePart): Color3
 	local name = part.Name
 
-	if named(name, { "propaccent" }) then
-		return ORANGE
-	elseif named(name, { "ventwall" }) then
+	if named(name, { "prop" }) then
+		local holder = part.Parent
+		local id = if holder then holder:GetAttribute("VluxyBT_Prop") else nil
+		local orange = false
+
+		if type(id) == "string" then
+			local sum = 0
+
+			for i = 1, #id do
+				sum += string.byte(id, i)
+			end
+
+			orange = sum % 2 == 0
+		end
+
+		if named(name, { "propaccent" }) then
+			return if orange then GREY else ORANGE
+		end
+
+		return if orange then ORANGE_DARK else GREY_LIGHT
+	elseif named(name, { "ventwall", "ventceiling" }) then
 		return ORANGE_DARK
 	elseif named(name, { "vent" }) then
-		return if named(name, { "floor", "ceiling", "duct" }) then GREY else ORANGE
-	elseif named(name, { "floor", "foundation", "stair", "step", "ramp", "porch", "landing" }) then
+		return if named(name, { "floor", "duct" }) then GREY else ORANGE
+	elseif named(name, { "foundation", "floor", "landing" }) then
 		return GREY
+	elseif named(name, { "stair", "step", "ramp", "porch" }) then
+		return ORANGE_DARK
 	elseif named(name, { "ceiling", "roof", "arched" }) then
-		return GREY_LIGHT
-	elseif named(name, { "wall", "pillar", "opening", "arch", "post", "rail", "fence", "sill", "header", "frame" }) then
-		return ORANGE
+		return ORANGE_DARK
 	end
 
-	return GREY_LIGHT
+	return ORANGE
 end
 
 --[[
