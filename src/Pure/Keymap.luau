@@ -2,7 +2,7 @@
 
 --[=[
 	The Blender-style hotkeys. `Resolve` turns a key press into an action name; the plugin decides
-	what the action does. Ctrl is only used for Ctrl+M and the Ctrl+number tool picks, and Alt for Alt+H, the plane locks and the
+	what the action does. Ctrl is only used for Ctrl+M and the Ctrl+number tool picks, and Alt for Alt+H, Alt+L, the plane locks and the
 	Alt+number options, so Studio's
 	own shortcuts keep working. W A S D Q E F and Shift are never taken: Studio uses them to fly the
 	camera, focus and multi-select.
@@ -60,7 +60,6 @@ local PLAIN_KEYS: { [string]: Action } = {
 	F1 = "ShowHotkeys",
 	P = "TogglePastel",
 	L = "ToggleGrid",
-	B = "ToggleCameraLight",
 	V = "Duplicate",
 	O = "Rotate90Arm",
 	I = "ToggleHiddenView",
@@ -115,7 +114,7 @@ function Keymap.Describe(): { { string } }
 		{ "F1", "Open this tab" },
 		{ "P", "Themes on or off" },
 		{ "L", "Surface grid on or off" },
-		{ "B", "Camera light on or off" },
+		{ "Alt+L", "Camera light on or off" },
 		{ "N", "Show or hide the panel" },
 		{ "Ctrl+M, then X / Y / Z", "Mirror the selection on that axis" },
 		{
@@ -145,6 +144,10 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 
 	if alt and not ctrl and not shift and keyName == "H" then
 		return "Unhide"
+	end
+
+	if alt and not ctrl and not shift and keyName == "L" then
+		return "ToggleCameraLight"
 	end
 
 	if ctrl and not alt and not shift and keyName == "M" then

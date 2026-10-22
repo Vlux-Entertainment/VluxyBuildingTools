@@ -114,7 +114,7 @@ Tips.Entries = {
 	["Allow untagged folders (not recommended)"] = {
 		Text = "Let the plugin work in folders without the VluxyBT_Map tag.",
 	},
-	["Camera light"] = { Text = "A light that follows your camera; never saved.", Key = "B" },
+	["Camera light"] = { Text = "A light that follows your camera; never saved.", Key = "Alt+L" },
 	["Random rotation"] = { Text = "Turn each brush copy a random amount." },
 	["Randomize prop rotation"] = { Text = "Turn each prop a small random amount." },
 	["Set cut depth with mouse"] = { Text = "Move the mouse to set how deep the opening goes." },

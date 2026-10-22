@@ -31,7 +31,7 @@ local new = Kit.New
 local COLUMNS = 3
 local CELL_HEIGHT = 104
 local CAMERA_ANGLE = Vector3.new(0.9, 0.7, -1.3).Unit
-local SPIN_SPEED = math.pi / 2
+local SPIN_SPEED = math.pi / 4
 
 --[[ A prop picture's spin: how far it has turned, and how to turn its camera to an angle. ]]
 type Spin = { Angle: number, Turn: (angle: number) -> () }
