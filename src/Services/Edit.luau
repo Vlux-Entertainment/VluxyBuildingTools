@@ -11,6 +11,8 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
+local Profile = require("../Core/Profile")
+
 export type Deps = {
 	Say: (text: string) -> (),
 	Sound: (name: string) -> (),
@@ -57,17 +59,18 @@ function Edit.new(deps: Deps): Edit
 				table.insert(added, object)
 			end
 		end)
-		local ok, err = pcall(change :: any)
+		local ok, err = pcall(Profile.Run :: any, "Edit", change)
 
 		watch:Disconnect()
 
-		for _, part in added do
-			if part:IsDescendantOf(workspace) then
-				deps.Adopt(part)
+		Profile.Run("Adopt", function()
+			for _, part in added do
+				if part:IsDescendantOf(workspace) then
+					deps.Adopt(part)
+				end
 			end
-		end
-
-		deps.Sweep()
+		end)
+		Profile.Run("Sweep", deps.Sweep)
 		ChangeHistoryService:FinishRecording(
 			id,
 			if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel

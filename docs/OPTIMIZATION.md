@@ -30,9 +30,9 @@ CollectionService tag, or a box search near the cursor.
    name a slow spot later. One small helper, `Core/Profile.luau`, wraps a function in a label so a
    missed `profileend` cannot happen. Labels, all prefixed `VluxyBT/`:
    - `Heartbeat`, and inside it `Preview`, `Modal`, `Folder`
-   - `Edit`, and inside it `Adopt`, `Sweep`
-   - `Load`, `Pastel`, `Grid`, `Hidden`
-2. **Stress place generator**: `tools/StressPlace.luau`, run from the Studio command bar. It fills
+   - `Edit` (the change itself), then `Adopt` and `Sweep` after it
+   - `Load`, `Pastel` (on, off, theme change), `Grid` (on, off)
+2. **Stress place generator**: `Commands/StressPlace.luau`, run from the Studio command bar. It fills
    a folder with rooms, corridors, walls, floors, stairs and doorways made by the plugin's own
    builders, to a chosen part count (default 100k). It is not part of the plugin build.
 3. **Baseline**: record the numbers for every label at 10k, 50k and 100k in this file before any

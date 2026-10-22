@@ -14,6 +14,7 @@
 local Colors = require("../Core/Colors")
 local Geometry = require("../Core/Geometry")
 local Hidden = require("../Core/Hidden")
+local Profile = require("../Core/Profile")
 local Settings = require("../Pure/Settings")
 local Store = require("../State/Store")
 local SurfaceGrid = require("../Core/SurfaceGrid")
@@ -119,7 +120,7 @@ function Display.new(deps: Deps, trove: Trove.Trove): Display
 		SurfaceGrid.Recolor(self.Grid)
 	end))
 	trove:Add(Store.Watch(store, "ColorTheme", function()
-		Colors.Retheme(self.Colors)
+		Display.Retheme(self)
 	end))
 
 	local recount = false
@@ -176,7 +177,7 @@ end
 	@param on boolean
 ]=]
 function Display.SetPastel(self: Display, on: boolean)
-	Colors.Set(self.Colors, on)
+	Profile.Run("Pastel", Colors.Set, self.Colors, on)
 end
 
 --[=[
@@ -184,7 +185,7 @@ end
 	@param on boolean
 ]=]
 function Display.SetGrid(self: Display, on: boolean)
-	SurfaceGrid.Set(self.Grid, on)
+	Profile.Run("Grid", SurfaceGrid.Set, self.Grid, on)
 end
 
 --[=[
@@ -193,7 +194,7 @@ end
 	@param self Display
 ]=]
 function Display.Retheme(self: Display)
-	Colors.Retheme(self.Colors)
+	Profile.Run("Pastel", Colors.Retheme, self.Colors)
 end
 
 --[=[
