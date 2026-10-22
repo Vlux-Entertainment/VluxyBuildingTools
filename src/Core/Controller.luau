@@ -209,6 +209,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local propId: string? = nil
 	local propFrame: CFrame? = nil
 	local othersPresent: () -> boolean
+	local sharedSeen: { [string]: any } = {}
 	local folderWatch: RBXScriptConnection? = nil
 	local conflict: { Folder: Instance, Names: string }? = nil
 	local ventHitNormal: Vector3? = nil
@@ -330,13 +331,20 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		Writes the global visual settings onto the folder, so everyone working in it shares them.
 	]]
-	local function publishShared(target: Instance)
+	local function publishShared(target: Instance, force: boolean?)
 		for _, entry in SHARED_SETTINGS do
 			local value = (settings :: any)[entry.Key]
+			local stored = target:GetAttribute(SHARED_PREFIX .. entry.Key)
 
-			if target:GetAttribute(SHARED_PREFIX .. entry.Key) ~= value then
+			if
+				stored == nil
+				or (force == true and stored ~= value)
+				or (sharedSeen[entry.Key] ~= value and stored ~= value)
+			then
 				target:SetAttribute(SHARED_PREFIX .. entry.Key, value)
 			end
+
+			sharedSeen[entry.Key] = value
 		end
 	end
 
@@ -358,6 +366,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		(settings :: any)[key] = value
+		sharedSeen[key] = value
 		pcall(function()
 			plugin:SetSetting(SETTINGS_KEY, settings)
 		end)
@@ -2697,6 +2706,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		if chosen then
 			if chosen:IsDescendantOf(workspace) then
+				for _, entry in SHARED_SETTINGS do
+					sharedSeen[entry.Key] = (settings :: any)[entry.Key]
+				end
+
 				publishShared(chosen)
 				folderWatch = chosen.AttributeChanged:Connect(function(name)
 					for _, entry in SHARED_SETTINGS do
@@ -2801,7 +2814,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			setFolder(pending.Folder)
 
 			if folder == pending.Folder then
-				publishShared(pending.Folder)
+				publishShared(pending.Folder, true)
 				Colors.Retheme(colors)
 			end
 		end
