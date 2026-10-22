@@ -92,6 +92,21 @@ local SWITCH_OFF = Color3.fromRGB(66, 69, 76)
 local TABS = { "Build", "Arrange", "Display", "Hotkeys", "Settings" }
 local LOCKED: { [string]: boolean } = { Build = true, Arrange = true, Display = true }
 
+--[[ The setting each switch changes, by its title, so a switch can offer a reset to the default. ]]
+local SWITCH_KEYS: { [string]: string } = {
+	["Railing"] = "PorchRailing",
+	["Random rotation"] = "BrushRandomYaw",
+	["Ceiling"] = "Roof",
+	["Snap to parts"] = "SnapToParts",
+	["Join rooms and corridors"] = "ConnectStructures",
+	["Set cut depth with mouse"] = "CutDepth",
+	["Tilt copy to surface"] = "Align",
+	["Camera light"] = "CameraLight",
+	["Construction grid while drawing"] = "ShowGrid",
+	["Allow untagged folders (not recommended)"] = "AllowUntagged",
+	["Blender hotkeys"] = "Hotkeys",
+}
+
 local Panel = {}
 
 --[[
@@ -519,6 +534,96 @@ function Panel.new(deps: Deps): Panel
 		overrideFlag[row[1]] = row[3]
 	end
 
+	local menuCatcher: TextButton? = nil
+	local menuItem: TextButton? = nil
+	local menuAction: (() -> ())? = nil
+
+	--[[
+		Hides the right-click menu.
+	]]
+	local function closeMenu()
+		if menuCatcher and menuItem then
+			menuCatcher.Visible = false
+			menuItem.Visible = false
+		end
+
+		menuAction = nil
+	end
+
+	--[[
+		@param position Vector2 -- where the mouse is, in screen pixels
+		@param text string
+		@param action () -> ()
+
+		Shows a one-item menu at the mouse. Clicking the item runs the action; clicking anywhere else closes it.
+	]]
+	local function openMenu(position: Vector2, label: string, action: () -> ())
+		if not menuCatcher or not menuItem then
+			local catcher = make("TextButton", {
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				Text = "",
+				ZIndex = 100,
+				Visible = false,
+			}, deps.Widget)
+			local item = make("TextButton", {
+				Size = UDim2.fromOffset(210, 28),
+				BackgroundColor3 = TILE,
+				BorderSizePixel = 0,
+				Text = "",
+				TextColor3 = TEXT,
+				Font = Enum.Font.GothamMedium,
+				TextSize = 12,
+				ZIndex = 101,
+				Visible = false,
+			}, deps.Widget)
+
+			style(item, 6, CARD_STROKE)
+			catcher.MouseButton1Click:Connect(closeMenu)
+			catcher.MouseButton2Click:Connect(closeMenu)
+			item.MouseButton1Click:Connect(function()
+				local run = menuAction
+
+				closeMenu()
+
+				if run then
+					run()
+				end
+			end)
+			menuCatcher, menuItem = catcher, item
+		end
+
+		local catcher, item = menuCatcher :: TextButton, menuItem :: TextButton
+
+		item.Text = label
+		item.Position = UDim2.fromOffset(math.min(position.X, deps.Widget.AbsoluteSize.X - 214), position.Y)
+		catcher.Visible = true
+		item.Visible = true
+		menuAction = action
+	end
+
+	--[[
+		@param frame Frame -- the setting's row
+		@param reset () -> ()
+		@param defaultText string
+
+		Right-clicking the row offers to put that one setting back to its default.
+	]]
+	local function resetMenu(frame: Frame, reset: () -> (), defaultText: string)
+		frame.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton2 then
+				openMenu(
+					Vector2.new(input.Position.X, input.Position.Y),
+					"Reset to default (" .. defaultText .. ")",
+					function()
+						reset()
+						refresh()
+					end
+				)
+			end
+		end)
+	end
+
 	local function numeric(
 		parent: Instance,
 		key: string,
@@ -608,6 +713,14 @@ function Panel.new(deps: Deps): Panel
 		stepperButton(group, "+", 128).MouseButton1Click:Connect(function()
 			apply(values[key] + (step or settings.Grid))
 		end)
+
+		local initial = (Settings.Defaults() :: any)[key]
+
+		if type(initial) == "number" then
+			resetMenu(frame, function()
+				apply(initial)
+			end, tostring(initial))
+		end
 	end
 
 	local function switch(
@@ -659,6 +772,15 @@ function Panel.new(deps: Deps): Panel
 		track.MouseButton1Click:Connect(function()
 			set(not get())
 		end)
+
+		local field = SWITCH_KEYS[title]
+		local initial = if field then (Settings.Defaults() :: any)[field] else nil
+
+		if type(initial) == "boolean" then
+			resetMenu(frame, function()
+				set(initial)
+			end, if initial then "on" else "off")
+		end
 	end
 
 	--
