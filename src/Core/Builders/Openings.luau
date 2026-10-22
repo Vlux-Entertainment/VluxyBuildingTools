@@ -137,7 +137,7 @@ function Openings.Opening(
 				cf * CFrame.new(x + sideX, bottom + doorHeight / 2, 0),
 				"Door_Frame"
 			)
-			add(out, Vector3.new(w - bar, bar, reach), cf * CFrame.new(x, bottom + h - bar / 2, 0), "Door_Frame")
+			add(out, Vector3.new(w, bar, reach), cf * CFrame.new(x, bottom + h - bar / 2, 0), "Door_Frame")
 		end
 
 		if dims.Panel then
