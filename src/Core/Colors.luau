@@ -23,6 +23,8 @@ export type Colors = {
 	_refresh: () -> (),
 	_stop: () -> (),
 	_scope: () -> Instance?,
+	_theme: () -> string,
+	_switching: boolean,
 }
 
 local ORIGINAL = "VluxGreybox_OriginalColor_v1"
@@ -42,12 +44,82 @@ local PALETTE = {
 	Color3.fromRGB(187, 153, 167),
 }
 
+local ORANGE = Color3.fromRGB(255, 138, 36)
+local ORANGE_DARK = Color3.fromRGB(214, 108, 20)
+local GREY = Color3.fromRGB(52, 54, 60)
+local GREY_LIGHT = Color3.fromRGB(80, 83, 90)
+local PURPLE = Color3.fromRGB(150, 110, 205)
+
 local Colors = {}
+
+--[=[
+	The color themes that can be picked.
+
+	@prop Themes { string }
+	@within Colors
+]=]
+Colors.Themes = { "Pastel", "Unity" }
+
+--[[
+	@param name string -- a part's name
+	@param words { string }
+	@return boolean -- whether the lowercase name contains any of the words
+]]
+local function named(name: string, words: { string }): boolean
+	local lower = string.lower(name)
+
+	for _, word in words do
+		if string.find(lower, word, 1, true) then
+			return true
+		end
+	end
+
+	return false
+end
+
+--[[
+	@param part BasePart
+	@return Color3 -- the Unity theme color by what the part is: walls and posts orange, floors and steps dark grey, ceilings and roofs lighter grey
+]]
+local function unityColor(part: BasePart): Color3
+	local name = part.Name
+
+	if named(name, { "ventwall" }) then
+		return ORANGE_DARK
+	elseif named(name, { "vent" }) then
+		return if named(name, { "floor", "ceiling", "duct" }) then GREY else ORANGE
+	elseif named(name, { "floor", "foundation", "stair", "step", "ramp", "porch", "landing" }) then
+		return GREY
+	elseif named(name, { "ceiling", "roof", "arched" }) then
+		return GREY_LIGHT
+	elseif named(name, { "wall", "pillar", "opening", "arch", "post", "rail", "fence", "sill", "header", "frame" }) then
+		return ORANGE
+	end
+
+	return GREY_LIGHT
+end
+
+--[[
+	@param self Colors
+	@param part BasePart
+	@return Color3 -- the color the current theme gives the part; a part that is partly see-through is purple in every theme
+]]
+local function themed(self: Colors, part: BasePart): Color3
+	if part.Transparency > 0.001 and part.Transparency < 0.999 then
+		return PURPLE
+	end
+
+	if self._theme() == "Unity" then
+		return unityColor(part)
+	end
+
+	return PALETTE[self._random:NextInteger(1, #PALETTE)]
+end
 
 --[[
 	@param part BasePart
 
-	Gives the part a pastel color, saving its original color first.
+	Gives the part a themed color, saving its original color first.
 ]]
 local function apply(self: Colors, part: BasePart)
 	if typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
@@ -62,7 +134,7 @@ local function apply(self: Colors, part: BasePart)
 		part.UsePartColor = true
 	end
 
-	part.Color = PALETTE[self._random:NextInteger(1, #PALETTE)]
+	part.Color = themed(self, part)
 	self._colored[part] = true
 end
 
@@ -102,6 +174,7 @@ function Colors.new(
 		Stop: () -> (),
 		GetScope: () -> Instance?,
 		Remember: ((boolean) -> ())?,
+		GetTheme: () -> string,
 	},
 	trove: Trove.Trove
 ): Colors
@@ -115,6 +188,8 @@ function Colors.new(
 		_refresh = deps.Refresh,
 		_stop = deps.Stop,
 		_scope = deps.GetScope,
+		_theme = deps.GetTheme,
+		_switching = false,
 	}
 
 	for _, part in workspace:GetDescendants() do
@@ -186,6 +261,47 @@ function Colors.Adopt(self: Colors, part: BasePart)
 end
 
 --[=[
+	Gives every part in the working folder that missed its color one, so a part made by a cut, a
+	union or any other path is never left plain. It runs at the end of each plugin edit.
+
+	@param self Colors
+]=]
+function Colors.Sweep(self: Colors)
+	local scope = self._scope()
+
+	if not self.On or self._switching or not scope then
+		return
+	end
+
+	for _, part in scope:GetDescendants() do
+		if part:IsA("BasePart") and typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
+			apply(self, part)
+		end
+	end
+end
+
+--[=[
+	Repaints every part that already has a theme color with the theme now picked, as one undo step.
+
+	@param self Colors
+]=]
+function Colors.Retheme(self: Colors)
+	local scope = self._scope()
+
+	if not self.On or not scope then
+		return
+	end
+
+	self._edit("Change color theme", function()
+		for _, part in scope:GetDescendants() do
+			if part:IsA("BasePart") and typeof(part:GetAttribute(ORIGINAL)) == "Color3" then
+				part.Color = themed(self, part)
+			end
+		end
+	end)
+end
+
+--[=[
 	Turns the pastel colors on or off as one undoable edit.
 
 	@param self Colors
@@ -199,6 +315,7 @@ function Colors.Set(self: Colors, value: boolean)
 	end
 
 	self._stop()
+	self._switching = true
 
 	local ok = self._edit(if value then "Show pastel colors" else "Restore original colors", function()
 		if value then
@@ -224,6 +341,8 @@ function Colors.Set(self: Colors, value: boolean)
 			workspace:SetAttribute(ACTIVE, nil)
 		end
 	end)
+
+	self._switching = false
 
 	if ok then
 		self.On = value

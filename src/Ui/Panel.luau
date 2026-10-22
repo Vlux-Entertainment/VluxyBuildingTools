@@ -1431,6 +1431,52 @@ function Panel.new(deps: Deps): Panel
 		end, function(on)
 			Colors.Set(deps.Colors, on)
 		end)
+		do
+			local themeRow = newRow(parent, 30)
+			local themeButtons: { [string]: TextButton } = {}
+
+			register(themeRow, {
+				Condition = function()
+					return deps.Colors.On
+				end,
+			})
+
+			for i, name in Colors.Themes do
+				local choice = make("TextButton", {
+					Size = UDim2.new(1 / #Colors.Themes, -4, 0, 30),
+					Position = UDim2.fromScale((i - 1) / #Colors.Themes, 0),
+					BackgroundColor3 = TILE,
+					BorderSizePixel = 0,
+					Text = name,
+					TextColor3 = TEXT,
+					Font = Enum.Font.GothamMedium,
+					TextSize = 12,
+				}, themeRow)
+
+				style(choice, 6, CARD_STROKE)
+				attachTip(choice, {
+					Text = if name == "Unity"
+						then "Unity theme: walls orange, floors dark grey, ceilings lighter grey. Partly see-through parts are purple."
+						else "Pastel theme: a random soft color for every part. Partly see-through parts are purple.",
+				})
+				themeButtons[name] = choice
+				choice.MouseButton1Click:Connect(function()
+					settings.ColorTheme = name
+					deps.Save()
+					Colors.Retheme(deps.Colors)
+					refresh()
+				end)
+			end
+
+			table.insert(refreshers, function()
+				for name, choice in themeButtons do
+					local active = name == settings.ColorTheme
+
+					choice.BackgroundColor3 = if active then ACCENT else TILE
+					choice.TextColor3 = if active then BACKGROUND else TEXT
+				end
+			end)
+		end
 		switch(parent, "Surface grid", function()
 			return deps.SurfaceGrid.On
 		end, function(on)

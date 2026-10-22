@@ -335,6 +335,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			end
 		end
 
+		SurfaceGrid.Sweep(surfaceGrid)
+		Colors.Sweep(colors)
+
 		ChangeHistoryService:FinishRecording(
 			id,
 			if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
@@ -2352,6 +2355,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--
 
 	colors = Colors.new({
+		GetTheme = function()
+			return settings.ColorTheme
+		end,
 		Remember = function(value)
 			if not quiet then
 				settings.AutoPastel = value
