@@ -24,6 +24,7 @@ export type SurfaceGrid = {
 	_scope: () -> Instance?,
 	_size: () -> number,
 	_color: () -> Color3,
+	_switching: boolean,
 }
 
 local TEXTURE_NAME = "VluxGridTexture"
@@ -126,6 +127,7 @@ function SurfaceGrid.new(
 		_scope = deps.GetScope,
 		_size = deps.GetSize,
 		_color = deps.GetColor,
+		_switching = false,
 	}
 
 	if not self.On then
@@ -186,6 +188,26 @@ function SurfaceGrid.Adopt(self: SurfaceGrid, part: BasePart)
 end
 
 --[=[
+	Puts the grid on every part in the working folder that missed it, so a part made by a cut, a
+	union or any other path is never left plain. It runs at the end of each plugin edit.
+
+	@param self SurfaceGrid
+]=]
+function SurfaceGrid.Sweep(self: SurfaceGrid)
+	local scope = self._scope()
+
+	if not self.On or self._switching or not scope then
+		return
+	end
+
+	for _, object in scope:GetDescendants() do
+		if object:IsA("BasePart") and eligible(object) and not object:FindFirstChild(TEXTURE_NAME) then
+			apply(object, self._size(), self._color())
+		end
+	end
+end
+
+--[=[
 	Turns the grid on or off as one undoable edit. Off removes every grid Texture in Workspace, not
 	only the working folder's, so nothing is left behind.
 
@@ -200,6 +222,7 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 	end
 
 	self._stop()
+	self._switching = true
 
 	local ok = self._edit(if value then "Show surface grid" else "Remove surface grid", function()
 		if value then
@@ -220,6 +243,8 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 			workspace:SetAttribute(ACTIVE, nil)
 		end
 	end)
+
+	self._switching = false
 
 	if ok then
 		self.On = value

@@ -273,7 +273,17 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function requireFolder(): boolean
 		if folder and folder:IsDescendantOf(workspace) then
-			return true
+			if settings.AllowUntagged or CollectionService:HasTag(folder, MAP_TAG) then
+				return true
+			end
+
+			local text =
+				`"{folder.Name}" is missing the tag {MAP_TAG}, so the plugin will not edit it. Select the folder, open View > Tag Editor and add {MAP_TAG}.`
+
+			say(text)
+			warn("[VluxyBuildingTools] " .. text)
+
+			return false
 		end
 
 		say("Pick a working folder in the panel first. The plugin only works inside it.")
@@ -324,6 +334,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				Colors.Adopt(colors, part)
 			end
 		end
+
+		SurfaceGrid.Sweep(surfaceGrid)
+		Colors.Sweep(colors)
 
 		ChangeHistoryService:FinishRecording(
 			id,
@@ -955,6 +968,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				if not openEnd then
 					ventHitHost = (b - a).Unit
 				end
+			end
+
+			if not shaft and openEnd and math.abs(openEnd.Y) > 0.9 then
+				local centre = endPoint - openEnd.Unit * (size / 2)
+
+				ventHitHost = openEnd.Unit
+				snapMark = centre
+
+				return centre - Vector3.new(0, size / 2, 0)
 			end
 
 			snapMark = endPoint
@@ -2342,6 +2364,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	--
 
 	colors = Colors.new({
+		GetTheme = function()
+			return settings.ColorTheme
+		end,
 		Remember = function(value)
 			if not quiet then
 				settings.AutoPastel = value
@@ -2428,9 +2453,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function proposeFolder(target: Instance)
 		if not settings.AllowUntagged and not CollectionService:HasTag(target, MAP_TAG) then
-			return say(
-				`"{target.Name}" is not a map. Add the tag {MAP_TAG} to the folder first (Tag Editor), or turn on Allow untagged folders (not recommended).`
-			)
+			local text =
+				`"{target.Name}" is not a map yet. Select it, open View > Tag Editor and add the tag {MAP_TAG}, then pick it again.`
+
+			warn("[VluxyBuildingTools] " .. text)
+
+			return say(text)
 		end
 
 		pendingFolder = target
@@ -2480,9 +2508,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	]]
 	local function setFolder(chosen: Instance?)
 		if chosen and not settings.AllowUntagged and not CollectionService:HasTag(chosen, MAP_TAG) then
-			return say(
-				`"{chosen.Name}" cannot be the working folder: add the tag {MAP_TAG} to it first, or turn on Allow untagged folders (not recommended).`
-			)
+			local text =
+				`"{chosen.Name}" cannot be the working folder: select it, open View > Tag Editor and add the tag {MAP_TAG}.`
+
+			warn("[VluxyBuildingTools] " .. text)
+
+			return say(text)
 		end
 
 		if colors.On and chosen ~= folder then
