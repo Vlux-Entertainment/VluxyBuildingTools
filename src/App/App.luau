@@ -136,11 +136,8 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 	local edit = Edit.new({
 		Say = say,
 		Sound = sound,
-		Adopt = function(part)
-			Display.Adopt(display, part)
-		end,
-		Sweep = function()
-			Display.Sweep(display)
+		Sweep = function(parts)
+			Display.Sweep(display, parts)
 		end,
 	})
 

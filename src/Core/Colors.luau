@@ -253,32 +253,37 @@ function Colors.Preview(self: Colors, part: BasePart): Color3
 	return themed(self, part)
 end
 
---[=[
-	Colors a part that was just built, now, so the color belongs to the same undo step as the part.
-
+--[[
 	@param self Colors
 	@param part BasePart
-]=]
-function Colors.Adopt(self: Colors, part: BasePart)
-	local scope = self._scope()
+	@param unity boolean -- the Unity theme is in force
 
-	if
-		workspace:GetAttribute(ACTIVE) == true
-		and scope
-		and part:IsDescendantOf(scope)
-		and typeof(part:GetAttribute(ORIGINAL)) ~= "Color3"
-	then
+	Gives a part its theme color: a plain part gets one, a Unity-colored part gets the one its
+	shape and name call for now, and a part with a Unity color under another theme is repainted.
+]]
+local function settle(self: Colors, part: BasePart, unity: boolean)
+	if typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
 		apply(self, part)
+	elseif unity then
+		local want = themed(self, part)
+
+		if part.Color ~= want then
+			part.Color = want
+		end
+	elseif isUnityColor(part.Color) then
+		part.Color = themed(self, part)
 	end
 end
 
 --[=[
-	Gives every part in the working folder that missed its color one, so a part made by a cut, a
-	union or any other path is never left plain. It runs at the end of each plugin edit.
+	Colors the parts an edit added or changed, so a part made by a cut, a union, a copy or any
+	other path is never left plain and the colors belong to the same undo step. With no list it
+	goes through the whole working folder, which is only done when a folder is picked.
 
 	@param self Colors
+	@param parts { BasePart }? -- the parts to settle; nil for every part in the working folder
 ]=]
-function Colors.Sweep(self: Colors)
+function Colors.Sweep(self: Colors, parts: { BasePart }?)
 	local scope = self._scope()
 
 	if workspace:GetAttribute(ACTIVE) ~= true or self._switching or not scope then
@@ -287,19 +292,19 @@ function Colors.Sweep(self: Colors)
 
 	local unity = self._theme() == "Unity"
 
+	if parts then
+		for _, part in parts do
+			if part:IsDescendantOf(scope) then
+				settle(self, part, unity)
+			end
+		end
+
+		return
+	end
+
 	for _, part in scope:GetDescendants() do
 		if part:IsA("BasePart") then
-			if typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
-				apply(self, part)
-			elseif unity then
-				local want = themed(self, part)
-
-				if part.Color ~= want then
-					part.Color = want
-				end
-			elseif isUnityColor(part.Color) then
-				part.Color = themed(self, part)
-			end
+			settle(self, part, unity)
 		end
 	end
 end

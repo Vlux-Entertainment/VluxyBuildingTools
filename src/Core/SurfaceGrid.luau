@@ -175,29 +175,27 @@ function SurfaceGrid.new(
 end
 
 --[=[
-	Puts the grid on a part that was just built, now, so it belongs to the same undo step as the part.
+	Puts the grid on the parts an edit added or changed, so a part made by a cut, a union, a copy
+	or any other path is never left plain and the grid belongs to the same undo step. With no list
+	it goes through the whole working folder, which is only done when a folder is picked.
 
 	@param self SurfaceGrid
-	@param part BasePart
+	@param parts { BasePart }? -- the parts to grid; nil for every part in the working folder
 ]=]
-function SurfaceGrid.Adopt(self: SurfaceGrid, part: BasePart)
-	local scope = self._scope()
-
-	if workspace:GetAttribute(ACTIVE) == true and scope and eligible(part) and part:IsDescendantOf(scope) then
-		apply(part, self._size(), self._color())
-	end
-end
-
---[=[
-	Puts the grid on every part in the working folder that missed it, so a part made by a cut, a
-	union or any other path is never left plain. It runs at the end of each plugin edit.
-
-	@param self SurfaceGrid
-]=]
-function SurfaceGrid.Sweep(self: SurfaceGrid)
+function SurfaceGrid.Sweep(self: SurfaceGrid, parts: { BasePart }?)
 	local scope = self._scope()
 
 	if workspace:GetAttribute(ACTIVE) ~= true or self._switching or not scope then
+		return
+	end
+
+	if parts then
+		for _, part in parts do
+			if eligible(part) and part:IsDescendantOf(scope) then
+				apply(part, self._size(), self._color())
+			end
+		end
+
 		return
 	end
 

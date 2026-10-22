@@ -16,10 +16,8 @@ local Profile = require("../Core/Profile")
 export type Deps = {
 	Say: (text: string) -> (),
 	Sound: (name: string) -> (),
-	--[=[ Called for every Part the change added, after it ran. ]=]
-	Adopt: (part: BasePart) -> (),
-	--[=[ Called once after every change, to tidy up Parts that left. ]=]
-	Sweep: () -> (),
+	--[=[ Called once after every change with the Parts it added, still in the same undo step. ]=]
+	Sweep: (parts: { BasePart }) -> (),
 }
 
 --[=[
@@ -63,14 +61,7 @@ function Edit.new(deps: Deps): Edit
 
 		watch:Disconnect()
 
-		Profile.Run("Adopt", function()
-			for _, part in added do
-				if part:IsDescendantOf(workspace) then
-					deps.Adopt(part)
-				end
-			end
-		end)
-		Profile.Run("Sweep", deps.Sweep)
+		Profile.Run("Sweep", deps.Sweep, added)
 		ChangeHistoryService:FinishRecording(
 			id,
 			if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel

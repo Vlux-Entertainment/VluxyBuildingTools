@@ -30,7 +30,7 @@ CollectionService tag, or a box search near the cursor.
    name a slow spot later. One small helper, `Core/Profile.luau`, wraps a function in a label so a
    missed `profileend` cannot happen. Labels, all prefixed `VluxyBT/`:
    - `Heartbeat`, and inside it `Preview`, `Modal`, `Folder`
-   - `Edit` (the change itself), then `Adopt` and `Sweep` after it
+   - `Edit` (the change itself), then `Sweep` after it
    - `Load`, `Pastel` (on, off, theme change), `Grid` (on, off)
 2. **Stress place generator**: `Commands/StressPlace.luau`, run from the Studio command bar. It fills
    a folder with rooms, corridors, walls, floors, stairs and doorways made by the plugin's own
@@ -44,17 +44,19 @@ CollectionService tag, or a box search near the cursor.
 working folder twice, `Colors.Sweep` and `SurfaceGrid.Sweep`, and in Unity mode it also runs the
 name matching and the shape sizing on every part. Estimated 0.3 to 0.4 s per click at 100k.
 
-**Change:**
-- `Services/Edit` already collects the parts an edit adds. It also collects the parts an edit
-  changes: a tool reports what it resized or moved through a new `ctx.Touch(part)`, and Move,
-  Extend, Arrange and the modal actions call it.
-- `Colors.Sweep` and `SurfaceGrid.Sweep` take that list and handle only those parts.
-- The whole-folder walk stays only where it is asked for: switching pastel or the grid on, a
-  theme change, and an explicit "Recolor folder" pass.
+**Change (done):**
+- `Services/Edit` already collected the parts an edit adds. It now hands that list to
+  `Display.Sweep`, and `Colors.Sweep` and `SurfaceGrid.Sweep` handle only those parts. The
+  separate `Adopt` pass is gone, since the sweep of the added parts does the same work.
+- No edit resizes or renames a part it did not add: cuts, unions, extrusions and copies all make
+  new parts. Move, rotate and scale (`Modal/Move`) record their own undo step and never swept, so
+  nothing changes for them.
+- The whole-folder walk stays only where it is asked for: picking a working folder, and switching
+  pastel or the grid on, or changing the theme.
 
-**Risk:** a path that changes a part without reporting it leaves that part with an old color.
-Cuts and unions make new parts, which `DescendantAdded` already catches. Covered by testing every
-tool with Unity colors on.
+**Behavior change:** before, any plugin edit also repainted parts changed by Studio's own tools
+since the last edit, as a side effect. Now those keep their color until the folder is picked
+again or pastel is switched off and on.
 
 ## Phase 2: the working folder outline
 
