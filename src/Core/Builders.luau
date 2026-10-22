@@ -1505,8 +1505,22 @@ function Builders.VentStrips(settings: Settings): { Strip }
 	local pad = 0.03
 
 	return {
-		{ key = "Floor", name = "VentFloor", low = -w / 2 - pad, high = w / 2 + pad, rise = t / 2, height = t },
-		{ key = "Ceiling", name = "VentCeiling", low = -w / 2 - pad, high = w / 2 + pad, rise = w - t / 2, height = t },
+		{
+			key = "Floor",
+			name = "VentFloor",
+			low = -w / 2 - pad,
+			high = w / 2 + pad,
+			rise = t / 2 - pad / 2,
+			height = t + pad,
+		},
+		{
+			key = "Ceiling",
+			name = "VentCeiling",
+			low = -w / 2 - pad,
+			high = w / 2 + pad,
+			rise = w - t / 2 + pad / 2,
+			height = t + pad,
+		},
 		{ key = "Right", name = "VentWall", low = w / 2 - t, high = w / 2 + pad, rise = w / 2, height = inner },
 		{ key = "Left", name = "VentWall", low = -w / 2 - pad, high = -w / 2 + t, rise = w / 2, height = inner },
 	}
@@ -1627,8 +1641,8 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 		local slant = t / cosine
 
 		for _, floor in { true, false } do
-			local y1 = if floor then -gap else gap + slant
-			local y2 = if floor then -gap - slant else gap
+			local y1 = if floor then -gap else gap + slant + pad
+			local y2 = if floor then -gap - slant - pad else gap
 
 			quadPrism(
 				out,
@@ -1658,8 +1672,8 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 		return out
 	end
 
-	add(out, Vector3.new(w + 2 * pad, t, length), frame * CFrame.new(0, -reach, 0), "VentFloor")
-	add(out, Vector3.new(w + 2 * pad, t, length), frame * CFrame.new(0, reach, 0), "VentCeiling")
+	add(out, Vector3.new(w + 2 * pad, t + pad, length), frame * CFrame.new(0, -reach - pad / 2, 0), "VentFloor")
+	add(out, Vector3.new(w + 2 * pad, t + pad, length), frame * CFrame.new(0, reach + pad / 2, 0), "VentCeiling")
 	add(out, Vector3.new(t + pad, inner, length), frame * CFrame.new(reach + pad / 2, 0, 0), "VentWall")
 	add(out, Vector3.new(t + pad, inner, length), frame * CFrame.new(-reach - pad / 2, 0, 0), "VentWall")
 
