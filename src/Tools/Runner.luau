@@ -112,17 +112,18 @@ local function start(self: Runner, name: string): boolean
 	local deps = self._deps
 	local ctx = deps.Context
 	local tool = Registry[name]
+	local had = self._tool ~= nil
 
 	deps.Starting()
 	Runner.Stop(self)
 
-	if not tool or not deps.CanStart() then
-		return false
-	end
-
-	local state = tool.Begin(ctx)
+	local state = if tool and deps.CanStart() then tool.Begin(ctx) else nil
 
 	if state == nil then
+		if had then
+			deps.Stopped()
+		end
+
 		return false
 	end
 
@@ -261,7 +262,8 @@ function Runner.ResumeLast(self: Runner): boolean
 end
 
 --[=[
-	Starts the active tool afresh, keeping it on, as Enter does.
+	Starts the active tool afresh, keeping it on, as Enter does. A tool that cannot begin again is
+	turned off.
 
 	@param self Runner
 ]=]
@@ -277,7 +279,18 @@ function Runner.Reset(self: Runner)
 	end
 
 	clearOverlay(self)
-	self._state = tool.Begin(ctx)
+
+	local state = tool.Begin(ctx)
+
+	if state == nil then
+		self._tool, self._state, self.Mode = nil, nil, nil
+		ctx.State.Mode(nil)
+		self._deps.Stopped()
+
+		return
+	end
+
+	self._state = state
 end
 
 --[[
@@ -369,7 +382,16 @@ function Runner.Click(self: Runner)
 		return ctx.Say(tostring(shown))
 	end
 
-	tool.Click(ctx, self._state, shown)
+	local clicked, err = pcall(function()
+		tool.Click(ctx, self._state, shown)
+	end)
+
+	if not clicked then
+		Runner.Stop(self)
+		self._deps.Stopped()
+		ctx.Say("Tool stopped: " .. tostring(err))
+		warn("[VluxyBuildingTools] " .. tostring(err))
+	end
 end
 
 --[=[

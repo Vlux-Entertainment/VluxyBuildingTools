@@ -28,7 +28,7 @@ local CUT_PARTS: { [string]: boolean } = {
 	Ceiling_Right = true,
 }
 
-type Cutter = { cf: CFrame, size: Vector3, cylinder: boolean, thickness: number? }
+export type Cutter = { cf: CFrame, size: Vector3, cylinder: boolean, thickness: number? }
 
 local PREFIX = "VluxyBT_"
 
@@ -136,14 +136,39 @@ local function measure(model: Model): { Cutter }
 	end)
 end
 
---[[
-	@return { Cutter } -- the cutters stored on a structure when it was built
-]]
-local function stored(model: Instance): { Cutter }
+--[=[
+	Remembers a structure's cutters on the model, relative to its pivot, so they follow the
+	structure when it is moved, turned or flipped.
+
+	@param model Instance -- the structure
+	@param cutters { Cutter }
+	@param pivot CFrame -- the model's pivot now
+]=]
+function Joints.RememberCuts(model: Instance, cutters: { Cutter }, pivot: CFrame)
+	for index, cutter in cutters do
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Local", pivot:ToObjectSpace(cutter.cf))
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Size", cutter.size)
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Cylinder", cutter.cylinder)
+		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Thickness", cutter.thickness)
+	end
+
+	model:SetAttribute(PREFIX .. "Cuts", #cutters)
+end
+
+--[=[
+	Reads the cutters stored on a structure. Structures built before cutters were kept relative to
+	the pivot still have world-space `_CF` attributes, which are read as they are.
+
+	@param model Instance -- the structure
+	@param pivot CFrame -- the model's pivot now
+	@return { Cutter } -- the cutters, in world space
+]=]
+function Joints.StoredCuts(model: Instance, pivot: CFrame): { Cutter }
 	local out: { Cutter } = {}
 
 	for index = 1, (attribute(model, "Cuts") :: number?) or 0 do
-		local cf = attribute(model, "Cut" .. index .. "_CF")
+		local relative = model:GetAttribute(PREFIX .. "Cut" .. index .. "_Local")
+		local cf = if typeof(relative) == "CFrame" then pivot * relative else attribute(model, "Cut" .. index .. "_CF")
 		local size = attribute(model, "Cut" .. index .. "_Size")
 
 		if typeof(cf) == "CFrame" and typeof(size) == "Vector3" then
@@ -159,6 +184,15 @@ local function stored(model: Instance): { Cutter }
 	end
 
 	return out
+end
+
+--[[
+	@return { Cutter } -- the cutters stored on a structure when it was built, where it is now
+]]
+local function stored(model: Instance): { Cutter }
+	local pivot = if model:IsA("Model") then model:GetPivot() else CFrame.identity
+
+	return Joints.StoredCuts(model, pivot)
 end
 
 --[[
@@ -251,6 +285,7 @@ local function carve(part: BasePart, cutters: { Cutter }): boolean
 
 	local holder = part.Parent
 
+	Geometry.CarryOver(part, result)
 	result.Name = part.Name
 	result.Anchored = true
 	result.Parent = holder
@@ -330,6 +365,7 @@ function Joints.CarveShape(part: BasePart, specs: { Geometry.Spec }): boolean
 
 	local holder = part.Parent
 
+	Geometry.CarryOver(part, result)
 	result.Name = part.Name
 	result.Anchored = true
 	result.Parent = holder
@@ -726,14 +762,7 @@ end
 function Joints.Connect(model: Model, roomJoin: string, skip: Instance?): number
 	local mine = measure(model)
 
-	for index, cutter in mine do
-		model:SetAttribute(PREFIX .. "Cut" .. index .. "_CF", cutter.cf)
-		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Size", cutter.size)
-		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Cylinder", cutter.cylinder)
-		model:SetAttribute(PREFIX .. "Cut" .. index .. "_Thickness", cutter.thickness)
-	end
-
-	model:SetAttribute(PREFIX .. "Cuts", #mine)
+	Joints.RememberCuts(model, mine, model:GetPivot())
 
 	if #mine == 0 then
 		return 0

@@ -55,9 +55,15 @@ function Hidden.new(trove: Trove.Trove): Hidden
 	local self: Hidden = { View = false, Ghost = 0.82, _parts = {} }
 
 	trove:Connect(workspace.DescendantRemoving, function(object)
-		if object:IsA("BasePart") then
-			self._parts[object] = nil
+		if not object:IsA("BasePart") then
+			return
 		end
+
+		task.defer(function()
+			if not object:IsDescendantOf(workspace) then
+				self._parts[object] = nil
+			end
+		end)
 	end)
 
 	return self
@@ -157,6 +163,20 @@ function Hidden.SetGhost(self: Hidden, value: number)
 			apply(self, part)
 		end
 	end
+end
+
+--[=[
+	@param self Hidden
+	@return { Instance } -- the parts hidden this session, for rays to pass through
+]=]
+function Hidden.Parts(self: Hidden): { Instance }
+	local parts: { Instance } = {}
+
+	for part in self._parts do
+		table.insert(parts, part)
+	end
+
+	return parts
 end
 
 --[=[

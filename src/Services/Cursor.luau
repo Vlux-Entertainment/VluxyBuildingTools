@@ -26,6 +26,7 @@ export type Cursor = {
 	--[=[ The part the last `PartSnap` snapped to, or nil. ]=]
 	SnapPart: BasePart?,
 	_settings: Settings.Settings,
+	_hidden: () -> { Instance },
 }
 
 local FAR = 100000
@@ -36,10 +37,11 @@ local Cursor = {}
 --[=[
 	@param mouse PluginMouse
 	@param settings Settings -- the live settings, read for the grid and snapping options
+	@param hidden () -> { Instance } -- the hidden parts, which the mouse ray passes through
 	@return Cursor
 ]=]
-function Cursor.new(mouse: PluginMouse, settings: Settings.Settings): Cursor
-	return { Mouse = mouse, Mark = nil, SnapPart = nil, _settings = settings }
+function Cursor.new(mouse: PluginMouse, settings: Settings.Settings, hidden: () -> { Instance }): Cursor
+	return { Mouse = mouse, Mark = nil, SnapPart = nil, _settings = settings, _hidden = hidden }
 end
 
 --[=[
@@ -91,15 +93,20 @@ end
 
 --[=[
 	@param self Cursor
-	@param exclude { Instance }? -- objects the ray passes through
-	@return RaycastResult? -- the first surface under the mouse, anywhere in Workspace
+	@param exclude { Instance }? -- objects the ray passes through, besides the hidden parts
+	@return RaycastResult? -- the first visible surface under the mouse, anywhere in Workspace
 ]=]
 function Cursor.Hit(self: Cursor, exclude: { Instance }?): RaycastResult?
 	local ray = self.Mouse.UnitRay
 	local params = RaycastParams.new()
+	local ignored = self._hidden()
+
+	if exclude then
+		table.move(exclude, 1, #exclude, #ignored + 1, ignored)
+	end
 
 	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances = exclude or {}
+	params.FilterDescendantsInstances = ignored
 
 	return workspace:Raycast(ray.Origin, ray.Direction * FAR, params)
 end

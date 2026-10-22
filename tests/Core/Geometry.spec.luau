@@ -86,4 +86,20 @@ return {
 		expect.equal(placed.Name, "Crate")
 		expect.equal(placed.Parent, context.Workspace)
 	end,
+	["CarryOver gives a cut result the source's attributes and tags"] = function(expect)
+		local Geometry = Harness.Load("src/Core/Geometry")
+		local source = Harness.Part(Vector3.new(4, 1, 4), CFrame.new())
+		local result = Harness.Part(Vector3.new(4, 1, 4), CFrame.new())
+
+		source:SetAttribute("VluxGreybox_OriginalColor_v1", roblox.Color3.new(1, 0, 0))
+		source:SetAttribute("VluxyBT_GroupColor", "Blue")
+		source:AddTag("Greybox")
+		result:SetAttribute("VluxyBT_GroupColor", "Kept")
+
+		Geometry.CarryOver(source, result)
+
+		expect.equal(result:GetAttribute("VluxGreybox_OriginalColor_v1"), roblox.Color3.new(1, 0, 0))
+		expect.equal(result:GetAttribute("VluxyBT_GroupColor"), "Kept", "an attribute the result has is left alone")
+		expect.equal(result:HasTag("Greybox"), true)
+	end,
 }

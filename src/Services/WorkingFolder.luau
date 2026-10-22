@@ -37,6 +37,8 @@ export type Deps = {
 	Say: (text: string) -> (),
 	Warn: (text: string) -> (),
 	StopTools: () -> (),
+	--[=[ True while the panel is open; themes and grid come back only then. ]=]
+	IsOpen: () -> boolean,
 }
 
 type Conflict = { Folder: Instance, Names: string }
@@ -256,7 +258,10 @@ local function setFolder(self: WorkingFolder, chosen: Instance?)
 		end)
 	end
 
-	Display.RestoreAuto(display)
+	if deps.IsOpen() then
+		Display.RestoreAuto(display)
+	end
+
 	Display.Sweep(display)
 	deps.Say(`Working in {chosen:GetFullName()}.`)
 end

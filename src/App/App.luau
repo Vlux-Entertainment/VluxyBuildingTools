@@ -26,6 +26,7 @@ local CameraLight = require("../Services/CameraLight")
 local Cursor = require("../Services/Cursor")
 local Display = require("../Services/Display")
 local Edit = require("../Services/Edit")
+local Hidden = require("../Core/Hidden")
 local Host = require("../Modal/Host")
 local Input = require("./Input")
 local Overlay = require("../Core/Overlay")
@@ -86,10 +87,12 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 	local state = AppState.new()
 	local overlay = Overlay.new(trove)
 	local mouse = plugin:GetMouse()
-	local cursor = Cursor.new(mouse, settings)
+	local display: Display.Display
+	local cursor = Cursor.new(mouse, settings, function()
+		return Hidden.Parts(display.Hidden)
+	end)
 	local runner: Runner.Runner
 	local host: Host.Host
-	local display: Display.Display
 	local status = Status.new(state, overlay, function()
 		return Host.Describe(host) or Runner.Describe(runner)
 	end)
@@ -163,6 +166,9 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Warn = warnUser,
 		StopTools = function()
 			stopAll()
+		end,
+		IsOpen = function()
+			return widget.Enabled
 		end,
 	}, trove)
 
