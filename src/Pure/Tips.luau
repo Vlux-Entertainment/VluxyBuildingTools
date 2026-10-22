@@ -129,6 +129,27 @@ Tips.Entries = {
 	WindowHeight = { Text = "How tall the window is." },
 	WindowSill = { Text = "How far the bottom of the window is above the bottom of the wall." },
 	Yaw = { Text = "How much to turn painted copies.", Key = "R" },
+	FieldStep = {
+		Text = "How much the + and - buttons beside a number change it. 0 lets each field use its own step; set 0.1 to make every field move by 0.1.",
+	},
+	GhostTransparency = {
+		Text = "How see-through hidden parts look when you show them as ghosts. 0 is solid, 1 is clear.",
+	},
+	PropScale = { Text = "Makes the prop bigger or smaller than its normal size. 1 is normal." },
+	["Add a door with frame (see-through, no collision)"] = {
+		Text = "Also puts a frame and a see-through door panel in the doorway. The panel has no collision, so you can walk through.",
+	},
+	["Allow untagged folders (not recommended)"] = {
+		Text = "Lets the plugin work in any folder. Off by default: a folder needs the VluxyBT_Map tag so the plugin never edits a folder by accident.",
+	},
+	["Camera light"] = {
+		Text = "A light that follows the editor camera, so dark rooms are easy to see. It is never saved in the place.",
+	},
+	["Ceiling"] = { Text = "Adds a ceiling to rooms and corridors." },
+	["Random rotation"] = { Text = "Turns each brush copy a random amount around the up axis." },
+	["Set cut depth with mouse"] = {
+		Text = "After clicking a wall, move the mouse to choose how deep the opening goes before you click again.",
+	},
 	VentSize = { Text = "The outside width and height of a vent duct, in studs." },
 	VentThickness = { Text = "How thick the sheet metal of a vent is." },
 	BrushRadius = { Text = "How far from the cursor the brush scatters copies, in studs." },
