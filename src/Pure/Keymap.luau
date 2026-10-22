@@ -60,6 +60,7 @@ local PLAIN_KEYS: { [string]: Action } = {
 	F1 = "ShowHotkeys",
 	P = "TogglePastel",
 	L = "ToggleGrid",
+	B = "ToggleCameraLight",
 	V = "Duplicate",
 	O = "Rotate90Arm",
 	I = "ToggleHiddenView",
@@ -114,6 +115,7 @@ function Keymap.Describe(): { { string } }
 		{ "F1", "Open this tab" },
 		{ "P", "Themes on or off" },
 		{ "L", "Surface grid on or off" },
+		{ "B", "Camera light on or off" },
 		{ "N", "Show or hide the panel" },
 		{ "Ctrl+M, then X / Y / Z", "Mirror the selection on that axis" },
 		{

@@ -42,6 +42,7 @@ local STARTS: { [string]: boolean } = {
 	ShowHotkeys = true,
 	TogglePastel = true,
 	ToggleGrid = true,
+	ToggleCameraLight = true,
 	TogglePanel = true,
 	Hide = true,
 	Unhide = true,

@@ -381,6 +381,16 @@ function Actions.ToggleGrid(app: App)
 	Display.SetGrid(app.Display, not app.Display.Grid.On)
 end
 
+--[=[
+	@param app App
+]=]
+function Actions.ToggleCameraLight(app: App)
+	local on = not app.Store.Values.CameraLight
+
+	Store.Set(app.Store, "CameraLight", on)
+	app.Say(if on then "Camera light on." else "Camera light off.")
+end
+
 local SIMPLE: { [string]: (app: App) -> () } = {
 	Cancel = Actions.Cancel,
 	Confirm = Actions.Confirm,
@@ -425,6 +435,7 @@ local SIMPLE: { [string]: (app: App) -> () } = {
 	end,
 	TogglePastel = Actions.TogglePastel,
 	ToggleGrid = Actions.ToggleGrid,
+	ToggleCameraLight = Actions.ToggleCameraLight,
 	TogglePanel = function(app)
 		app.Widget.Enabled = not app.Widget.Enabled
 	end,
