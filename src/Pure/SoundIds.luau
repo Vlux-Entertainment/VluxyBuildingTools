@@ -18,7 +18,7 @@ local SoundIds: { [string]: Entry } = {
 	ToggleOn = { Id = "rbxassetid://10128760939", Volume = 0.5 },
 	ToggleOff = { Id = "rbxassetid://10066968815", Volume = 0.5 },
 	Hotkey = { Id = "rbxassetid://15675059323", Volume = 0.4 },
-	Tool = { Id = "rbxassetid://10066968815", Volume = 0.5 },
+	Tool = { Id = "rbxassetid://15675037413", Volume = 0.5 },
 	ToolOff = { Id = "rbxassetid://10066914500", Volume = 0.5 },
 	Cancel = { Id = "rbxassetid://10066914500", Volume = 0.5 },
 	Build = { Id = "rbxassetid://9120916241", Volume = 0.6 },

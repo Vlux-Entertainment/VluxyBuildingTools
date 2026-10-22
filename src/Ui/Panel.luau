@@ -2480,6 +2480,12 @@ function Panel.new(deps: Deps): Panel
 					isTab = isTab or tab == object
 				end
 
+				for _, tile in tiles do
+					if tile.Button == object then
+						return
+					end
+				end
+
 				deps.Sound(if isTab then "Tab" else "Click")
 			end)
 		end
