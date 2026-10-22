@@ -113,6 +113,7 @@ function Keymap.Describe(): { { string } }
 		},
 		{ "F1", "Open this tab" },
 		{ "P", "Themes on or off" },
+		{ "Hold P + Scroll", "Switch the theme" },
 		{ "L", "Surface grid on or off" },
 		{ "Alt+L", "Camera light on or off" },
 		{ "N", "Show or hide the panel" },

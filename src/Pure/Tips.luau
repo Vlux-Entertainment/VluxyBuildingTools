@@ -46,7 +46,7 @@ Tips.Entries = {
 	Cancel = { Text = "Keep the current working folder.", Key = "Esc" },
 
 	-- Switches
-	Themes = { Text = "Color parts by the theme below; your team sees it too.", Key = "P" },
+	Themes = { Text = "Color parts by theme; hold P and scroll to switch themes.", Key = "P" },
 	["Surface grid"] = { Text = "Put a grid texture on every part; your team sees it too.", Key = "L" },
 	["Show hidden parts (ghosted)"] = { Text = "Show hidden parts as faint ghosts.", Key = "I" },
 	["Play sounds"] = { Text = "Play small sounds for clicks and tools." },

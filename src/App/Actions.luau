@@ -22,6 +22,7 @@ local Host = require("../Modal/Host")
 local Move = require("../Modal/Move")
 local PropData = require("../Pure/PropData")
 local Runner = require("../Tools/Runner")
+local Settings = require("../Pure/Settings")
 local Store = require("../State/Store")
 local Tools = require("../Pure/Tools")
 local Transform = require("../Core/Transform")
@@ -379,6 +380,26 @@ end
 ]=]
 function Actions.ToggleGrid(app: App)
 	Display.SetGrid(app.Display, not app.Display.Grid.On)
+end
+
+--[=[
+	Moves to the next or previous color theme, wrapping around, and switches themes on if they are off.
+
+	@param app App
+	@param step number -- 1 for the next theme, -1 for the previous
+]=]
+function Actions.StepTheme(app: App, step: number)
+	local themes = Settings.Themes
+	local at = table.find(themes, Display.Theme(app.Display)) or 1
+	local name = themes[(at - 1 + step) % #themes + 1]
+
+	Store.Set(app.Store, "ColorTheme", name)
+
+	if not app.Display.Colors.On then
+		Display.SetPastel(app.Display, true)
+	end
+
+	app.Say(`Theme: {name}.`)
 end
 
 --[=[
