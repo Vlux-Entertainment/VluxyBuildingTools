@@ -1,10 +1,11 @@
 --!strict
 
 --[=[
-	Plays the plugin's sounds for this Studio user only, through `SoundService:PlayLocalSound`. The
-	Sound objects are never put in the place, so Team Create does not hand them to anyone else. Every
-	id lives in `Pure/SoundIds`; this module only plays them, quietly, and never more than a few
-	times a second per sound so held keys do not buzz.
+	Plays the plugin's sounds for this Studio user only. Studio plays a Sound in Edit mode only when
+	it sits in a plugin widget, so the sounds live in a small hidden widget of their own; a widget is
+	not part of the place, so Team Create never hands them to anyone else. Every id lives in
+	`Pure/SoundIds`; this module only plays them, quietly, and never more than a few times a second
+	per sound so held keys do not buzz.
 
 	@class Sounds
 ]=]
@@ -15,6 +16,7 @@ local SoundIds = require("../Pure/SoundIds")
 local Trove = require("../Packages/Trove")
 
 export type Sounds = {
+	_holder: DockWidgetPluginGui,
 	_enabled: () -> boolean,
 	_volume: () -> number,
 	_made: { [string]: Sound },
@@ -23,17 +25,30 @@ export type Sounds = {
 }
 
 local MIN_GAP = 0.05
+local HOLDER_ID = "VluxyBuildingTools_sounds"
 
 local Sounds = {}
 
 --[=[
+	Makes the hidden widget the sounds play from. It yields while Studio makes the widget.
+
+	@param plugin Plugin
 	@param enabled () -> boolean
 	@param volume () -> number -- a multiplier from 0 to 1
 	@param trove Trove
 	@return Sounds
 ]=]
-function Sounds.new(enabled: () -> boolean, volume: () -> number, trove: Trove.Trove): Sounds
+function Sounds.new(plugin: Plugin, enabled: () -> boolean, volume: () -> number, trove: Trove.Trove): Sounds
+	local holder = plugin:CreateDockWidgetPluginGuiAsync(
+		HOLDER_ID,
+		DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, true, 10, 10, 10, 10)
+	)
+
+	holder.Name = "VluxyBT_Sounds"
+	holder.Title = "Vluxy sounds"
+
 	local self: Sounds = {
+		_holder = holder,
 		_enabled = enabled,
 		_volume = volume,
 		_made = {},
@@ -62,6 +77,7 @@ function Sounds.new(enabled: () -> boolean, volume: () -> number, trove: Trove.T
 		end
 
 		table.clear(self._made)
+		holder:Destroy()
 	end)
 
 	return self
@@ -121,11 +137,13 @@ function Sounds.Sound(self: Sounds, name: string)
 	if not found then
 		sound.Name = "VluxyBT_" .. name
 		sound.SoundId = entry.Id
+		sound.Parent = self._holder
 		self._made[name] = sound
 	end
 
 	sound.Volume = entry.Volume * math.clamp(self._volume(), 0, 1)
-	SoundService:PlayLocalSound(sound)
+	sound.TimePosition = 0
+	sound:Play()
 end
 
 return Sounds

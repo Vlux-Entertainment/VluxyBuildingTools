@@ -102,7 +102,7 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Status.Warn(status, text)
 	end
 
-	local sounds = Sounds.new(function()
+	local sounds = Sounds.new(plugin, function()
 		return settings.SoundEnabled
 	end, function()
 		return settings.SoundVolume
