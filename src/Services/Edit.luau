@@ -46,7 +46,7 @@ function Edit.new(deps: Deps): Edit
 		local id = ChangeHistoryService:TryBeginRecording("Vlux_" .. action, action)
 
 		if not id then
-			deps.Say("Cannot begin an edit right now. Finish the other tool action first.")
+			deps.Say("Finish the other tool action first.")
 
 			return false
 		end

@@ -212,19 +212,17 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 
 	local arrange = Arrange.new({
 		Settings = settings,
-		SetSetting = function(key, value)
-			Store.Set(store, key, value)
-		end,
 		Edit = edit,
 		Say = say,
 		Stop = function()
 			stopAll()
 		end,
-		Readout = function(position, text)
-			Overlay.Readout(overlay, position, text)
-		end,
-		ResetTool = function()
-			Runner.Reset(runner)
+		Ghosts = function(specs)
+			if #specs == 0 then
+				Overlay.ClearGhosts(overlay)
+			else
+				Overlay.DrawGhosts(overlay, specs)
+			end
 		end,
 	})
 
@@ -291,9 +289,14 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 				stopAll()
 			end
 
+			arrange.PreviewArray(false)
+
 			return
 		end
 
+		arrange.PreviewArray(
+			widget.Enabled and state.Page() == "Arrange" and runner.Mode == nil and not Host.Running(host)
+		)
 		Runner.Step(runner)
 	end)
 

@@ -23,15 +23,14 @@ export type Popups = {
 	Frames: { GuiObject },
 }
 
-local DELAY = 0.35
-
 local Popups = {}
 
 --[=[
 	@param widget DockWidgetPluginGui -- where the popups are drawn
+	@param delay () -> number? -- how long the mouse rests before a tip shows, read at each hover; nil for no tips
 	@return Popups
 ]=]
-function Popups.new(widget: DockWidgetPluginGui): Popups
+function Popups.new(widget: DockWidgetPluginGui, delay: () -> number?): Popups
 	local new = Kit.New
 	local token = 0
 	local text = vide.source("")
@@ -113,8 +112,13 @@ function Popups.new(widget: DockWidgetPluginGui): Popups
 				token += 1
 
 				local mine = token
+				local wait = delay()
 
-				task.delay(DELAY, function()
+				if not wait then
+					return
+				end
+
+				task.delay(wait, function()
 					if token == mine then
 						text(info.Text)
 						key(info.Key)

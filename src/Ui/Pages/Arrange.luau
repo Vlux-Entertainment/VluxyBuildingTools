@@ -1,14 +1,16 @@
 --!strict
 
 --[=[
-	The Arrange tab: flip and turn the selection, make repeated copies, and quick actions. Every
-	action needs a working folder.
+	The Arrange tab: flip the selection, and the array (Blender's Array modifier), which previews
+	its copies while the tab is open. Every action needs a working folder.
 
 	@class ArrangePage
 ]=]
 
 local Actions = require("../../App/Actions")
+local ArrayStep = require("../../Pure/ArrayStep")
 local Controls = require("../Controls")
+local Store = require("../../State/Store")
 
 type Ui = Controls.Ui
 
@@ -19,6 +21,7 @@ type Ui = Controls.Ui
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local arrange = app.Arrange
+	local store = app.Store
 
 	local function guarded(run: () -> ()): () -> ()
 		return Actions.Guarded(app, run)
@@ -33,40 +36,43 @@ return function(ui: Ui): { Instance }
 		}
 	end
 
-	local function turn(axis: string, degrees: number): Controls.Item
-		return {
-			Text = (if degrees > 0 then "+90° " else "−90° ") .. axis,
-			Run = guarded(function()
-				arrange.RotateBy(axis, degrees)
-			end),
-		}
+	local function setting(key: string): () -> boolean
+		return function()
+			return Store.Get(store, key) == true
+		end
 	end
 
+	local function offset(key: string, title: string, visible: () -> boolean): Frame
+		return Controls.Number(
+			ui,
+			{ Key = key, Title = title, Min = -2048, Max = 2048, Step = 0.25, Visible = visible }
+		)
+	end
+
+	local relative, constant = setting("ArrayRelative"), setting("ArrayConstant")
+
 	return {
-		Controls.Card(ui, "FLIP SELECTION  (Ctrl+M, then X / Y / Z)", {
-			Controls.Text(ui, "Mirrors the selection in place, around its own centre."),
+		Controls.Card(ui, "FLIP", {
 			Controls.ButtonRow(ui, { flip("X"), flip("Y"), flip("Z") }),
 		}),
-		Controls.Card(ui, "ROTATE 90°  (O, then X / Y / Z)", {
-			Controls.ButtonRow(ui, { turn("X", 90), turn("Y", 90), turn("Z", 90) }),
-			Controls.ButtonRow(ui, { turn("X", -90), turn("Y", -90), turn("Z", -90) }),
-		}),
-		Controls.Card(ui, "REPEAT SELECTED OBJECTS", {
-			Controls.Number(
-				ui,
-				{ Key = "Copies", Title = "Extra copies", Min = 1, Max = 100, Step = 1, Integer = true }
-			),
-			Controls.Number(ui, { Key = "DX", Title = "X spacing", Min = -2048, Max = 2048 }),
-			Controls.Number(ui, { Key = "DY", Title = "Y spacing", Min = -2048, Max = 2048 }),
-			Controls.Number(ui, { Key = "DZ", Title = "Z spacing", Min = -2048, Max = 2048 }),
-			Controls.Button(ui, "Make repeated copies", guarded(arrange.RepeatCopies), true),
-		}),
-		Controls.Card(ui, "QUICK ACTIONS", {
-			Controls.ButtonRow(ui, {
-				{ Text = "Snap selection", Run = guarded(arrange.SnapSelection) },
-				{ Text = "Show dimensions", Run = guarded(arrange.ShowDimensions) },
+		Controls.Card(ui, "ARRAY", {
+			Controls.Number(ui, {
+				Key = "ArrayCount",
+				Title = "Count",
+				Min = 1,
+				Max = ArrayStep.MaxCount,
+				Step = 1,
+				Integer = true,
 			}),
-			Controls.Button(ui, "Anchor selection", guarded(arrange.AnchorSelection)),
+			Controls.Switch(ui, { Title = "Relative Offset", Key = "ArrayRelative" }),
+			offset("ArrayRelX", "Factor X", relative),
+			offset("ArrayRelY", "Factor Y", relative),
+			offset("ArrayRelZ", "Factor Z", relative),
+			Controls.Switch(ui, { Title = "Constant Offset", Key = "ArrayConstant" }),
+			offset("ArrayConstX", "Distance X", constant),
+			offset("ArrayConstY", "Distance Y", constant),
+			offset("ArrayConstZ", "Distance Z", constant),
+			Controls.Button(ui, "Apply Array", guarded(arrange.ApplyArray), true),
 		}),
 	}
 end

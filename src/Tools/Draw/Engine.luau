@@ -320,12 +320,14 @@ function Engine.Preview(ctx: Context, draw: Draw): Types.Preview
 		draw.Current = current
 	end
 
-	if current and settings.ShowGrid and not lock then
+	if current and ctx.State.GridOn() and not lock then
 		Overlay.DrawPlaneGrid(
 			ctx.Overlay,
 			Vector3.new(Cursor.Snap(cursor, current.X), current.Y, Cursor.Snap(cursor, current.Z)),
 			math.max(0.05, Cursor.Grid(cursor))
 		)
+	elseif not ctx.State.GridOn() then
+		Overlay.ClearPlaneGrid(ctx.Overlay)
 	end
 
 	if current and origin then
@@ -374,7 +376,7 @@ function Engine.Preview(ctx: Context, draw: Draw): Types.Preview
 				text ..= `  = {draw.Numeric.Text}`
 			end
 
-			message = "Click to build. Hold Alt for a straight direction; Esc cancels."
+			message = "Click to build; hold Alt for a straight line."
 			Overlay.Readout(ctx.Overlay, (a + b) * 0.5, text)
 		end
 	elseif current then
@@ -461,7 +463,7 @@ local function build(ctx: Context, draw: Draw, current: Vector3)
 	Overlay.ClearGhosts(ctx.Overlay)
 	Overlay.HideReadout(ctx.Overlay)
 	ctx.Say(
-		if chain then "Click the next endpoint, or Start new chain to begin elsewhere." else Tools.Instruction(shape.Id)
+		if chain then "Click the next endpoint, or press Enter to begin elsewhere." else Tools.Instruction(shape.Id)
 	)
 end
 
@@ -491,13 +493,13 @@ function Engine.Click(ctx: Context, draw: Draw, preview: Types.Preview?)
 
 		if shape.Shaft then
 			startRise(draw, current)
-			ctx.Say("Move the mouse up or down to set the length of the vent. Click to place.")
+			ctx.Say("Move up or down to set the vent length, then click.")
 		else
-			ctx.Say("Move to the other point. Click to build. Press X, Y or Z to lock an axis.")
+			ctx.Say("Click the other point; X, Y or Z locks an axis.")
 		end
 	elseif valid and shape.Rise and not draw.Rise then
 		startRise(draw, current)
-		ctx.Say("Move the mouse up or down to set the height. Click to place.")
+		ctx.Say("Move up or down to set the height, then click.")
 	elseif valid then
 		build(ctx, draw, current)
 	end
@@ -516,9 +518,7 @@ function Engine.Lock(ctx: Context, draw: Draw, axis: AxisLock.Axis, plane: boole
 	local shape = draw.Shape
 
 	if axis == "Y" and not plane and shape.Id ~= "Block" and not shape.HeightDrag then
-		return ctx.Say(
-			"Y sets the height of walls, corridors, rooms and blocks. For this tool use X or Z, or Alt+Y to stay on the floor."
-		)
+		return ctx.Say("Y is for height; use X, Z or Alt+Y with this tool.")
 	end
 
 	local updated = AxisLock.Toggle(draw.Lock, axis, plane)
@@ -570,7 +570,7 @@ function Engine.Tool(shape: Shape): Types.Tool
 
 			reset(ctx, draw)
 
-			return "Point removed. Click to start again, or press Esc again to leave the tool."
+			return "Point removed; Esc again leaves the tool."
 		end,
 		Lock = function(ctx: Context, draw: Draw, axis: AxisLock.Axis, plane: boolean)
 			Engine.Lock(ctx, draw, axis, plane)
@@ -582,7 +582,7 @@ function Engine.Tool(shape: Shape): Types.Tool
 end
 
 --[=[
-	Starts a new chain: forgets every point, as the panel's Start new chain button does.
+	Starts a new chain: forgets every point, as Enter does.
 
 	@param ctx Context
 	@param draw Draw

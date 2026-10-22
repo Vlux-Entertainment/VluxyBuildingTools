@@ -219,7 +219,7 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 	local scope = self._scope()
 
 	if value and not scope then
-		return self._say("Pick a working folder first. The surface grid only goes on Parts inside it.")
+		return self._say("Pick a working folder first.")
 	end
 
 	self._stop()
@@ -255,11 +255,7 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 		end
 
 		self._refresh()
-		self._say(
-			if value
-				then "Surface grid ON. The grid is on the Parts in your folder. It stays until you switch it off, even if you close Studio."
-				else "Surface grid OFF. The grid Textures are removed."
-		)
+		self._say(if value then "Surface grid on." else "Surface grid off.")
 	end
 end
 

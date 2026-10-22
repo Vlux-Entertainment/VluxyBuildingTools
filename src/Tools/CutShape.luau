@@ -132,7 +132,7 @@ local function finish(ctx: Context, state: CutState)
 	local triangles = Polygon.Triangulate(flat)
 
 	if not triangles then
-		return ctx.Say("The outline crosses itself or has no area. Press Esc and try again.")
+		return ctx.Say("The outline crosses itself; press Esc and try again.")
 	end
 
 	local specs = Openings.CutShape(points, triangles, face.thickness + 0.5, -face.normal * (face.thickness / 2))
@@ -204,7 +204,7 @@ local function preview(ctx: Context, state: CutState): Types.Preview
 	local message = if #points == 0
 		then "Click the first corner on the wall."
 		elseif #points < 3 then "Click the next corner."
-		else "Click the next corner. Click the first corner again or press Enter to cut the shape out."
+		else "Click the next corner, or press Enter to cut."
 
 	return { Specs = out, Valid = #out > 0, Message = message }
 end

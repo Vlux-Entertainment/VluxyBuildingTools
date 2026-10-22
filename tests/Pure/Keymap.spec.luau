@@ -75,6 +75,9 @@ return {
 	["hide, flip and quick-rotate keys"] = function(expect)
 		expect.equal(Keymap.Resolve("H", false, false, false, false), "Hide")
 		expect.equal(Keymap.Resolve("H", false, false, true, false), "Unhide")
+		expect.equal(Keymap.Resolve("L", false, false, true, false), "ToggleCameraLight")
+		expect.equal(Keymap.Resolve("L", false, false, true, true), "ToggleCameraLight")
+		expect.equal(Keymap.Resolve("L", false, false, false, false), "ToggleGrid")
 		expect.equal(Keymap.Resolve("I", false, false, false, false), "ToggleHiddenView")
 		expect.equal(Keymap.Resolve("M", false, true, false, false), "FlipArm")
 		expect.equal(Keymap.Resolve("O", false, false, false, false), "Rotate90Arm")
@@ -83,6 +86,23 @@ return {
 	end,
 
 	["every binding is described"] = function(expect)
-		expect.truthy(#Keymap.Describe() >= 12)
+		local count = 0
+
+		for _, section in Keymap.Sections() do
+			expect.truthy(#section.Title > 0)
+
+			for _, binding in section.Bindings do
+				expect.truthy(#binding.Keys > 0, binding.Meaning)
+				count += 1
+			end
+		end
+
+		expect.truthy(count >= 25)
+	end,
+
+	["joining words are not keys"] = function(expect)
+		expect.truthy(Keymap.IsJoiner("+"))
+		expect.truthy(Keymap.IsJoiner("then"))
+		expect.falsy(Keymap.IsJoiner("Ctrl"))
 	end,
 }

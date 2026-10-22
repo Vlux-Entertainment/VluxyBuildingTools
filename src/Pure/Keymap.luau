@@ -2,7 +2,7 @@
 
 --[=[
 	The Blender-style hotkeys. `Resolve` turns a key press into an action name; the plugin decides
-	what the action does. Ctrl is only used for Ctrl+M and the Ctrl+number tool picks, and Alt for Alt+H, the plane locks and the
+	what the action does. Ctrl is only used for Ctrl+M and the Ctrl+number tool picks, and Alt for Alt+H, Alt+L, the plane locks and the
 	Alt+number options, so Studio's
 	own shortcuts keep working. W A S D Q E F and Shift are never taken: Studio uses them to fly the
 	camera, focus and multi-select.
@@ -71,59 +71,97 @@ local PLAIN_KEYS: { [string]: Action } = {
 local Keymap = {}
 
 --[=[
-	Every binding with its plain-language meaning, for the Help tab.
+	@type Binding { Keys: { string }, Meaning: string }
+	@within Keymap
 
-	@return { { string } } -- pairs of { keys, meaning }
+	One row of the Hotkeys tab. `Keys` are shown in order as key chips, except the joining words
+	that `IsJoiner` picks out.
 ]=]
-function Keymap.Describe(): { { string } }
+export type Binding = { Keys: { string }, Meaning: string }
+
+--[=[
+	@type Section { Title: string, Bindings: { Binding } }
+	@within Keymap
+]=]
+export type Section = { Title: string, Bindings: { Binding } }
+
+local JOINERS: { [string]: boolean } = {
+	["+"] = true,
+	["/"] = true,
+	["then"] = true,
+	["hold"] = true,
+}
+
+--[=[
+	@param token string -- one entry of a binding's `Keys`
+	@return boolean -- true for the words between keys, such as "+" and "then", which are not keys
+]=]
+function Keymap.IsJoiner(token: string): boolean
+	return JOINERS[token] == true
+end
+
+--[=[
+	Every binding with a short meaning, grouped into the cards of the Hotkeys tab.
+
+	@return { Section }
+]=]
+function Keymap.Sections(): { Section }
 	return {
 		{
-			"Ctrl+1 … Ctrl+8, Ctrl+0",
-			"Pick a tool: Basic (walls, floors, blocks, pillars, arches), Stairs, Additive (doorways, windows, archways, face extend), Structures, Vents, Railings, Brush, Measure (0). Press it again to turn it off",
+			Title = "TOOLS",
+			Bindings = {
+				{ Keys = { "Ctrl", "+", "1–7", "/", "0" }, Meaning = "Pick a tool; again to stop" },
+				{ Keys = { "Alt", "+", "1–0" }, Meaning = "Pick a tool option" },
+				{ Keys = { "Ctrl", "+", "Scroll" }, Meaning = "Previous or next tool or prop section" },
+				{ Keys = { "Alt", "+", "Scroll" }, Meaning = "Previous or next option" },
+			},
 		},
 		{
-			"Alt+1 … Alt+0",
-			"Pick the 1st to 10th option inside the active tool, for example Walls, Door / Window, Archway in Basic",
-		},
-		{ "T", "Extrude the face under the cursor of the selected block" },
-		{ "G / R / C", "Grab, rotate or scale the selection" },
-		{ "V", "Duplicate the selection and grab the copy" },
-		{
-			"W A S D Q E F",
-			"Never taken: Studio uses them to fly the camera and focus. Hotkeys are also ignored while the right mouse button is held",
-		},
-		{
-			"Hold Shift",
-			"Snap to the fine step (1 stud by default) instead of the normal step (4 studs). Both are in Settings",
-		},
-		{ "X / Y / Z", "While drawing or in a modal action: lock to that world axis. Press again to unlock" },
-		{ "Alt+X / Y / Z", "Lock to the plane the axis is perpendicular to" },
-		{ "0-9 and .", "While drawing or in a modal action: type an exact length, angle or factor" },
-		{ "Enter / click", "Confirm" },
-		{ "Esc / right-click", "Cancel the action, or stop the tool. Enter then brings the last tool back" },
-		{ "[ and ]", "Lower or raise the active height by one snap step" },
-		{ "Tab / `", "Next or previous panel tab" },
-		{
-			"Ctrl+Scroll",
-			"Step to the previous or next tool. On the Props tab, step through its sections. The camera does not zoom while you do",
+			Title = "DRAWING",
+			Bindings = {
+				{ Keys = { "hold", "Shift" }, Meaning = "Snap to the fine grid" },
+				{ Keys = { "X", "/", "Y", "/", "Z" }, Meaning = "Lock to an axis; again to unlock" },
+				{ Keys = { "Alt", "+", "X", "/", "Y", "/", "Z" }, Meaning = "Lock to the plane across it" },
+				{ Keys = { "0–9", "." }, Meaning = "Type an exact amount" },
+				{ Keys = { "[", "]" }, Meaning = "Lower or raise the height" },
+				{ Keys = { "Enter", "/", "Click" }, Meaning = "Confirm" },
+				{ Keys = { "Esc", "/", "Right-click" }, Meaning = "Cancel, or stop the tool" },
+			},
 		},
 		{
-			"Alt+Scroll",
-			"Step to the previous or next option inside the current tool. The camera does not zoom while you do",
+			Title = "MOVE & EDIT",
+			Bindings = {
+				{ Keys = { "G" }, Meaning = "Grab the selection" },
+				{ Keys = { "R" }, Meaning = "Rotate the selection" },
+				{ Keys = { "C" }, Meaning = "Scale the selection" },
+				{ Keys = { "Arrows" }, Meaning = "Turn 90° while rotating" },
+				{ Keys = { "V" }, Meaning = "Duplicate and grab" },
+				{ Keys = { "T" }, Meaning = "Extrude the face under the cursor" },
+				{ Keys = { "Ctrl", "+", "M", "then", "X/Y/Z" }, Meaning = "Mirror on that axis" },
+				{ Keys = { "O", "then", "X/Y/Z" }, Meaning = "Turn 90°; Alt for -90°" },
+			},
 		},
-		{ "F1", "Open this Hotkeys tab" },
-		{ "P", "Themes on or off" },
-		{ "L", "Surface grid on or off" },
-		{ "N", "Show or hide the panel" },
-		{ "Ctrl+M, then X / Y / Z", "Flip (mirror) the selection in place across that axis" },
 		{
-			"O, then X / Y / Z",
-			"Rotate the selection 90 degrees about that axis. Hold Alt on the axis key for -90",
+			Title = "SHOW & HIDE",
+			Bindings = {
+				{ Keys = { "H" }, Meaning = "Hide selected parts, just for you" },
+				{ Keys = { "Alt", "+", "H" }, Meaning = "Unhide everything" },
+				{ Keys = { "I" }, Meaning = "Hidden parts as ghosts on or off" },
+				{ Keys = { "P" }, Meaning = "Themes on or off" },
+				{ Keys = { "hold", "P", "+", "Scroll" }, Meaning = "Switch the theme" },
+				{ Keys = { "L" }, Meaning = "Surface grid on or off" },
+				{ Keys = { "Alt", "+", "L" }, Meaning = "Camera light on or off" },
+			},
 		},
-		{ "Arrow keys in Rotate", "While rotating with R, step the angle by 90 degrees" },
-		{ "H", "Hide the selected parts (local to you, nothing is saved)" },
-		{ "Alt+H", "Unhide everything you hid" },
-		{ "I", "Show hidden parts as faint ghosts, or hide them completely again" },
+		{
+			Title = "PANEL",
+			Bindings = {
+				{ Keys = { "N" }, Meaning = "Show or hide the panel" },
+				{ Keys = { "Tab", "/", "`" }, Meaning = "Next or previous tab" },
+				{ Keys = { "F1" }, Meaning = "Open this tab" },
+				{ Keys = { "W A S D Q E F" }, Meaning = "Left to Studio's camera" },
+			},
+		},
 	}
 end
 
@@ -143,6 +181,10 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 
 	if alt and not ctrl and not shift and keyName == "H" then
 		return "Unhide"
+	end
+
+	if alt and not ctrl and not shift and keyName == "L" then
+		return "ToggleCameraLight"
 	end
 
 	if ctrl and not alt and not shift and keyName == "M" then

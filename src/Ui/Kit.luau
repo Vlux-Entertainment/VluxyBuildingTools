@@ -11,6 +11,8 @@
 	@class Kit
 ]=]
 
+local TweenService = game:GetService("TweenService")
+
 local Theme = require("./Theme")
 local vide = require("../Packages/vide")
 
@@ -25,13 +27,245 @@ export type Prop<T> = T | () -> T
 local Kit = {}
 
 local order = 0
+local POP_GROWTH = 0.12
+local POP_GROW = TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local POP_SETTLE = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+
+--[=[
+	Whether the panel animates, read at each click and frame; `Panel` points it at the UI animations setting.
+
+	@prop Animate () -> boolean
+	@within Kit
+]=]
+Kit.Animate = function(): boolean
+	return true
+end
+
+--[=[
+	How strong the pops are, from 0 to 1, read at each pop; `Panel` points it at the animation
+	intensity setting. 0.5 grows a button by 6 percent.
+
+	@prop Intensity () -> number
+	@within Kit
+]=]
+Kit.Intensity = function(): number
+	return 0.5
+end
+
+--[=[
+	Whether lists of rows are striped; `Panel` points it at the zebra rows setting.
+
+	@prop Zebra vide.Source<boolean>
+	@within Kit
+]=]
+Kit.Zebra = vide.source(true)
+
+local ROW = "Row"
+local BAND = "VluxyBT_Band"
+local ROW_INSET = 6
+
+--[[
+	@param container Instance
+
+	Shades every other row that shows, in LayoutOrder, so a value lines up with its label at a
+	glance; hidden rows are skipped so the stripes never double up.
+]]
+local function stripe(container: Instance)
+	local rows: { GuiObject } = {}
+
+	for _, child in container:GetChildren() do
+		if child.Name == ROW and child:IsA("GuiObject") and child.Visible then
+			table.insert(rows, child)
+		end
+	end
+
+	table.sort(rows, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+
+	local on = Kit.Zebra()
+
+	for index, row in rows do
+		if not row:FindFirstChild(BAND) then
+			local corner = Instance.new("UICorner")
+
+			corner.Name = BAND
+			corner.CornerRadius = UDim.new(0, 5)
+			corner.Parent = row
+
+			local inset = Instance.new("UIPadding")
+
+			inset.PaddingLeft = UDim.new(0, ROW_INSET)
+			inset.PaddingRight = UDim.new(0, ROW_INSET)
+			inset.Parent = row
+			row.BackgroundColor3 = Theme.Tile
+			row.BorderSizePixel = 0
+		end
+
+		row.BackgroundTransparency = if on and index % 2 == 1 then 0 else 1
+	end
+end
+
+--[=[
+	A vide action that stripes the container's rows (see `Kit.Row`), and keeps the stripes right as
+	rows show, hide or come and go, and as the zebra rows setting changes.
+
+	@return any -- the action, to put among the container's properties
+]=]
+function Kit.Striped(): any
+	return vide.action(function(instance: Instance)
+		local queued = false
+
+		local function later()
+			if queued then
+				return
+			end
+
+			queued = true
+			task.defer(function()
+				queued = false
+				stripe(instance)
+			end)
+		end
+
+		local function watch(child: Instance)
+			if child.Name == ROW and child:IsA("GuiObject") then
+				child:GetPropertyChangedSignal("Visible"):Connect(later)
+				later()
+			end
+		end
+
+		for _, child in instance:GetChildren() do
+			watch(child)
+		end
+
+		instance.ChildAdded:Connect(watch)
+		instance.ChildRemoved:Connect(later)
+		vide.effect(function()
+			Kit.Zebra()
+			later()
+		end)
+	end)
+end
+
+--[[ When each target last popped, so a click that also selects the button pops it once, not twice. ]]
+local lastPop: { [GuiObject]: number } = setmetatable({}, { __mode = "k" }) :: any
+
+--[=[
+	Grows the button a little and settles it back. A see-through button laid over something, such
+	as a prop picture, grows what it covers instead. Does nothing while UI animations are off.
+
+	@param button GuiObject
+]=]
+function Kit.Pop(button: GuiObject)
+	local intensity = math.clamp(Kit.Intensity(), 0, 1)
+
+	if not Kit.Animate() or intensity <= 0 then
+		return
+	end
+
+	local covers = button:IsA("GuiButton")
+		and button.BackgroundTransparency >= 1
+		and not (button:IsA("TextButton") and button.Text ~= "")
+		and button.Parent
+		and button.Parent:IsA("GuiObject")
+	local target = (if covers then button.Parent else button) :: GuiObject
+	local now = os.clock()
+
+	if now - (lastPop[target] or -1) < 0.1 then
+		return
+	end
+
+	lastPop[target] = now
+
+	local scale = target:FindFirstChild("VluxyBT_Pop") :: UIScale?
+
+	if not scale then
+		local made = Instance.new("UIScale")
+
+		made.Name = "VluxyBT_Pop"
+		made.Parent = target
+		scale = made
+	end
+
+	local grow = TweenService:Create(scale :: UIScale, POP_GROW, { Scale = 1 + POP_GROWTH * intensity })
+
+	grow.Completed:Once(function()
+		TweenService:Create(scale :: UIScale, POP_SETTLE, { Scale = 1 }):Play()
+	end)
+	grow:Play()
+end
+
+--[=[
+	Follows a condition the way it settles, not every blink: it turns true at once, but only turns
+	false if still false once the current change is over. A tool switch that passes through "no
+	tool" for an instant therefore never reads as off.
+
+	@param condition () -> boolean -- read reactively
+	@return () -> boolean -- the settled value
+]=]
+function Kit.Settled(condition: () -> boolean): () -> boolean
+	local settled = vide.untrack(condition)
+
+	vide.effect(function()
+		if condition() then
+			task.defer(function()
+				settled = true
+			end)
+		else
+			task.defer(function()
+				if not vide.untrack(condition) then
+					settled = false
+				end
+			end)
+		end
+	end)
+
+	return function()
+		return settled
+	end
+end
+
+--[=[
+	A vide action that pops the button each time it becomes the selected one, however that
+	happened: a click, a hotkey or the wheel. A selection that only blinks off and on does not pop.
+
+	@param selected () -> boolean
+	@param allow (() -> boolean)? -- asked when the button becomes selected; false skips the pop
+	@return any -- the action, to put among the button's properties
+]=]
+function Kit.PopWhen(selected: () -> boolean, allow: (() -> boolean)?): any
+	return vide.action(function(instance: Instance)
+		local was = Kit.Settled(selected)
+
+		vide.effect(function()
+			if selected() and not was() and (allow == nil or allow()) then
+				Kit.Pop(instance :: GuiObject)
+			end
+		end)
+	end)
+end
 
 --[=[
 	@param class string
-	@return (props: { [any]: any }) -> any -- makes an instance of the class from vide properties
+	@return (props: { [any]: any }) -> any -- makes an instance of the class from vide properties; buttons pop when clicked
 ]=]
 function Kit.New(class: string): (props: { [any]: any }) -> any
-	return (vide.create :: any)(class)
+	local make = (vide.create :: any)(class)
+
+	if class ~= "TextButton" and class ~= "ImageButton" then
+		return make
+	end
+
+	return function(props: { [any]: any }): any
+		local button = make(props) :: GuiButton
+
+		button.Activated:Connect(function()
+			Kit.Pop(button)
+		end)
+
+		return button
+	end
 end
 
 --[=[
@@ -52,10 +286,10 @@ function Kit.Corner(radius: number): UICorner
 end
 
 --[=[
-	@param color Color3?
+	@param color Prop<Color3>?
 	@return UIStroke -- a one-pixel border, the card stroke color by default
 ]=]
-function Kit.Stroke(color: Color3?): UIStroke
+function Kit.Stroke(color: Prop<Color3>?): UIStroke
 	return Kit.New("UIStroke")({
 		Color = color or Theme.CardStroke,
 		Thickness = 1,
@@ -115,6 +349,7 @@ function Kit.Group(children: { any }, visible: Prop<boolean>?): Frame
 		LayoutOrder = Kit.Next(),
 		Visible = visible or true,
 		Kit.List(4),
+		Kit.Striped(),
 		children,
 	})
 end
@@ -127,6 +362,7 @@ end
 ]=]
 function Kit.Row(height: number, children: { any }, visible: Prop<boolean>?): Frame
 	return Kit.New("Frame")({
+		Name = ROW,
 		Size = UDim2.new(1, 0, 0, height),
 		BackgroundTransparency = 1,
 		LayoutOrder = Kit.Next(),
@@ -142,7 +378,7 @@ end
 function Kit.Lit(active: () -> boolean): { [string]: any }
 	return {
 		BackgroundColor3 = function()
-			return if active() then Theme.Accent else Theme.Tile
+			return if active() then Theme.Accent() else Theme.Tile
 		end,
 		TextColor3 = function()
 			return if active() then Theme.Background else Theme.Text

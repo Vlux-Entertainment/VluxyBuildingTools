@@ -136,11 +136,8 @@ local function opening(mode: string): Types.Tool
 
 		if locked and (#out > 0 or cuts) then
 			message = if state.Depth
-				then string.format(
-					"Cut depth %.2f. Move the mouse to change it; past the far side it cuts all the way through. Click to confirm.",
-					state.Depth
-				)
-				else "Move the mouse to set the cut depth. Click to confirm."
+				then string.format("Cut depth %.2f; click to confirm.", state.Depth)
+				else "Move the mouse to set the cut depth, then click."
 		end
 
 		return { Specs = out, Valid = #out > 0 or cuts ~= nil, Message = message, Cut = cut }
@@ -157,7 +154,7 @@ local function opening(mode: string): Types.Tool
 			if hit then
 				state.Locked = hit
 				state.Depth = nil
-				ctx.Say("Move the mouse to set the cut depth. Click to confirm.")
+				ctx.Say("Move the mouse to set the cut depth, then click.")
 			end
 
 			return

@@ -12,6 +12,8 @@
 	@class PropsPage
 ]=]
 
+local RunService = game:GetService("RunService")
+
 local Actions = require("../../App/Actions")
 local Colors = require("../../Core/Colors")
 local Controls = require("../Controls")
@@ -29,13 +31,18 @@ local new = Kit.New
 local COLUMNS = 3
 local CELL_HEIGHT = 104
 local CAMERA_ANGLE = Vector3.new(0.9, 0.7, -1.3).Unit
+local SPIN_SPEED = math.pi / 4
+
+--[[ A prop picture's spin: how far it has turned, and how to turn its camera to an angle. ]]
+type Spin = { Angle: number, Turn: (angle: number) -> () }
 
 --[[
 	@param ui Ui
 	@param prop PropData.Prop
 	@return ViewportFrame -- a picture of the prop, colored like the map
+	@return (angle: number) -> () -- turns the picture's camera around the prop; 0 is the starting view
 ]]
-local function picture(ui: Ui, prop: PropData.Prop): ViewportFrame
+local function picture(ui: Ui, prop: PropData.Prop): (ViewportFrame, (angle: number) -> ())
 	local view = new("ViewportFrame")({
 		Size = UDim2.new(1, -8, 1, -24),
 		Position = UDim2.fromOffset(4, 4),
@@ -76,12 +83,17 @@ local function picture(ui: Ui, prop: PropData.Prop): ViewportFrame
 	local radius = math.max(2, (high - low).Magnitude / 2)
 	local camera = Instance.new("Camera")
 
+	--[[ Puts the camera on its orbit around the prop, turned by an angle about the vertical. ]]
+	local function turn(angle: number)
+		camera.CFrame = CFrame.lookAt(middle + CFrame.Angles(0, angle, 0) * CAMERA_ANGLE * radius * 2.4, middle)
+	end
+
 	camera.FieldOfView = 40
-	camera.CFrame = CFrame.lookAt(middle + CAMERA_ANGLE * radius * 2.4, middle)
+	turn(0)
 	camera.Parent = view
 	view.CurrentCamera = camera
 
-	return view
+	return view, turn
 end
 
 --[=[
@@ -137,6 +149,9 @@ return function(ui: Ui): { Instance }
 				Kit.Lit(function()
 					return state.PropSection() == section.Id
 				end),
+				Kit.PopWhen(function()
+					return state.PropSection() == section.Id
+				end),
 				Kit.Corner(6),
 				Kit.Stroke(),
 				MouseButton1Click = function()
@@ -153,6 +168,24 @@ return function(ui: Ui): { Instance }
 		reloaded or the theme changes: vide cannot make reactive cells inside a reactive rebuild.
 	]]
 	local cells: { Instance } = {}
+	local spins: { [string]: Spin } = {}
+	local hovered: string? = nil
+
+	--[[ The hovered prop and the picked one turn slowly; any other goes back to its starting view. ]]
+	vide.cleanup(RunService.Heartbeat:Connect(function(dt: number)
+		local chosen = current()
+		local animate = store.Values.PropSpin
+
+		for id, spin in spins do
+			if animate and (id == hovered or id == chosen) then
+				spin.Angle = (spin.Angle + dt * SPIN_SPEED) % (2 * math.pi)
+				spin.Turn(spin.Angle)
+			elseif spin.Angle ~= 0 then
+				spin.Angle = 0
+				spin.Turn(0)
+			end
+		end
+	end))
 
 	do
 		local out = cells
@@ -161,7 +194,7 @@ return function(ui: Ui): { Instance }
 			local cell = new("Frame")({
 				BorderSizePixel = 0,
 				BackgroundColor3 = function()
-					return if current() == prop.Id then Theme.Accent else Theme.Tile
+					return if current() == prop.Id then Theme.Accent() else Theme.Tile
 				end,
 				LayoutOrder = function()
 					return table.find(PropData.Shown(state.PropSection()), prop) or 0
@@ -184,7 +217,17 @@ return function(ui: Ui): { Instance }
 					Store.Get(store, "ColorTheme")
 
 					local view = vide.untrack(function()
-						return picture(ui, prop)
+						local made, turn = picture(ui, prop)
+						local spin = spins[prop.Id]
+
+						if spin then
+							spin.Turn = turn
+							turn(spin.Angle)
+						else
+							spins[prop.Id] = { Angle = 0, Turn = turn }
+						end
+
+						return made
 					end)
 
 					vide.cleanup(view)
@@ -208,6 +251,14 @@ return function(ui: Ui): { Instance }
 					Text = "",
 					ZIndex = 5,
 					ui.Popups.Tip({ Text = prop.Label .. if prop.Mount == "wall" then " (hangs on a wall)." else "." }),
+					MouseEnter = function()
+						hovered = prop.Id
+					end,
+					MouseLeave = function()
+						if hovered == prop.Id then
+							hovered = nil
+						end
+					end,
 					MouseButton1Click = function()
 						app.Sound("Click")
 						collapsed(app.Store.Values.PropAutoCollapse)
@@ -222,10 +273,6 @@ return function(ui: Ui): { Instance }
 
 	return {
 		Controls.Card(ui, "PROPS", {
-			Controls.Text(
-				ui,
-				"Pick a section, then a prop, then click a floor (or a wall for wall props) to place it. R turns it."
-			),
 			Controls.Switch(ui, { Title = "Collapse props after picking one", Key = "PropAutoCollapse" }),
 			Controls.Button(ui, "Reload prop pictures", function()
 				pictures(pictures() + 1)

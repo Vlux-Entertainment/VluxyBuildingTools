@@ -73,7 +73,7 @@ local function release(ctx: Context, state: ExtendState)
 			built = Geometry.Materialize(out, "Face_Extension")
 		end) then
 			handle(ctx, built and built:FindFirstChildWhichIsA("BasePart"))
-			ctx.Say("Added " .. drag.length .. " studs. Drag another handle to keep building.")
+			ctx.Say("Added " .. drag.length .. " studs.")
 		end
 	else
 		ctx.Say("Drag a green face handle outward to create an extension.")
@@ -126,7 +126,7 @@ local function connect(ctx: Context, state: ExtendState)
 
 			Overlay.DrawGhosts(ctx.Overlay, out)
 			Overlay.Readout(ctx.Overlay, out[1].cf.Position, string.format("Extend %.2f studs", drag.length))
-			ctx.Say(`Release to add {drag.length} studs. Esc cancels this extension.`)
+			ctx.Say(`Release to add {drag.length} studs; Esc cancels.`)
 		else
 			Overlay.ClearGhosts(ctx.Overlay)
 			Overlay.HideReadout(ctx.Overlay)
@@ -179,7 +179,7 @@ local tool: Types.Tool = {
 			and Geometry.InScope(hit.Instance)
 		then
 			handle(ctx, hit.Instance :: BasePart)
-			ctx.Say("Drag a green face handle outward. Release to add the new block.")
+			ctx.Say("Drag a green face handle outward, then release.")
 		else
 			ctx.Say("Click an unlocked rectangular block, then drag one of its green handles.")
 		end

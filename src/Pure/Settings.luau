@@ -27,7 +27,15 @@ export type Settings = {
 	WindowHeight: number,
 	WindowSill: number,
 	Offset: number,
-	Copies: number,
+	ArrayCount: number,
+	ArrayRelative: boolean,
+	ArrayRelX: number,
+	ArrayRelY: number,
+	ArrayRelZ: number,
+	ArrayConstant: boolean,
+	ArrayConstX: number,
+	ArrayConstY: number,
+	ArrayConstZ: number,
 	ArchHeight: number,
 	ArchDepth: number,
 	ArchSegments: number,
@@ -36,9 +44,6 @@ export type Settings = {
 	ColorTheme: string,
 	StairHeight: number,
 	RampHeight: number,
-	DX: number,
-	DY: number,
-	DZ: number,
 	Yaw: number,
 	VentSize: number,
 	VentThickness: number,
@@ -95,10 +100,18 @@ export type Settings = {
 	BalusterSpacing: number,
 	Pastel: boolean,
 	Align: boolean,
-	ShowGrid: boolean,
 	Hotkeys: boolean,
 	SoundEnabled: boolean,
 	SoundVolume: number,
+	UiAnimations: boolean,
+	UiAccent: string,
+	ZebraRows: boolean,
+	Tooltips: boolean,
+	TooltipDelay: number,
+	PreviewsFollowUi: boolean,
+	HintBar: boolean,
+	PropSpin: boolean,
+	AnimationIntensity: number,
 	Axis: string,
 }
 
@@ -113,9 +126,9 @@ local DOOR_KEYS =
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Version = 5,
+		Version = 6,
 		Grid = 4,
-		FineGrid = 1,
+		FineGrid = 0.25,
 		Elevation = 0,
 		Height = 12,
 		Thickness = 1,
@@ -133,7 +146,15 @@ function Settings.Defaults(): Settings
 		WindowHeight = 4,
 		WindowSill = 3,
 		Offset = 0,
-		Copies = 3,
+		ArrayCount = 2,
+		ArrayRelative = true,
+		ArrayRelX = 1,
+		ArrayRelY = 0,
+		ArrayRelZ = 0,
+		ArrayConstant = false,
+		ArrayConstX = 0,
+		ArrayConstY = 0,
+		ArrayConstZ = 0,
 		ArchHeight = 10,
 		ArchDepth = 2,
 		ArchSegments = 16,
@@ -142,9 +163,6 @@ function Settings.Defaults(): Settings
 		ColorTheme = "Pastel",
 		StairHeight = 6,
 		RampHeight = 6,
-		DX = 12,
-		DY = 0,
-		DZ = 0,
 		Yaw = 0,
 		VentSize = 3,
 		VentThickness = 0.2,
@@ -177,7 +195,7 @@ function Settings.Defaults(): Settings
 		SnapToParts = true,
 		AutoGrid = true,
 		AutoPastel = true,
-		SnapRadius = 5,
+		SnapRadius = 1,
 		ConnectStructures = true,
 		RoomJoin = "Open",
 		StandardHeight = 12,
@@ -201,10 +219,18 @@ function Settings.Defaults(): Settings
 		BalusterSpacing = 1.2,
 		Pastel = false,
 		Align = false,
-		ShowGrid = true,
 		Hotkeys = true,
 		SoundEnabled = true,
 		SoundVolume = 0.5,
+		UiAnimations = true,
+		UiAccent = "Orange",
+		ZebraRows = true,
+		Tooltips = true,
+		TooltipDelay = 0.35,
+		PreviewsFollowUi = true,
+		HintBar = true,
+		PropSpin = true,
+		AnimationIntensity = 0.5,
 		Axis = "X",
 	}
 end
@@ -220,6 +246,34 @@ Settings.Standards = {
 	{ "Thickness", "StandardThickness", "ThicknessOverride" },
 	{ "DoorWidth", "StandardDoorWidth", "DoorWidthOverride" },
 	{ "DoorHeight", "StandardDoorHeight", "DoorHeightOverride" },
+}
+
+--[=[
+	The settings shown on the Settings tab, which its Reset puts back; tool, display and hotkey
+	settings are left alone.
+
+	@prop Page { string }
+	@within Settings
+]=]
+Settings.Page = {
+	"StandardHeight",
+	"StandardThickness",
+	"StandardDoorWidth",
+	"StandardDoorHeight",
+	"Extend",
+	"FieldStep",
+	"UiAccent",
+	"UiAnimations",
+	"AnimationIntensity",
+	"ZebraRows",
+	"Tooltips",
+	"TooltipDelay",
+	"PreviewsFollowUi",
+	"HintBar",
+	"PropSpin",
+	"SoundEnabled",
+	"SoundVolume",
+	"AllowUntagged",
 }
 
 --[=[
@@ -396,6 +450,20 @@ function Settings.Load(saved: any): Settings
 	if version < 5 and settings.CameraLightBrightness == 2 then
 		settings.CameraLightBrightness = fresh.CameraLightBrightness
 	end
+
+	-- Version 6 made the Shift grid and part snap finer; values left at the old defaults follow.
+	if version < 6 then
+		if settings.FineGrid == 1 then
+			settings.FineGrid = fresh.FineGrid
+		end
+
+		if settings.SnapRadius == 5 then
+			settings.SnapRadius = fresh.SnapRadius
+		end
+	end
+
+	-- The floor level has no field on the panel any more, so it is always the ground.
+	settings.Elevation = fresh.Elevation
 
 	Settings.Sync(settings)
 

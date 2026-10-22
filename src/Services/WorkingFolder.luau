@@ -258,7 +258,7 @@ local function setFolder(self: WorkingFolder, chosen: Instance?)
 
 	Display.RestoreAuto(display)
 	Display.Sweep(display)
-	deps.Say(`Working in {chosen:GetFullName()}. Builds go in this folder and nothing outside it is changed.`)
+	deps.Say(`Working in {chosen:GetFullName()}.`)
 end
 
 --[[
@@ -279,7 +279,7 @@ local function offer(self: WorkingFolder, chosen: Instance)
 	if names ~= "" then
 		self._conflict = { Folder = chosen, Names = names }
 		self._deps.State.Conflict(names)
-		self._deps.Say(`"{chosen.Name}" has different settings ({names}). Use the folder's, overwrite them, or cancel.`)
+		self._deps.Say(`"{chosen.Name}" has different settings ({names}); use the folder's, overwrite or cancel.`)
 
 		return
 	end
@@ -295,14 +295,12 @@ end
 ]]
 local function propose(self: WorkingFolder, target: Instance)
 	if not allowed(self, target) then
-		return self._deps.Warn(
-			`"{target.Name}" is not a map yet. Select it, open View > Tag Editor and add the tag {MAP_TAG}, then pick it again.`
-		)
+		return self._deps.Warn(`"{target.Name}" needs the {MAP_TAG} tag first (View > Tag Editor).`)
 	end
 
 	self._deps.State.Pending(target)
 	redrawBoxes(self)
-	self._deps.Say(`Picked "{target:GetFullName()}". Press Yes to confirm, or click another Folder.`)
+	self._deps.Say(`Picked "{target:GetFullName()}"; press Yes to confirm.`)
 end
 
 --[=[
@@ -379,14 +377,12 @@ function WorkingFolder.Require(self: WorkingFolder): boolean
 			return true
 		end
 
-		self._deps.Warn(
-			`"{folder.Name}" is missing the tag {MAP_TAG}, so the plugin will not edit it. Select the folder, open View > Tag Editor and add {MAP_TAG}.`
-		)
+		self._deps.Warn(`"{folder.Name}" needs the {MAP_TAG} tag (View > Tag Editor).`)
 
 		return false
 	end
 
-	self._deps.Say("Pick a working folder in the panel first. The plugin only works inside it.")
+	self._deps.Say("Pick a working folder in the panel first.")
 
 	return false
 end
@@ -518,7 +514,7 @@ function WorkingFolder.Click(self: WorkingFolder): boolean
 	if target then
 		propose(self, target)
 	else
-		self._deps.Say("That is not inside a Folder. Click a Part that sits in a Folder.")
+		self._deps.Say("Click a Part that sits in a Folder.")
 	end
 
 	return true
@@ -558,7 +554,7 @@ function WorkingFolder.Step(self: WorkingFolder, dt: number)
 		state.Folder(nil)
 		self._deps.StopTools()
 		redrawBoxes(self)
-		self._deps.Say("The working folder is gone. Pick another one to keep working.")
+		self._deps.Say("The working folder is gone; pick another one.")
 	end
 end
 
@@ -595,7 +591,7 @@ function WorkingFolder._selectionChanged(self: WorkingFolder)
 	if #selected > 0 and state.Pending() then
 		state.Pending(nil)
 		redrawBoxes(self)
-		self._deps.Say("That is not a Folder inside Workspace. Click or select a Folder in Workspace.")
+		self._deps.Say("Click or select a Folder in Workspace.")
 	end
 end
 

@@ -82,12 +82,12 @@ end
 
 --[=[
 	@param ui Ui
-	@param title string? -- shown small and muted at the top
+	@param title string? -- shown small and muted at the top; hovering it shows its description from `Tips`
 	@param children { any }
 	@param visible Prop<boolean>?
 	@return Frame -- a rounded card holding rows
 ]=]
-function Controls.Card(_ui: Ui, title: string?, children: { any }, visible: Prop<boolean>?): Frame
+function Controls.Card(ui: Ui, title: string?, children: { any }, visible: Prop<boolean>?): Frame
 	return new("Frame")({
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
@@ -99,6 +99,7 @@ function Controls.Card(_ui: Ui, title: string?, children: { any }, visible: Prop
 		Kit.Stroke(),
 		Kit.Padding(10, 8),
 		Kit.List(4),
+		Kit.Striped(),
 		if title
 			then new("TextLabel")({
 				Size = UDim2.new(1, 0, 0, 22),
@@ -109,6 +110,7 @@ function Controls.Card(_ui: Ui, title: string?, children: { any }, visible: Prop
 				TextSize = 11,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = -1,
+				ui.Popups.Tip(Tips.Find(title)),
 			})
 			else nil,
 		children,
@@ -118,11 +120,11 @@ end
 --[=[
 	@param ui Ui
 	@param text Prop<string>
-	@param color Color3?
+	@param color Prop<Color3>?
 	@param visible Prop<boolean>?
 	@return TextLabel -- wrapping text, muted by default
 ]=]
-function Controls.Text(_ui: Ui, text: Prop<string>, color: Color3?, visible: Prop<boolean>?): TextLabel
+function Controls.Text(_ui: Ui, text: Prop<string>, color: Prop<Color3>?, visible: Prop<boolean>?): TextLabel
 	return new("TextLabel")({
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
@@ -150,7 +152,9 @@ function Controls.Button(ui: Ui, label: Prop<string>, run: () -> (), primary: bo
 	return Kit.Row(34, {
 		new("TextButton")({
 			Size = UDim2.fromScale(1, 1),
-			BackgroundColor3 = if primary then Theme.Accent else Theme.Tile,
+			BackgroundColor3 = function()
+				return if primary then Theme.Accent() else Theme.Tile
+			end,
 			BorderSizePixel = 0,
 			Text = label,
 			TextColor3 = if primary then Theme.Background else Theme.Text,
@@ -192,7 +196,9 @@ function Controls.ButtonRow(ui: Ui, items: { Item }, visible: Prop<boolean>?): F
 			new("TextButton")({
 				Size = UDim2.new(1 / #items, -4, 1, 0),
 				Position = UDim2.fromScale((i - 1) / #items, 0),
-				BackgroundColor3 = if item.Primary then Theme.Accent else Theme.Tile,
+				BackgroundColor3 = function()
+					return if item.Primary then Theme.Accent() else Theme.Tile
+				end,
 				BorderSizePixel = 0,
 				Text = item.Text,
 				TextColor3 = if item.Primary then Theme.Background else Theme.Text,
@@ -388,7 +394,10 @@ function Controls.Switch(ui: Ui, spec: SwitchSpec): Frame
 			Store.Set(store, key, on)
 		end
 		else spec.Set :: (boolean) -> ()
-	local onColor = if spec.Danger then Theme.Danger else Theme.Accent
+	--[[ The switch's color when on: red for a dangerous switch, else the UI color. ]]
+	local function onColor(): Color3
+		return if spec.Danger then Theme.Danger else Theme.Accent()
+	end
 	local initial = if key then (Settings.Defaults() :: any)[key] else nil
 
 	local function change(on: boolean)
@@ -415,7 +424,7 @@ function Controls.Switch(ui: Ui, spec: SwitchSpec): Frame
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.fromScale(1, 0.5),
 			BackgroundColor3 = function()
-				return if get() then onColor else Theme.SwitchOff
+				return if get() then onColor() else Theme.SwitchOff
 			end,
 			BorderSizePixel = 0,
 			Text = "",
@@ -457,6 +466,7 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 	local store = ui.App.Store
 	local dragging = false
 	local bar: Frame
+	local knob: Frame
 
 	local function value(): number
 		return math.clamp(Store.Get(store, key) :: number, 0, 1)
@@ -483,30 +493,37 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 			BorderSizePixel = 0,
 			Kit.Corner(3),
 		}),
-		new("Frame")({
-			Size = UDim2.fromOffset(14, 14),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = function()
-				return UDim2.fromScale(value(), 0.5)
-			end,
-			BackgroundColor3 = Theme.White,
-			BorderSizePixel = 0,
-			Kit.Corner(7),
-		}),
+	})
+	knob = new("Frame")({
+		Size = UDim2.fromOffset(14, 14),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = function()
+			return UDim2.fromScale(value(), 0.5)
+		end,
+		BackgroundColor3 = Theme.White,
+		BorderSizePixel = 0,
+		Parent = bar,
+		Kit.Corner(7),
 	})
 
-	vide.cleanup(ui.Root.InputChanged:Connect(function(input)
+	--[[ Follows the mouse while dragging. ]]
+	local function moved(input: InputObject)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			setFrom(input.Position.X)
 		end
-	end))
-	vide.cleanup(ui.Root.InputEnded:Connect(function(input)
+	end
+
+	--[[ Ends the drag on the mouse's release, wherever the panel hears it, and saves the value once. ]]
+	local function ended(input: InputObject)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = false
 			Store.Save(store)
 			ui.App.Sound("Tab")
 		end
-	end))
+	end
+
+	vide.cleanup(ui.Root.InputChanged:Connect(moved))
+	vide.cleanup(ui.Root.InputEnded:Connect(ended))
 
 	local initial = (Settings.Defaults() :: any)[key]
 
@@ -521,20 +538,22 @@ function Controls.Slider(ui: Ui, key: string, title: string, visible: Prop<boole
 			TextXAlignment = Enum.TextXAlignment.Left,
 			ui.Popups.Tip(Tips.Find(key)),
 		}),
-		new("TextButton")({
+		new("Frame")({
 			Size = UDim2.fromOffset(130, 28),
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -46, 0.5, 0),
 			BackgroundTransparency = 1,
-			Text = "",
-			AutoButtonColor = false,
+			Active = true,
 			bar,
 			InputBegan = function(input: InputObject)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 then
 					dragging = true
 					setFrom(input.Position.X)
+					Kit.Pop(knob)
 				end
 			end,
+			InputChanged = moved,
+			InputEnded = ended,
 		}),
 		new("TextLabel")({
 			Size = UDim2.fromOffset(40, 36),
@@ -593,6 +612,16 @@ export type ChoiceSpec = {
 function Controls.Choice(ui: Ui, spec: ChoiceSpec): Frame
 	local buttons = {}
 	local columns = spec.Columns
+	local values: { [string]: boolean } = {}
+
+	for _, option in spec.Options do
+		values[option.Value] = true
+	end
+
+	--[[ Whether one of these options was already picked, so arriving at the row from elsewhere does not pop it. ]]
+	local wasHere = Kit.Settled(function()
+		return values[spec.Get() or ""] == true
+	end)
 
 	for i, option in spec.Options do
 		table.insert(
@@ -607,6 +636,9 @@ function Controls.Choice(ui: Ui, spec: ChoiceSpec): Frame
 				Kit.Lit(function()
 					return spec.Get() == option.Value
 				end),
+				Kit.PopWhen(function()
+					return spec.Get() == option.Value
+				end, wasHere),
 				Kit.Corner(6),
 				Kit.Stroke(),
 				ui.Popups.Tip(if option.Tip then { Text = option.Tip, Key = option.Key } else nil),

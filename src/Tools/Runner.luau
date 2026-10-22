@@ -261,7 +261,7 @@ function Runner.ResumeLast(self: Runner): boolean
 end
 
 --[=[
-	Starts the active tool afresh, keeping it on: the panel's Start new chain.
+	Starts the active tool afresh, keeping it on, as Enter does.
 
 	@param self Runner
 ]=]
@@ -419,7 +419,7 @@ function Runner.Back(self: Runner): string?
 	Runner.Stop(self)
 	self._deps.Stopped()
 
-	return "Tool stopped. Your completed builds stay in the map. Press Enter to bring it back."
+	return "Tool stopped; Enter brings it back."
 end
 
 --[=[

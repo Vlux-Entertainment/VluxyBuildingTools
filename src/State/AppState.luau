@@ -68,7 +68,7 @@ function AppState.new(): AppState
 		Picking = vide.source(false),
 		Conflict = vide.source(nil :: string?),
 		Prop = vide.source(nil :: string?),
-		Status = vide.source("Pick a tool, or press a number key. Everything is in studs."),
+		Status = vide.source("Pick a tool to start building."),
 		Page = vide.source("Build"),
 		PropSection = vide.source("All"),
 		PastelOn = vide.source(false),

@@ -16,8 +16,10 @@ local AppState = require("../State/AppState")
 local AppTypes = require("../App/Types")
 local Controls = require("./Controls")
 local Kit = require("./Kit")
+local Overlay = require("../Core/Overlay")
 local PluginInfo = require("../Pure/PluginInfo")
 local Popups = require("./Popups")
+local Store = require("../State/Store")
 local Theme = require("./Theme")
 local Tips = require("../Pure/Tips")
 local vide = require("../Packages/vide")
@@ -92,13 +94,24 @@ local function tabBar(ui: Controls.Ui): Frame
 			return app.State.Page() == name
 		end
 
+		local hovered = vide.source(false)
+
 		table.insert(
 			buttons,
 			new("TextButton")({
 				Size = UDim2.new(1 / #pages, -4, 1, -8),
 				Position = UDim2.new((i - 1) / #pages, 4, 0, 4),
 				BackgroundColor3 = function()
-					return if active() then Theme.Accent else Theme.Card
+					local color = if active() then Theme.Accent() else Theme.Card
+
+					return if hovered() then color:Lerp(Theme.White, if active() then 0.15 else 0.08) else color
+				end,
+				Kit.PopWhen(active),
+				MouseEnter = function()
+					hovered(true)
+				end,
+				MouseLeave = function()
+					hovered(false)
 				end,
 				TextColor3 = function()
 					return if active() then Theme.Background else Theme.Text
@@ -147,6 +160,14 @@ end
 ]=]
 function Panel.Mount(app: AppTypes.App): () -> ()
 	local widget = app.Widget
+
+	Kit.Animate = function()
+		return app.Store.Values.UiAnimations
+	end
+	Kit.Intensity = function()
+		return app.Store.Values.AnimationIntensity
+	end
+
 	local root = new("ScrollingFrame")({
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Theme.Background,
@@ -160,7 +181,11 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 	local popups: Popups.Popups
 
 	local destroy = vide.root(function()
-		popups = Popups.new(widget)
+		popups = Popups.new(widget, function()
+			local values = app.Store.Values
+
+			return if values.Tooltips then values.TooltipDelay else nil
+		end)
 
 		local ui: Controls.Ui = { App = app, Popups = popups, Root = root }
 		local pages = {}
@@ -183,14 +208,9 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 		end
 
 		local folderCard = FolderCard(ui)
-		local lockedNote = Controls.Text(
-			ui,
-			"Pick a working folder above to start using the tools.",
-			Theme.Accent,
-			function()
-				return locked(app, app.State.Page())
-			end
-		)
+		local lockedNote = Controls.Text(ui, "Pick a working folder above to start.", Theme.Accent, function()
+			return locked(app, app.State.Page())
+		end)
 
 		folderCard.LayoutOrder = 2
 		lockedNote.LayoutOrder = 5
@@ -216,6 +236,20 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 		}
 
 		vide.apply(root)(children)
+		vide.effect(function()
+			Theme.SetAccent(Store.Get(app.Store, "UiAccent"))
+		end)
+		vide.effect(function()
+			Kit.Zebra(Store.Get(app.Store, "ZebraRows") == true)
+		end)
+		vide.effect(function()
+			local follow = Store.Get(app.Store, "PreviewsFollowUi") == true
+
+			Overlay.SetAccent(app.Overlay, if follow then Theme.Accent() else Theme.Accents[1].Color)
+		end)
+		vide.effect(function()
+			Overlay.AllowBar(app.Overlay, Store.Get(app.Store, "HintBar") == true)
+		end)
 		vide.effect(function()
 			app.State.Page()
 			app.State.Mode()

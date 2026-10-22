@@ -409,7 +409,7 @@ function Colors.Set(self: Colors, value: boolean)
 	local scope = self._scope()
 
 	if value and not scope then
-		return self._say("Pick a working folder first. Themes only recolor Parts inside it.")
+		return self._say("Pick a working folder first.")
 	end
 
 	self._stop()
@@ -450,11 +450,7 @@ function Colors.Set(self: Colors, value: boolean)
 		end
 
 		self._refresh()
-		self._say(
-			if value
-				then "Themes ON. Click again to restore originals. Your teammates see these colors too."
-				else "Themes OFF. Original colors restored."
-		)
+		self._say(if value then "Themes on." else "Themes off; original colors restored.")
 	end
 end
 

@@ -22,6 +22,7 @@ local Host = require("../Modal/Host")
 local Move = require("../Modal/Move")
 local PropData = require("../Pure/PropData")
 local Runner = require("../Tools/Runner")
+local Settings = require("../Pure/Settings")
 local Store = require("../State/Store")
 local Tools = require("../Pure/Tools")
 local Transform = require("../Core/Transform")
@@ -102,8 +103,8 @@ function Actions.Arm(app: App, which: Host.Armed)
 	app.Modal.Armed = which
 	app.Say(
 		if which == "Flip"
-			then "Flip: press X, Y or Z to mirror the selection across that axis. Esc cancels."
-			else "Rotate 90°: press X, Y or Z (hold Alt for -90°). Esc cancels."
+			then "Flip: press X, Y or Z, or Esc to cancel."
+			else "Rotate 90°: press X, Y or Z (Alt for -90°), or Esc to cancel."
 	)
 end
 
@@ -343,7 +344,7 @@ function Actions.Hide(app: App)
 
 	Display.Hide(app.Display, parts)
 	Selection:Set({})
-	app.Say(`Hid {#parts} part(s). Alt+H unhides them, I shows them as ghosts.`)
+	app.Say(`Hid {#parts} part(s); Alt+H brings them back.`)
 end
 
 --[=[
@@ -379,6 +380,36 @@ end
 ]=]
 function Actions.ToggleGrid(app: App)
 	Display.SetGrid(app.Display, not app.Display.Grid.On)
+end
+
+--[=[
+	Moves to the next or previous color theme, wrapping around, and switches themes on if they are off.
+
+	@param app App
+	@param step number -- 1 for the next theme, -1 for the previous
+]=]
+function Actions.StepTheme(app: App, step: number)
+	local themes = Settings.Themes
+	local at = table.find(themes, Display.Theme(app.Display)) or 1
+	local name = themes[(at - 1 + step) % #themes + 1]
+
+	Store.Set(app.Store, "ColorTheme", name)
+
+	if not app.Display.Colors.On then
+		Display.SetPastel(app.Display, true)
+	end
+
+	app.Say(`Theme: {name}.`)
+end
+
+--[=[
+	@param app App
+]=]
+function Actions.ToggleCameraLight(app: App)
+	local on = not app.Store.Values.CameraLight
+
+	Store.Set(app.Store, "CameraLight", on)
+	app.Say(if on then "Camera light on." else "Camera light off.")
 end
 
 local SIMPLE: { [string]: (app: App) -> () } = {
@@ -425,6 +456,7 @@ local SIMPLE: { [string]: (app: App) -> () } = {
 	end,
 	TogglePastel = Actions.TogglePastel,
 	ToggleGrid = Actions.ToggleGrid,
+	ToggleCameraLight = Actions.ToggleCameraLight,
 	TogglePanel = function(app)
 		app.Widget.Enabled = not app.Widget.Enabled
 	end,

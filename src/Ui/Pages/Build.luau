@@ -12,9 +12,9 @@ local Actions = require("../../App/Actions")
 local Brushes = require("../../Core/Brushes")
 local Controls = require("../Controls")
 local Kit = require("../Kit")
-local Runner = require("../../Tools/Runner")
 local Store = require("../../State/Store")
 local Theme = require("../Theme")
+local Tips = require("../../Pure/Tips")
 local Tools = require("../../Pure/Tools")
 local vide = require("../../Packages/vide")
 
@@ -55,16 +55,6 @@ local HEIGHT: Modes = {
 	Pillar = true,
 	Porch = true,
 }
-local CHAINS: Modes = {
-	Wall = true,
-	PillaredWall = true,
-	Corridor = true,
-	ArchedCorridor = true,
-	Fence = true,
-	Railing = true,
-	HalfWall = true,
-	Vent = true,
-}
 local WINDOWS: Modes = { Window = true, CircleWindow = true, TriangleWindow = true }
 local OPENINGS: Modes = { Door = true, Window = true, CircleWindow = true, TriangleWindow = true, ArchOpening = true }
 local VENT_SIZED: Modes = {
@@ -86,6 +76,11 @@ local ADVANCED_TOOLS: Modes = {
 	Arch = true,
 	ArchOpening = true,
 	Place = true,
+	Door = true,
+	Vent = true,
+	VentRamp = true,
+	VentShaft = true,
+	VentHole = true,
 }
 
 --[[
@@ -119,16 +114,17 @@ local function tile(ui: Ui, tool: Tools.Tile, index: number): TextButton
 
 	return new("TextButton")({
 		BackgroundColor3 = function()
-			return if active() then Theme.AccentDim else Theme.Tile
+			return if active() then Theme.AccentDim() else Theme.Tile
 		end,
 		BorderSizePixel = 0,
 		Text = "",
 		AutoButtonColor = true,
 		LayoutOrder = index,
+		Kit.PopWhen(active),
 		Kit.Corner(6),
 		new("UIStroke")({
 			Color = function()
-				return if active() then Theme.Accent else Theme.CardStroke
+				return if active() then Theme.Accent() else Theme.CardStroke
 			end,
 			Thickness = 1,
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -191,10 +187,7 @@ local function brushList(ui: Ui, visible: () -> boolean): Frame
 		local out: { Instance } = {}
 
 		if #brushes == 0 then
-			local empty = Controls.Text(
-				ui,
-				"No brushes yet. With the brush on, click an object in the viewport to add it (hold Ctrl to add more), or select it and press Add selected to brushes. With none, the brush paints the current selection."
-			)
+			local empty = Controls.Text(ui, "No brushes yet.")
 
 			vide.cleanup(empty)
 			table.insert(out, empty)
@@ -209,7 +202,9 @@ local function brushList(ui: Ui, visible: () -> boolean): Frame
 				LayoutOrder = index,
 				new("TextButton")({
 					Size = UDim2.new(1, -34, 1, 0),
-					BackgroundColor3 = if on then Theme.Accent else Theme.Tile,
+					BackgroundColor3 = function()
+						return if on then Theme.Accent() else Theme.Tile
+					end,
 					BorderSizePixel = 0,
 					Text = entry.Name,
 					TextColor3 = if on then Theme.Background else Theme.Muted,
@@ -219,7 +214,7 @@ local function brushList(ui: Ui, visible: () -> boolean): Frame
 					Kit.Corner(6),
 					Kit.Stroke(),
 					ui.Popups.Tip({
-						Text = "Click to switch this brush on or off. Every brush that is on is painted at random.",
+						Text = "Click to switch this brush on or off.",
 					}),
 					MouseButton1Click = function()
 						app.Sound("Click")
@@ -316,12 +311,19 @@ return function(ui: Ui): { Instance }
 		table.insert(tiles, tile(ui, entry, index))
 	end
 
+	local howTo: Tips.Tip = { Text = "" }
+
+	vide.effect(function()
+		howTo.Text = Tools.Instruction(state.Mode())
+	end)
+
 	local header = Kit.Row(34, {
 		new("TextButton")({
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 			Text = "",
 			AutoButtonColor = false,
+			ui.Popups.Tip(howTo),
 			MouseButton1Click = function()
 				app.Sound("Click")
 				toolOpen(not toolOpen())
@@ -419,15 +421,8 @@ return function(ui: Ui): { Instance }
 		Controls.Card(ui, nil, {
 			header,
 			variants,
-			Controls.Text(ui, function()
-				return Tools.Instruction(state.Mode())
-			end, Theme.Muted, when(nil)),
-			number("Grid", "Snap increment", 0.05, 128, 0.5, when(DRAW)),
-			number("FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5, when(DRAW)),
-			number("Elevation", "Floor level (Y)", -10000, 10000, nil, when(DRAW)),
-			Controls.Button(ui, "Use selected floor height", function()
-				Actions.Guarded(app, app.Arrange.UseSelectedFloor)()
-			end, false, when(DRAW)),
+			number("Grid", "Grid Snap", 0.05, 128, 0.5, when(DRAW)),
+			number("FineGrid", "Precise Grid Snap", 0.05, 128, 0.25, when(DRAW)),
 			number("Height", "Height", 0.1, 2048, nil, when(HEIGHT)),
 			number(
 				"Thickness",
@@ -447,10 +442,7 @@ return function(ui: Ui): { Instance }
 			number("DoorWidth", "Doorway width", 0.1, 1024, nil, when(door)),
 			number("DoorHeight", "Doorway height", 0.1, 1024, nil, when(door)),
 			Controls.Switch(ui, { Title = "Door frame", Key = "DoorFrame", Visible = when(door) }),
-			number("FrameWidth", "Frame width", 0.05, 8, nil, when(door, false, setting("DoorFrame"))),
-			number("FrameDepth", "Frame depth", 0.05, 64, nil, when(door, false, setting("DoorFrame"))),
 			Controls.Switch(ui, { Title = "Door", Key = "DoorPanel", Visible = when(door) }),
-			number("DoorThickness", "Door thickness", 0.05, 8, nil, when(door, false, setting("DoorPanel"))),
 			Controls.Slider(ui, "DoorTransparency", "Door transparency", when(door, false, setting("DoorPanel"))),
 			Controls.Switch(ui, {
 				Title = "Door CanCollide",
@@ -504,20 +496,10 @@ return function(ui: Ui): { Instance }
 			number("RailHeight", "Railing height", 0.1, 256, nil, when(modes("Porch", "Railing", "HalfWall"))),
 			number("BalusterSpacing", "Bar spacing", 0.3, 64, nil, when(modes("Railing"))),
 			number("VentSize", "Vent size", 0.5, 64, nil, when(VENT_SIZED)),
-			number(
-				"VentThickness",
-				"Vent sheet thickness",
-				0.05,
-				4,
-				0.05,
-				when(modes("Vent", "VentRamp", "VentShaft", "VentHole"))
-			),
 			number("RoofThickness", "Roof sheet thickness", 0.05, 64, nil, when(modes("Roof"), true)),
 			number("Yaw", "Copy rotation", -360, 360, 90, when(modes("Place"))),
 			number("BrushRadius", "Brush radius", 0, 200, 1, when(modes("Place"))),
 			number("BrushSpacing", "Brush spacing", 0.5, 100, 0.5, when(modes("Place"))),
-			number("BrushSizeMin", "Smallest size (x)", 0.05, 20, 0.1, when(modes("Place"))),
-			number("BrushSizeMax", "Biggest size (x)", 0.05, 20, 0.1, when(modes("Place"))),
 			Controls.Switch(ui, { Title = "Random rotation", Key = "BrushRandomYaw", Visible = when(modes("Place")) }),
 			brushList(ui, when(modes("Place"))),
 			Controls.Button(ui, "Add selected to brushes", function()
@@ -526,15 +508,9 @@ return function(ui: Ui): { Instance }
 				Actions.BrushesChanged(app)
 				app.Say(message)
 			end, true, when(modes("Place"))),
-			Controls.Button(ui, "Start new chain", function()
-				local draw = app.Runner
-
-				Runner.Reset(draw)
-				app.Say(Tools.Instruction(draw.Mode))
-			end, false, when(CHAINS)),
 			Controls.Switch(ui, { Title = "Ceiling", Key = "Roof", Visible = when(modes("Room", "Corridor")) }),
 			Controls.Switch(ui, { Title = "Snap to parts", Key = "SnapToParts", Visible = when(DRAW) }),
-			number("SnapRadius", "Snap reach", 0.5, 32, 0.5, when(DRAW)),
+			number("SnapRadius", "Part snap distance", 0.25, 32, 0.25, when(DRAW, false, setting("SnapToParts"))),
 			Controls.Switch(ui, {
 				Title = "Join rooms and corridors",
 				Key = "ConnectStructures",
@@ -577,6 +553,19 @@ return function(ui: Ui): { Instance }
 				4,
 				when(modes("Arch", "ArchOpening", "ArchedCorridor"), true)
 			),
+			number("FrameWidth", "Frame width", 0.05, 8, nil, when(door, true, setting("DoorFrame"))),
+			number("FrameDepth", "Frame depth", 0.05, 64, nil, when(door, true, setting("DoorFrame"))),
+			number("DoorThickness", "Door thickness", 0.05, 8, nil, when(door, true, setting("DoorPanel"))),
+			number(
+				"VentThickness",
+				"Vent sheet thickness",
+				0.05,
+				4,
+				0.05,
+				when(modes("Vent", "VentRamp", "VentShaft", "VentHole"), true)
+			),
+			number("BrushSizeMin", "Smallest size (x)", 0.05, 20, 0.1, when(modes("Place"), true)),
+			number("BrushSizeMax", "Biggest size (x)", 0.05, 20, 0.1, when(modes("Place"), true)),
 			number("Offset", "Surface gap", -256, 256, 0.25, when(modes("Place"), true)),
 			Controls.Switch(
 				ui,

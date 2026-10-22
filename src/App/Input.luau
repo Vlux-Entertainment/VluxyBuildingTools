@@ -42,6 +42,7 @@ local STARTS: { [string]: boolean } = {
 	ShowHotkeys = true,
 	TogglePastel = true,
 	ToggleGrid = true,
+	ToggleCameraLight = true,
 	TogglePanel = true,
 	Hide = true,
 	Unhide = true,
@@ -71,21 +72,23 @@ end
 	@param processed boolean -- whether Studio already used the key
 
 	Handles one key press.
+
+	@return boolean -- true when the key was P for themes, which acts on release unless the wheel turned while it was held
 ]]
-local function keyPressed(app: App, key: string, processed: boolean)
+local function keyPressed(app: App, key: string, processed: boolean): boolean
 	local runner, modal = app.Runner, app.Modal
 	local active = modal.Active
 	local running = active ~= nil
 
 	if active and active.Key and active.Key(key) then
-		return
+		return false
 	end
 
 	if app.Store.Values.Hotkeys then
 		local entry = Host.Typing(modal) or Runner.Typing(runner)
 
 		if entry and NumericInput.Press(entry, key) then
-			return
+			return false
 		end
 	end
 
@@ -98,7 +101,7 @@ local function keyPressed(app: App, key: string, processed: boolean)
 	)
 
 	if not action then
-		return
+		return false
 	end
 
 	local turns = action == "Rotate" and Runner.Turns(runner)
@@ -110,7 +113,7 @@ local function keyPressed(app: App, key: string, processed: boolean)
 			)
 		end
 
-		return
+		return false
 	end
 
 	if not app.Store.Values.Hotkeys and not ALWAYS_ON[action] and not turns then
@@ -118,7 +121,7 @@ local function keyPressed(app: App, key: string, processed: boolean)
 			app.Say(`Key {key} is {action}, but Blender hotkeys are switched off in Settings.`)
 		end
 
-		return
+		return false
 	end
 
 	local idle = not running and not runner.Mode and not modal.Armed and not WorkingFolder.IsPicking(app.Folder)
@@ -128,7 +131,11 @@ local function keyPressed(app: App, key: string, processed: boolean)
 			Runner.ResumeLast(runner)
 		end
 
-		return
+		return false
+	end
+
+	if action == "TogglePastel" then
+		return true
 	end
 
 	if action == "Cancel" then
@@ -138,6 +145,8 @@ local function keyPressed(app: App, key: string, processed: boolean)
 	end
 
 	Actions.Perform(app, action)
+
+	return false
 end
 
 --[=[
@@ -148,6 +157,24 @@ end
 	@param trove Trove
 ]=]
 function Input.Connect(app: App, mouse: PluginMouse, trove: Trove.Trove)
+	--[[ While P is held: whether the wheel turned, which makes letting go of P not toggle themes. ]]
+	local themeHold: { Scrolled: boolean }? = nil
+
+	trove:Connect(UserInputService.InputEnded, function(input)
+		if input.KeyCode ~= Enum.KeyCode.P or not themeHold then
+			return
+		end
+
+		local scrolled = themeHold.Scrolled
+
+		themeHold = nil
+
+		if not scrolled then
+			app.Sound("Hotkey")
+			Actions.Perform(app, "TogglePastel")
+		end
+	end)
+
 	trove:Connect(UserInputService.InputBegan, function(input, processed)
 		if UserInputService:GetFocusedTextBox() or not RunService:IsEdit() then
 			return
@@ -168,7 +195,9 @@ function Input.Connect(app: App, mouse: PluginMouse, trove: Trove.Trove)
 			return
 		end
 
-		keyPressed(app, input.KeyCode.Name, processed)
+		if keyPressed(app, input.KeyCode.Name, processed) then
+			themeHold = { Scrolled = false }
+		end
 	end)
 
 	trove:Connect(mouse.Button1Down, function()
@@ -214,6 +243,14 @@ function Input.Connect(app: App, mouse: PluginMouse, trove: Trove.Trove)
 			or UserInputService:GetFocusedTextBox()
 			or not RunService:IsEdit()
 		then
+			return
+		end
+
+		if themeHold and UserInputService:IsKeyDown(Enum.KeyCode.P) and input.Position.Z ~= 0 then
+			themeHold.Scrolled = true
+			cameraHeldUntil = os.clock() + CAMERA_HOLD
+			Actions.StepTheme(app, if input.Position.Z > 0 then -1 else 1)
+
 			return
 		end
 

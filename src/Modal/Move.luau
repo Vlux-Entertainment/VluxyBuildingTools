@@ -68,7 +68,7 @@ function Move.Start(ctx: Context, kind: Transform.Kind, duplicate: boolean): Mod
 	local recording = ChangeHistoryService:TryBeginRecording("Vlux_" .. kind, kind)
 
 	if not recording then
-		ctx.Say("Cannot begin an edit right now. Finish the other tool action first.")
+		ctx.Say("Finish the other tool action first.")
 
 		return nil
 	end
@@ -104,7 +104,7 @@ function Move.Start(ctx: Context, kind: Transform.Kind, duplicate: boolean): Mod
 			if commit then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
 		)
 		Overlay.HideReadout(ctx.Overlay)
-		ctx.Say(if commit then "Done. Ctrl+Z undoes it." else "Cancelled.")
+		ctx.Say(if commit then "Done; Ctrl+Z undoes it." else "Cancelled.")
 	end
 
 	local modal: ModalTypes.Modal
