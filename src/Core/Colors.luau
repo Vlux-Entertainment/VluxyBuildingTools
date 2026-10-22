@@ -120,6 +120,14 @@ local function unityColor(part: BasePart): Color3
 end
 
 --[[
+	@param color Color3
+	@return boolean -- whether the color is one the Unity theme paints with
+]]
+local function isUnityColor(color: Color3): boolean
+	return color == ORANGE or color == ORANGE_DARK or color == GREY or color == GREY_LIGHT
+end
+
+--[[
 	@param self Colors
 	@param part BasePart
 	@return Color3 -- the color the current theme gives the part; a part that is partly see-through is purple in every theme
@@ -302,9 +310,21 @@ function Colors.Sweep(self: Colors)
 		return
 	end
 
+	local unity = self._theme() == "Unity"
+
 	for _, part in scope:GetDescendants() do
-		if part:IsA("BasePart") and typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
-			apply(self, part)
+		if part:IsA("BasePart") then
+			if typeof(part:GetAttribute(ORIGINAL)) ~= "Color3" then
+				apply(self, part)
+			elseif unity then
+				local want = themed(self, part)
+
+				if part.Color ~= want then
+					part.Color = want
+				end
+			elseif isUnityColor(part.Color) then
+				part.Color = themed(self, part)
+			end
 		end
 	end
 end
