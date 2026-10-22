@@ -62,10 +62,12 @@ function Edit.new(deps: Deps): Edit
 		watch:Disconnect()
 
 		Profile.Run("Sweep", deps.Sweep, added)
-		ChangeHistoryService:FinishRecording(
-			id,
-			if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
-		)
+		Profile.Run("Commit", function()
+			ChangeHistoryService:FinishRecording(
+				id,
+				if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
+			)
+		end)
 
 		if ok then
 			deps.Sound(if action == "Place prop" then "Prop" else "Build")
