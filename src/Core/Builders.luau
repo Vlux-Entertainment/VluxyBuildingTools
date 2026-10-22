@@ -1502,12 +1502,13 @@ end
 function Builders.VentStrips(settings: Settings): { Strip }
 	local w, t = settings.VentSize, settings.VentThickness
 	local inner = math.max(0.05, w - 2 * t)
+	local pad = 0.03
 
 	return {
-		{ key = "Floor", name = "VentFloor", low = -w / 2, high = w / 2, rise = t / 2, height = t },
-		{ key = "Ceiling", name = "VentCeiling", low = -w / 2, high = w / 2, rise = w - t / 2, height = t },
-		{ key = "Right", name = "VentWall", low = w / 2 - t, high = w / 2, rise = w / 2, height = inner },
-		{ key = "Left", name = "VentWall", low = -w / 2, high = -w / 2 + t, rise = w / 2, height = inner },
+		{ key = "Floor", name = "VentFloor", low = -w / 2 - pad, high = w / 2 + pad, rise = t / 2, height = t },
+		{ key = "Ceiling", name = "VentCeiling", low = -w / 2 - pad, high = w / 2 + pad, rise = w - t / 2, height = t },
+		{ key = "Right", name = "VentWall", low = w / 2 - t, high = w / 2 + pad, rise = w / 2, height = inner },
+		{ key = "Left", name = "VentWall", low = -w / 2 - pad, high = -w / 2 + t, rise = w / 2, height = inner },
 	}
 end
 
@@ -1615,6 +1616,7 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	local inner = math.max(0.05, w - 2 * t)
 	local reach = w / 2 - t / 2
 	local dirN = (b - a).Unit
+	local pad = 0.03
 
 	if math.abs(dirN.Y) < 0.99 then
 		local flat = Vector3.new(dirN.X, 0, dirN.Z).Unit
@@ -1634,13 +1636,13 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 				b + Vector3.new(0, y1, 0),
 				b + Vector3.new(0, y2, 0),
 				a + Vector3.new(0, y2, 0),
-				w,
+				w + 2 * pad,
 				if floor then "VentFloor" else "VentCeiling"
 			)
 		end
 
 		for _, side in { -1, 1 } do
-			local lateral = across * (side * reach)
+			local lateral = across * (side * (reach + pad / 2))
 
 			quadPrism(
 				out,
@@ -1648,7 +1650,7 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 				b + lateral + Vector3.new(0, -gap, 0),
 				b + lateral + Vector3.new(0, gap, 0),
 				a + lateral + Vector3.new(0, gap, 0),
-				t,
+				t + pad,
 				"VentWall"
 			)
 		end
@@ -1656,10 +1658,10 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 		return out
 	end
 
-	add(out, Vector3.new(w, t, length), frame * CFrame.new(0, -reach, 0), "VentFloor")
-	add(out, Vector3.new(w, t, length), frame * CFrame.new(0, reach, 0), "VentCeiling")
-	add(out, Vector3.new(t, inner, length), frame * CFrame.new(reach, 0, 0), "VentWall")
-	add(out, Vector3.new(t, inner, length), frame * CFrame.new(-reach, 0, 0), "VentWall")
+	add(out, Vector3.new(w + 2 * pad, t, length), frame * CFrame.new(0, -reach, 0), "VentFloor")
+	add(out, Vector3.new(w + 2 * pad, t, length), frame * CFrame.new(0, reach, 0), "VentCeiling")
+	add(out, Vector3.new(t + pad, inner, length), frame * CFrame.new(reach + pad / 2, 0, 0), "VentWall")
+	add(out, Vector3.new(t + pad, inner, length), frame * CFrame.new(-reach - pad / 2, 0, 0), "VentWall")
 
 	return out
 end
