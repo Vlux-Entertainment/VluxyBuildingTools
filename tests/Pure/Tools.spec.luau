@@ -10,7 +10,7 @@ return {
 				local names = { "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" }
 				local name = if tile.Key == "0" then "Zero" else names[tonumber(tile.Key) :: number]
 
-				expect.equal(Keymap.Resolve(name, false, false, false, false), `Tool:{tile.Id}`, tile.Id)
+				expect.equal(Keymap.Resolve(name, false, true, false, false), `Tool:{tile.Id}`, tile.Id)
 			end
 		end
 	end,

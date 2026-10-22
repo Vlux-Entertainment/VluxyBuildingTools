@@ -74,7 +74,8 @@ local function trianglePrism(
 	c: Vector3,
 	depth: number,
 	name: string,
-	source: BasePart?
+	source: BasePart?,
+	overlap: number?
 )
 	if (b - a).Magnitude < (c - a).Magnitude then
 		b, c = c, b
@@ -106,11 +107,12 @@ local function trianglePrism(
 
 		if run.Magnitude > 0.001 then
 			local back = run.Unit
-			local center = (foot + endPoint) * 0.5 + rise * 0.5
+			local extra = overlap or 0
+			local center = (foot + endPoint) * 0.5 + rise * 0.5 + back * (extra / 2)
 
 			add(
 				out,
-				Vector3.new(depth, height, run.Magnitude),
+				Vector3.new(depth, height, run.Magnitude + extra),
 				CFrame.fromMatrix(center, up:Cross(back), up, back),
 				name,
 				source,
@@ -364,7 +366,7 @@ function Builders.ArchedBend(settings: Settings, joint: Vector3, prevDir: Vector
 
 		table.insert(wedges, {
 			specs = specs,
-			cutter = CFrame.lookAt(joint + away * (big / 2), joint + away * big),
+			cutter = CFrame.lookAt(joint + away * (big / 2 + 0.02), joint + away * (big + 0.02)),
 			cutterSize = Vector3.new(big, big, big),
 		})
 	end
@@ -470,9 +472,10 @@ end
 	@param settings Settings
 	@param a Vector3 -- the start, on the floor or a stair
 	@param b Vector3 -- the end, on the floor or a stair
+	@param postAtStart boolean? -- false when the railing before this one already has a pillar there
 	@return { Spec }
 ]=]
-function Builders.Railing(settings: Settings, a: Vector3, b: Vector3): { Spec }
+function Builders.Railing(settings: Settings, a: Vector3, b: Vector3, postAtStart: boolean?): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local length = d.Magnitude
@@ -487,7 +490,10 @@ function Builders.Railing(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	local height = settings.RailHeight
 	local up = Vector3.new(0, 1, 0)
 
-	newel(out, a, flatDir, height + 0.3, "RailingPillar")
+	if postAtStart ~= false then
+		newel(out, a, flatDir, height + 0.3, "RailingPillar")
+	end
+
 	newel(out, b, flatDir, height + 0.3, "RailingPillar")
 
 	local middle = (a + b) * 0.5
@@ -514,9 +520,10 @@ end
 	@param settings Settings
 	@param a Vector3
 	@param b Vector3
+	@param postAtStart boolean? -- false when the wall before this one already has a pillar there
 	@return { Spec }
 ]=]
-function Builders.HalfWall(settings: Settings, a: Vector3, b: Vector3): { Spec }
+function Builders.HalfWall(settings: Settings, a: Vector3, b: Vector3, postAtStart: boolean?): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local flat = Vector3.new(d.X, 0, d.Z)
@@ -529,7 +536,10 @@ function Builders.HalfWall(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	local height = settings.RailHeight
 	local up = Vector3.new(0, height, 0)
 
-	newel(out, a, flatDir, height + 0.3, "HalfWallPillar")
+	if postAtStart ~= false then
+		newel(out, a, flatDir, height + 0.3, "HalfWallPillar")
+	end
+
 	newel(out, b, flatDir, height + 0.3, "HalfWallPillar")
 	quadPrism(out, a, b, b + up, a + up, 0.5, "HalfWall")
 
@@ -707,7 +717,7 @@ end
 	Closes the corner where a wall or corridor continues another, with an exact miter and no
 	overlap. Each strip (a wall, a floor) is cut along the line that bisects the bend: the strip
 	keeps a plain rectangle up to the shorter end of that cut, and a small triangular prism fills the
-	rest. The earlier segment's rectangles move by `finish` and the new segment's by `start`; the
+	rest. A right angle needs no triangle: the earlier strip runs on to cover the corner square. The earlier segment's rectangles move by `finish` and the new segment's by `start`; the
 	triangles go in `ending` and `beginning`.
 
 	@param joint Vector3 -- where the two segments meet, at the base level
@@ -738,6 +748,7 @@ function Builders.Bend(joint: Vector3, prevDir: Vector3, dir: Vector3, prevStrip
 	local rv = v:Cross(Vector3.yAxis)
 	local turning = if v:Dot(ru) > 0 then 1 else -1
 	local slope = turning * math.tan(math.min(turn, math.rad(170)) / 2)
+	local square = math.abs(turn - math.pi / 2) < math.rad(1)
 
 	for _, strip in prevStrips do
 		local atLow, atHigh = -slope * strip.low, -slope * strip.high
@@ -746,9 +757,9 @@ function Builders.Bend(joint: Vector3, prevDir: Vector3, dir: Vector3, prevStrip
 		local longSide = if atLow < atHigh then strip.high else strip.low
 		local lift = Vector3.new(0, strip.rise, 0)
 
-		bend.finish[strip.key] = short
+		bend.finish[strip.key] = if square then long else short
 
-		if long - short > 0.01 then
+		if not square and long - short > 0.01 then
 			trianglePrism(
 				bend.ending,
 				joint + u * short + ru * shortSide + lift,
@@ -769,7 +780,7 @@ function Builders.Bend(joint: Vector3, prevDir: Vector3, dir: Vector3, prevStrip
 
 		bend.start[strip.key] = late
 
-		if late - early > 0.01 then
+		if not square and late - early > 0.01 then
 			trianglePrism(
 				bend.beginning,
 				joint + v * early + rv * earlySide + lift,
@@ -1219,7 +1230,7 @@ function Builders.Opening(
 					cf:PointToWorldSpace(Vector3.new(x2, edge, 0)),
 					cf:PointToWorldSpace(Vector3.new(x1, edge, 0)),
 					size.Z,
-					"Circle_Frame",
+					if side == 1 then "Circle_Upper" else "Circle_Lower",
 					p
 				)
 			end
@@ -1352,6 +1363,36 @@ function Builders.Opening(
 end
 
 --[=[
+	The tool that cuts a polygon out of a wall: each triangle of the polygon is extruded through
+	the wall as a pair of wedges, to be subtracted from it.
+
+	@param corners { Vector3 } -- the polygon's corners, on the face of the wall
+	@param triangles { { number } } -- triples of indexes into corners
+	@param depth number -- how far the cut reaches, centred on the corners moved by `shift`
+	@param shift Vector3 -- where the corners move to, into the middle of the wall
+	@return { Spec }
+]=]
+function Builders.CutShape(corners: { Vector3 }, triangles: { { number } }, depth: number, shift: Vector3): { Spec }
+	local out: { Spec } = {}
+
+	for _, t in triangles do
+		local a, b, c = corners[t[1]] + shift, corners[t[2]] + shift, corners[t[3]] + shift
+		local middle = (a + b + c) / 3
+
+		--[[ Each triangle is a hair bigger so neighbours overlap and no sliver is left between them. ]]
+		local function grow(p: Vector3): Vector3
+			local away = p - middle
+
+			return if away.Magnitude > 0.001 then p + away.Unit * 0.03 else p
+		end
+
+		trianglePrism(out, grow(a), grow(b), grow(c), depth, "Cut", nil, 0.03)
+	end
+
+	return out
+end
+
+--[=[
 	Works out which local axis a face normal points along. Used to grow a block out of that face.
 
 	@param part BasePart
@@ -1411,21 +1452,52 @@ end
 	@return string -- what to tell the user
 	@return CFrame? -- where the source's pivot lands
 ]=]
-function Builders.Place(settings: Settings, hit: RaycastResult?, source: Source?): ({ Spec }, string, CFrame?)
+function Builders.Place(
+	settings: Settings,
+	hit: RaycastResult?,
+	source: Source?,
+	scale: number?
+): ({ Spec }, string, CFrame?)
 	local out: { Spec } = {}
 
 	if not hit or not source then
-		return out, "Select an object, then choose Stamp copies.", nil
+		return out, "Select an object, then choose Brush.", nil
 	end
 
 	for _, part in source.Parts do
-		if not part:IsDescendantOf(workspace) then
-			return out, "Selection changed or was removed. Choose Stamp copies again.", nil
+		if not part:IsDescendantOf(game) then
+			return out, "Selection changed or was removed. Choose Brush again.", nil
 		end
 	end
 
-	local rot = CFrame.Angles(0, math.rad(settings.Yaw), 0)
-	local normal = hit.Normal
+	local specs, target = Builders.PlaceAt(settings, hit.Position, hit.Normal, source, settings.Yaw, scale)
+
+	return specs, "Click or drag to paint copies onto surfaces. Radius, spacing and rotation are in the panel.", target
+end
+
+--[=[
+	One copy of the source seated flush on a surface point.
+
+	@param settings Settings
+	@param position Vector3 -- where the surface is
+	@param normal Vector3 -- which way the surface faces
+	@param source Source
+	@param yaw number -- turn about the surface normal, in degrees
+	@param scale number? -- how much bigger or smaller than the original, 1 when left out
+	@return { Spec }
+	@return CFrame -- where the source's pivot lands
+]=]
+function Builders.PlaceAt(
+	settings: Settings,
+	position: Vector3,
+	normal: Vector3,
+	source: Source,
+	yaw: number,
+	scale: number?
+): ({ Spec }, CFrame)
+	local out: { Spec } = {}
+	local grow = scale or 1
+	local rot = CFrame.Angles(0, math.rad(yaw), 0)
 
 	if settings.Align then
 		local reference = if math.abs(normal.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis
@@ -1439,14 +1511,19 @@ function Builders.Place(settings: Settings, hit: RaycastResult?, source: Source?
 		math.abs(normal:Dot(rot.RightVector)) * source.Size.X
 		+ math.abs(normal:Dot(rot.UpVector)) * source.Size.Y
 		+ math.abs(normal:Dot(rot.LookVector)) * source.Size.Z
-	) / 2
-	local target = CFrame.new(hit.Position + normal * (radius + settings.Offset)) * rot
+	)
+		/ 2
+		* grow
+	local target = CFrame.new(position + normal * (radius + settings.Offset)) * rot
 
 	for _, part in source.Parts do
-		add(out, part.Size, target * source.Pivot:ToObjectSpace(part.CFrame), part.Name)
+		local relative = source.Pivot:ToObjectSpace(part.CFrame)
+		local scaled = CFrame.new(relative.Position * grow) * (relative - relative.Position)
+
+		add(out, part.Size * grow, target * scaled, part.Name)
 	end
 
-	return out, "Click to place a copy flush to this surface. Yaw and offset are in the panel.", target
+	return out, target
 end
 
 return Builders

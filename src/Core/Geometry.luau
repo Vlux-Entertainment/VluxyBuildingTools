@@ -129,6 +129,31 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 end
 
 --[=[
+	Like Materialize, but a build of a single piece goes straight into the folder as a Part, with no
+	Model around it. Builds of several pieces still get a Model.
+
+	@param specs { Spec }
+	@param title string -- the Model's name, or the Part's when there is only one piece
+	@return Instance -- the Part, or the Model holding the pieces
+]=]
+function Geometry.Place(specs: { Spec }, title: string): Instance
+	local model = Geometry.Materialize(specs, title)
+	local parts = model:GetChildren()
+
+	if #parts ~= 1 then
+		return model
+	end
+
+	local part = parts[1]
+
+	part.Name = title
+	part.Parent = model.Parent
+	model:Destroy()
+
+	return part
+end
+
+--[=[
 	@param anywhere boolean? -- true to ignore the working folder
 	@return { Instance } -- the selected Parts and Models in the working folder, leaving out any whose ancestor is also selected
 ]=]
@@ -337,6 +362,55 @@ function Geometry.UnionSides(model: Model, pieceName: string, prefix: string): s
 end
 
 --[=[
+	Joins every piece of the model with the given name into one union, named `result`. The joined
+	pieces leave the model with their Parent set to nil so undo can bring them back.
+
+	@param model Model
+	@param pieceName string
+	@param result string
+	@return string? -- why it could not join them, or nil when it did
+]=]
+function Geometry.UnionNamed(model: Model, pieceName: string, result: string): string?
+	local group: { BasePart } = {}
+
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") and child.Name == pieceName then
+			table.insert(group, child)
+		end
+	end
+
+	if #group < 2 then
+		for _, piece in group do
+			piece.Name = result
+		end
+
+		return nil
+	end
+
+	local rest = table.clone(group)
+
+	table.remove(rest, 1)
+
+	local ok, joined = pcall(function()
+		return group[1]:UnionAsync(rest)
+	end)
+
+	if not ok or not joined then
+		return "Roblox could not join the circle frame: " .. tostring(joined)
+	end
+
+	joined.Name = result
+	joined.Anchored = true
+	joined.Parent = model
+
+	for _, piece in group do
+		piece.Parent = nil
+	end
+
+	return nil
+end
+
+--[=[
 	Joins every Part in a built model into one union, such as the steps and landing of a stair. The
 	joined pieces leave the model with their Parent set to nil, not destroyed, so undo can bring them
 	back.
@@ -476,12 +550,56 @@ function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSi
 		return joined:SubtractAsync({ tool })
 	end)
 
+	if not ok or not result then
+		-- The joined cut failed, so cut each piece on its own, then join what is left into one piece.
+		local kept: { BasePart } = {}
+
+		for _, piece in parts do
+			local cutOk, cut = pcall(function()
+				return piece:SubtractAsync({ tool })
+			end)
+
+			if cutOk and cut then
+				cut.Anchored = true
+				cut.Parent = model
+				table.insert(kept, cut)
+			end
+		end
+
+		tool:Destroy()
+		holder:Destroy()
+
+		if #kept > 1 then
+			local rest = table.clone(kept)
+
+			table.remove(rest, 1)
+
+			local joinOk, joined = pcall(function()
+				return kept[1]:UnionAsync(rest)
+			end)
+
+			if joinOk and joined then
+				joined.Name = name
+				joined.Anchored = true
+				joined.Parent = model
+
+				for _, piece in kept do
+					piece:Destroy()
+				end
+
+				return true
+			end
+		end
+
+		for _, piece in kept do
+			piece.Name = name
+		end
+
+		return #kept > 0
+	end
+
 	tool:Destroy()
 	holder:Destroy()
-
-	if not ok or not result then
-		return false
-	end
 
 	result.Name = name
 	result.Anchored = true

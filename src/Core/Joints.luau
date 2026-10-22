@@ -271,6 +271,73 @@ function Joints.Carve(part: BasePart, cutters: { Cutter }): boolean
 	return carve(part, cutters)
 end
 
+--[=[
+	Cuts a shape built from specs out of one part. The part leaves with its Parent set to nil so
+	undo can bring it back.
+
+	@param part BasePart
+	@param specs { Geometry.Spec } -- the pieces of the cutting tool
+	@return boolean -- false when the cut failed
+]=]
+function Joints.CarveShape(part: BasePart, specs: { Geometry.Spec }): boolean
+	local tools: { BasePart } = {}
+
+	for _, spec in specs do
+		local tool = Instance.new(spec.class) :: BasePart
+
+		tool.Size = spec.size
+		tool.CFrame = spec.cf
+		table.insert(tools, tool)
+	end
+
+	if #tools == 0 then
+		return false
+	end
+
+	local ok, result = pcall(function()
+		return part:SubtractAsync(tools)
+	end)
+
+	if #tools > 1 then
+		local joined, cutter = pcall(function()
+			local rest = table.clone(tools)
+
+			table.remove(rest, 1)
+
+			return tools[1]:UnionAsync(rest)
+		end)
+
+		if joined and cutter then
+			local again, smooth = pcall(function()
+				return part:SubtractAsync({ cutter })
+			end)
+
+			if again and smooth then
+				ok, result = again, smooth
+			end
+
+			cutter:Destroy()
+		end
+	end
+
+	for _, tool in tools do
+		tool:Destroy()
+	end
+
+	if not ok or not result then
+		return false
+	end
+
+	local holder = part.Parent
+
+	result.Name = part.Name
+	result.Anchored = true
+	result.Parent = holder
+	part.Parent = nil
+
+	return true
+end
+
 --[[
 	@param model Instance
 	@param cutters { Cutter }

@@ -1,7 +1,7 @@
 --!strict
 
 --[=[
-	The Arrange tab's actions: repeated copies, mirror copies, snapping, dimensions and anchoring.
+	The Arrange tab's actions: repeated copies, snapping, dimensions and anchoring.
 	Each works on the current selection and is one undo step.
 
 	@class Arrange
@@ -29,7 +29,6 @@ local MAX_COPIED_PARTS = 10000
 
 export type Actions = {
 	RepeatCopies: () -> (),
-	MirrorCopy: () -> (),
 	SnapSelection: () -> (),
 	ShowDimensions: () -> (),
 	AnchorSelection: () -> (),
@@ -107,7 +106,7 @@ end
 
 --[=[
 	@param deps Deps
-	@return { [string]: () -> () } -- RepeatCopies, MirrorCopy, SnapSelection, ShowDimensions, AnchorSelection, UseSelectedFloor
+	@return { [string]: () -> () } -- RepeatCopies, SnapSelection, ShowDimensions, AnchorSelection, UseSelectedFloor
 ]=]
 function Arrange.new(deps: Deps): Actions
 	local settings, say = deps.Settings, deps.Say
@@ -155,59 +154,6 @@ function Arrange.new(deps: Deps): Actions
 
 		if made then
 			say("Copies created. Ctrl+Z undoes the whole set.")
-		end
-	end
-
-	local function mirrorCopy()
-		deps.Stop()
-
-		local roots, parts = selection()
-
-		if #parts == 0 then
-			return say("Select Parts or Models first.")
-		elseif not allArchivable(roots) then
-			return say("Enable Archivable on selected objects first.")
-		end
-
-		local axis = settings.Axis
-
-		local function reflect(v: Vector3): Vector3
-			return Vector3.new(
-				if axis == "X" then -v.X else v.X,
-				if axis == "Y" then -v.Y else v.Y,
-				if axis == "Z" then -v.Z else v.Z
-			)
-		end
-
-		local function reflectCF(cf: CFrame): CFrame
-			local up = reflect(cf.UpVector)
-			local back = reflect(-cf.LookVector)
-
-			return CFrame.fromMatrix(reflect(cf.Position), up:Cross(back), up, back)
-		end
-
-		local made = deps.Edit("Mirror objects", function()
-			local copies = Arrange.CloneRoots(roots, function(cf)
-				return cf
-			end)
-
-			for _, copy in copies do
-				local pivot = (copy :: any):GetPivot()
-
-				for _, part in Geometry.PartsOf({ copy }) do
-					part.CFrame = reflectCF(part.CFrame)
-				end
-
-				if copy:IsA("Model") and not copy.PrimaryPart then
-					copy.WorldPivot = reflectCF(pivot)
-				end
-			end
-
-			Selection:Set(copies)
-		end)
-
-		if made then
-			say("Mirrored across world " .. axis .. " = 0.")
 		end
 	end
 
@@ -333,7 +279,6 @@ function Arrange.new(deps: Deps): Actions
 		Flip = flip,
 		RotateBy = rotateBy,
 		RepeatCopies = repeatCopies,
-		MirrorCopy = mirrorCopy,
 		SnapSelection = snapSelection,
 		ShowDimensions = showDimensions,
 		AnchorSelection = anchorSelection,

@@ -77,8 +77,8 @@ local Keymap = {}
 function Keymap.Describe(): { { string } }
 	return {
 		{
-			"Ctrl+1 … Ctrl+6, Ctrl+0 or 1 … 6, 0",
-			"Pick a tool: Basic (walls, floors, blocks, pillars, arches), Stairs, Additive (doorways, windows, archways, face extend), Structures, Railings, Stamp, Measure (0). Press it again to turn it off",
+			"Ctrl+1 … Ctrl+6, Ctrl+0",
+			"Pick a tool: Basic (walls, floors, blocks, pillars, arches), Stairs, Additive (doorways, windows, archways, face extend), Structures, Railings, Brush, Measure (0). Press it again to turn it off",
 		},
 		{
 			"Alt+1 … Alt+0",
@@ -156,12 +156,6 @@ function Keymap.Resolve(keyName: string, shift: boolean, ctrl: boolean, alt: boo
 		local option = OPTION_KEYS[keyName]
 
 		return if option then `Option:{option}` else nil
-	end
-
-	local tool = TOOL_KEYS[keyName]
-
-	if tool then
-		return `Tool:{tool}`
 	end
 
 	return PLAIN_KEYS[keyName]

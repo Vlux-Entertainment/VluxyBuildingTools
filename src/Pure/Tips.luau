@@ -18,7 +18,7 @@ local Tips = {}
 Tips.Entries = {
 	-- Tabs
 	Build = { Text = "Pick a building tool and set its numbers.", Key = "Tab" },
-	Arrange = { Text = "Copy, mirror, flip, rotate and snap what you have selected.", Key = "Tab" },
+	Arrange = { Text = "Copy, flip, rotate and snap what you have selected.", Key = "Tab" },
 	Display = { Text = "Pastel colors, the surface grid and hidden parts.", Key = "Tab" },
 	Settings = { Text = "Snap size, hotkeys and resetting the panel.", Key = "Tab" },
 	Hotkeys = { Text = "Every hotkey, explained.", Key = "F1" },
@@ -104,7 +104,6 @@ Tips.Entries = {
 	["−90° Y"] = { Text = "Rotate the selection -90 degrees about Y.", Key = "O, then Alt+Y" },
 	["−90° Z"] = { Text = "Rotate the selection -90 degrees about Z.", Key = "O, then Alt+Z" },
 	["Make repeated copies"] = { Text = "Copy the selection several times, stepping by the X, Y and Z spacing." },
-	["Make mirror copy"] = { Text = "Copy the selection, mirrored across world 0 on the chosen axis." },
 	["Snap selection"] = { Text = "Move the selection onto the snap grid." },
 	["Show dimensions"] = { Text = "Show the size of the selection in the viewport." },
 	["Anchor selection"] = { Text = "Anchor every selected Part." },
@@ -129,7 +128,14 @@ Tips.Entries = {
 	WindowWidth = { Text = "How wide the window is." },
 	WindowHeight = { Text = "How tall the window is." },
 	WindowSill = { Text = "How far the bottom of the window is above the bottom of the wall." },
-	Yaw = { Text = "How much to turn stamped copies.", Key = "R" },
+	Yaw = { Text = "How much to turn painted copies.", Key = "R" },
+	BrushRadius = { Text = "How far from the cursor the brush scatters copies, in studs." },
+	BrushSizeMin = { Text = "The smallest a painted copy can be, as a multiple of the original size." },
+	BrushSizeMax = { Text = "The biggest a painted copy can be, as a multiple of the original size." },
+	BrushSpacing = { Text = "How far the cursor travels before the brush adds the next copy, in studs." },
+	CameraLightRange = { Text = "How far the light on the editor camera reaches." },
+	CameraLightBrightness = { Text = "How bright the light on the editor camera is." },
+
 	Run = { Text = "Roughly how deep each step is." },
 	Landing = { Text = "A flat landing added at the top." },
 	Floor = { Text = "How thick floors and ceilings are." },

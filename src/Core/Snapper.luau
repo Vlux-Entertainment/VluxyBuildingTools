@@ -136,6 +136,139 @@ function Snapper.Find(point: Vector3, radius: number): (Vector3, boolean, BasePa
 end
 
 --[=[
+	Finds the nearest of the eight corners of any part within the radius, in all three dimensions.
+	The Measure tool uses it so a distance starts and ends exactly on a vertex.
+
+	@param point Vector3 -- where the cursor hit
+	@param radius number
+	@return Vector3 -- the corner, or the same point when none is near
+	@return boolean -- whether it moved to a corner
+]=]
+function Snapper.Vertex(point: Vector3, radius: number): (Vector3, boolean)
+	local params = OverlapParams.new()
+
+	params.MaxParts = MAX_PARTS
+
+	local best: Vector3? = nil
+	local bestDistance = radius
+
+	for _, part in workspace:GetPartBoundsInRadius(point, radius, params) do
+		if not part:IsA("Terrain") then
+			local half = part.Size / 2
+
+			for _, x in { -1, 1 } do
+				for _, y in { -1, 1 } do
+					for _, z in { -1, 1 } do
+						local corner = part.CFrame:PointToWorldSpace(Vector3.new(half.X * x, half.Y * y, half.Z * z))
+						local distance = (corner - point).Magnitude
+
+						if distance < bestDistance then
+							bestDistance, best = distance, corner
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if best then
+		return best, true
+	end
+
+	return point, false
+end
+
+--[=[
+	Finds the corner of a nearby part that sits closest to the mouse on the screen, within a few
+	pixels. Unlike a distance in studs, this only grabs a corner when the cursor is really on it.
+
+	@param point Vector3 -- where the cursor hit
+	@param mouse Vector2 -- the mouse in screen coordinates
+	@param pixels number -- how close on screen counts
+	@return Vector3 -- the corner, or the same point when none is near
+	@return boolean -- whether it moved to a corner
+]=]
+function Snapper.VertexNear(point: Vector3, mouse: Vector2, pixels: number): (Vector3, boolean)
+	local camera = workspace.CurrentCamera
+
+	if not camera then
+		return point, false
+	end
+
+	local params = OverlapParams.new()
+
+	params.MaxParts = MAX_PARTS
+
+	local best: Vector3? = nil
+	local bestDistance = pixels
+
+	for _, part in workspace:GetPartBoundsInRadius(point, 30, params) do
+		if not part:IsA("Terrain") then
+			local half = part.Size / 2
+
+			for _, x in { -1, 1 } do
+				for _, y in { -1, 1 } do
+					for _, z in { -1, 1 } do
+						local corner = part.CFrame:PointToWorldSpace(Vector3.new(half.X * x, half.Y * y, half.Z * z))
+						local screen = camera:WorldToScreenPoint(corner)
+
+						if screen.Z > 0 then
+							local distance = (Vector2.new(screen.X, screen.Y) - mouse).Magnitude
+
+							if distance < bestDistance then
+								bestDistance, best = distance, corner
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if best then
+		return best, true
+	end
+
+	return point, false
+end
+
+--[=[
+	Moves a point on the top of a thin part, such as a wall, onto its centre line, so a wall built
+	on top of a wall sits on it instead of beside it. Along the part it snaps to its ends, else to
+	the grid measured from one end.
+
+	@param part BasePart
+	@param point Vector3 -- where the cursor hit the top
+	@param grid number
+	@param endReach number -- how close to an end counts as the end
+	@return Vector3? -- the point on the centre line, or nil when the part is not thin
+]=]
+function Snapper.TopCenter(part: BasePart, point: Vector3, grid: number, endReach: number): Vector3?
+	local size = part.Size
+	local thinIsX = size.X <= size.Z
+	local thin, long = if thinIsX then size.X else size.Z, if thinIsX then size.Z else size.X
+
+	if thin >= long * 0.5 or part.CFrame.UpVector.Y < 0.98 then
+		return nil
+	end
+
+	local localPoint = part.CFrame:PointToObjectSpace(point)
+	local along = if thinIsX then localPoint.Z else localPoint.X
+	local half = long / 2
+
+	if half - math.abs(along) <= endReach then
+		along = if along >= 0 then half else -half
+	elseif grid > 0 then
+		along = math.clamp(math.round((along + half) / grid) * grid - half, -half, half)
+	end
+
+	local top = size.Y / 2
+	local result = if thinIsX then Vector3.new(0, top, along) else Vector3.new(along, top, 0)
+
+	return part.CFrame:PointToWorldSpace(result)
+end
+
+--[=[
 	Finds a doorway made by the Additive tools near the point: a rectangular or arched opening
 	that reaches the floor. The result is the middle of the opening on the face of the wall the point is
 	on, with the direction pointing away from that face, so a corridor can start there.
