@@ -124,6 +124,7 @@ local function unityColor(part: BasePart): Color3
 	local longest = math.max(size.X, size.Y, size.Z)
 
 	return if longest >= thinnest * 2 then GREY else ORANGE
+end
 
 --[[
 	@param color Color3
