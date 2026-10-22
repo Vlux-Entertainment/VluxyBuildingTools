@@ -110,6 +110,7 @@ export type Settings = {
 	TooltipDelay: number,
 	PreviewsFollowUi: boolean,
 	HintBar: boolean,
+	PropSpin: boolean,
 	Axis: string,
 }
 
@@ -227,6 +228,7 @@ function Settings.Defaults(): Settings
 		TooltipDelay = 0.35,
 		PreviewsFollowUi = true,
 		HintBar = true,
+		PropSpin = true,
 		Axis = "X",
 	}
 end

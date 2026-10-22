@@ -68,6 +68,7 @@ return function(ui: Ui): { Instance }
 		Controls.Card(ui, "VIEWPORT", {
 			Controls.Switch(ui, { Title = "Previews use the UI color", Key = "PreviewsFollowUi" }),
 			Controls.Switch(ui, { Title = "Hint bar", Key = "HintBar" }),
+			Controls.Switch(ui, { Title = "Prop rotation", Key = "PropSpin" }),
 		}),
 		Controls.Card(ui, "SOUND", {
 			Controls.Switch(ui, {

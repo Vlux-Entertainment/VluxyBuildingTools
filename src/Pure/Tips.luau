@@ -37,6 +37,7 @@ Tips.Entries = {
 	Tooltips = { Text = "Show these descriptions when you hover." },
 	TooltipDelay = { Text = "How long to hover before a description shows." },
 	["Previews use the UI color"] = { Text = "Build previews and folder outlines take the UI color, not orange." },
+	["Prop rotation"] = { Text = "The hovered or picked prop picture slowly turns." },
 	["Hint bar"] = { Text = "Show the active tool's keys at the bottom of the 3D view." },
 	["WORKING FOLDER"] = { Text = "The plugin only edits parts inside this folder." },
 	TOOLS = { Text = "Pick tools and their options without the mouse." },
@@ -46,7 +47,7 @@ Tips.Entries = {
 	PANEL = { Text = "Move around this panel; Studio keeps its camera keys." },
 	INTERFACE = { Text = "How the panel looks and moves." },
 	["Zebra rows"] = { Text = "Shade every other row so values line up with their labels." },
-	["UI animations"] = { Text = "Buttons pop when clicked and prop pictures spin." },
+	["UI animations"] = { Text = "Buttons pop when clicked or picked." },
 
 	-- Working folder
 	["Choose working folder"] = { Text = "Click a Folder in the viewport or Explorer to work in." },

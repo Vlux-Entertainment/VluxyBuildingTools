@@ -174,7 +174,7 @@ return function(ui: Ui): { Instance }
 	--[[ The hovered prop and the picked one turn slowly; any other goes back to its starting view. ]]
 	vide.cleanup(RunService.Heartbeat:Connect(function(dt: number)
 		local chosen = current()
-		local animate = Kit.Animate()
+		local animate = store.Values.PropSpin
 
 		for id, spin in spins do
 			if animate and (id == hovered or id == chosen) then
