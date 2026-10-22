@@ -11,6 +11,9 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
+local PartRole = require("../Pure/PartRole")
+local Settings = require("../Pure/Settings")
+local ShapeClass = require("../Pure/ShapeClass")
 local Trove = require("../Packages/Trove")
 
 export type Colors = {
@@ -53,81 +56,33 @@ local PURPLE = Color3.fromRGB(150, 110, 205)
 local Colors = {}
 
 --[=[
-	The color themes that can be picked.
+	The color themes that can be picked; the list itself lives in `Settings.Themes`.
 
 	@prop Themes { string }
 	@within Colors
 ]=]
-Colors.Themes = { "Pastel", "Unity" }
-
---[[
-	@param name string -- a part's name
-	@param words { string }
-	@return boolean -- whether the lowercase name contains any of the words
-]]
-local function named(name: string, words: { string }): boolean
-	local lower = string.lower(name)
-
-	for _, word in words do
-		if string.find(lower, word, 1, true) then
-			return true
-		end
-	end
-
-	return false
-end
+Colors.Themes = Settings.Themes
 
 --[[
 	@param part BasePart
-	@return Color3 -- orange for a part of 1 cubic stud or less or an even-sized one; dark grey for a part taller than it is wide, or much longer in X than Z or the reverse, or one that cannot be judged
+	@return Color3 -- the Unity theme color. Walls (everything Basic and Additive make but floors) are grey and floors, ceilings and stairs orange, whatever their shape (see `PartRole`); any other part is grey unless it is a cube or rectangular block, which is orange (see `ShapeClass`). See-through parts are purple before this is asked.
 ]]
-local function shapeColor(part: BasePart): Color3
-	local size = part.Size
-	local volume = size.X * size.Y * size.Z
+local function unityColor(part: BasePart): Color3
+	local role = PartRole.Of(part.Name)
 
-	if volume ~= volume or volume == math.huge or math.min(size.X, size.Y, size.Z) <= 0 then
+	if role == "Wall" then
 		return GREY
-	end
-
-	if volume <= 1 then
+	elseif role == "Floor" or role == "Ceiling" or role == "Stairs" then
 		return ORANGE
 	end
 
-	local across = math.max(size.X, size.Z)
+	local size = part.Size
 
-	if size.Y > across * 1.25 or across >= math.min(size.X, size.Z) * 2 then
-		return GREY
+	if ShapeClass.Of(size.X, size.Y, size.Z) == "Block" then
+		return ORANGE
 	end
 
-	return ORANGE
-end
-
---[[
-	@param part BasePart
-	@return Color3 -- the Unity theme color: shape decides it, a prop's accent parts take the opposite color, ceilings and roofs are lighter grey, vents have their own colors
-]]
-local function unityColor(part: BasePart): Color3
-	local name = part.Name
-
-	if named(name, { "prop" }) then
-		local base = shapeColor(part)
-
-		if named(name, { "propaccent" }) then
-			return if base == ORANGE then GREY else ORANGE
-		end
-
-		return base
-	elseif named(name, { "ceiling", "roof", "arched" }) then
-		return GREY_LIGHT
-	elseif named(name, { "ventwall" }) then
-		return GREY
-	elseif named(name, { "ventceiling" }) then
-		return GREY_LIGHT
-	elseif named(name, { "vent" }) then
-		return if named(name, { "floor", "duct" }) then ORANGE_DARK else ORANGE
-	end
-
-	return shapeColor(part)
+	return GREY
 end
 
 --[[

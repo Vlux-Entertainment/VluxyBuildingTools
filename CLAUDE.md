@@ -44,13 +44,15 @@ Usage runs out fast, so keep it low. This section loads every turn; keep it shor
 88678433007729 for live editing; `plugin.project.json` builds the installable plugin). Wally packages:
 Signal, Trove, Dash, Promise, vide. Tools are pinned in `rokit.toml`; run `rokit install`.
 
-Only the skeleton exists: the entry script adds a toolbar button and nothing else.
+The map of the code, the tool contract and a "where to look when it breaks" table are in
+`docs/ARCHITECTURE.md`; read it before changing `src/`. Settings are written only through
+`State/Store`; services are created only in `App/App.luau`; the panel (`Ui/`, vide) holds no logic.
 
 ## Commands
 
 | Task | Command |
 |---|---|
-| All gates (format, lint, Lune tests, both Rojo builds) | `npm run verify` (`--fix` reformats first) |
+| All gates (format, lint, Lune tests, both Rojo builds, strict types) | `npm run verify` (`--fix` reformats first) |
 | Install packages, sourcemap and package types | `npm run packages:refresh` |
 | Tests alone | `lune run tests/runner [pattern]` |
 | Build the plugin file | `npm run plugin:build` (writes `VluxyBuildingTools.rbxm`; `rojo build --plugin` also installs it) |

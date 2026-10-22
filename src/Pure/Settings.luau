@@ -206,13 +206,6 @@ function Settings.Defaults(): Settings
 end
 
 --[=[
-	Copies every saved value whose type matches the default's type over the defaults. Unknown keys
-	and values of the wrong type are dropped, so an old or damaged save cannot break the plugin.
-
-	@param saved any -- whatever the plugin settings store returned
-	@return Settings
-]=]
---[=[
 	The values a tool field can override, as { field, standard, override flag }.
 
 	@prop Standards { { string } }
@@ -224,6 +217,107 @@ Settings.Standards = {
 	{ "DoorWidth", "StandardDoorWidth", "DoorWidthOverride" },
 	{ "DoorHeight", "StandardDoorHeight", "DoorHeightOverride" },
 }
+
+--[=[
+	The color themes, in the order the panel shows them.
+
+	@prop Themes { string }
+	@within Settings
+]=]
+Settings.Themes = { "Pastel", "Unity" }
+
+--[=[
+	The settings everyone working in one folder shares, as { Key, Name }. They are kept in
+	attributes on the working folder, so the whole team sees the same viewport.
+
+	@prop Shared { { Key: string, Name: string } }
+	@within Settings
+]=]
+Settings.Shared = {
+	{ Key = "ColorTheme", Name = "theme" },
+	{ Key = "GhostTransparency", Name = "ghost transparency" },
+	{ Key = "AutoPastel", Name = "pastel" },
+	{ Key = "AutoGrid", Name = "grid" },
+}
+
+--[=[
+	@param value any
+	@return string? -- the theme the value names, ignoring case, or nil when it names none
+]=]
+function Settings.ThemeName(value: any): string?
+	if type(value) == "string" then
+		for _, name in Settings.Themes do
+			if string.lower(name) == string.lower(value) then
+				return name
+			end
+		end
+	end
+
+	return nil
+end
+
+--[=[
+	@param key string -- a setting
+	@return string? -- the override flag that remembers a tool field differs from its standard, if the key has one
+]=]
+function Settings.OverrideFlag(key: string): string?
+	for _, row in Settings.Standards do
+		if row[1] == key then
+			return row[3]
+		end
+	end
+
+	return nil
+end
+
+--[=[
+	Writes one value the way the panel does: a tool field that has a standard remembers whether it
+	now differs from it, and a changed standard flows into every field that is not overridden.
+
+	@param settings Settings
+	@param key string
+	@param value any
+]=]
+function Settings.Apply(settings: Settings, key: string, value: any)
+	local target = settings :: any
+	local flag = Settings.OverrideFlag(key)
+
+	target[key] = value
+
+	if flag then
+		target[flag] = value ~= target["Standard" .. key]
+	elseif string.sub(key, 1, 8) == "Standard" then
+		Settings.Sync(settings)
+	end
+end
+
+--[=[
+	@param settings Settings
+	@param read (key: string) -> any -- the folder's stored value of a shared setting
+	@return { string } -- the names of the shared settings the folder holds a different value for
+]=]
+function Settings.Differences(settings: Settings, read: (key: string) -> any): { string }
+	local names: { string } = {}
+
+	for _, entry in Settings.Shared do
+		local theirs = read(entry.Key)
+		local mine = (settings :: any)[entry.Key]
+
+		if entry.Key == "ColorTheme" then
+			theirs = Settings.ThemeName(theirs) or theirs
+		end
+
+		if theirs ~= nil and type(theirs) == type(mine) then
+			local same = if type(mine) == "number" then math.abs((theirs :: number) - mine) < 1e-6 else theirs == mine
+
+			if not same then
+				table.insert(names, entry.Name)
+			end
+		end
+	end
+
+	return names
+end
 
 --[=[
 	Gives every field that is not overridden the standard value, and clears an override that now
@@ -247,6 +341,13 @@ function Settings.Sync(settings: Settings)
 	end
 end
 
+--[=[
+	Copies every saved value whose type matches the default's type over the defaults. Unknown keys
+	and values of the wrong type are dropped, so an old or damaged save cannot break the plugin.
+
+	@param saved any -- whatever the plugin settings store returned
+	@return Settings
+]=]
 function Settings.Load(saved: any): Settings
 	local settings = Settings.Defaults()
 

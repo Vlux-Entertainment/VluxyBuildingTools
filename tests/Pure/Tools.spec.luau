@@ -30,6 +30,14 @@ return {
 		end
 	end,
 
+	["every tool has an instruction"] = function(expect)
+		for _, tool in Tools.List do
+			expect.truthy(Tools.Instructions[tool.Id], tool.Id)
+		end
+
+		expect.equal(Tools.Instruction(nil), "Choose a drawing tool first.")
+	end,
+
 	["tool ids are unique and findable"] = function(expect)
 		local seen: { [string]: boolean } = {}
 

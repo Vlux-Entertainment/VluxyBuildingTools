@@ -1404,4 +1404,24 @@ function PropData.InCategory(category: string): { Prop }
 	return out
 end
 
+--[=[
+	The sections of the Props tab: All, then every category.
+
+	@prop Sections { Category }
+	@within PropData
+]=]
+PropData.Sections = { { Id = "All", Label = "All" } :: Category }
+
+for _, category in PropData.Categories do
+	table.insert(PropData.Sections, category)
+end
+
+--[=[
+	@param section string -- `All` or a category id
+	@return { Prop } -- the props the Props tab shows for that section
+]=]
+function PropData.Shown(section: string): { Prop }
+	return if section == "All" then table.clone(PropData.Props) else PropData.InCategory(section)
+end
+
 return PropData

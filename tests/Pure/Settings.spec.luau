@@ -27,6 +27,46 @@ return {
 		expect.falsy((settings :: any).Unknown)
 	end,
 
+	["a tool field that differs from its standard is marked overridden"] = function(expect)
+		local settings = Settings.Defaults()
+
+		Settings.Apply(settings, "Height", 20)
+		expect.equal(settings.Height, 20)
+		expect.equal(settings.HeightOverride, true)
+
+		Settings.Apply(settings, "Height", settings.StandardHeight)
+		expect.equal(settings.HeightOverride, false)
+	end,
+
+	["a new standard flows into fields that are not overridden"] = function(expect)
+		local settings = Settings.Defaults()
+
+		Settings.Apply(settings, "Thickness", 3)
+		Settings.Apply(settings, "StandardHeight", 16)
+		Settings.Apply(settings, "StandardThickness", 2)
+
+		expect.equal(settings.Height, 16)
+		expect.equal(settings.Thickness, 3)
+	end,
+
+	["shared differences name only settings the folder holds a different value for"] = function(expect)
+		local settings = Settings.Defaults()
+		local folder: { [string]: any } = { ColorTheme = "unity", GhostTransparency = 0.82, AutoGrid = "yes" }
+		local names = Settings.Differences(settings, function(key)
+			return folder[key]
+		end)
+
+		expect.equal(#names, 1)
+		expect.equal(names[1], "theme")
+	end,
+
+	["theme names match ignoring case"] = function(expect)
+		expect.equal(Settings.ThemeName("UNITY"), "Unity")
+		expect.equal(Settings.ThemeName("Pastel"), "Pastel")
+		expect.falsy(Settings.ThemeName("Neon"))
+		expect.falsy(Settings.ThemeName(5))
+	end,
+
 	["snap rounds to the grid and never below 0.05"] = function(expect)
 		expect.equal(Snap.Round(7.4, 5), 5)
 		expect.equal(Snap.Round(7.6, 5), 10)
