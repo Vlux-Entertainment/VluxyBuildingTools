@@ -21,6 +21,20 @@ decided by one person. Each working folder has one **admin**.
 - The admin can click someone's face and pick **Give admin**. Anyone else can click a face and pick
   **Request admin**; the admin then sees the request on the card and picks **Give** or **Ignore**.
   A request runs out after a minute.
+- Someone who has done nothing in Studio for more than 15 minutes is **idle**: their face is faded
+  and hovering it adds "idle 17 min". Idle never moves admin by itself, but when the admin is idle,
+  anyone else in the folder can click the admin's face and pick **Take over admin** to become admin
+  at once.
+
+### How idle is detected
+
+Your plugin counts any of these as activity: a key or mouse button press, moving the mouse or turning
+the mouse wheel, moving the camera, typing in a script, changing the selection, undo, redo, and any
+finished edit. It writes the time of your last activity onto the folder as
+`VluxyBT_Active_<userId>`, at most once a minute and only after new activity, so idle times are about
+a minute coarse. The times come from each person's computer clock, so a clock that is far off makes
+someone look more or less idle than they are. Someone using an older plugin that writes no activity
+counts from when they joined.
 
 Only the admin can change these. For everyone else the controls are greyed, hovering them names the
 admin, and their hotkeys and toolbar buttons only say so in the status line:
@@ -37,7 +51,7 @@ Everyone keeps every build tool, Arrange, Props, the camera light, the ghost vie
 Settings tab and hint bar.
 
 Who is in a folder is kept in attributes on the folder: `VluxyBT_Here_<userId>` (the last
-heartbeat, every 15 seconds), `VluxyBT_Joined_<userId>`, `VluxyBT_Admin` and
+heartbeat, every 15 seconds), `VluxyBT_Joined_<userId>`, `VluxyBT_Active_<userId>`, `VluxyBT_Admin` and
 `VluxyBT_AdminRequest`. They are cleared when you leave and are not undo steps.
 
 ## Shared through the folder

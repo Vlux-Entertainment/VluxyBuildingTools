@@ -22,8 +22,18 @@ type Source<T> = vide.Source<T>
 	.Avatar string -- a head shot image, or "" until it loads
 	.Admin boolean
 	.Me boolean
+	.Idle boolean -- whether they have done nothing for longer than `AdminRules.IDLE_AFTER`
+	.IdleMinutes number -- whole minutes since their last activity
 ]=]
-export type Person = { UserId: number, Name: string, Avatar: string, Admin: boolean, Me: boolean }
+export type Person = {
+	UserId: number,
+	Name: string,
+	Avatar: string,
+	Admin: boolean,
+	Me: boolean,
+	Idle: boolean,
+	IdleMinutes: number,
+}
 
 export type AppState = {
 	--[=[ The active tool mode, such as `Room`, or nil when no tool is on. ]=]

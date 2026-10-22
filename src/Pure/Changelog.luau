@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.3.0",
+		Date = "2026-10-22",
+		Changes = {
+			"Someone idle for over 15 minutes shows a faded face and their idle time.",
+			"Click an idle admin's face to take over admin at once.",
+		},
+	},
+	{
 		Version = "1.2.0",
 		Date = "2026-10-22",
 		Changes = {

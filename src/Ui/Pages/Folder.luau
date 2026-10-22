@@ -42,6 +42,7 @@ local AVATAR = 27
 local AVATAR_GAP = 5
 local CHANGE_WIDTH = 30
 local GAP = 6
+local IDLE_FADE = 0.5
 
 --[[ How far above the folder row the avatars start: the card's top (34 px up) plus about a third of an avatar, which overhangs the card's top edge on purpose. ]]
 local TITLE_LIFT = 42
@@ -116,16 +117,20 @@ end
 	@param ui Ui
 	@param person () -> Person
 	@param index number
-	@return ImageButton -- a round head shot; the admin's has a ring, and clicking offers admin
+	@return ImageButton -- a round head shot; the admin's has a ring, an idle person's is faded, and clicking offers admin
 ]]
 local function avatar(ui: Ui, person: () -> Person, index: number): ImageButton
 	local app = ui.App
 
-	--[[ Offers to give admin to this person, or to ask for it, at the mouse. ]]
+	--[[ Offers to take admin from an idle admin, give admin to this person, or ask for it, at the mouse. ]]
 	local function offer(at: Vector2)
 		local who = person()
 
-		if app.State.IsAdmin() and not who.Me then
+		if who.Admin and not who.Me and Admin.CanTakeOver(app.Admin) then
+			ui.Popups.Menu(at, `Take over admin (idle {who.IdleMinutes} min)`, function()
+				Actions.TakeOverAdmin(app)
+			end)
+		elseif app.State.IsAdmin() and not who.Me then
 			ui.Popups.Menu(at, `Give admin to {who.Name}`, function()
 				Actions.GiveAdmin(app, who.UserId)
 			end)
@@ -145,6 +150,9 @@ local function avatar(ui: Ui, person: () -> Person, index: number): ImageButton
 		LayoutOrder = index,
 		Image = function()
 			return person().Avatar
+		end,
+		ImageTransparency = function()
+			return if person().Idle then IDLE_FADE else 0
 		end,
 		AutoButtonColor = true,
 		Kit.Corner(AVATAR // 2),
@@ -166,13 +174,18 @@ local function avatar(ui: Ui, person: () -> Person, index: number): ImageButton
 				return person().Avatar == ""
 			end,
 			TextColor3 = Theme.Text,
+			TextTransparency = function()
+				return if person().Idle then IDLE_FADE else 0
+			end,
 			Font = Enum.Font.GothamBold,
 			TextSize = 11,
 		}),
 		ui.Popups.Tip(function(): Tips.Tip?
 			local who = person()
+			local idle = if who.Idle then `idle {who.IdleMinutes} min` else nil
+			local notes = if who.Admin and idle then `admin, {idle}` elseif who.Admin then "admin" else idle
 
-			return { Text = if who.Admin then `{who.Name} (admin)` else who.Name }
+			return { Text = if notes then `{who.Name} ({notes})` else who.Name }
 		end),
 		InputBegan = function(input: InputObject)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
