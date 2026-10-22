@@ -707,10 +707,11 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		@param model Model -- the vent that was just built
 		@param a Vector3 -- one end of the duct, on its middle line
 		@param b Vector3 -- the other end
+		@param skip Instance? -- the vent this one continues, left uncut
 
 		Records the vent's two open ends so later vents and covers can find them, then cuts the duct and its openings out of every other part the vent passes through.
 	]]
-	local function finishVent(model: Model, a: Vector3, b: Vector3)
+	local function finishVent(model: Model, a: Vector3, b: Vector3, skip: Instance?)
 		if (b - a).Magnitude < 0.05 then
 			return
 		end
@@ -754,6 +755,31 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		for part in targets do
 			if not Joints.Carve(part, cutters) then
+				failed += 1
+			end
+		end
+
+		local joins = Builders.VentJoinCutters(settings, a, b)
+		local others: { [BasePart]: boolean } = {}
+
+		for _, cutter in joins do
+			for _, part in workspace:GetPartBoundsInBox(cutter.cf, cutter.size, params) do
+				local owner = part.Parent
+
+				if
+					owner
+					and owner ~= model
+					and owner ~= skip
+					and owner:IsA("Model")
+					and CollectionService:HasTag(owner, VENT_TAG)
+				then
+					others[part] = true
+				end
+			end
+		end
+
+		for part in others do
+			if not Joints.Carve(part, joins) then
 				failed += 1
 			end
 		end
@@ -889,7 +915,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 
 		local size = settings.VentSize
-		local endPoint = Snapper.VentEnd(hit.Position, math.max(size, 3))
+		local endPoint = Snapper.VentConnect(hit.Position, size * 1.1, math.max(0.5, settings.FineGrid))
 
 		if endPoint then
 			snapMark = endPoint
@@ -2892,7 +2918,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 						end
 
 						if (active == "Vent" or active == "VentRamp" or active == "VentShaft") and ends and model then
-							finishVent(model, ends[1], ends[2])
+							finishVent(model, ends[1], ends[2], previousModel)
 						end
 
 						if active == "Floor" and settings.FloorTransparency > 0 then

@@ -213,6 +213,51 @@ function Snapper.VentEnd(point: Vector3, radius: number): (Vector3?, Vector3?)
 end
 
 --[=[
+	Finds a connection point on a vent built by this plugin: either open end, or any spot along
+	its middle line, snapped to the step. A new vent or a shaft can start from any of them.
+
+	@param point Vector3 -- where the cursor hit
+	@param radius number -- how far from the middle line still counts
+	@param step number -- the spacing of the points along a vent
+	@return Vector3? -- the point on the middle line
+	@return Vector3? -- the way out of the vent when the point is an open end, else nil
+]=]
+function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vector3?, Vector3?)
+	local best: Vector3? = nil
+	local bestDirection: Vector3? = nil
+	local bestDistance = radius
+
+	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
+		local a = model:GetAttribute("VluxyBT_VentStart")
+		local b = model:GetAttribute("VluxyBT_VentEnd")
+
+		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 then
+			local d = b - a
+			local length = d.Magnitude
+			local along = math.clamp((point - a):Dot(d) / length, 0, length)
+			local onLine = a + d.Unit * along
+			local distance = (onLine - point).Magnitude
+
+			if distance < bestDistance then
+				bestDistance = distance
+
+				if along < step * 0.75 then
+					best, bestDirection = a, model:GetAttribute("VluxyBT_VentStartDir") :: Vector3
+				elseif length - along < step * 0.75 then
+					best, bestDirection = b, model:GetAttribute("VluxyBT_VentEndDir") :: Vector3
+				else
+					local snapped = math.clamp(math.round(along / step) * step, 0, length)
+
+					best, bestDirection = a + d.Unit * snapped, nil
+				end
+			end
+		end
+	end
+
+	return best, bestDirection
+end
+
+--[=[
 	Finds the corner of a nearby part that sits closest to the mouse on the screen, within a few
 	pixels. Unlike a distance in studs, this only grabs a corner when the cursor is really on it.
 

@@ -1546,6 +1546,33 @@ function Builders.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 	local length = (b - a).Magnitude
 	local inner = math.max(0.05, w - 2 * t)
 	local reach = w / 2 - t / 2
+	local dirN = (b - a).Unit
+
+	if math.abs(dirN.Y) < 0.99 then
+		local flat = Vector3.new(dirN.X, 0, dirN.Z).Unit
+		local across = flat:Cross(Vector3.yAxis).Unit
+		local tilt = CFrame.lookAt(frame.Position, frame.Position + dirN)
+		local gap = w / 2 - t
+
+		add(out, Vector3.new(w, t, length), tilt * CFrame.new(0, -reach, 0), "VentFloor")
+		add(out, Vector3.new(w, t, length), tilt * CFrame.new(0, reach, 0), "VentCeiling")
+
+		for _, side in { -1, 1 } do
+			local lateral = across * (side * reach)
+
+			quadPrism(
+				out,
+				a + lateral + Vector3.new(0, -gap, 0),
+				b + lateral + Vector3.new(0, -gap, 0),
+				b + lateral + Vector3.new(0, gap, 0),
+				a + lateral + Vector3.new(0, gap, 0),
+				t,
+				"VentWall"
+			)
+		end
+
+		return out
+	end
 
 	add(out, Vector3.new(w, t, length), frame * CFrame.new(0, -reach, 0), "VentFloor")
 	add(out, Vector3.new(w, t, length), frame * CFrame.new(0, reach, 0), "VentCeiling")
@@ -1582,6 +1609,39 @@ function Builders.VentCutters(settings: Settings, a: Vector3, b: Vector3): { Cut
 		table.insert(cutters, {
 			cf = frame * CFrame.new(0, 0, side * length / 2),
 			size = Vector3.new(inner, inner, 2.5),
+			cylinder = false,
+		})
+	end
+
+	return cutters
+end
+
+--[=[
+	The openings that let a vent join the side of another vent: a box at each end reaching back
+	along the duct far enough to cut through the wall it ends in.
+
+	@param settings Settings
+	@param a Vector3
+	@param b Vector3
+	@return { Cutter }
+]=]
+function Builders.VentJoinCutters(settings: Settings, a: Vector3, b: Vector3): { Cutter }
+	local frame = ductFrame(a, b)
+	local cutters: { Cutter } = {}
+
+	if not frame then
+		return cutters
+	end
+
+	local w, t = settings.VentSize, settings.VentThickness
+	local length = (b - a).Magnitude
+	local inner = math.max(0.05, w - 2 * t)
+	local reach = math.min(length, w / 2 + 0.3)
+
+	for _, side in { -1, 1 } do
+		table.insert(cutters, {
+			cf = frame * CFrame.new(0, 0, side * (length / 2 - reach / 2 + 0.05)),
+			size = Vector3.new(inner, inner, reach),
 			cylinder = false,
 		})
 	end
