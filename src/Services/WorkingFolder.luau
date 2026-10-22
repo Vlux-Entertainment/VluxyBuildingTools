@@ -48,6 +48,8 @@ export type WorkingFolder = {
 	_seen: { [string]: any },
 	_watch: RBXScriptConnection?,
 	_boxClock: number,
+	--[=[ True while taking a new folder's settings, so they are not written onto the old folder. ]=]
+	_adopting: boolean,
 }
 
 local MAP_TAG = "VluxyBT_Map"
@@ -316,12 +318,13 @@ function WorkingFolder.new(deps: Deps, trove: Trove.Trove): WorkingFolder
 		_seen = {},
 		_watch = nil,
 		_boxClock = 0,
+		_adopting = false,
 	}
 
 	Store.OnSaved(deps.Store, function()
 		local folder = deps.State.Folder()
 
-		if folder and folder:IsDescendantOf(workspace) then
+		if folder and folder:IsDescendantOf(workspace) and not self._adopting then
 			publish(self, folder)
 		end
 	end)
@@ -472,6 +475,7 @@ function WorkingFolder.Resolve(self: WorkingFolder, choice: string)
 	end
 
 	if choice == "Use" then
+		self._adopting = true
 		Store.Mutate(store, function(values)
 			for _, entry in Settings.Shared do
 				local theirs = pending.Folder:GetAttribute(SHARED_PREFIX .. entry.Key)
@@ -485,6 +489,7 @@ function WorkingFolder.Resolve(self: WorkingFolder, choice: string)
 				end
 			end
 		end)
+		self._adopting = false
 		setFolder(self, pending.Folder)
 	elseif choice == "Overwrite" then
 		setFolder(self, pending.Folder)

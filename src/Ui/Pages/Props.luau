@@ -94,6 +94,14 @@ return function(ui: Ui): { Instance }
 	local collapsed = vide.source(false)
 	local pictures = vide.source(0)
 
+	--[[ Showing another section, by click or by wheel, shows all of it again. ]]
+	vide.effect(function()
+		state.PropSection()
+		vide.untrack(function()
+			collapsed(false)
+		end)
+	end)
+
 	local function current(): string?
 		return if state.Mode() == "Prop" then state.Prop() else nil
 	end

@@ -100,7 +100,7 @@ function Extrude.Start(ctx: Context): ModalTypes.Modal?
 		Numeric = numeric,
 		Step = function(): boolean
 			if not part:IsDescendantOf(workspace) then
-				modal.Cancel()
+				clear()
 
 				return false
 			end

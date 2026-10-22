@@ -107,8 +107,8 @@ function Host.Cancel(self: Host)
 end
 
 --[=[
-	Undoes the action and drops an armed key, but keeps the mouse: for when something else is about
-	to take over.
+	Undoes the action but keeps the mouse: for when something else is about to take over. An armed
+	flip or turn stays armed.
 
 	@param self Host
 ]=]
@@ -116,7 +116,6 @@ function Host.Halt(self: Host)
 	local modal = self.Active
 
 	self.Active = nil
-	self.Armed = nil
 
 	if modal then
 		modal.Cancel()

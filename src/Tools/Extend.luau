@@ -18,6 +18,7 @@ local Builders = require("../Core/Builders")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local Overlay = require("../Core/Overlay")
+local Tools = require("../Pure/Tools")
 local Trove = require("../Packages/Trove")
 local Types = require("./Types")
 
@@ -182,6 +183,11 @@ local tool: Types.Tool = {
 		else
 			ctx.Say("Click an unlocked rectangular block, then drag one of its green handles.")
 		end
+	end,
+	Confirm = function(ctx: Context): boolean
+		ctx.Say(Tools.Instruction("Extend"))
+
+		return true
 	end,
 	Busy = function(state: ExtendState): boolean
 		return state.Drag ~= nil

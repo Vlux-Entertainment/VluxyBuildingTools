@@ -121,6 +121,21 @@ function Display.new(deps: Deps, trove: Trove.Trove): Display
 	trove:Add(Store.Watch(store, "ColorTheme", function()
 		Colors.Retheme(self.Colors)
 	end))
+
+	local recount = false
+
+	--[[ A deleted hidden part leaves the hidden list, so the panel's count is redone once per frame of deletions. ]]
+	trove:Connect(workspace.DescendantRemoving, function(object)
+		if recount or not object:IsA("BasePart") then
+			return
+		end
+
+		recount = true
+		task.defer(function()
+			recount = false
+			mirror(self)
+		end)
+	end)
 	mirror(self)
 
 	return self

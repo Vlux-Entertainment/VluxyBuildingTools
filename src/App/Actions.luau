@@ -67,12 +67,15 @@ end
 	@param make () -> Modal?
 ]=]
 function Actions.StartModal(app: App, make: () -> any)
-	if not Actions.CanBuild(app) then
-		return
+	if not RunService:IsEdit() then
+		return app.Say("Stop the playtest before building.")
 	end
 
 	app.StopAll(true)
-	Host.Start(app.Modal, make)
+
+	if WorkingFolder.Require(app.Folder) then
+		Host.Start(app.Modal, make)
+	end
 end
 
 --[=[
