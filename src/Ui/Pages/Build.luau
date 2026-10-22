@@ -23,28 +23,6 @@ type Modes = { [string]: boolean }
 
 local new = Kit.New
 
-local DRAW: Modes = {
-	Wall = true,
-	Floor = true,
-	PillaredWall = true,
-	Corridor = true,
-	ArchedCorridor = true,
-	Room = true,
-	Foundation = true,
-	Porch = true,
-	Fence = true,
-	Roof = true,
-	Railing = true,
-	HalfWall = true,
-	Vent = true,
-	VentRamp = true,
-	VentShaft = true,
-	Block = true,
-	Stairs = true,
-	Ramp = true,
-	Arch = true,
-	Pillar = true,
-}
 local HEIGHT: Modes = {
 	Wall = true,
 	PillaredWall = true,
@@ -507,7 +485,6 @@ return function(ui: Ui): { Instance }
 				app.Say(message)
 			end, true, when(modes("Place"))),
 			Controls.Switch(ui, { Title = "Ceiling", Key = "Roof", Visible = when(modes("Room", "Corridor")) }),
-			Controls.Switch(ui, { Title = "Snap to parts", Key = "SnapToParts", Visible = when(DRAW) }),
 			Controls.Switch(ui, {
 				Title = "Join rooms and corridors",
 				Key = "ConnectStructures",

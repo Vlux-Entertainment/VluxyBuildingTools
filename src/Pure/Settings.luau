@@ -258,6 +258,7 @@ Settings.Standards = {
 Settings.Page = {
 	"Grid",
 	"FineGrid",
+	"SnapToParts",
 	"SnapRadius",
 	"StandardHeight",
 	"StandardThickness",

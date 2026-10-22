@@ -40,16 +40,20 @@ return function(ui: Ui): { Instance }
 	end
 
 	return {
-		Controls.Card(ui, "BUILDING", {
+		Controls.Card(ui, "SNAPPING", {
 			number("Grid", "Grid Snap", 0.05, 128, 0.5),
 			number("FineGrid", "Precise Grid Snap", 0.05, 128, 0.25),
-			number("SnapRadius", "Part snap distance", 0.25, 32, 0.25),
-			number("StandardHeight", "Standard wall height", 0.1, 2048),
-			number("StandardThickness", "Standard wall thickness", 0.05, 512),
-			number("StandardDoorWidth", "Standard doorway width", 0.1, 1024),
-			number("StandardDoorHeight", "Standard doorway height", 0.1, 1024),
+			Controls.Switch(ui, { Title = "Snap to parts", Key = "SnapToParts" }),
+			number("SnapRadius", "Part snap distance", 0.25, 32, 0.25, function()
+				return Store.Get(store, "SnapToParts") == true
+			end),
+		}),
+		Controls.Card(ui, "STANDARD SIZES", {
+			number("StandardHeight", "Wall height", 0.1, 2048),
+			number("StandardThickness", "Wall thickness", 0.05, 512),
+			number("StandardDoorWidth", "Doorway width", 0.1, 1024),
+			number("StandardDoorHeight", "Doorway height", 0.1, 1024),
 			number("Extend", "Face extend length", 0.1, 2048),
-			number("FieldStep", "Arrow step", 0, 100, 0.05),
 		}),
 		Controls.Card(ui, "INTERFACE", {
 			Controls.Choice(ui, {
@@ -62,6 +66,7 @@ return function(ui: Ui): { Instance }
 					Store.Set(store, "UiAccent", name)
 				end,
 			}),
+			number("FieldStep", "Arrow step", 0, 100, 0.05),
 			Controls.Switch(ui, { Title = "UI animations", Key = "UiAnimations" }),
 			Controls.Slider(ui, "AnimationIntensity", "Animation intensity", function()
 				return Store.Get(store, "UiAnimations") == true
