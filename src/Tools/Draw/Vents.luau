@@ -1,0 +1,388 @@
+--!strict
+
+--[=[
+	The duct tools: a vent that runs along X or Z and turns at right angles, a sloped vent and a
+	vertical shaft.
+
+	A vent can start against a wall, floor or ceiling, or from an existing vent, and is pushed so it
+	sits against what it started on. Once built, it records its open ends (so covers and later vents
+	find them) and cuts its way through every part it passes.
+
+	@class DrawVents
+]=]
+
+local CollectionService = game:GetService("CollectionService")
+
+local Bends = require("./Bends")
+local Builders = require("../../Core/Builders")
+local Cursor = require("../../Services/Cursor")
+local Engine = require("./Engine")
+local Geometry = require("../../Core/Geometry")
+local Joints = require("../../Core/Joints")
+local Points = require("./Points")
+local Snapper = require("../../Core/Snapper")
+local Types = require("../Types")
+
+type Context = Types.Context
+type Draw = Engine.Draw
+type Built = Engine.Built
+
+local VENT_TAG = "VluxyBT_Vent"
+
+--[[
+	@param draw Draw
+	@return Engine.VentState
+]]
+local function ventOf(draw: Draw): Engine.VentState
+	return draw.Vent :: Engine.VentState
+end
+
+--[[
+	@param part BasePart
+	@return boolean -- whether the part belongs to a vent, as one of its pieces or one level deeper
+]]
+local function inVent(part: BasePart): boolean
+	for _, ancestor in { part.Parent, part.Parent and part.Parent.Parent } do
+		if ancestor and CollectionService:HasTag(ancestor, VENT_TAG) then
+			return true
+		end
+	end
+
+	return false
+end
+
+--[[
+	@param cutters { Builders.Cutter }
+	@param keep (part: BasePart) -> boolean
+	@return { [BasePart]: boolean } -- the parts in the working folder the cutters touch and `keep` accepts
+]]
+local function touched(cutters: { Builders.Cutter }, keep: (part: BasePart) -> boolean): { [BasePart]: boolean }
+	local params = OverlapParams.new()
+	local scope = Geometry.GetScope()
+	local found: { [BasePart]: boolean } = {}
+
+	if scope then
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { scope }
+	end
+
+	for _, cutter in cutters do
+		for _, part in workspace:GetPartBoundsInBox(cutter.cf, cutter.size, params) do
+			if keep(part) then
+				found[part] = true
+			end
+		end
+	end
+
+	return found
+end
+
+--[[
+	@param ctx Context
+	@param model Model -- the vent just built
+	@param a Vector3 -- one end of the duct, on its middle line
+	@param b Vector3 -- the other end
+	@param skip Instance? -- the vent this one continues, left uncut
+
+	Records the vent's open ends, then cuts the duct and its openings out of every other part it
+	passes through, and opens the side of any vent it joins.
+]]
+local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: Instance?)
+	if (b - a).Magnitude < 0.05 then
+		return
+	end
+
+	local dir = (b - a).Unit
+
+	model:SetAttribute("VluxyBT_VentStart", a)
+	model:SetAttribute("VluxyBT_VentStartDir", -dir)
+	model:SetAttribute("VluxyBT_VentEnd", b)
+	model:SetAttribute("VluxyBT_VentEndDir", dir)
+	CollectionService:AddTag(model, VENT_TAG)
+
+	local failed = 0
+	local cutters = Builders.VentCutters(ctx.Settings, a, b)
+
+	for part in
+		touched(cutters, function(candidate)
+			return not inVent(candidate) and not candidate:IsA("Terrain")
+		end)
+	do
+		if not Joints.Carve(part, cutters) then
+			failed += 1
+		end
+	end
+
+	local joins = Builders.VentJoinCutters(ctx.Settings, a, b)
+
+	for part in
+		touched(joins, function(candidate)
+			local owner = candidate.Parent
+
+			return owner ~= nil
+				and owner ~= model
+				and owner ~= skip
+				and owner:IsA("Model")
+				and CollectionService:HasTag(owner, VENT_TAG)
+		end)
+	do
+		if not Joints.Carve(part, joins) then
+			failed += 1
+		end
+	end
+
+	if failed > 0 then
+		ctx.Say(string.format("%d part(s) could not be cut for the vent.", failed))
+	end
+end
+
+--[[
+	@param ctx Context
+	@param draw Draw
+	@param built Built
+
+	Finishes the vent from the ends the preview worked out.
+]]
+local function commit(ctx: Context, draw: Draw, built: Built)
+	local ends = ventOf(draw).Ends
+	local previous = built.Previous
+
+	if ends and built.Model then
+		finish(
+			ctx,
+			built.Model,
+			ends[1],
+			ends[2],
+			if previous and previous.model:IsA("Model") then previous.model else nil
+		)
+	end
+end
+
+--[[
+	@param shaft boolean
+	@return (ctx, draw) -> Vector3? -- a start picker for a vent
+]]
+local function start(shaft: boolean): (ctx: Context, draw: Draw) -> Vector3?
+	return function(ctx: Context, draw: Draw): Vector3?
+		return Points.Vent(ctx, draw, shaft)
+	end
+end
+
+--[[ Before the first click on a surface, the marker is the vent's outline on that surface. ]]
+local function idle(ctx: Context, draw: Draw, _point: Vector3): { Geometry.Spec }?
+	local normal, mark = ventOf(draw).HitNormal, ctx.Cursor.Mark
+
+	if normal and mark then
+		return Builders.VentHoleMark(mark + normal * 0.05, normal, ctx.Settings.VentSize)
+	end
+
+	return nil
+end
+
+--[[
+	@param keepNormal boolean -- whether the run remembers the surface it started on
+
+	@return (ctx, draw) -> () -- records what the vent started on at the first click
+]]
+local function onStart(keepNormal: boolean): (ctx: Context, draw: Draw) -> ()
+	return function(_ctx: Context, draw: Draw)
+		local vent = ventOf(draw)
+
+		vent.Normal = if keepNormal then vent.HitNormal else nil
+		vent.Host = vent.HitHost
+		vent.Shift = Vector3.zero
+	end
+end
+
+--[[ After a build the next section starts in the open, not against a surface. ]]
+local function built(draw: Draw)
+	local vent = ventOf(draw)
+
+	vent.Normal, vent.Shift, vent.Host = nil, Vector3.zero, nil
+end
+
+--[[
+	@param ctx Context
+	@param origin Vector3
+	@param direction Vector3 -- the run's direction along X or Z
+	@return number? -- how far the run may go before it meets the side of a level vent under the cursor, so it ends flush against it
+]]
+local function meetHost(ctx: Context, origin: Vector3, direction: Vector3): number?
+	local size = ctx.Settings.VentSize
+	local aim = Cursor.Hit(ctx.Cursor)
+	local _, _, owner = if aim then Snapper.VentConnect(aim.Position, size * 1.1, 1) else nil, nil, nil
+	local hostA = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
+	local hostB = if owner then owner:GetAttribute("VluxyBT_VentEnd") else nil
+
+	if typeof(hostA) ~= "Vector3" or typeof(hostB) ~= "Vector3" or math.abs(hostB.Y - hostA.Y) >= 0.05 then
+		return nil
+	end
+
+	local along = Vector3.new(hostB.X - hostA.X, 0, hostB.Z - hostA.Z)
+
+	if along.Magnitude <= 0.05 then
+		return nil
+	end
+
+	local hostDir = along.Unit
+	local cross = direction.X * hostDir.Z - direction.Z * hostDir.X
+	local reachTo = Vector3.new(hostA.X - origin.X, 0, hostA.Z - origin.Z)
+	local s = (reachTo.X * hostDir.Z - reachTo.Z * hostDir.X) / (if cross == 0 then 1 else cross)
+	local meet = origin + direction * s
+	local position = Vector3.new(meet.X - hostA.X, 0, meet.Z - hostA.Z):Dot(hostDir)
+	local centreY = origin.Y + size / 2
+
+	if
+		math.abs(cross) > 0.9
+		and math.abs(hostA.Y - centreY) < size * 0.5
+		and position > -0.1
+		and position < along.Magnitude + 0.1
+		and s - size / 2 > 0.1
+	then
+		return s - size / 2
+	end
+
+	return nil
+end
+
+--[[
+	@param ctx Context
+	@param draw Draw
+	@param a Vector3
+	@param b Vector3
+	@return Vector3, Vector3 -- the run pulled onto X or Z, never doubling back on the last section, ending flush against a vent it meets, and pushed against the surface it started on
+]]
+local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vector3, Vector3)
+	local vent = ventOf(draw)
+
+	if draw.Rise then
+		return a, b
+	end
+
+	local d = b - a
+	local alongX = math.abs(d.X) >= math.abs(d.Z)
+	local sign = if alongX then (if d.X >= 0 then 1 else -1) else (if d.Z >= 0 then 1 else -1)
+	local axis = if alongX then Vector3.xAxis else Vector3.zAxis
+
+	if draw.Chained and draw.Previous and (axis * sign):Dot(draw.Previous.dir) < -0.5 then
+		alongX = not alongX
+		axis = if alongX then Vector3.xAxis else Vector3.zAxis
+		sign = if alongX then (if d.X >= 0 then 1 else -1) else (if d.Z >= 0 then 1 else -1)
+	end
+
+	local direction = axis * sign
+
+	b = a + direction * (if alongX then math.abs(d.X) else math.abs(d.Z))
+
+	local meet = meetHost(ctx, a, direction)
+
+	if meet then
+		b = a + direction * meet
+	end
+
+	if not draw.Chained and vent.Normal then
+		local sideways = math.abs(direction:Dot(vent.Normal)) < 0.5
+
+		vent.Shift = if sideways then vent.Normal * (ctx.Settings.VentSize / 2 - 0.03) else Vector3.zero
+	end
+
+	if not draw.Chained and vent.Host then
+		local into = math.abs(direction:Dot(vent.Host)) < 0.5
+
+		vent.Shift = if into then direction * (ctx.Settings.VentSize / 2) else Vector3.zero
+
+		return a + vent.Shift, b
+	end
+
+	return a + vent.Shift, b + vent.Shift
+end
+
+--[[
+	@param ctx Context
+	@return Vector3 -- from the floor of the duct to its middle line
+]]
+local function lift(ctx: Context): Vector3
+	return Vector3.new(0, ctx.Settings.VentSize / 2, 0)
+end
+
+local vent: Engine.Shape = {
+	Id = "Vent",
+	Vents = true,
+	Start = start(false),
+	Idle = idle,
+	OnStart = onStart(true),
+	Constrain = constrain,
+	Built = built,
+	Chain = true,
+	Build = function(ctx, draw, a, b)
+		local up = lift(ctx)
+
+		ventOf(draw).Ends = { a + up, b + up }
+
+		return Builders.VentRun(ctx.Settings, a, b, if draw.Chained and draw.Previous then draw.Previous.dir else nil)
+	end,
+	Commit = function(ctx, draw, result)
+		Bends.Join(draw, result, Builders.VentStrips(ctx.Settings))
+		commit(ctx, draw, result)
+	end,
+}
+
+local ventRamp: Engine.Shape = {
+	Id = "VentRamp",
+	Vents = true,
+	Start = start(false),
+	Idle = idle,
+	OnStart = onStart(true),
+	Constrain = constrain,
+	Built = built,
+	Rise = true,
+	RiseOrigin = function(draw, a)
+		return a + ventOf(draw).Shift
+	end,
+	Build = function(ctx, draw, a, b, sized)
+		local up = lift(ctx)
+
+		if not draw.Rise then
+			return Builders.VentRun(ctx.Settings, a, b, nil)
+		end
+
+		local run = Vector3.new(b.X - a.X, 0, b.Z - a.Z).Magnitude
+		local top = b + Vector3.new(0, math.clamp(sized.Signed, -run, run), 0)
+
+		ventOf(draw).Ends = { a + up, top + up }
+
+		return Builders.VentDuct(ctx.Settings, a + up, top + up)
+	end,
+	Commit = commit,
+}
+
+local ventShaft: Engine.Shape = {
+	Id = "VentShaft",
+	Vents = true,
+	Start = start(true),
+	Idle = idle,
+	OnStart = onStart(false),
+	Built = built,
+	Shaft = true,
+	Build = function(ctx, draw, a, _b, sized)
+		local size = ctx.Settings.VentSize
+		local host = ventOf(draw).Host
+		local top = a + Vector3.new(0, sized.Signed, 0)
+		local bottom = a
+
+		if host and math.abs(host.Y) < 0.5 and math.abs(sized.Signed) > size / 2 + 0.1 then
+			bottom = a + Vector3.new(0, math.sign(sized.Signed) * size / 2, 0)
+		end
+
+		ventOf(draw).Ends = { bottom, top }
+
+		return Builders.VentDuct(ctx.Settings, bottom, top)
+	end,
+	Commit = commit,
+}
+
+return {
+	Engine.Tool(vent),
+	Engine.Tool(ventRamp),
+	Engine.Tool(ventShaft),
+}
