@@ -97,6 +97,8 @@ export type Settings = {
 	Align: boolean,
 	ShowGrid: boolean,
 	Hotkeys: boolean,
+	SoundEnabled: boolean,
+	SoundVolume: number,
 	Axis: string,
 }
 
@@ -197,6 +199,8 @@ function Settings.Defaults(): Settings
 		Align = false,
 		ShowGrid = true,
 		Hotkeys = true,
+		SoundEnabled = true,
+		SoundVolume = 0.5,
 		Axis = "X",
 	}
 end

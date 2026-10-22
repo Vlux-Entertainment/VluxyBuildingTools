@@ -55,6 +55,10 @@ Tips.Entries = {
 		Text = "Show the parts you hid as faint ghosts, or hide them completely again.",
 		Key = "I",
 	},
+	["Play sounds"] = {
+		Text = "Play small sounds for button clicks, hotkeys, tools and placing things. The sound ids are all in Pure/SoundIds.",
+	},
+	SoundVolume = { Text = "How loud the plugin sounds are, from 0 (silent) to 1." },
 	["Blender hotkeys"] = { Text = "Turn the Blender-style hotkeys on or off. Esc, Enter and [ ] always work." },
 	["Railing"] = { Text = "Add a low railing around the porch." },
 	["Roof style"] = { Text = "The shape of the roof." },

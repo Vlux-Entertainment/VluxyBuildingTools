@@ -51,6 +51,7 @@ export type Deps = {
 	Save: () -> (),
 	Colors: Colors.Colors,
 	GetTheme: () -> string,
+	Sound: (name: string) -> (),
 	SetTheme: (string) -> (),
 	SurfaceGrid: SurfaceGrid.SurfaceGrid,
 	Actions: Actions,
@@ -116,6 +117,7 @@ local SWITCH_KEYS: { [string]: string } = {
 	["Construction grid while drawing"] = "ShowGrid",
 	["Allow untagged folders (not recommended)"] = "AllowUntagged",
 	["Blender hotkeys"] = "Hotkeys",
+	["Play sounds"] = "SoundEnabled",
 	["Door"] = "DoorPanel",
 	["Door frame"] = "DoorFrame",
 	["Door blocks movement"] = "DoorCollide",
@@ -2290,6 +2292,15 @@ function Panel.new(deps: Deps): Panel
 	numeric(editing, "StandardDoorWidth", "Standard doorway width", 0.1, 1024)
 	numeric(editing, "StandardDoorHeight", "Standard doorway height", 0.1, 1024)
 	numeric(editing, "Extend", "Face extend length", 0.1, 2048)
+	switch(editing, "Play sounds", function()
+		return settings.SoundEnabled
+	end, function(on)
+		settings.SoundEnabled = on
+		deps.Save()
+		refresh()
+		deps.Sound("ToggleOn")
+	end)
+	numeric(editing, "SoundVolume", "Sound volume", 0, 1, 0.1)
 	switch(editing, "Blender hotkeys", function()
 		return settings.Hotkeys
 	end, function(on)
@@ -2459,6 +2470,26 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	refresh()
+
+	local function wireClicks(object: Instance)
+		if object:IsA("GuiButton") then
+			object.MouseButton1Click:Connect(function()
+				local isTab = false
+
+				for _, tab in tabButtons do
+					isTab = isTab or tab == object
+				end
+
+				deps.Sound(if isTab then "Tab" else "Click")
+			end)
+		end
+	end
+
+	for _, object in deps.Widget:GetDescendants() do
+		wireClicks(object)
+	end
+
+	deps.Widget.DescendantAdded:Connect(wireClicks)
 
 	return {
 		Say = say,

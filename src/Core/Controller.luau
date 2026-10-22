@@ -32,6 +32,7 @@ local Props = require("./Props")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
 local Snapper = require("./Snapper")
+local Sounds = require("./Sounds")
 local SurfaceGrid = require("./SurfaceGrid")
 local Tools = require("../Pure/Tools")
 local Transform = require("./Transform")
@@ -396,6 +397,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 	end
 
+	local sounds = Sounds.new(game:GetService("SoundService"), function()
+		return settings.SoundEnabled
+	end, function()
+		return settings.SoundVolume
+	end, trove)
+
 	--[[
 		@param action string -- the undo step's name
 		@param callback () -> ()
@@ -442,7 +449,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
 		)
 
-		if not ok then
+		if ok then
+			Sounds.Play(sounds, if action == "Place prop" then "Prop" else "Build")
+		else
+			Sounds.Play(sounds, "Warning")
 			say("Action cancelled: " .. tostring(err))
 			warn("VluxyBuildingTools: " .. tostring(err))
 		end
@@ -2278,6 +2288,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		mode = name
 		plugin:Activate(true)
+		Sounds.Play(sounds, "Tool")
 
 		if name == "Extend" then
 			local chosen = Selection:Get()
@@ -2332,6 +2343,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 		if mode and table.find(tile.Modes, mode) then
 			stop()
+			Sounds.Play(sounds, "ToolOff")
 
 			return say("Tool off.")
 		end
@@ -2972,6 +2984,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		Save = save,
 		Colors = colors,
 		GetTheme = currentTheme,
+		Sound = function(name: string)
+			Sounds.Play(sounds, name)
+		end,
 		SetTheme = function(name: string)
 			settings.ColorTheme = name
 			save()
@@ -3420,7 +3435,9 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 				Selection:Set({ object })
 
-				local _, added = Brushes.AddSelected()
+				local count, added = Brushes.AddSelected()
+
+				Sounds.Play(sounds, if count > 0 then "BrushAdd" else "Warning")
 
 				if buildBrushPool() == nil then
 					rollBrush()
@@ -3792,6 +3809,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			return
 		end
 
+		if action == "Cancel" then
+			Sounds.Play(sounds, "Cancel")
+		elseif string.sub(action, 1, 5) ~= "Tool:" and string.sub(action, 1, 7) ~= "Option:" then
+			Sounds.Play(sounds, "Hotkey")
+		end
+
 		perform(action)
 	end)
 
@@ -3885,6 +3908,14 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		local kind, step = string.match(action, "^(%a+):(%-?%d)$")
 
 		stepTool(tonumber(step) :: number, kind == "Tile")
+	end)
+
+	trove:Connect(ChangeHistoryService.OnUndo, function()
+		Sounds.Play(sounds, "Undo")
+	end)
+
+	trove:Connect(ChangeHistoryService.OnRedo, function()
+		Sounds.Play(sounds, "Undo")
 	end)
 
 	trove:Connect(UserInputService.InputEnded, function(input)
