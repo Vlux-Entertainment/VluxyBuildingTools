@@ -508,7 +508,6 @@ return function(ui: Ui): { Instance }
 			end, true, when(modes("Place"))),
 			Controls.Switch(ui, { Title = "Ceiling", Key = "Roof", Visible = when(modes("Room", "Corridor")) }),
 			Controls.Switch(ui, { Title = "Snap to parts", Key = "SnapToParts", Visible = when(DRAW) }),
-			number("SnapRadius", "Part snap distance", 0.25, 32, 0.25, when(DRAW, false, setting("SnapToParts"))),
 			Controls.Switch(ui, {
 				Title = "Join rooms and corridors",
 				Key = "ConnectStructures",
