@@ -1839,6 +1839,29 @@ function Panel.new(deps: Deps): Panel
 			end
 
 			local current = if deps.GetMode() == "Prop" then deps.GetProp() else nil
+			local row = 0
+			local place = 0
+
+			for _, prop in PropData.Props do
+				if category == "All" or prop.Category == category then
+					if prop.Id == current then
+						row = place // 3
+					end
+
+					place += 1
+				end
+			end
+
+			place = 0
+
+			for _, prop in PropData.Props do
+				local cell = cells[prop.Id]
+
+				if cell and (category == "All" or prop.Category == category) then
+					cell.frame.Visible = not collapsed or place // 3 == row
+					place += 1
+				end
+			end
 
 			for id, cell in cells do
 				cell.frame.BackgroundColor3 = if id == current then ACCENT else TILE
