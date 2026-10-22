@@ -18,7 +18,7 @@ local new = Kit.New
 
 local TIPS = {
 	"Draw tools: click the first point, move the mouse, then click again. The preview shows the size before you build.",
-	"Walls and corridors continue from the last point. Start new chain begins somewhere else.",
+	"Walls and corridors continue from the last point. Press Enter to begin somewhere else.",
 	"Door and arch openings replace a childless rectangular wall with separate Parts. Undo restores the original.",
 	"Every completed build supports Studio Undo and Redo. The plugin adds no scripts to your game.",
 }

@@ -6,7 +6,7 @@ local Snap = require("../../src/Pure/Snap")
 return {
 	["a bad save falls back to the defaults"] = function(expect)
 		expect.equal(Settings.Load("nope").Grid, 4)
-		expect.equal(Settings.Load("nope").FineGrid, 1)
+		expect.equal(Settings.Load("nope").FineGrid, 0.25)
 		expect.equal(Settings.Load(nil).Height, 12)
 	end,
 
@@ -14,8 +14,23 @@ return {
 		local settings = Settings.Load({ Grid = 1, FineGrid = 0.25, Height = 20 })
 
 		expect.equal(settings.Grid, 4)
-		expect.equal(settings.FineGrid, 1)
+		expect.equal(settings.FineGrid, 0.25)
 		expect.equal(settings.Height, 20)
+	end,
+
+	["snap values left at the old defaults take the new ones, and the floor level is the ground"] = function(expect)
+		local old = Settings.Load({ Version = 5, Grid = 2, FineGrid = 1, SnapRadius = 5, Elevation = 40 })
+
+		expect.equal(old.Grid, 2)
+		expect.equal(old.FineGrid, 0.25)
+		expect.equal(old.SnapRadius, 1)
+		expect.equal(old.Elevation, 0)
+
+		local chosen = Settings.Load({ Version = 5, FineGrid = 0.5, SnapRadius = 3 })
+
+		expect.equal(chosen.FineGrid, 0.5)
+		expect.equal(chosen.SnapRadius, 3)
+		expect.equal(Settings.Load({ Version = 6, FineGrid = 1 }).FineGrid, 1)
 	end,
 
 	["a save from before the standard door takes the door defaults once"] = function(expect)

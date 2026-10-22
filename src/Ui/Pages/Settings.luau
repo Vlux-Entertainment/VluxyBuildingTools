@@ -30,8 +30,6 @@ return function(ui: Ui): { Instance }
 				Danger = true,
 			}),
 			number("FieldStep", "Arrow step", 0, 100, 0.05),
-			number("Grid", "Snap increment", 0.05, 128, 0.5),
-			number("FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5),
 			number("StandardHeight", "Standard wall height", 0.1, 2048),
 			number("StandardThickness", "Standard wall thickness", 0.05, 512),
 			number("StandardDoorWidth", "Standard doorway width", 0.1, 1024),
@@ -56,7 +54,6 @@ return function(ui: Ui): { Instance }
 					)
 				end,
 			}),
-			Controls.Switch(ui, { Title = "Construction grid while drawing", Key = "ShowGrid" }),
 		}),
 		Controls.Card(ui, "RESET", {
 			Controls.Text(

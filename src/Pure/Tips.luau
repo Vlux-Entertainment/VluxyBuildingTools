@@ -88,9 +88,9 @@ Tips.Entries = {
 		Text = "How a new room meets a room next to it. Open removes the walls between them, Shared keeps one wall, Separate keeps both walls.",
 	},
 	["Snap to parts"] = {
-		Text = "Points snap to the corners and edges of nearby parts, with a marker where they land. Hold Shift to skip it and use the fine grid.",
+		Text = "Points snap to the corners and edges of nearby parts, with a marker where they land. Hold Shift to skip it and use the Shift grid.",
 	},
-	SnapRadius = { Text = "How close, in studs, a corner or edge has to be to attract the point." },
+	SnapRadius = { Text = "How close, in studs, the cursor has to be to a corner or edge for the point to snap to it." },
 	CutDepth = {
 		Text = "After you click a spot, move the mouse to set how deep the cut goes. Past the far side of the wall it cuts all the way through.",
 	},
@@ -101,8 +101,6 @@ Tips.Entries = {
 	["Tilt copy to surface"] = { Text = "Tilt stamped copies so they sit flat on a sloped surface." },
 
 	-- Buttons
-	["Use selected floor height"] = { Text = "Draw on top of the selected Part instead of at the Floor level number." },
-	["Start new chain"] = { Text = "Begin the next wall or corridor somewhere else.", Key = "Enter" },
 	["Unhide all (Alt+H)"] = { Text = "Bring back every part you hid.", Key = "Alt+H" },
 	["Flip X"] = { Text = "Mirror the selection across the X axis, around its own centre.", Key = "Ctrl+M, then X" },
 	["Flip Y"] = { Text = "Mirror the selection across the Y axis, around its own centre.", Key = "Ctrl+M, then Y" },
@@ -120,9 +118,8 @@ Tips.Entries = {
 	["Reset all settings"] = { Text = "Put every number and switch on this panel back to its default." },
 
 	-- Number fields, by settings key
-	Grid = { Text = "How far points snap to the grid while drawing. Hold Shift for the fine step." },
-	FineGrid = { Text = "The snap step while Shift is held." },
-	Elevation = { Text = "The height of the floor you draw on." },
+	Grid = { Text = "Points you draw land on a grid of this many studs." },
+	FineGrid = { Text = "The smaller grid points land on while you hold Shift, for fine placement." },
 	Height = { Text = "How tall walls, rooms and blocks are.", Key = "[ and ]" },
 	Thickness = { Text = "How thick walls and frames are." },
 	Width = { Text = "How wide corridors, stairs and ramps are." },

@@ -213,9 +213,6 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 
 	local arrange = Arrange.new({
 		Settings = settings,
-		SetSetting = function(key, value)
-			Store.Set(store, key, value)
-		end,
 		Edit = edit,
 		Say = say,
 		Stop = function()
@@ -223,9 +220,6 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		end,
 		Readout = function(position, text)
 			Overlay.Readout(overlay, position, text)
-		end,
-		ResetTool = function()
-			Runner.Reset(runner)
 		end,
 	})
 

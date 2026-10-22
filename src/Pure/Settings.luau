@@ -113,9 +113,9 @@ local DOOR_KEYS =
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Version = 5,
+		Version = 6,
 		Grid = 4,
-		FineGrid = 1,
+		FineGrid = 0.25,
 		Elevation = 0,
 		Height = 12,
 		Thickness = 1,
@@ -177,7 +177,7 @@ function Settings.Defaults(): Settings
 		SnapToParts = true,
 		AutoGrid = true,
 		AutoPastel = true,
-		SnapRadius = 5,
+		SnapRadius = 1,
 		ConnectStructures = true,
 		RoomJoin = "Open",
 		StandardHeight = 12,
@@ -396,6 +396,20 @@ function Settings.Load(saved: any): Settings
 	if version < 5 and settings.CameraLightBrightness == 2 then
 		settings.CameraLightBrightness = fresh.CameraLightBrightness
 	end
+
+	-- Version 6 made the Shift grid and part snap finer; values left at the old defaults follow.
+	if version < 6 then
+		if settings.FineGrid == 1 then
+			settings.FineGrid = fresh.FineGrid
+		end
+
+		if settings.SnapRadius == 5 then
+			settings.SnapRadius = fresh.SnapRadius
+		end
+	end
+
+	-- The floor level has no field on the panel any more, so it is always the ground.
+	settings.Elevation = fresh.Elevation
 
 	Settings.Sync(settings)
 

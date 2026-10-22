@@ -16,15 +16,12 @@ local Snap = require("../Pure/Snap")
 type Settings = Settings.Settings
 
 export type Deps = {
-	--[=[ The live settings, read only; write through `SetSetting`. ]=]
+	--[=[ The live settings, read only. ]=]
 	Settings: Settings,
-	SetSetting: (key: string, value: any) -> (),
 	Edit: (action: string, callback: () -> ()) -> boolean,
 	Say: (text: string) -> (),
 	Stop: () -> (),
 	Readout: (position: Vector3, text: string) -> (),
-	--[=[ Drops the active tool's points, so a new floor level takes effect at once. ]=]
-	ResetTool: () -> (),
 }
 
 local MAX_COPIED_PARTS = 10000
@@ -34,7 +31,6 @@ export type Actions = {
 	SnapSelection: () -> (),
 	ShowDimensions: () -> (),
 	AnchorSelection: () -> (),
-	UseSelectedFloor: () -> (),
 	Flip: (axis: string) -> (),
 	RotateBy: (axis: string, degrees: number) -> (),
 }
@@ -108,7 +104,7 @@ end
 
 --[=[
 	@param deps Deps
-	@return { [string]: () -> () } -- RepeatCopies, SnapSelection, ShowDimensions, AnchorSelection, UseSelectedFloor
+	@return { [string]: () -> () } -- RepeatCopies, SnapSelection, ShowDimensions, AnchorSelection
 ]=]
 function Arrange.new(deps: Deps): Actions
 	local settings, say = deps.Settings, deps.Say
@@ -211,20 +207,6 @@ function Arrange.new(deps: Deps): Actions
 		end)
 	end
 
-	local function useSelectedFloor()
-		local _, parts = selection()
-
-		if #parts == 0 then
-			return say("Select a floor first, then click Use selected floor height.")
-		end
-
-		local cf, size = Geometry.Bounds(parts)
-
-		deps.SetSetting("Elevation", cf.Y + size.Y / 2)
-		deps.ResetTool()
-		say("Drawing floor is now Y = " .. settings.Elevation .. ".")
-	end
-
 	local function flip(axis: string)
 		deps.Stop()
 
@@ -283,7 +265,6 @@ function Arrange.new(deps: Deps): Actions
 		SnapSelection = snapSelection,
 		ShowDimensions = showDimensions,
 		AnchorSelection = anchorSelection,
-		UseSelectedFloor = useSelectedFloor,
 	}
 end
 

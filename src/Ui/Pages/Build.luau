@@ -12,7 +12,6 @@ local Actions = require("../../App/Actions")
 local Brushes = require("../../Core/Brushes")
 local Controls = require("../Controls")
 local Kit = require("../Kit")
-local Runner = require("../../Tools/Runner")
 local Store = require("../../State/Store")
 local Theme = require("../Theme")
 local Tools = require("../../Pure/Tools")
@@ -55,16 +54,6 @@ local HEIGHT: Modes = {
 	Pillar = true,
 	Porch = true,
 }
-local CHAINS: Modes = {
-	Wall = true,
-	PillaredWall = true,
-	Corridor = true,
-	ArchedCorridor = true,
-	Fence = true,
-	Railing = true,
-	HalfWall = true,
-	Vent = true,
-}
 local WINDOWS: Modes = { Window = true, CircleWindow = true, TriangleWindow = true }
 local OPENINGS: Modes = { Door = true, Window = true, CircleWindow = true, TriangleWindow = true, ArchOpening = true }
 local VENT_SIZED: Modes = {
@@ -86,6 +75,11 @@ local ADVANCED_TOOLS: Modes = {
 	Arch = true,
 	ArchOpening = true,
 	Place = true,
+	Door = true,
+	Vent = true,
+	VentRamp = true,
+	VentShaft = true,
+	VentHole = true,
 }
 
 --[[
@@ -422,12 +416,8 @@ return function(ui: Ui): { Instance }
 			Controls.Text(ui, function()
 				return Tools.Instruction(state.Mode())
 			end, Theme.Muted, when(nil)),
-			number("Grid", "Snap increment", 0.05, 128, 0.5, when(DRAW)),
-			number("FineGrid", "Fine snap (hold Shift)", 0.05, 128, 0.5, when(DRAW)),
-			number("Elevation", "Floor level (Y)", -10000, 10000, nil, when(DRAW)),
-			Controls.Button(ui, "Use selected floor height", function()
-				Actions.Guarded(app, app.Arrange.UseSelectedFloor)()
-			end, false, when(DRAW)),
+			number("Grid", "Grid snap (studs)", 0.05, 128, 0.5, when(DRAW)),
+			number("FineGrid", "Grid snap with Shift held", 0.05, 128, 0.25, when(DRAW)),
 			number("Height", "Height", 0.1, 2048, nil, when(HEIGHT)),
 			number(
 				"Thickness",
@@ -447,10 +437,7 @@ return function(ui: Ui): { Instance }
 			number("DoorWidth", "Doorway width", 0.1, 1024, nil, when(door)),
 			number("DoorHeight", "Doorway height", 0.1, 1024, nil, when(door)),
 			Controls.Switch(ui, { Title = "Door frame", Key = "DoorFrame", Visible = when(door) }),
-			number("FrameWidth", "Frame width", 0.05, 8, nil, when(door, false, setting("DoorFrame"))),
-			number("FrameDepth", "Frame depth", 0.05, 64, nil, when(door, false, setting("DoorFrame"))),
 			Controls.Switch(ui, { Title = "Door", Key = "DoorPanel", Visible = when(door) }),
-			number("DoorThickness", "Door thickness", 0.05, 8, nil, when(door, false, setting("DoorPanel"))),
 			Controls.Slider(ui, "DoorTransparency", "Door transparency", when(door, false, setting("DoorPanel"))),
 			Controls.Switch(ui, {
 				Title = "Door CanCollide",
@@ -504,20 +491,10 @@ return function(ui: Ui): { Instance }
 			number("RailHeight", "Railing height", 0.1, 256, nil, when(modes("Porch", "Railing", "HalfWall"))),
 			number("BalusterSpacing", "Bar spacing", 0.3, 64, nil, when(modes("Railing"))),
 			number("VentSize", "Vent size", 0.5, 64, nil, when(VENT_SIZED)),
-			number(
-				"VentThickness",
-				"Vent sheet thickness",
-				0.05,
-				4,
-				0.05,
-				when(modes("Vent", "VentRamp", "VentShaft", "VentHole"))
-			),
 			number("RoofThickness", "Roof sheet thickness", 0.05, 64, nil, when(modes("Roof"), true)),
 			number("Yaw", "Copy rotation", -360, 360, 90, when(modes("Place"))),
 			number("BrushRadius", "Brush radius", 0, 200, 1, when(modes("Place"))),
 			number("BrushSpacing", "Brush spacing", 0.5, 100, 0.5, when(modes("Place"))),
-			number("BrushSizeMin", "Smallest size (x)", 0.05, 20, 0.1, when(modes("Place"))),
-			number("BrushSizeMax", "Biggest size (x)", 0.05, 20, 0.1, when(modes("Place"))),
 			Controls.Switch(ui, { Title = "Random rotation", Key = "BrushRandomYaw", Visible = when(modes("Place")) }),
 			brushList(ui, when(modes("Place"))),
 			Controls.Button(ui, "Add selected to brushes", function()
@@ -526,15 +503,9 @@ return function(ui: Ui): { Instance }
 				Actions.BrushesChanged(app)
 				app.Say(message)
 			end, true, when(modes("Place"))),
-			Controls.Button(ui, "Start new chain", function()
-				local draw = app.Runner
-
-				Runner.Reset(draw)
-				app.Say(Tools.Instruction(draw.Mode))
-			end, false, when(CHAINS)),
 			Controls.Switch(ui, { Title = "Ceiling", Key = "Roof", Visible = when(modes("Room", "Corridor")) }),
 			Controls.Switch(ui, { Title = "Snap to parts", Key = "SnapToParts", Visible = when(DRAW) }),
-			number("SnapRadius", "Snap reach", 0.5, 32, 0.5, when(DRAW)),
+			number("SnapRadius", "Part snap distance", 0.25, 32, 0.25, when(DRAW, false, setting("SnapToParts"))),
 			Controls.Switch(ui, {
 				Title = "Join rooms and corridors",
 				Key = "ConnectStructures",
@@ -577,6 +548,19 @@ return function(ui: Ui): { Instance }
 				4,
 				when(modes("Arch", "ArchOpening", "ArchedCorridor"), true)
 			),
+			number("FrameWidth", "Frame width", 0.05, 8, nil, when(door, true, setting("DoorFrame"))),
+			number("FrameDepth", "Frame depth", 0.05, 64, nil, when(door, true, setting("DoorFrame"))),
+			number("DoorThickness", "Door thickness", 0.05, 8, nil, when(door, true, setting("DoorPanel"))),
+			number(
+				"VentThickness",
+				"Vent sheet thickness",
+				0.05,
+				4,
+				0.05,
+				when(modes("Vent", "VentRamp", "VentShaft", "VentHole"), true)
+			),
+			number("BrushSizeMin", "Smallest size (x)", 0.05, 20, 0.1, when(modes("Place"), true)),
+			number("BrushSizeMax", "Biggest size (x)", 0.05, 20, 0.1, when(modes("Place"), true)),
 			number("Offset", "Surface gap", -256, 256, 0.25, when(modes("Place"), true)),
 			Controls.Switch(
 				ui,

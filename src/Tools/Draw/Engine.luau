@@ -461,7 +461,7 @@ local function build(ctx: Context, draw: Draw, current: Vector3)
 	Overlay.ClearGhosts(ctx.Overlay)
 	Overlay.HideReadout(ctx.Overlay)
 	ctx.Say(
-		if chain then "Click the next endpoint, or Start new chain to begin elsewhere." else Tools.Instruction(shape.Id)
+		if chain then "Click the next endpoint, or press Enter to begin elsewhere." else Tools.Instruction(shape.Id)
 	)
 end
 
@@ -582,7 +582,7 @@ function Engine.Tool(shape: Shape): Types.Tool
 end
 
 --[=[
-	Starts a new chain: forgets every point, as the panel's Start new chain button does.
+	Starts a new chain: forgets every point, as Enter does.
 
 	@param ctx Context
 	@param draw Draw

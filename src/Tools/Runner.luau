@@ -261,7 +261,7 @@ function Runner.ResumeLast(self: Runner): boolean
 end
 
 --[=[
-	Starts the active tool afresh, keeping it on: the panel's Start new chain.
+	Starts the active tool afresh, keeping it on, as Enter does.
 
 	@param self Runner
 ]=]
