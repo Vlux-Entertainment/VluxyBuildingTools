@@ -103,6 +103,7 @@ local SWITCH_KEYS: { [string]: string } = {
 	["Railing"] = "PorchRailing",
 	["Random rotation"] = "BrushRandomYaw",
 	["Randomize prop rotation"] = "PropRandomRotation",
+	["Collapse props after picking one"] = "PropAutoCollapse",
 	["Ceiling"] = "Roof",
 	["Snap to parts"] = "SnapToParts",
 	["Join rooms and corridors"] = "ConnectStructures",
@@ -1885,6 +1886,10 @@ function Panel.new(deps: Deps): Panel
 							{ Text = prop.Label .. if prop.Mount == "wall" then " (hangs on a wall)." else "." }
 						)
 						click.MouseButton1Click:Connect(function()
+							if settings.PropAutoCollapse then
+								propsExpanded = false
+							end
+
 							actions.PickProp(prop.Id)
 						end)
 						cell = { frame = frame, button = click }
@@ -1950,6 +1955,13 @@ function Panel.new(deps: Deps): Panel
 			"Pick a section, then a prop, then click a floor (or a wall for wall props) to place it. R turns it.",
 			MUTED
 		)
+		switch(propsCard, "Collapse props after picking one", function()
+			return settings.PropAutoCollapse
+		end, function(on)
+			settings.PropAutoCollapse = on
+			deps.Save()
+			refresh()
+		end)
 		propsBrowser(propsCard)
 		numeric(propsCard, "Yaw", "Rotation", -360, 360, 90, { Modes = { Prop = true }, Condition = propSelected })
 		numeric(
