@@ -183,10 +183,10 @@ Tools.List = {
 	},
 	{
 		Id = "Place",
-		Label = "Stamp Copies",
+		Label = "Brush",
 		Glyph = "❐",
 		Key = nil,
-		Description = "Stamp copies of the selection onto surfaces.",
+		Description = "Paint copies of the selection onto surfaces by clicking or dragging.",
 	},
 	{
 		Id = "Measure",
@@ -240,10 +240,10 @@ Tools.Grid = {
 	},
 	{
 		Id = "Place",
-		Label = "Stamp Copies",
+		Label = "Brush",
 		Glyph = "❐",
 		Key = "6",
-		Description = "Stamp copies of the selection onto surfaces.",
+		Description = "Paint copies of the selection onto surfaces by clicking or dragging.",
 		Modes = { "Place" },
 	},
 	{

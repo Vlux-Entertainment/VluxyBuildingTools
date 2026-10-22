@@ -95,7 +95,7 @@ local INSTRUCTIONS: { [string]: string } = {
 	TriangleWindow = "Click an undecorated rectangular wall. The triangular window is centered on the cursor, point up.",
 	Window = "Click an undecorated rectangular wall. The window is centered on the cursor; its height above the floor is in the options.",
 	Extend = "Click a block to select it, then drag a green face handle OUTWARD. Release to add a connected block.",
-	Place = "Select an object first. Click surfaces to stamp copies. R rotates the preview 90 degrees.",
+	Place = "Select an object first. Click or drag over surfaces to paint copies of it. R rotates the copies 90 degrees.",
 	Measure = "Click two surface points. A distance label stays in the viewport. Esc clears it.",
 }
 
@@ -167,6 +167,10 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local cutPending: Face? = nil
 	local cutPoints: { Vector3 } = {}
 	local cutSpot: Vector3? = nil
+	local brushing = false
+	local brushLast: Vector3? = nil
+	local brushTargets: { CFrame } = {}
+	local brushSpecs: { Spec } = {}
 	local quiet = false
 	local lockedHit: RaycastResult? = nil
 	local cutDepth: number? = nil
@@ -175,7 +179,6 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local hoverDoor: Snapper.Doorway? = nil
 	local startDoor: Snapper.Doorway? = nil
 	local snapPart: BasePart? = nil
-	local placementCF: CFrame? = nil
 	local extendDrag: ExtendDrag? = nil
 	local extendHover = false
 	local extrude: Extrude? = nil
@@ -368,6 +371,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 	local function resetPoint()
 		first, current = nil, nil
 		cutFace, cutPending, cutPoints, cutSpot = nil, nil, {}, nil
+		brushing, brushLast, brushTargets, brushSpecs = false, nil, {}, {}
 		lockedHit, cutDepth = nil, nil
 		prevWall = nil
 		startDoor = nil
@@ -491,6 +495,73 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			v = others[2],
 			thickness = sizes[axis],
 		}
+	end
+
+	--[[
+		@param hit RaycastResult -- the surface the brush is over
+
+		Adds one copy to the stroke: the first right under the cursor, the rest scattered within the brush radius.
+	]]
+	local function brushStep(hit: RaycastResult)
+		local pivot = source
+		local spot, normal = hit.Position, hit.Normal
+
+		if not pivot then
+			return
+		end
+
+		if #brushTargets > 0 and settings.BrushRadius > 0 then
+			local angle = math.random() * math.pi * 2
+			local reach = math.sqrt(math.random()) * settings.BrushRadius
+			local across = (if math.abs(normal.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis):Cross(normal).Unit
+			local along = normal:Cross(across)
+			local from = hit.Position + across * (math.cos(angle) * reach) + along * (math.sin(angle) * reach)
+			local params = RaycastParams.new()
+
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.FilterDescendantsInstances = sourceRoots
+
+			local found = workspace:Raycast(from + normal * 8, -normal * 16, params)
+
+			if not found then
+				return
+			end
+
+			spot, normal = found.Position, found.Normal
+		end
+
+		brushLast = hit.Position
+
+		local yaw = if settings.BrushRandomYaw then math.random() * 360 else settings.Yaw
+		local specs, target = Builders.PlaceAt(settings, spot, normal, pivot, yaw)
+
+		table.insert(brushTargets, target)
+
+		for _, spec in specs do
+			table.insert(brushSpecs, spec)
+		end
+	end
+
+	--[[
+		Makes every copy of the stroke as one undo step and clears the stroke.
+	]]
+	local function finishBrush()
+		local targets, pivot = brushTargets, source
+
+		brushing, brushLast, brushTargets, brushSpecs = false, nil, {}, {}
+		Overlay.ClearGhosts(overlay)
+
+		if #targets == 0 or not pivot then
+			return
+		end
+
+		edit("Brush copies", function()
+			for _, target in targets do
+				Arrange.CloneRoots(sourceRoots, function(cf)
+					return target * pivot.Pivot:ToObjectSpace(cf)
+				end)
+			end
+		end)
 	end
 
 	--[[
@@ -913,7 +984,25 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				message = "Click to place the pillar."
 			end
 		elseif mode == "Place" then
-			out, message, placementCF = Builders.Place(settings, hitSurface(), source)
+			local hit = hitSurface()
+
+			out, message = Builders.Place(settings, hit, source)
+
+			if brushing then
+				if not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+					finishBrush()
+				elseif hit then
+					local last = brushLast
+
+					if not last or (hit.Position - last).Magnitude >= settings.BrushSpacing then
+						brushStep(hit)
+					end
+				end
+			end
+
+			for _, spec in brushSpecs do
+				table.insert(out, spec)
+			end
 		elseif mode == "Measure" then
 			local hit = hitSurface()
 
@@ -1455,7 +1544,7 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 			local parts = Geometry.PartsOf(roots)
 
 			if #parts == 0 then
-				return say("Select an object first, then choose Stamp copies.")
+				return say("Select an object first, then choose Brush.")
 			elseif #parts > MAX_STAMP_PARTS then
 				return say("Stamp copies supports up to 600 Parts in the source selection.")
 			end
@@ -2183,6 +2272,12 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 		end
 	end)
 
+	trove:Connect(mouse.Button1Up, function()
+		if brushing then
+			finishBrush()
+		end
+	end)
+
 	trove:Connect(mouse.Button1Down, function()
 		if picking then
 			local hit = hitSurface()
@@ -2340,18 +2435,15 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 				Geometry.Place(specs, "Pillar")
 			end)
 		elseif active == "Place" then
-			local target = placementCF
-			local pivot = source and source.Pivot
+			local hit = hitSurface()
 
-			if not previewValid or not target or not pivot then
+			if not previewValid or not hit or not source then
 				return
 			end
 
-			edit("Stamp copy", function()
-				Arrange.CloneRoots(sourceRoots, function(cf)
-					return target * pivot:ToObjectSpace(cf)
-				end)
-			end)
+			brushing = true
+			brushTargets, brushSpecs, brushLast = {}, {}, nil
+			brushStep(hit)
 		elseif active == "Measure" and current then
 			if not first then
 				measurement = nil
@@ -2692,8 +2784,63 @@ function Controller.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trov
 
 	local elapsed = 0
 
+	local cameraLight: Part? = nil
+
+	trove:Add(function()
+		if cameraLight then
+			cameraLight:Destroy()
+		end
+	end)
+
+	--[[
+		Keeps a point light on the editor camera while Camera light is on. It lives under the camera, so it is never saved into the place.
+	]]
+	local function syncCameraLight()
+		local camera = workspace.CurrentCamera
+
+		if not settings.CameraLight or not camera or not RunService:IsEdit() then
+			if cameraLight then
+				cameraLight:Destroy()
+				cameraLight = nil
+			end
+
+			return
+		end
+
+		if not cameraLight or not cameraLight.Parent then
+			local holder = Instance.new("Part")
+
+			holder.Name = "VluxyBT_CameraLight"
+			holder.Size = Vector3.one * 0.2
+			holder.Transparency = 1
+			holder.Anchored = true
+			holder.CanCollide = false
+			holder.CanQuery = false
+			holder.CanTouch = false
+			holder.Locked = true
+			holder.Parent = camera
+
+			local light = Instance.new("PointLight")
+
+			light.Shadows = false
+			light.Parent = holder
+			cameraLight = holder
+		end
+
+		local holder = cameraLight :: Part
+		local light = holder:FindFirstChildOfClass("PointLight")
+
+		holder.CFrame = camera.CFrame
+
+		if light then
+			light.Range = settings.CameraLightRange
+			light.Brightness = settings.CameraLightBrightness
+		end
+	end
+
 	trove:Connect(RunService.Heartbeat, function(dt)
 		Overlay.PositionReadout(overlay)
+		syncCameraLight()
 
 		if session or extrude then
 			local ok, err = pcall((if session then updateSession else updateExtrude) :: any)

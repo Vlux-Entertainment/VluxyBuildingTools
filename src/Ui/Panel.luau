@@ -1153,6 +1153,14 @@ function Panel.new(deps: Deps): Panel
 	numeric(scope, "BalusterSpacing", "Bar spacing", 0.3, 64, nil, body({ Railing = true }))
 	numeric(scope, "RoofThickness", "Roof sheet thickness", 0.05, 64, nil, body({ Roof = true }, true))
 	numeric(scope, "Yaw", "Copy rotation", -360, 360, 90, body({ Place = true }))
+	numeric(scope, "BrushRadius", "Brush radius", 0, 200, 1, body({ Place = true }))
+	numeric(scope, "BrushSpacing", "Brush spacing", 0.5, 100, 0.5, body({ Place = true }))
+	switch(scope, "Random rotation", function()
+		return settings.BrushRandomYaw
+	end, function(on)
+		settings.BrushRandomYaw = on
+		deps.Save()
+	end, body({ Place = true }))
 
 	button(
 		scope,
@@ -1345,6 +1353,24 @@ function Panel.new(deps: Deps): Panel
 	end
 
 	local displayCard = card("VIEWPORT DISPLAY", "Display")
+
+	switch(displayCard, "Camera light", function()
+		return settings.CameraLight
+	end, function(on)
+		settings.CameraLight = on
+		deps.Save()
+		refresh()
+	end)
+	numeric(displayCard, "CameraLightRange", "Light range (studs)", 4, 500, 10, {
+		Condition = function()
+			return settings.CameraLight
+		end,
+	})
+	numeric(displayCard, "CameraLightBrightness", "Light brightness", 0.1, 20, 0.5, {
+		Condition = function()
+			return settings.CameraLight
+		end,
+	})
 
 	displayRows(displayCard)
 	switch(displayCard, "Construction grid while drawing", function()

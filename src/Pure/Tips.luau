@@ -128,7 +128,12 @@ Tips.Entries = {
 	WindowWidth = { Text = "How wide the window is." },
 	WindowHeight = { Text = "How tall the window is." },
 	WindowSill = { Text = "How far the bottom of the window is above the bottom of the wall." },
-	Yaw = { Text = "How much to turn stamped copies.", Key = "R" },
+	Yaw = { Text = "How much to turn painted copies.", Key = "R" },
+	BrushRadius = { Text = "How far from the cursor the brush scatters copies, in studs." },
+	BrushSpacing = { Text = "How far the cursor travels before the brush adds the next copy, in studs." },
+	CameraLightRange = { Text = "How far the light on the editor camera reaches." },
+	CameraLightBrightness = { Text = "How bright the light on the editor camera is." },
+
 	Run = { Text = "Roughly how deep each step is." },
 	Landing = { Text = "A flat landing added at the top." },
 	Floor = { Text = "How thick floors and ceilings are." },

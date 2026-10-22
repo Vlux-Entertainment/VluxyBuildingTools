@@ -1456,17 +1456,40 @@ function Builders.Place(settings: Settings, hit: RaycastResult?, source: Source?
 	local out: { Spec } = {}
 
 	if not hit or not source then
-		return out, "Select an object, then choose Stamp copies.", nil
+		return out, "Select an object, then choose Brush.", nil
 	end
 
 	for _, part in source.Parts do
 		if not part:IsDescendantOf(workspace) then
-			return out, "Selection changed or was removed. Choose Stamp copies again.", nil
+			return out, "Selection changed or was removed. Choose Brush again.", nil
 		end
 	end
 
-	local rot = CFrame.Angles(0, math.rad(settings.Yaw), 0)
-	local normal = hit.Normal
+	local specs, target = Builders.PlaceAt(settings, hit.Position, hit.Normal, source, settings.Yaw)
+
+	return specs, "Click or drag to paint copies onto surfaces. Radius, spacing and rotation are in the panel.", target
+end
+
+--[=[
+	One copy of the source seated flush on a surface point.
+
+	@param settings Settings
+	@param position Vector3 -- where the surface is
+	@param normal Vector3 -- which way the surface faces
+	@param source Source
+	@param yaw number -- turn about the surface normal, in degrees
+	@return { Spec }
+	@return CFrame -- where the source's pivot lands
+]=]
+function Builders.PlaceAt(
+	settings: Settings,
+	position: Vector3,
+	normal: Vector3,
+	source: Source,
+	yaw: number
+): ({ Spec }, CFrame)
+	local out: { Spec } = {}
+	local rot = CFrame.Angles(0, math.rad(yaw), 0)
 
 	if settings.Align then
 		local reference = if math.abs(normal.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis
@@ -1481,13 +1504,13 @@ function Builders.Place(settings: Settings, hit: RaycastResult?, source: Source?
 		+ math.abs(normal:Dot(rot.UpVector)) * source.Size.Y
 		+ math.abs(normal:Dot(rot.LookVector)) * source.Size.Z
 	) / 2
-	local target = CFrame.new(hit.Position + normal * (radius + settings.Offset)) * rot
+	local target = CFrame.new(position + normal * (radius + settings.Offset)) * rot
 
 	for _, part in source.Parts do
 		add(out, part.Size, target * source.Pivot:ToObjectSpace(part.CFrame), part.Name)
 	end
 
-	return out, "Click to place a copy flush to this surface. Yaw and offset are in the panel.", target
+	return out, target
 end
 
 return Builders
