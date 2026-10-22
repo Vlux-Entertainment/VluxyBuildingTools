@@ -1,7 +1,8 @@
 --!strict
 
 --[=[
-	The surface grid. It puts a grid Texture on every face of the Parts in the working folder, so the
+	The surface grid. It puts a grid Texture on the faces that matter of the Parts in the working
+	folder (the tops of floors, the sides of walls; see `GridFaces`), so the
 	grid shows in the viewport and in play. Each Texture has a fixed name, and a flag on Workspace
 	remembers that the grid is on, so the grid can be switched off later even after Studio was closed
 	and reopened, and it stays until you do.
@@ -12,6 +13,8 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 
+local Geometry = require("./Geometry")
+local GridFaces = require("../Pure/GridFaces")
 local Trove = require("../Packages/Trove")
 
 export type SurfaceGrid = {
@@ -39,7 +42,34 @@ local FACES = {
 	Enum.NormalId.Back,
 }
 
+--[[ A folder bigger than this gets a reminder that the grid is heavy when it is switched on. ]]
+local BIG_FOLDER = 20000
+
 local SurfaceGrid = {}
+
+--[[
+	@param part BasePart
+	@return { Enum.NormalId } -- the faces to grid: chosen by `GridFaces` for a plain block Part, every face for wedges, unions and round parts
+]]
+local function facesOf(part: BasePart): { Enum.NormalId }
+	if not Geometry.IsPlainBlock(part) then
+		return FACES
+	end
+
+	local cf, size = part.CFrame, part.Size
+	local names = GridFaces.For(
+		part.Name,
+		{ size.X, size.Y, size.Z },
+		{ cf.RightVector.Y, cf.UpVector.Y, -cf.LookVector.Y }
+	)
+	local out: { Enum.NormalId } = {}
+
+	for _, name in names do
+		table.insert(out, (Enum.NormalId :: any)[name])
+	end
+
+	return out
+end
 
 --[[
 	@param object Instance
@@ -57,10 +87,10 @@ end
 	@param part BasePart
 	@param studs number -- the size of one grid tile
 
-	Gives each face of the part a grid Texture, reusing any it already has.
+	Gives the faces that matter (see `facesOf`) a grid Texture, reusing any it already has.
 ]]
 local function apply(part: BasePart, studs: number, color: Color3)
-	for _, face in FACES do
+	for _, face in facesOf(part) do
 		local texture: Texture? = nil
 
 		for _, child in part:GetChildren() do
@@ -223,6 +253,7 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 	self._stop()
 	self._switching = true
 
+	local count = 0
 	local ok = self._edit(if value then "Show surface grid" else "Remove surface grid", function()
 		if value then
 			workspace:SetAttribute(ACTIVE, true)
@@ -230,6 +261,7 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 			for _, object in (scope :: Instance):GetDescendants() do
 				if object:IsA("BasePart") and eligible(object) then
 					apply(object, self._size(), self._color())
+					count += 1
 				end
 			end
 		else
@@ -254,7 +286,13 @@ function SurfaceGrid.Set(self: SurfaceGrid, value: boolean)
 
 		self._refresh()
 		self._say(
-			if value
+			if value and count > BIG_FOLDER
+				then string.format(
+					"Surface grid ON for %d Parts. That many grid Textures can slow Studio down; switch it off when you are done with it.",
+					count
+				)
+				elseif
+					value
 				then "Surface grid ON. The grid is on the Parts in your folder. It stays until you switch it off, even if you close Studio."
 				else "Surface grid OFF. The grid Textures are removed."
 		)

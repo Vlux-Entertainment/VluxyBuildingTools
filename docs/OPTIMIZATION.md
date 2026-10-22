@@ -103,18 +103,15 @@ if they are not tagged yet), and read the tags. Older places without tags get on
 tags from then on. Expected gain: about a quarter second at load and a second or so per switch-off
 at 100k. Lowest priority of the four.
 
-## Phase 5: the surface grid (needs a decision)
+## Phase 5: the surface grid (done)
 
-At 100k parts the grid is about 600,000 Texture instances, six per part. That strains Studio's
-memory and rendering whatever our code does. Options:
-
-| Option | Effect |
-|---|---|
-| **Fewer faces** (recommended, with the warning) | Only floor and stair tops and the two wide sides of walls, using `Pure/PartRole`. About a third of the textures, same look where it is used. |
-| **Warn above a part count** (recommended, with fewer faces) | Above about 20k parts, ask before applying. |
-| **Leave it** | Current behavior; heavy on big folders. |
-
-**Open:** pick one or both before this phase starts.
+At 100k parts the old grid was about 600,000 Texture instances, six per part, and every one of
+them is also uploaded in Team Create. Now `Pure/GridFaces` picks the faces that matter on a plain
+block Part: the face that looks up on floors and stairs, the one that looks down on ceilings, the
+two wide sides of thin parts such as walls, the four long sides of posts, and every face of a
+chunky block. Wedges, unions and round parts keep all six. That is one or two Textures on most
+building parts instead of six. Switching the grid on for more than 20,000 parts says that it can
+slow Studio down. Parts gridded before this keep their six Textures until the grid is switched off.
 
 ## Phase 6: one-off jobs stay responsive
 
