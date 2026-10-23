@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.3.4",
+		Date = "2026-10-22",
+		Changes = {
+			"Vents, vent pieces, vent holes, props and cut depth snap to Grid Snap, and Precise Grid Snap with Shift.",
+			"Holding Shift also turns off the vent snaps to heights and vent ends, as it does for part snapping.",
+		},
+	},
+	{
 		Version = "1.3.3",
 		Date = "2026-10-22",
 		Changes = {

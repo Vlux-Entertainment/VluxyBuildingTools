@@ -127,7 +127,7 @@ function Extrude.Start(ctx: Context): ModalTypes.Modal?
 			return true
 		end,
 		Confirm = function(): boolean
-			if length < math.max(0.05, ctx.Settings.Grid * 0.5) then
+			if length < math.max(0.05, Cursor.Grid(ctx.Cursor) * 0.5) then
 				ctx.Say("Move the mouse away from the face, or type a length, then click.")
 
 				return false
