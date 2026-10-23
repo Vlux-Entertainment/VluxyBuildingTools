@@ -59,11 +59,7 @@ something else there. A field you changed by hand keeps your value.
 | **Play sounds** | On | Small sounds for clicks and tools. Only you hear them. |
 | **Sound volume** | 0.5 | How loud they are. |
 
-## Advanced
-
-| Setting | Default | What it does |
-|---|---|---|
-| **Allow untagged folders (not recommended)** | Off | Let the plugin work in folders without the `VluxyBT_Map` tag. |
+## Reset
 
 **Reset settings** puts every setting on this tab back to its default. It does not touch tool
 options, the Display tab or the hotkeys switch, and it does not change anything you built.

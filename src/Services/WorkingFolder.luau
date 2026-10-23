@@ -5,7 +5,8 @@
 	it is edited.
 
 	Picking one is a small flow: start picking, click or select a Folder (it is outlined and waits),
-	then confirm. A folder must carry the `VluxyBT_Map` tag unless the user allowed untagged folders.
+	then confirm. A folder must carry the `VluxyBT_Map` tag; one without it is shown in the panel with
+	how to tag it, and picked as soon as it is tagged.
 	When the folder already holds shared settings (see `Settings.Shared`) that differ from the user's,
 	the user chooses whose to keep before it becomes the working folder; someone joining teammates
 	already there simply takes the folder's. While it is the working folder, the admin's changes are
@@ -66,6 +67,14 @@ local BOX_INTERVAL = 1
 
 local WorkingFolder = {}
 
+--[=[
+	The tag a folder needs before the plugin works in it.
+
+	@prop MAP_TAG string
+	@within WorkingFolder
+]=]
+WorkingFolder.MAP_TAG = MAP_TAG
+
 --[[
 	@param instance Instance?
 	@return Instance? -- the closest Folder above the instance, if it is inside Workspace
@@ -87,10 +96,23 @@ end
 --[[
 	@param self WorkingFolder
 	@param target Instance
-	@return boolean -- whether the plugin may work in the folder: it carries the map tag, or untagged folders are allowed
+	@return boolean -- whether the plugin may work in the folder: it carries the map tag, or else the user is told how to tag it
 ]]
 local function allowed(self: WorkingFolder, target: Instance): boolean
-	return self._deps.Store.Values.AllowUntagged or CollectionService:HasTag(target, MAP_TAG)
+	local state = self._deps.State
+
+	if CollectionService:HasTag(target, MAP_TAG) then
+		if state.Untagged() == target then
+			state.Untagged(nil)
+		end
+
+		return true
+	end
+
+	state.Untagged(target)
+	self._deps.Warn(`"{target.Name}" needs the tag {MAP_TAG}: select it, open View > Tag Editor and add {MAP_TAG}.`)
+
+	return false
 end
 
 --[[
@@ -206,9 +228,7 @@ local function setFolder(self: WorkingFolder, chosen: Instance?)
 	local display = deps.Display
 
 	if chosen and not allowed(self, chosen) then
-		return deps.Warn(
-			`"{chosen.Name}" cannot be the working folder: select it, open View > Tag Editor and add the tag {MAP_TAG}.`
-		)
+		return
 	end
 
 	local previous = state.Folder()
@@ -339,7 +359,7 @@ end
 ]]
 local function propose(self: WorkingFolder, target: Instance)
 	if not allowed(self, target) then
-		return self._deps.Warn(`"{target.Name}" needs the {MAP_TAG} tag first (View > Tag Editor).`)
+		return
 	end
 
 	self._deps.State.Pending(target)
@@ -384,6 +404,19 @@ function WorkingFolder.new(deps: Deps, trove: Trove.Trove): WorkingFolder
 	trove:Connect(Selection.SelectionChanged, function()
 		WorkingFolder._selectionChanged(self)
 	end)
+	trove:Connect(CollectionService:GetInstanceAddedSignal(MAP_TAG), function(tagged)
+		if deps.State.Untagged() ~= tagged then
+			return
+		end
+
+		deps.State.Untagged(nil)
+
+		if deps.State.Picking() and not deps.State.Pending() then
+			propose(self, tagged)
+		else
+			deps.Say(`"{tagged.Name}" is tagged and ready to work in.`)
+		end
+	end)
 	trove:Add(function()
 		if self._watch then
 			self._watch:Disconnect()
@@ -427,13 +460,7 @@ function WorkingFolder.Require(self: WorkingFolder): boolean
 	local folder = self._deps.State.Folder()
 
 	if folder and folder:IsDescendantOf(workspace) then
-		if allowed(self, folder) then
-			return true
-		end
-
-		self._deps.Warn(`"{folder.Name}" needs the {MAP_TAG} tag (View > Tag Editor).`)
-
-		return false
+		return allowed(self, folder)
 	end
 
 	self._deps.Say("Pick a working folder in the panel first.")
@@ -461,6 +488,7 @@ function WorkingFolder.StartPicking(self: WorkingFolder)
 	self._deps.StopTools()
 	state.Picking(true)
 	state.Pending(nil)
+	state.Untagged(nil)
 	self._hover = nil
 
 	local selected = Selection:Get()
@@ -484,6 +512,7 @@ function WorkingFolder.CancelPicking(self: WorkingFolder)
 
 	state.Picking(false)
 	state.Pending(nil)
+	state.Untagged(nil)
 	self._hover = nil
 	redrawBoxes(self)
 end

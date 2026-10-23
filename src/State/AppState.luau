@@ -44,6 +44,8 @@ export type AppState = {
 	Pending: Source<Instance?>,
 	--[=[ True while the user is picking a working folder. ]=]
 	Picking: Source<boolean>,
+	--[=[ A folder turned down for lacking the map tag, shown until it is tagged or another is picked. ]=]
+	Untagged: Source<Instance?>,
 	--[=[ The names of the shared settings that differ from the folder's, while the user decides whose to keep. ]=]
 	Conflict: Source<string?>,
 	--[=[ The prop the Prop tool places. ]=]
@@ -97,6 +99,7 @@ function AppState.new(): AppState
 		Folder = vide.source(nil :: Instance?),
 		Pending = vide.source(nil :: Instance?),
 		Picking = vide.source(false),
+		Untagged = vide.source(nil :: Instance?),
 		Conflict = vide.source(nil :: string?),
 		Prop = vide.source(nil :: string?),
 		Status = vide.source("Pick a tool to start building."),

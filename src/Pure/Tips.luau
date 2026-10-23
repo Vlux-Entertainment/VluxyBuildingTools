@@ -34,7 +34,7 @@ Tips.Entries = {
 	["STANDARD SIZES"] = { Text = "The sizes new builds start from." },
 	VIEWPORT = { Text = "What the plugin draws in the 3D view." },
 	SOUND = { Text = "The plugin's sounds." },
-	ADVANCED = { Text = "Folder safety and a reset of this tab; builds are untouched." },
+	RESET = { Text = "Puts this tab back to its defaults; builds are untouched." },
 	Tooltips = { Text = "Show these descriptions when you hover." },
 	TooltipDelay = { Text = "How long to hover before a description shows." },
 	["Previews use the UI color"] = { Text = "Build previews and folder outlines take the UI color, not orange." },
@@ -129,9 +129,6 @@ Tips.Entries = {
 	FrameDepth = { Text = "How thick the frame is through the wall." },
 	DoorThickness = { Text = "How thick the door panel is." },
 	DoorTransparency = { Text = "How see-through the door is." },
-	["Allow untagged folders (not recommended)"] = {
-		Text = "Let the plugin work in folders without the VluxyBT_Map tag.",
-	},
 	["Camera light"] = { Text = "A light that follows your camera; never saved.", Key = "Alt+L" },
 	["Random rotation"] = { Text = "Turn each brush copy a random amount." },
 	["Randomize prop rotation"] = { Text = "Turn each prop a small random amount." },
