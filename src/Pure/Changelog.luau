@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.3.5",
+		Date = "2026-10-22",
+		Changes = {
+			"Peek covers, vent pieces, vent holes and wall props snap on turned walls and vents too.",
+			"Measure and the brush's first copy snap to Grid Snap, or Precise Grid Snap with Shift.",
+		},
+	},
+	{
 		Version = "1.3.4",
 		Date = "2026-10-22",
 		Changes = {
