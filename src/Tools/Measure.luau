@@ -36,14 +36,21 @@ local tool: Types.Tool = {
 		local cursor = ctx.Cursor
 		local hit = Cursor.Hit(cursor)
 		local current = if hit then hit.Position else Cursor.Horizontal(cursor, ctx.Settings.Elevation)
+		local corner = if current
+				and ctx.Settings.SnapToParts
+				and not Cursor.Fine()
+			then Cursor.Corner(current)
+			else nil
 
-		if current and ctx.Settings.SnapToParts then
-			local corner = Cursor.Corner(current)
-
-			if corner then
-				current = corner
-				cursor.Mark = corner
-			end
+		if corner then
+			current = corner
+			cursor.Mark = corner
+		elseif current then
+			current = Common.SnapOnSurface(
+				current,
+				if hit then hit.Normal else Vector3.yAxis,
+				Common.RoundTo(Cursor.Grid(cursor))
+			)
 		end
 
 		state.Current = current

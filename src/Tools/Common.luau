@@ -41,14 +41,15 @@ end
 	@param point Vector3
 	@param normal Vector3 -- the surface normal
 	@param round (number) -> number
-	@return Vector3 -- the point with each axis that lies along the surface rounded, and the axis across it left alone
+	@return Vector3 -- the point rounded along the two directions that lie in the surface, and left alone across it, so it stays on the surface even when that is turned
 ]=]
 function Common.SnapOnSurface(point: Vector3, normal: Vector3, round: (number) -> number): Vector3
-	return Vector3.new(
-		if math.abs(normal.X) < 0.5 then round(point.X) else point.X,
-		if math.abs(normal.Y) < 0.5 then round(point.Y) else point.Y,
-		if math.abs(normal.Z) < 0.5 then round(point.Z) else point.Z
-	)
+	local n = normal.Unit
+	local reference = if math.abs(n.Y) > 0.95 then Vector3.xAxis else Vector3.yAxis
+	local u = reference:Cross(n).Unit
+	local v = n:Cross(u)
+
+	return n * point:Dot(n) + u * round(point:Dot(u)) + v * round(point:Dot(v))
 end
 
 --[=[

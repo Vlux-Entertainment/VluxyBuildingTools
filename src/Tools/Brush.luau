@@ -16,6 +16,7 @@ local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 
 local Brushes = require("../Core/Brushes")
+local Common = require("./Common")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
 local Overlay = require("../Core/Overlay")
@@ -170,7 +171,8 @@ end
 local function step(ctx: Context, state: BrushState, hit: RaycastResult)
 	local item = state.Item
 	local settings = ctx.Settings
-	local spot, normal = hit.Position, hit.Normal
+	local spot, normal =
+		Common.SnapOnSurface(hit.Position, hit.Normal, Common.RoundTo(Cursor.Grid(ctx.Cursor))), hit.Normal
 
 	if not item then
 		return
