@@ -92,12 +92,7 @@ return function(ui: Ui): { Instance }
 			}),
 			Controls.Slider(ui, "SoundVolume", "Sound volume"),
 		}),
-		Controls.Card(ui, "ADVANCED", {
-			Controls.Switch(ui, {
-				Title = "Allow untagged folders (not recommended)",
-				Key = "AllowUntagged",
-				Danger = true,
-			}),
+		Controls.Card(ui, "RESET", {
 			Controls.Button(ui, "Reset settings", function()
 				Store.ResetKeys(store, Settings.Page)
 				app.Say("This tab's settings are back to their defaults.")

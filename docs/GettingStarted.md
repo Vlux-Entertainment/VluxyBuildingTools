@@ -14,8 +14,8 @@ The plugin only builds and edits inside one **working folder**. Nothing outside 
 1. Make a `Folder` in `Workspace`, for example `Map`.
 2. Tag it: select the folder, open **View > Tag Editor** and add the tag `VluxyBT_Map`.
 
-The tag is a safety catch, so the plugin can't change a folder by mistake. You can switch it off with
-**Allow untagged folders** in [Settings](Settings#advanced), but that is not recommended.
+The tag is a safety catch, so the plugin can't change a folder by mistake, and it is required. Pick a
+folder without it and the panel shows a red notice saying how to tag it; once tagged, it is picked.
 
 ## 2. Pick the folder
 

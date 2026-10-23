@@ -184,7 +184,10 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Cursor = cursor,
 		Edit = edit,
 		Say = say,
-		Warn = warnUser,
+		Warn = function(text)
+			warnUser(text)
+			sound("Warning")
+		end,
 		StopTools = function()
 			stopAll()
 		end,

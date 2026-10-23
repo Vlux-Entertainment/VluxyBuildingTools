@@ -46,6 +46,7 @@ local IDLE_FADE = 0.5
 
 --[[ How far above the folder row the avatars start: the card's top (34 px up) plus about a third of an avatar, which overhangs the card's top edge on purpose. ]]
 local TITLE_LIFT = 42
+local UNTAGGED_HEIGHT = 46
 
 --[[
 	@param ui Ui
@@ -332,6 +333,49 @@ return function(ui: Ui): Frame
 		return if id then Admin.NameOf(app.Admin, id) else ""
 	end
 
+	--[[ A red notice while a folder was turned down for lacking the tag, saying how to add it. ]]
+	local function untagged(): Frame
+		return Kit.Row(UNTAGGED_HEIGHT, {
+			new("Frame")({
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Theme.Danger,
+				BackgroundTransparency = 0.82,
+				BorderSizePixel = 0,
+				Kit.Corner(6),
+				Kit.Stroke(Theme.Danger),
+				new("UIPadding")({ PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
+				new("TextLabel")({
+					Size = UDim2.new(1, 0, 0, 20),
+					Position = UDim2.fromOffset(0, 4),
+					BackgroundTransparency = 1,
+					Text = function()
+						local target = state.Untagged()
+
+						return if target then `⚠  "{target.Name}" is not tagged` else ""
+					end,
+					TextColor3 = Theme.Danger,
+					Font = Enum.Font.GothamBold,
+					TextSize = 13,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				new("TextLabel")({
+					Size = UDim2.new(1, 0, 0, 18),
+					Position = UDim2.fromOffset(0, 24),
+					BackgroundTransparency = 1,
+					Text = `Add the tag {WorkingFolder.MAP_TAG} in View > Tag Editor.`,
+					TextColor3 = Theme.Text,
+					Font = Enum.Font.GothamMedium,
+					TextSize = 12,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+			}),
+		}, function()
+			return state.Untagged() ~= nil
+		end)
+	end
+
 	return Controls.Card(ui, "WORKING FOLDER", {
 		Kit.Row(ROW_HEIGHT, {
 			people,
@@ -386,5 +430,6 @@ return function(ui: Ui): Frame
 				},
 			}, showing("Request")),
 		}),
+		untagged(),
 	})
 end

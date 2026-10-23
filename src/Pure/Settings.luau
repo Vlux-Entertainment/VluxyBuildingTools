@@ -66,7 +66,6 @@ export type Settings = {
 	PropAutoCollapse: boolean,
 	FieldStep: number,
 	CameraLight: boolean,
-	AllowUntagged: boolean,
 	CameraLightRange: number,
 	CameraLightBrightness: number,
 	Roof: boolean,
@@ -185,7 +184,6 @@ function Settings.Defaults(): Settings
 		PropAutoCollapse = true,
 		FieldStep = 0,
 		CameraLight = false,
-		AllowUntagged = false,
 		CameraLightRange = 60,
 		CameraLightBrightness = 0.5,
 		Roof = false,
@@ -277,7 +275,6 @@ Settings.Page = {
 	"PropSpin",
 	"SoundEnabled",
 	"SoundVolume",
-	"AllowUntagged",
 }
 
 --[=[

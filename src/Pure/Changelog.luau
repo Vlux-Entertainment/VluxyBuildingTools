@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.3.2",
+		Date = "2026-10-22",
+		Changes = {
+			"Working folders must carry the VluxyBT_Map tag; the untagged option is gone.",
+			"An untagged folder shows a red notice saying how to tag it, and is picked once tagged.",
+		},
+	},
+	{
 		Version = "1.3.1",
 		Date = "2026-10-22",
 		Changes = {
