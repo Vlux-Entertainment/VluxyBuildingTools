@@ -262,9 +262,6 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Busy = function()
 			return os.clock() - pluginBusyAt < PLUGIN_QUIET
 		end,
-		Open = function()
-			return widget.Enabled
-		end,
 	}, trove)
 
 	local cameraLight = CameraLight.new(settings, trove)

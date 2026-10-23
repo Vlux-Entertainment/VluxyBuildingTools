@@ -497,9 +497,12 @@ function Engine.Click(ctx: Context, draw: Draw, preview: Types.Preview?)
 		else
 			ctx.Say("Click the other point; X, Y or Z locks an axis.")
 		end
+
+		ctx.Sound("Point")
 	elseif valid and shape.Rise and not draw.Rise then
 		startRise(draw, current)
 		ctx.Say("Move up or down to set the height, then click.")
+		ctx.Sound("Point")
 	elseif valid then
 		build(ctx, draw, current)
 	end
@@ -558,6 +561,10 @@ function Engine.Tool(shape: Shape): Types.Tool
 			Engine.Click(ctx, draw, preview)
 		end,
 		Confirm = function(ctx: Context, draw: Draw): boolean
+			if draw.First or draw.Chained then
+				ctx.Sound("Confirm")
+			end
+
 			reset(ctx, draw)
 			ctx.Say(Tools.Instruction(shape.Id))
 

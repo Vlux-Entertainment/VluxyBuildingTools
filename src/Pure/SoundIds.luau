@@ -29,6 +29,8 @@ local SoundIds: { [string]: Entry } = {
 	StudioDrag = { Id = "rbxassetid://9117556149", Volume = 0.35 },
 	StudioRotate = { Id = "rbxassetid://15675059323", Volume = 0.35 },
 	StudioScale = { Id = "rbxassetid://9120916241", Volume = 0.35 },
+	Point = { Id = "rbxassetid://15675032796", Volume = 0.45 },
+	Confirm = { Id = "rbxassetid://10066947742", Volume = 0.45 },
 	BrushAdd = { Id = "rbxassetid://15675055424", Volume = 0.6 },
 	Success = { Id = "rbxassetid://10066947742", Volume = 0.5 },
 	Warning = { Id = "rbxassetid://15675085146", Volume = 0.5 },
