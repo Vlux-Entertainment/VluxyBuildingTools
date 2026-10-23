@@ -116,6 +116,12 @@ function Move.Start(ctx: Context, kind: Transform.Kind, duplicate: boolean): Mod
 		)
 		Overlay.HideReadout(ctx.Overlay)
 		ctx.Say(if commit then "Done; Ctrl+Z undoes it." else "Cancelled.")
+
+		if commit then
+			ctx.Sound(
+				if kind == "Scale" then "StudioScale" elseif kind == "Rotate" then "StudioRotate" else "StudioDrag"
+			)
+		end
 	end
 
 	local modal: ModalTypes.Modal

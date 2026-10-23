@@ -19,6 +19,15 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.3.1",
+		Date = "2026-10-22",
+		Changes = {
+			"Studio's move, rotate and scale handles play a sound when you let go, even with the panel closed.",
+			"Blender-style move, rotate and scale play a sound when confirmed.",
+			"Vents and other drawn pieces click on each point and chime when Enter finishes them.",
+		},
+	},
+	{
 		Version = "1.3.0",
 		Date = "2026-10-22",
 		Changes = {
