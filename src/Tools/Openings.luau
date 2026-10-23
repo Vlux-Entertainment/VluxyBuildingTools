@@ -96,7 +96,7 @@ local function depthFrom(ctx: Context, hit: RaycastResult, previous: number?): n
 	end
 
 	local point = ray.Origin + ray.Direction * ((hit.Position - ray.Origin):Dot(unit) / denominator)
-	local step = math.max(0.05, ctx.Settings.FineGrid)
+	local step = math.max(0.05, Cursor.Grid(ctx.Cursor))
 
 	return math.max(step, Snap.Round((point - hit.Position):Dot(-hit.Normal), step))
 end

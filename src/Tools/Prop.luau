@@ -30,7 +30,7 @@ type PropState = { Frame: CFrame? }
 	@return CFrame? -- where the prop goes on the surface, or nil when the surface does not suit it
 ]]
 local function frameOn(ctx: Context, def: PropData.Prop, hit: RaycastResult): CFrame?
-	local round = Common.RoundTo(math.max(0.05, ctx.Settings.FineGrid))
+	local round = Common.RoundTo(Cursor.Grid(ctx.Cursor))
 	local normal = hit.Normal
 
 	if def.Mount == "wall" then

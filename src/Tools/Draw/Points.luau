@@ -223,7 +223,7 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 	end
 
 	local size = ctx.Settings.VentSize
-	local step = math.max(0.5, ctx.Settings.FineGrid)
+	local step = math.max(0.05, Cursor.Grid(cursor))
 	local endPoint, openEnd, owner = Snapper.VentConnect(hit.Position, size * 1.1, step)
 
 	vent.HitNormal = nil
@@ -268,7 +268,7 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 		local reach = halfHeight(part)
 		local bottom, top = part.Position.Y - reach, part.Position.Y + reach
 		local floorTop = Joints.FloorLevel(part) or bottom
-		local best = math.huge
+		local best = if ctx.Settings.SnapToParts and not Cursor.Fine() then math.huge else -1
 
 		y = Cursor.Snap(cursor, hit.Position.Y)
 

@@ -59,14 +59,19 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 		local part = hit.Instance :: BasePart
 		local depth = math.max(0.4, math.min(part.Size.X, part.Size.Y, part.Size.Z) + 0.2)
 
-		center = Common.SnapOnSurface(center, normal, Common.RoundTo(math.max(0.25, ctx.Settings.FineGrid)))
+		center = Common.SnapOnSurface(center, normal, Common.RoundTo(Cursor.Grid(ctx.Cursor)))
 		state.Cut = {
 			cf = Common.SurfaceFrame(center, normal) * CFrame.new(0, 0, 0.1 - depth / 2),
 			size = Vector3.new(PEEK_WIDTH - 0.5, Vents.PEEK_HEIGHT - 0.4, depth),
 			cylinder = false,
 		}
 	else
-		local endPoint, outward = Snapper.VentEnd(hit.Position, math.max(ctx.Settings.VentSize, 3))
+		local magnet = ctx.Settings.SnapToParts and not Cursor.Fine()
+		local endPoint, outward
+
+		if magnet then
+			endPoint, outward = Snapper.VentEnd(hit.Position, math.max(ctx.Settings.VentSize, 3))
+		end
 
 		if endPoint and outward then
 			center, normal = endPoint, outward
@@ -129,7 +134,7 @@ local hole: Types.Tool = {
 
 		local part = hit.Instance :: BasePart
 		local normal = hit.Normal
-		local center = Common.SnapOnSurface(hit.Position, normal, Common.RoundTo(math.max(0.25, ctx.Settings.FineGrid)))
+		local center = Common.SnapOnSurface(hit.Position, normal, Common.RoundTo(Cursor.Grid(ctx.Cursor)))
 		local cf = part.CFrame
 		local extent = math.abs(normal:Dot(cf.XVector)) * part.Size.X
 			+ math.abs(normal:Dot(cf.YVector)) * part.Size.Y

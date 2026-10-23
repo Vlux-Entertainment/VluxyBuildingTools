@@ -65,7 +65,7 @@ local function release(ctx: Context, state: ExtendState)
 
 	state.Drag = nil
 
-	if drag.length >= math.max(0.05, ctx.Settings.Grid) and drag.source.Parent then
+	if drag.length >= math.max(0.05, Cursor.Grid(ctx.Cursor)) and drag.source.Parent then
 		local out = Openings.Extend(ctx.Settings, drag.source, drag.normal, drag.length)
 		local built: Model?
 
