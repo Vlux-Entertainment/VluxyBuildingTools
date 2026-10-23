@@ -6,7 +6,7 @@
 
 	With the Set cut depth with mouse setting on, the first click fixes the spot and the mouse then
 	sets how deep the cut goes; past the far side it cuts all the way through. Otherwise one click
-	cuts through.
+	cuts through, as does a doorway with a frame or door, which only fit an opening that goes through.
 
 	@class OpeningTools
 ]=]
@@ -148,7 +148,10 @@ local function opening(mode: string): Types.Tool
 			return
 		end
 
-		if ctx.Settings.CutDepth and not state.Locked then
+		local settings = ctx.Settings
+		local fitted = mode == "Door" and (settings.DoorFrame or settings.DoorPanel)
+
+		if settings.CutDepth and not fitted and not state.Locked then
 			local hit = Cursor.ScopedHit(ctx.Cursor)
 
 			if hit then
