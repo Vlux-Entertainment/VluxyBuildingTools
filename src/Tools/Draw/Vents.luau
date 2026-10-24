@@ -19,6 +19,7 @@ local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
 local Joints = require("../../Core/Joints")
 local Points = require("./Points")
+local Settings = require("../../Pure/Settings")
 local Shapes = require("../../Core/Builders/Shapes")
 local Snapper = require("../../Core/Snapper")
 local Types = require("../Types")
@@ -174,7 +175,7 @@ local function idle(ctx: Context, draw: Draw, _point: Vector3): { Geometry.Spec 
 	local normal, mark = ventOf(draw).HitNormal, ctx.Cursor.Mark
 
 	if normal and mark then
-		return Vents.VentHoleMark(mark + normal * 0.05, normal, ctx.Settings.VentSize)
+		return Vents.VentHoleMark(mark + normal * 0.05, normal, Settings.VentOuter(ctx.Settings))
 	end
 
 	return nil
@@ -209,7 +210,7 @@ end
 	@return number? -- how far the run may go before it meets the side of a level vent under the cursor, so it ends flush against it
 ]]
 local function meetHost(ctx: Context, origin: Vector3, direction: Vector3): number?
-	local size = ctx.Settings.VentSize
+	local size = Settings.VentOuter(ctx.Settings)
 	local aim = Cursor.Hit(ctx.Cursor)
 	local _, _, owner = if aim then Snapper.VentConnect(aim.Position, size * 1.1, 1) else nil, nil, nil
 	local hostA = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
@@ -284,13 +285,13 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 	if not draw.Chained and vent.Normal then
 		local sideways = math.abs(direction:Dot(vent.Normal)) < 0.5
 
-		vent.Shift = if sideways then vent.Normal * (ctx.Settings.VentSize / 2 - 0.03) else Vector3.zero
+		vent.Shift = if sideways then vent.Normal * (Settings.VentOuter(ctx.Settings) / 2 - 0.03) else Vector3.zero
 	end
 
 	if not draw.Chained and vent.Host then
 		local into = math.abs(direction:Dot(vent.Host)) < 0.5
 
-		vent.Shift = if into then direction * (ctx.Settings.VentSize / 2) else Vector3.zero
+		vent.Shift = if into then direction * (Settings.VentOuter(ctx.Settings) / 2) else Vector3.zero
 
 		return a + vent.Shift, b
 	end
@@ -303,7 +304,7 @@ end
 	@return Vector3 -- from the floor of the duct to its middle line
 ]]
 local function lift(ctx: Context): Vector3
-	return Vector3.new(0, ctx.Settings.VentSize / 2, 0)
+	return Vector3.new(0, Settings.VentOuter(ctx.Settings) / 2, 0)
 end
 
 local vent: Engine.Shape = {
@@ -366,7 +367,7 @@ local ventShaft: Engine.Shape = {
 	Built = built,
 	Shaft = true,
 	Build = function(ctx, draw, a, _b, sized)
-		local size = ctx.Settings.VentSize
+		local size = Settings.VentOuter(ctx.Settings)
 		local host = ventOf(draw).Host
 		local top = a + Vector3.new(0, sized.Signed, 0)
 		local bottom = a

@@ -4,6 +4,19 @@ local Settings = require("../../src/Pure/Settings")
 local Snap = require("../../src/Pure/Snap")
 
 return {
+	["the vent size is the inside; the sheets go outside it"] = function(expect)
+		local settings = Settings.Defaults()
+
+		settings.VentSize, settings.VentThickness = 3, 0.2
+
+		expect.near(Settings.VentOuter(settings), 3.4, 1e-6)
+		expect.equal(Settings.VentHole(settings), 3)
+
+		settings.VentHoleFit = "Outside"
+
+		expect.near(Settings.VentHole(settings), 3.4, 1e-6)
+	end,
+
 	["a bad save falls back to the defaults"] = function(expect)
 		expect.equal(Settings.Load("nope").Grid, 4)
 		expect.equal(Settings.Load("nope").FineGrid, 0.25)

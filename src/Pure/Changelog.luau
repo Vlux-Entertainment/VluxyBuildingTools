@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.0",
+		Date = "2026-10-24",
+		Changes = {
+			"Vent size is now the inside of the vent: a 3 vent has 3 studs of clear space, with the sheets outside it.",
+			"Vent Hole has an Inside or Outside choice: the vent's inside size, or its outside size so a vent fits through.",
+		},
+	},
+	{
 		Version = "1.3.5",
 		Date = "2026-10-22",
 		Changes = {

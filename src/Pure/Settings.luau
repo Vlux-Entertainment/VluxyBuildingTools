@@ -47,6 +47,7 @@ export type Settings = {
 	Yaw: number,
 	VentSize: number,
 	VentThickness: number,
+	VentHoleFit: string,
 	BrushRadius: number,
 	BrushSpacing: number,
 	BrushRandomYaw: boolean,
@@ -165,6 +166,7 @@ function Settings.Defaults(): Settings
 		Yaw = 0,
 		VentSize = 3,
 		VentThickness = 0.2,
+		VentHoleFit = "Inside",
 		BrushRadius = 6,
 		BrushSpacing = 3,
 		BrushRandomYaw = true,
@@ -379,6 +381,24 @@ function Settings.Differences(settings: Settings, read: (key: string) -> any): {
 	end
 
 	return names
+end
+
+--[=[
+	`VentSize` is the clear space inside a vent; the sheets sit outside it.
+
+	@param settings Settings
+	@return number -- the outside width of a vent duct
+]=]
+function Settings.VentOuter(settings: Settings): number
+	return settings.VentSize + 2 * settings.VentThickness
+end
+
+--[=[
+	@param settings Settings
+	@return number -- the side of the square a Vent Hole cuts: the vent's inside size, or its outside size when `VentHoleFit` is "Outside"
+]=]
+function Settings.VentHole(settings: Settings): number
+	return if settings.VentHoleFit == "Outside" then Settings.VentOuter(settings) else settings.VentSize
 end
 
 --[=[

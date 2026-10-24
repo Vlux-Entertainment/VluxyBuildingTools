@@ -70,7 +70,7 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 		local endPoint, outward
 
 		if magnet then
-			endPoint, outward = Snapper.VentEnd(hit.Position, math.max(ctx.Settings.VentSize, 3))
+			endPoint, outward = Snapper.VentEnd(hit.Position, math.max(Settings.VentOuter(ctx.Settings), 3))
 		end
 
 		if endPoint and outward then
@@ -140,7 +140,7 @@ local hole: Types.Tool = {
 			+ math.abs(normal:Dot(cf.YVector)) * part.Size.Y
 			+ math.abs(normal:Dot(cf.ZVector)) * part.Size.Z
 		local depth = extent + 0.2
-		local inner = math.max(0.5, ctx.Settings.VentSize - 2 * ctx.Settings.VentThickness)
+		local inner = math.max(0.5, Settings.VentHole(ctx.Settings))
 
 		state.Cut = {
 			cf = Common.SurfaceFrame(center, normal) * CFrame.new(0, 0, 0.1 - depth / 2),

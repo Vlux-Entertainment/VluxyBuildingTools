@@ -81,7 +81,7 @@ Options:
   and **Door CanCollide**. Advanced: frame width and depth, door thickness.
 - **Windows**: width, height and **Bottom above floor**.
 - **Archway**: width and height. Advanced: **Arch smoothness**.
-- **Vent Hole**: **Vent size**. Advanced: **Vent sheet thickness**.
+- **Vent Hole**: **Vent inside size**, and **Inside** or **Outside**: cut the vent's inside size, or its outside size so a vent fits through. Advanced: **Vent sheet thickness**.
 
 ## Structures (Ctrl+4)
 
@@ -122,7 +122,7 @@ Square ducts and their end pieces.
 | **Fan End** | Click a vent opening. Closes it with a fan. |
 | **Peek Cover** | Click a wall or vent opening. A small cover to look out of. |
 
-Options: **Vent size** (the outside width). Advanced: **Vent sheet thickness**.
+Options: **Vent inside size** (the clear space inside; the sheets go outside it). Advanced: **Vent sheet thickness**.
 
 ## Railings (Ctrl+6)
 
