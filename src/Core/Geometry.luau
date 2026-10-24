@@ -43,6 +43,17 @@ local scope: Instance? = nil
 local Geometry = {}
 
 --[=[
+	The collision every cut and union is made with. The default only roughly follows the shape, so
+	a hole in a thin wall stayed solid; this follows it closely, so holes can be walked through.
+
+	@prop FIDELITY Enum.CollisionFidelity
+	@within Geometry
+]=]
+Geometry.FIDELITY = Enum.CollisionFidelity.PreciseConvexDecomposition
+
+local FIDELITY = Geometry.FIDELITY
+
+--[=[
 	Sets the working folder. Selection helpers only return things inside it, and new builds go in it.
 
 	@param folder Instance? -- nil clears the scope
@@ -354,7 +365,7 @@ function Geometry.UnionArchHalves(model: Model): string?
 			table.remove(rest, 1)
 
 			local ok, result = pcall(function()
-				return base:UnionAsync(rest)
+				return base:UnionAsync(rest, FIDELITY)
 			end)
 
 			if ok and result then
@@ -435,7 +446,7 @@ function Geometry.UnionSides(model: Model, pieceName: string, prefix: string): s
 			table.remove(rest, 1)
 
 			local ok, result = pcall(function()
-				return base:UnionAsync(rest)
+				return base:UnionAsync(rest, FIDELITY)
 			end)
 
 			if ok and result then
@@ -487,7 +498,7 @@ function Geometry.UnionNamed(model: Model, pieceName: string, result: string): s
 	table.remove(rest, 1)
 
 	local ok, joined = pcall(function()
-		return group[1]:UnionAsync(rest)
+		return group[1]:UnionAsync(rest, FIDELITY)
 	end)
 
 	if not ok or not joined then
@@ -534,7 +545,7 @@ function Geometry.UnionAll(model: Model, name: string): string?
 	table.remove(rest, 1)
 
 	local ok, result = pcall(function()
-		return base:UnionAsync(rest)
+		return base:UnionAsync(rest, FIDELITY)
 	end)
 
 	if not ok or not result then
@@ -642,9 +653,9 @@ function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSi
 
 		table.remove(rest, 1)
 
-		local joined = if #rest > 0 then base:UnionAsync(rest) else base
+		local joined = if #rest > 0 then base:UnionAsync(rest, FIDELITY) else base
 
-		return joined:SubtractAsync({ tool })
+		return joined:SubtractAsync({ tool }, FIDELITY)
 	end)
 
 	if not ok or not result then
@@ -653,7 +664,7 @@ function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSi
 
 		for _, piece in parts do
 			local cutOk, cut = pcall(function()
-				return piece:SubtractAsync({ tool })
+				return piece:SubtractAsync({ tool }, FIDELITY)
 			end)
 
 			if cutOk and cut then
@@ -672,7 +683,7 @@ function Geometry.AddCut(model: Model, specs: { Spec }, cutter: CFrame, cutterSi
 			table.remove(rest, 1)
 
 			local joinOk, joined = pcall(function()
-				return kept[1]:UnionAsync(rest)
+				return kept[1]:UnionAsync(rest, FIDELITY)
 			end)
 
 			if joinOk and joined then

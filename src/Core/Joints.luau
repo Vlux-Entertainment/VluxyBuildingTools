@@ -263,7 +263,7 @@ local function carve(part: BasePart, cutters: { Cutter }): boolean
 	end
 
 	local ok, result = pcall(function()
-		return part:SubtractAsync(tools)
+		return part:SubtractAsync(tools, Geometry.FIDELITY)
 	end)
 
 	for _, tool in tools do
@@ -330,7 +330,7 @@ function Joints.CarveShape(part: BasePart, specs: { Geometry.Spec }): boolean
 	end
 
 	local ok, result = pcall(function()
-		return part:SubtractAsync(tools)
+		return part:SubtractAsync(tools, Geometry.FIDELITY)
 	end)
 
 	if #tools > 1 then
@@ -339,12 +339,12 @@ function Joints.CarveShape(part: BasePart, specs: { Geometry.Spec }): boolean
 
 			table.remove(rest, 1)
 
-			return tools[1]:UnionAsync(rest)
+			return tools[1]:UnionAsync(rest, Geometry.FIDELITY)
 		end)
 
 		if joined and cutter then
 			local again, smooth = pcall(function()
-				return part:SubtractAsync({ cutter })
+				return part:SubtractAsync({ cutter }, Geometry.FIDELITY)
 			end)
 
 			if again and smooth then
