@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="plugin-moonwave plugin-id-moonwave" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">Actions | VluxyBuildingTools</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Actions"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Actions | VluxyBuildingTools"><meta data-rh="true" name="description" content="Everything the user can ask for, by hotkey or from the panel. `Perform` takes a hotkey action
+name from `Pure/Keymap`; the panel calls the named functions directly. Either way the same code
+runs, so a key and its button cannot drift apart."><meta data-rh="true" property="og:description" content="Everything the user can ask for, by hotkey or from the panel. `Perform` takes a hotkey action
+name from `Pure/Keymap`; the panel calls the named functions directly. Either way the same code
+runs, so a key and its button cannot drift apart."><link data-rh="true" rel="icon" href="/VluxyBuildingTools/VluxFavicon.ico"><link data-rh="true" rel="canonical" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Actions"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Actions" hreflang="en"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Actions" hreflang="x-default"><link rel="stylesheet" href="/VluxyBuildingTools/assets/css/styles.5ec48d9a.css">
+<script src="/VluxyBuildingTools/assets/js/runtime~main.afcab08f.js" defer="defer"></script>
+<script src="/VluxyBuildingTools/assets/js/main.bf70fa6e.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/VluxyBuildingTools/"><b class="navbar__title text--truncate">VluxyBuildingTools</b></a><a class="navbar__item navbar__link" href="/VluxyBuildingTools/docs/intro">Docs</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/VluxyBuildingTools/api/">API</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/Ebbp9UgBUD" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/Vlux-Entertainment/VluxyBuildingTools" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input id="search_input_react" type="search" placeholder="Loading..." aria-label="Search" class="navbar__search-input search-bar" disabled=""></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0 docPageContainer_wNNk"><div class="docPage_Dpn1"><div class="docSidebarContainer_o_re"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/VluxyBuildingTools/api/App"><span title="App" class="categoryLinkLabel_W154">App</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/App"><span title="​App" class="linkLabel_WmDU">​App</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/AppTypes"><span title="​App​Types" class="linkLabel_WmDU">​App​Types</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/VluxyBuildingTools/api/Actions"><span title="​Actions" class="linkLabel_WmDU">​Actions</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Input"><span title="​Input" class="linkLabel_WmDU">​Input</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Store"><span title="State" class="categoryLinkLabel_W154">State</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Edit"><span title="Services" class="categoryLinkLabel_W154">Services</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Runner"><span title="Tools" class="categoryLinkLabel_W154">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Host"><span title="Modal actions" class="categoryLinkLabel_W154">Modal actions</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Areas"><span title="Builders" class="categoryLinkLabel_W154">Builders</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Geometry"><span title="Core" class="categoryLinkLabel_W154">Core</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Settings"><span title="Pure (tested under Lune)" class="categoryLinkLabel_W154">Pure (tested under Lune)</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Panel"><span title="Panel" class="categoryLinkLabel_W154">Panel</span></a></div></li></ul></nav></div></div><main class="docMainContainer_HJE1"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_MU3C"><div class="docItemContainer_Wv98"><article><div class="member_J0w1 markdown"><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_oUs_"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><header><h1 class="docTitle_mZRt" style="text-decoration:none"><span style="display:inline-block">Actions</span></h1><div class="luaClassTags_EipM"></div><div>
+<p>
+  Everything the user can ask for, by hotkey or from the panel. <code>Perform</code> takes a hotkey action
+  name from <code>Pure/Keymap</code>; the panel calls the named functions directly. Either way the same code
+  runs, so a key and its button cannot drift apart.
+</p>
+</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="CanBuild"><code style="text-decoration:none">CanBuild</code><a href="#CanBuild" class="hash-link" aria-label="Direct link to CanBuild" title="Direct link to CanBuild" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L42"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">CanBuild</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>true when the place may be edited now: edit mode and a usable working folder; says why when not</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Guarded"><code style="text-decoration:none">Guarded</code><a href="#Guarded" class="hash-link" aria-label="Direct link to Guarded" title="Direct link to Guarded" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L57"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Guarded</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>run<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code></div></div><code>) → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><span class="inlineDescription_G7Er">-- <span>
+<p>the same action, but it only runs once a working folder is set</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="StartModal"><code style="text-decoration:none">StartModal</code><a href="#StartModal" class="hash-link" aria-label="Direct link to StartModal" title="Direct link to StartModal" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L71"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">StartModal</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>make<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ModalTypes#Modal">Modal?</a></code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Starts a modal action made by <code>make</code>, after ending whatever ran before.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="StartMove"><code style="text-decoration:none">StartMove</code><a href="#StartMove" class="hash-link" aria-label="Direct link to StartMove" title="Direct link to StartMove" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L88"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">StartMove</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>kind<!-- -->: </code><code class="blue_P4bS">Transform.Kind</code><code>,</code></div><div><code>duplicate<!-- -->: </code><code class="blue_P4bS">boolean</code></div></div><code>) → </code><code>(</code><code>)</code></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Arm"><code style="text-decoration:none">Arm</code><a href="#Arm" class="hash-link" aria-label="Direct link to Arm" title="Direct link to Arm" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L98"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Arm</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>which<!-- -->: </code><code class="blue_P4bS">Host.Armed</code><span class="inlineDescription_G7Er">-- <span>
+<p>the action that waits for its axis key</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Select"><code style="text-decoration:none">Select</code><a href="#Select" class="hash-link" aria-label="Direct link to Select" title="Direct link to Select" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L118"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Select</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>id<!-- -->: </code><code class="blue_P4bS">string</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Picks a tool tile, or turns the tool off when its tile is already on.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="SetMode"><code style="text-decoration:none">SetMode</code><a href="#SetMode" class="hash-link" aria-label="Direct link to SetMode" title="Direct link to SetMode" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L126"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">SetMode</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>mode<!-- -->: </code><code class="blue_P4bS">string</code></div></div><code>) → </code><code>(</code><code>)</code></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="PickProp"><code style="text-decoration:none">PickProp</code><a href="#PickProp" class="hash-link" aria-label="Direct link to PickProp" title="Direct link to PickProp" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L136"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">PickProp</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>id<!-- -->: </code><code class="blue_P4bS">string</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Picks a prop and starts placing it.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="BrushesChanged"><code style="text-decoration:none">BrushesChanged</code><a href="#BrushesChanged" class="hash-link" aria-label="Direct link to BrushesChanged" title="Direct link to BrushesChanged" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L146"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">BrushesChanged</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Tells the brush tool the brush list changed, and redraws the list.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ShowPage"><code style="text-decoration:none">ShowPage</code><a href="#ShowPage" class="hash-link" aria-label="Direct link to ShowPage" title="Direct link to ShowPage" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L157"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">ShowPage</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>name<!-- -->: </code><code class="blue_P4bS">string</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Switches the panel tab. Leaving a tab stops the tool and drops an unconfirmed folder pick.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="CycleTab"><code style="text-decoration:none">CycleTab</code><a href="#CycleTab" class="hash-link" aria-label="Direct link to CycleTab" title="Direct link to CycleTab" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L175"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">CycleTab</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>delta<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>1 for the next tab, -1 for the one before</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="StepSection"><code style="text-decoration:none">StepSection</code><a href="#StepSection" class="hash-link" aria-label="Direct link to StepSection" title="Direct link to StepSection" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L188"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">StepSection</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>delta<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Steps the Props tab to the next or previous section.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="StepProp"><code style="text-decoration:none">StepProp</code><a href="#StepProp" class="hash-link" aria-label="Direct link to StepProp" title="Direct link to StepProp" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L204"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">StepProp</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>delta<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Picks the next or previous prop of the section on show.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Scroll"><code style="text-decoration:none">Scroll</code><a href="#Scroll" class="hash-link" aria-label="Direct link to Scroll" title="Direct link to Scroll" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L227"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Scroll</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>tiles<!-- -->: </code><code class="blue_P4bS">boolean</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>Ctrl: step tiles (or sections); Alt: step options (or props)</p>
+</span></span></div><div><code>step<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>1 or -1</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  The mouse wheel with Ctrl or Alt: steps tools and their options, or the Props tab's sections and
+  props while it is on show.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ChangeHeight"><code style="text-decoration:none">ChangeHeight</code><a href="#ChangeHeight" class="hash-link" aria-label="Direct link to ChangeHeight" title="Direct link to ChangeHeight" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L247"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">ChangeHeight</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>direction<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>1 or -1</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>[ and ]: raises or lowers the height that matters for the active tool by one grid step.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Cancel"><code style="text-decoration:none">Cancel</code><a href="#Cancel" class="hash-link" aria-label="Direct link to Cancel" title="Direct link to Cancel" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L269"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Cancel</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Esc: the innermost thing running steps back.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Confirm"><code style="text-decoration:none">Confirm</code><a href="#Confirm" class="hash-link" aria-label="Direct link to Confirm" title="Direct link to Confirm" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L292"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Confirm</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Enter: confirms the modal action, or lets the tool finish what it is drawing.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Axis"><code style="text-decoration:none">Axis</code><a href="#Axis" class="hash-link" aria-label="Direct link to Axis" title="Direct link to Axis" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L311"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Axis</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>axis<!-- -->: </code><code class="blue_P4bS">AxisLock.Axis</code><code>,</code></div><div><code>plane<!-- -->: </code><code class="blue_P4bS">boolean</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  X, Y or Z, with Alt for a plane: picks the axis of an armed flip or turn, else locks the axis of
+  the modal action or the tool.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Hide"><code style="text-decoration:none">Hide</code><a href="#Hide" class="hash-link" aria-label="Direct link to Hide" title="Direct link to Hide" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L339"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Hide</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>H: hides the selected parts for everyone. Only the admin may.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="UnhideAll"><code style="text-decoration:none">UnhideAll</code><a href="#UnhideAll" class="hash-link" aria-label="Direct link to UnhideAll" title="Direct link to UnhideAll" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L361"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">UnhideAll</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Alt+H: shows every hidden part again, for everyone. Only the admin may.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ToggleHiddenView"><code style="text-decoration:none">ToggleHiddenView</code><a href="#ToggleHiddenView" class="hash-link" aria-label="Direct link to ToggleHiddenView" title="Direct link to ToggleHiddenView" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L376"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">ToggleHiddenView</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>I: shows hidden parts as ghosts, or hides them fully again.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="TogglePastel"><code style="text-decoration:none">TogglePastel</code><a href="#TogglePastel" class="hash-link" aria-label="Direct link to TogglePastel" title="Direct link to TogglePastel" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L386"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">TogglePastel</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>P or the toolbar: themes on or off. Only the admin may.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ToggleGrid"><code style="text-decoration:none">ToggleGrid</code><a href="#ToggleGrid" class="hash-link" aria-label="Direct link to ToggleGrid" title="Direct link to ToggleGrid" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L397"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">ToggleGrid</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>L or the toolbar: the surface grid on or off. Only the admin may.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="StepTheme"><code style="text-decoration:none">StepTheme</code><a href="#StepTheme" class="hash-link" aria-label="Direct link to StepTheme" title="Direct link to StepTheme" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L410"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">StepTheme</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>step<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>1 for the next theme, -1 for the previous</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  Moves to the next or previous color theme, wrapping around, and switches themes on if they are
+  off. Only the admin may.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ToggleCameraLight"><code style="text-decoration:none">ToggleCameraLight</code><a href="#ToggleCameraLight" class="hash-link" aria-label="Direct link to ToggleCameraLight" title="Direct link to ToggleCameraLight" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L431"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">ToggleCameraLight</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="GiveAdmin"><code style="text-decoration:none">GiveAdmin</code><a href="#GiveAdmin" class="hash-link" aria-label="Direct link to GiveAdmin" title="Direct link to GiveAdmin" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L444"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">GiveAdmin</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>userId<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Hands admin of the working folder to another user. Only the admin may.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="RequestAdmin"><code style="text-decoration:none">RequestAdmin</code><a href="#RequestAdmin" class="hash-link" aria-label="Direct link to RequestAdmin" title="Direct link to RequestAdmin" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L453"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">RequestAdmin</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Asks the folder's admin to hand admin over.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="TakeOverAdmin"><code style="text-decoration:none">TakeOverAdmin</code><a href="#TakeOverAdmin" class="hash-link" aria-label="Direct link to TakeOverAdmin" title="Direct link to TakeOverAdmin" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L462"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">TakeOverAdmin</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Takes admin from an admin who has been idle too long.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="IgnoreRequest"><code style="text-decoration:none">IgnoreRequest</code><a href="#IgnoreRequest" class="hash-link" aria-label="Direct link to IgnoreRequest" title="Direct link to IgnoreRequest" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L471"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">IgnoreRequest</code><code>(</code><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Turns down the open admin request.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Perform"><code style="text-decoration:none">Perform</code><a href="#Perform" class="hash-link" aria-label="Direct link to Perform" title="Direct link to Perform" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/App/Actions.luau#L538"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Actions<!-- -->.</code><code class="green_DgR4">Perform</code><code>(</code><div class="inset_uKQm"><div><code>app<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code><code>,</code></div><div><code>action<!-- -->: </code><code class="blue_P4bS">string</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Carries out a hotkey action from <code>Keymap.Resolve</code>.</p>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;CanBuild&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;true when the place may be edited now: edit mode and a usable working folder; says why when not&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 42,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Guarded&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;run&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; ()&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the same action, but it only runs once a working folder is set&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; ()&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 57,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;StartModal&quot;,
+            &quot;desc&quot;: &quot;Starts a modal action made by `make`, after ending whatever ran before.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;make&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; Modal?&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 71,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;StartMove&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;kind&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Transform.Kind&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;duplicate&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 88,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Arm&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;which&quot;,
+                    &quot;desc&quot;: &quot;the action that waits for its axis key&quot;,
+                    &quot;lua_type&quot;: &quot;Host.Armed&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 98,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Select&quot;,
+            &quot;desc&quot;: &quot;Picks a tool tile, or turns the tool off when its tile is already on.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;id&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 118,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;SetMode&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;mode&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 126,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;PickProp&quot;,
+            &quot;desc&quot;: &quot;Picks a prop and starts placing it.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;id&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 136,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;BrushesChanged&quot;,
+            &quot;desc&quot;: &quot;Tells the brush tool the brush list changed, and redraws the list.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 146,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ShowPage&quot;,
+            &quot;desc&quot;: &quot;Switches the panel tab. Leaving a tab stops the tool and drops an unconfirmed folder pick.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;name&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 157,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;CycleTab&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;delta&quot;,
+                    &quot;desc&quot;: &quot;1 for the next tab, -1 for the one before&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 175,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;StepSection&quot;,
+            &quot;desc&quot;: &quot;Steps the Props tab to the next or previous section.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;delta&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 188,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;StepProp&quot;,
+            &quot;desc&quot;: &quot;Picks the next or previous prop of the section on show.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;delta&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 204,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Scroll&quot;,
+            &quot;desc&quot;: &quot;The mouse wheel with Ctrl or Alt: steps tools and their options, or the Props tab&#x27;s sections and\nprops while it is on show.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;tiles&quot;,
+                    &quot;desc&quot;: &quot;Ctrl: step tiles (or sections); Alt: step options (or props)&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;step&quot;,
+                    &quot;desc&quot;: &quot;1 or -1&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 227,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ChangeHeight&quot;,
+            &quot;desc&quot;: &quot;[ and ]: raises or lowers the height that matters for the active tool by one grid step.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;direction&quot;,
+                    &quot;desc&quot;: &quot;1 or -1&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 247,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Cancel&quot;,
+            &quot;desc&quot;: &quot;Esc: the innermost thing running steps back.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 269,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Confirm&quot;,
+            &quot;desc&quot;: &quot;Enter: confirms the modal action, or lets the tool finish what it is drawing.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 292,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Axis&quot;,
+            &quot;desc&quot;: &quot;X, Y or Z, with Alt for a plane: picks the axis of an armed flip or turn, else locks the axis of\nthe modal action or the tool.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;axis&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;AxisLock.Axis&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;plane&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 311,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Hide&quot;,
+            &quot;desc&quot;: &quot;H: hides the selected parts for everyone. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 339,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;UnhideAll&quot;,
+            &quot;desc&quot;: &quot;Alt+H: shows every hidden part again, for everyone. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 361,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ToggleHiddenView&quot;,
+            &quot;desc&quot;: &quot;I: shows hidden parts as ghosts, or hides them fully again.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 376,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;TogglePastel&quot;,
+            &quot;desc&quot;: &quot;P or the toolbar: themes on or off. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 386,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ToggleGrid&quot;,
+            &quot;desc&quot;: &quot;L or the toolbar: the surface grid on or off. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 397,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;StepTheme&quot;,
+            &quot;desc&quot;: &quot;Moves to the next or previous color theme, wrapping around, and switches themes on if they are\noff. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;step&quot;,
+                    &quot;desc&quot;: &quot;1 for the next theme, -1 for the previous&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 410,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ToggleCameraLight&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 431,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;GiveAdmin&quot;,
+            &quot;desc&quot;: &quot;Hands admin of the working folder to another user. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;userId&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 444,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;RequestAdmin&quot;,
+            &quot;desc&quot;: &quot;Asks the folder&#x27;s admin to hand admin over.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 453,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;TakeOverAdmin&quot;,
+            &quot;desc&quot;: &quot;Takes admin from an admin who has been idle too long.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 462,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;IgnoreRequest&quot;,
+            &quot;desc&quot;: &quot;Turns down the open admin request.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 471,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Perform&quot;,
+            &quot;desc&quot;: &quot;Carries out a hotkey action from `Keymap.Resolve`.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;app&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;action&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 538,
+                &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [],
+    &quot;types&quot;: [],
+    &quot;name&quot;: &quot;Actions&quot;,
+    &quot;desc&quot;: &quot;Everything the user can ask for, by hotkey or from the panel. `Perform` takes a hotkey action\nname from `Pure/Keymap`; the panel calls the named functions directly. Either way the same code\nruns, so a key and its button cannot drift apart.&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 10,
+        &quot;path&quot;: &quot;src/App/Actions.luau&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Arm" class="table-of-contents__link toc-highlight">.Arm</a></li><li><a href="#Axis" class="table-of-contents__link toc-highlight">.Axis</a></li><li><a href="#BrushesChanged" class="table-of-contents__link toc-highlight">.BrushesChanged</a></li><li><a href="#CanBuild" class="table-of-contents__link toc-highlight">.CanBuild</a></li><li><a href="#Cancel" class="table-of-contents__link toc-highlight">.Cancel</a></li><li><a href="#ChangeHeight" class="table-of-contents__link toc-highlight">.ChangeHeight</a></li><li><a href="#Confirm" class="table-of-contents__link toc-highlight">.Confirm</a></li><li><a href="#CycleTab" class="table-of-contents__link toc-highlight">.CycleTab</a></li><li><a href="#GiveAdmin" class="table-of-contents__link toc-highlight">.GiveAdmin</a></li><li><a href="#Guarded" class="table-of-contents__link toc-highlight">.Guarded</a></li><li><a href="#Hide" class="table-of-contents__link toc-highlight">.Hide</a></li><li><a href="#IgnoreRequest" class="table-of-contents__link toc-highlight">.IgnoreRequest</a></li><li><a href="#Perform" class="table-of-contents__link toc-highlight">.Perform</a></li><li><a href="#PickProp" class="table-of-contents__link toc-highlight">.PickProp</a></li><li><a href="#RequestAdmin" class="table-of-contents__link toc-highlight">.RequestAdmin</a></li><li><a href="#Scroll" class="table-of-contents__link toc-highlight">.Scroll</a></li><li><a href="#Select" class="table-of-contents__link toc-highlight">.Select</a></li><li><a href="#SetMode" class="table-of-contents__link toc-highlight">.SetMode</a></li><li><a href="#ShowPage" class="table-of-contents__link toc-highlight">.ShowPage</a></li><li><a href="#StartModal" class="table-of-contents__link toc-highlight">.StartModal</a></li><li><a href="#StartMove" class="table-of-contents__link toc-highlight">.StartMove</a></li><li><a href="#StepProp" class="table-of-contents__link toc-highlight">.StepProp</a></li><li><a href="#StepSection" class="table-of-contents__link toc-highlight">.StepSection</a></li><li><a href="#StepTheme" class="table-of-contents__link toc-highlight">.StepTheme</a></li><li><a href="#TakeOverAdmin" class="table-of-contents__link toc-highlight">.TakeOverAdmin</a></li><li><a href="#ToggleCameraLight" class="table-of-contents__link toc-highlight">.ToggleCameraLight</a></li><li><a href="#ToggleGrid" class="table-of-contents__link toc-highlight">.ToggleGrid</a></li><li><a href="#ToggleHiddenView" class="table-of-contents__link toc-highlight">.ToggleHiddenView</a></li><li><a href="#TogglePastel" class="table-of-contents__link toc-highlight">.TogglePastel</a></li><li><a href="#UnhideAll" class="table-of-contents__link toc-highlight">.UnhideAll</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 Vlux-Entertainment. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+</body>
+</html>

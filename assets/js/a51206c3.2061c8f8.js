@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[5684],{42988:o=>{o.exports=JSON.parse('{"functions":[],"properties":[],"types":[],"name":"DrawAreas","desc":"The corner-to-corner tools: rooms, floors, foundations, porches, roofs and blocks. Two clicks\\nmark opposite corners of the footprint.","source":{"line":9,"path":"src/Tools/Draw/Areas.luau"}}')}}]);

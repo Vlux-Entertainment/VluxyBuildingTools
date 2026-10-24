@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="plugin-moonwave plugin-id-moonwave" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">Engine | VluxyBuildingTools</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Engine"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Engine | VluxyBuildingTools"><meta data-rh="true" name="description" content="The engine behind every point-to-point tool: walls, rooms, corridors, stairs, vents and the rest.
+
+The engine owns the drawing: the first point, the mouse point, axis locks, the Y height drag, the
+rise stage of stairs and sloped vents, typed lengths and chaining one segment onto the next. A
+shape (see `Shape`) only says what is different about it: where its points may land, what it
+builds between two points, and what to do after building. Turn a shape into a tool with
+`Engine.Tool(shape)`.
+
+The flow, with the state field that holds each step:
+
+1. Before the first click the cursor is shown where a build would start (`Current`).
+2. The first click fixes `First`. Moving the mouse previews the build from `First` to `Current`.
+3. A shape with `Rise` takes one more click: the next one fixes the run and starts the rise
+   (`Rise`), and the mouse then sets the height.
+4. The next click builds. A chaining shape keeps going from the end point (`Chained`); the last
+   segment is kept in `Previous` so the next one can join it."><meta data-rh="true" property="og:description" content="The engine behind every point-to-point tool: walls, rooms, corridors, stairs, vents and the rest.
+
+The engine owns the drawing: the first point, the mouse point, axis locks, the Y height drag, the
+rise stage of stairs and sloped vents, typed lengths and chaining one segment onto the next. A
+shape (see `Shape`) only says what is different about it: where its points may land, what it
+builds between two points, and what to do after building. Turn a shape into a tool with
+`Engine.Tool(shape)`.
+
+The flow, with the state field that holds each step:
+
+1. Before the first click the cursor is shown where a build would start (`Current`).
+2. The first click fixes `First`. Moving the mouse previews the build from `First` to `Current`.
+3. A shape with `Rise` takes one more click: the next one fixes the run and starts the rise
+   (`Rise`), and the mouse then sets the height.
+4. The next click builds. A chaining shape keeps going from the end point (`Chained`); the last
+   segment is kept in `Previous` so the next one can join it."><link data-rh="true" rel="icon" href="/VluxyBuildingTools/VluxFavicon.ico"><link data-rh="true" rel="canonical" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Engine"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Engine" hreflang="en"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Engine" hreflang="x-default"><link rel="stylesheet" href="/VluxyBuildingTools/assets/css/styles.5ec48d9a.css">
+<script src="/VluxyBuildingTools/assets/js/runtime~main.afcab08f.js" defer="defer"></script>
+<script src="/VluxyBuildingTools/assets/js/main.bf70fa6e.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/VluxyBuildingTools/"><b class="navbar__title text--truncate">VluxyBuildingTools</b></a><a class="navbar__item navbar__link" href="/VluxyBuildingTools/docs/intro">Docs</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/VluxyBuildingTools/api/">API</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/Ebbp9UgBUD" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/Vlux-Entertainment/VluxyBuildingTools" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input id="search_input_react" type="search" placeholder="Loading..." aria-label="Search" class="navbar__search-input search-bar" disabled=""></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0 docPageContainer_wNNk"><div class="docPage_Dpn1"><div class="docSidebarContainer_o_re"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/App"><span title="App" class="categoryLinkLabel_W154">App</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Store"><span title="State" class="categoryLinkLabel_W154">State</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Edit"><span title="Services" class="categoryLinkLabel_W154">Services</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/VluxyBuildingTools/api/Runner"><span title="Tools" class="categoryLinkLabel_W154">Tools</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Runner"><span title="​Runner" class="linkLabel_WmDU">​Runner</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Registry"><span title="​Registry" class="linkLabel_WmDU">​Registry</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/ToolTypes"><span title="​Tool​Types" class="linkLabel_WmDU">​Tool​Types</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Common"><span title="​Common" class="linkLabel_WmDU">​Common</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/VluxyBuildingTools/api/Engine"><span title="​Engine" class="linkLabel_WmDU">​Engine</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Points"><span title="​Points" class="linkLabel_WmDU">​Points</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Bends"><span title="​Bends" class="linkLabel_WmDU">​Bends</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/DrawWalls"><span title="​Draw​Walls" class="linkLabel_WmDU">​Draw​Walls</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/DrawAreas"><span title="​Draw​Areas" class="linkLabel_WmDU">​Draw​Areas</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/DrawCorridors"><span title="​Draw​Corridors" class="linkLabel_WmDU">​Draw​Corridors</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/DrawSlopes"><span title="​Draw​Slopes" class="linkLabel_WmDU">​Draw​Slopes</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/DrawVents"><span title="​Draw​Vents" class="linkLabel_WmDU">​Draw​Vents</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/OpeningTools"><span title="​Opening​Tools" class="linkLabel_WmDU">​Opening​Tools</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/CutShape"><span title="​Cut​Shape" class="linkLabel_WmDU">​Cut​Shape</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Extend"><span title="​Extend" class="linkLabel_WmDU">​Extend</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Pillar"><span title="​Pillar" class="linkLabel_WmDU">​Pillar</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/VentPieces"><span title="​Vent​Pieces" class="linkLabel_WmDU">​Vent​Pieces</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Brush"><span title="​Brush" class="linkLabel_WmDU">​Brush</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Prop"><span title="​Prop" class="linkLabel_WmDU">​Prop</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Measure"><span title="​Measure" class="linkLabel_WmDU">​Measure</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Host"><span title="Modal actions" class="categoryLinkLabel_W154">Modal actions</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Areas"><span title="Builders" class="categoryLinkLabel_W154">Builders</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Geometry"><span title="Core" class="categoryLinkLabel_W154">Core</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Settings"><span title="Pure (tested under Lune)" class="categoryLinkLabel_W154">Pure (tested under Lune)</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Panel"><span title="Panel" class="categoryLinkLabel_W154">Panel</span></a></div></li></ul></nav></div></div><main class="docMainContainer_HJE1"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_MU3C"><div class="docItemContainer_Wv98"><article><div class="member_J0w1 markdown"><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_oUs_"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><header><h1 class="docTitle_mZRt" style="text-decoration:none"><span style="display:inline-block">Engine</span></h1><div class="luaClassTags_EipM"></div><div>
+<p>The engine behind every point-to-point tool: walls, rooms, corridors, stairs, vents and the rest.</p>
+<p>
+  The engine owns the drawing: the first point, the mouse point, axis locks, the Y height drag, the
+  rise stage of stairs and sloped vents, typed lengths and chaining one segment onto the next. A
+  shape (see <code>Shape</code>) only says what is different about it: where its points may land, what it
+  builds between two points, and what to do after building. Turn a shape into a tool with
+  <code>Engine.Tool(shape)</code>.
+</p>
+<p>The flow, with the state field that holds each step:</p>
+<ol>
+  <li>Before the first click the cursor is shown where a build would start (<code>Current</code>).</li>
+  <li>The first click fixes <code>First</code>. Moving the mouse previews the build from <code>First</code> to <code>Current</code>.</li>
+  <li>
+    A shape with <code>Rise</code> takes one more click: the next one fixes the run and starts the rise
+    (<code>Rise</code>), and the mouse then sets the height.
+  </li>
+  <li>
+    The next click builds. A chaining shape keeps going from the end point (<code>Chained</code>); the last
+    segment is kept in <code>Previous</code> so the next one can join it.
+  </li>
+</ol>
+</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="types">Types<a href="#types" class="hash-link" aria-label="Direct link to Types" title="Direct link to Types" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Segment"><code style="text-decoration:none">Segment</code><a href="#Segment" class="hash-link" aria-label="Direct link to Segment" title="Direct link to Segment" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L49"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Segment<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>model<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>what the segment built</p>
+</span></span></div><div><code>dir<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>its flat direction</p>
+</span></span></div><div><code>strips<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS">Shapes.Strip</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+<p>the layers across it, which a bend lines up</p>
+</span></span></div></div><code>}</code></div><div>
+<p>The last segment of a chain, kept so the next segment can join it at a bend.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentState"><code style="text-decoration:none">VentState</code><a href="#VentState" class="hash-link" aria-label="Direct link to VentState" title="Direct link to VentState" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L65"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>VentState<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Normal<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the normal of the surface the run started on</p>
+</span></span></div><div><code>Host<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the direction of the vent the run started from</p>
+</span></span></div><div><code>Shift<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>how far the run is pushed so it sits against its surface or host</p>
+</span></span></div><div><code>HitNormal<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the surface normal under the cursor before the first click</p>
+</span></span></div><div><code>HitHost<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the vent direction under the cursor before the first click</p>
+</span></span></div><div><code>Marks<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+<p>the points a vent can start from near the cursor</p>
+</span></span></div><div><code>Ends<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">}</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the two duct ends of the previewed build, centered</p>
+</span></span></div></div><code>}</code></div><div>
+<p>
+  The vent tools' extra drawing state. Vents start against surfaces and other vents, so they
+  remember what they started on.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Draw"><code style="text-decoration:none">Draw</code><a href="#Draw" class="hash-link" aria-label="Direct link to Draw" title="Direct link to Draw" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L81"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Draw<!-- --> <!-- -->{</code><code>}</code></div><div>
+<p>The state of one drawing tool.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Sized"><code style="text-decoration:none">Sized</code><a href="#Sized" class="hash-link" aria-label="Direct link to Sized" title="Direct link to Sized" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L112"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Sized<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Live<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Settings">Settings</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the settings to build with: the fine grid while Shift is held, the dragged height, a doorway's size</p>
+</span></span></div><div><code>Height<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the height from the Y drag or rise stage, when one runs</p>
+</span></span></div><div><code>Signed<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>the same height with its sign, for parts that can go down</p>
+</span></span></div></div><code>}</code></div><div>
+<p>What the preview worked out, handed to a shape's <code>Build</code>.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Built"><code style="text-decoration:none">Built</code><a href="#Built" class="hash-link" aria-label="Direct link to Built" title="Direct link to Built" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L125"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Built<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Placed<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the Model (or loose Part) placed</p>
+</span></span></div><div><code>Model<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Model" target="_blank" rel="noopener noreferrer">Model?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p><code>Placed</code> when it is a Model</p>
+</span></span></div><div><code>Segment<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the flat vector from the first point to the end point</p>
+</span></span></div><div><code>Joint<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the first point, where the segment meets the one before it</p>
+</span></span></div><div><code>Previous<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Engine#Segment">Segment?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the segment before this one, if chained</p>
+</span></span></div></div><code>}</code></div><div>
+<p>What a shape's <code>Commit</code> gets after its build was placed, inside the undo step.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Shape"><code style="text-decoration:none">Shape</code><a href="#Shape" class="hash-link" aria-label="Direct link to Shape" title="Direct link to Shape" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L159"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Shape<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Id<!-- -->: </code><code class="blue_P4bS">string</code><span class="inlineDescription_G7Er">-- <span>
+<p>the tool mode</p>
+</span></span></div><div><code>Start<!-- -->: </code><code class="purple_ieR2">(</code><div class="inset_uKQm"><code class="blue_P4bS">ctx</code><code class="purple_ieR2">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">draw</code></div><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the point under the cursor before the first click</p>
+</span></span></div><div><code>Next<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS">ctx</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">draw</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">origin</code></div><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the point under the cursor after it; default the grid on the first point's level</p>
+</span></span></div><div><code>Build<!-- -->: </code><code class="purple_ieR2">(</code><div class="inset_uKQm"><code class="blue_P4bS">ctx</code><code class="purple_ieR2">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">draw</code><code class="purple_ieR2">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">a</code><code class="purple_ieR2">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">b</code><code class="purple_ieR2">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">sized</code></div><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">{</code><code class="blue_P4bS">Spec</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+<p>what to build between two points</p>
+</span></span></div><div><code>Readout<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS">draw</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">a</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">b</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">specs</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">sized</code></div><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">string</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the size label; default the length</p>
+</span></span></div><div><code>Problem<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="blue_P4bS">specs</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">string?</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>why nothing could be built, when <code>Build</code> returned nothing</p>
+</span></span></div><div><code>Idle<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS">ctx</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">draw</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">point</code></div><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="green_DgR4">{</code><code class="blue_P4bS">Spec</code><code class="green_DgR4">}</code><code class="blue_P4bS">?</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the marker before the first click; default a small block</p>
+</span></span></div><div><code>Constrain<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS">ctx</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">draw</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">a</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">b</code></div><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div><code class="green_DgR4">)</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>bends the drawn points, such as a vent turning only at right angles</p>
+</span></span></div><div><code>RiseOrigin<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS">draw</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">a</code></div><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>moves the first point during the rise stage</p>
+</span></span></div><div><code>OnStart<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS">ctx</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">draw</code></div><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the first click was made</p>
+</span></span></div><div><code>Commit<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><div class="inset_uKQm"><code class="blue_P4bS">ctx</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">draw</code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code class="blue_P4bS">built</code></div><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>runs inside the undo step after the build was placed</p>
+</span></span></div><div><code>Built<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="blue_P4bS">draw</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>runs after a successful build, to clear what one segment kept</p>
+</span></span></div><div><code>HeightDrag<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>Y drags the height</p>
+</span></span></div><div><code>Rise<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>a click after the run starts a rise stage</p>
+</span></span></div><div><code>Shaft<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the first click goes straight to the rise stage</p>
+</span></span></div><div><code>Chain<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>keep drawing from the end point after a build</p>
+</span></span></div><div><code>Loose<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>place loose Parts instead of one Model</p>
+</span></span></div><div><code>Joins<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>preview where the build joins rooms and corridors</p>
+</span></span></div><div><code>Vents<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>keeps a <code>VentState</code> in <code>draw.Vent</code></p>
+</span></span></div></div><code>}</code></div><div>
+<p>
+  What makes one drawing tool different from the others. Only <code>Id</code>, <code>Start</code> and <code>Build</code> are
+  required.
+</p>
+</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Preview"><code style="text-decoration:none">Preview</code><a href="#Preview" class="hash-link" aria-label="Direct link to Preview" title="Direct link to Preview" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L284"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Engine<!-- -->.</code><code class="green_DgR4">Preview</code><code>(</code><div class="inset_uKQm"><div><code>ctx<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ToolTypes#Context">Context</a></code><code>,</code></div><div><code>draw<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Engine#Draw">Draw</a></code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ToolTypes#Preview">Preview</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the build from the first point to the mouse, or the start marker before the first click</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Click"><code style="text-decoration:none">Click</code><a href="#Click" class="hash-link" aria-label="Direct link to Click" title="Direct link to Click" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L477"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Engine<!-- -->.</code><code class="green_DgR4">Click</code><code>(</code><div class="inset_uKQm"><div><code>ctx<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ToolTypes#Context">Context</a></code><code>,</code></div><div><code>draw<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Engine#Draw">Draw</a></code><code>,</code></div><div><code>preview<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ToolTypes#Preview">Preview?</a></code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>The first click fixes the start; later clicks start the rise stage or build.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Lock"><code style="text-decoration:none">Lock</code><a href="#Lock" class="hash-link" aria-label="Direct link to Lock" title="Direct link to Lock" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L520"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Engine<!-- -->.</code><code class="green_DgR4">Lock</code><code>(</code><div class="inset_uKQm"><div><code>ctx<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ToolTypes#Context">Context</a></code><code>,</code></div><div><code>draw<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Engine#Draw">Draw</a></code><code>,</code></div><div><code>axis<!-- -->: </code><code class="blue_P4bS">AxisLock.Axis</code><code>,</code></div><div><code>plane<!-- -->: </code><code class="blue_P4bS">boolean</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  Turns an axis lock on or off. Y drags the height of shapes with <code>HeightDrag</code>; other shapes only
+  take Y as a plane lock (Alt+Y), except the block, which grows up along it.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Tool"><code style="text-decoration:none">Tool</code><a href="#Tool" class="hash-link" aria-label="Direct link to Tool" title="Direct link to Tool" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L550"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Engine<!-- -->.</code><code class="green_DgR4">Tool</code><code>(</code><code>shape<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Engine#Shape">Shape</a></code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ToolTypes#Tool">Tool</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the drawing tool for the shape</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Reset"><code style="text-decoration:none">Reset</code><a href="#Reset" class="hash-link" aria-label="Direct link to Reset" title="Direct link to Reset" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Tools/Draw/Engine.luau#L597"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Engine<!-- -->.</code><code class="green_DgR4">Reset</code><code>(</code><div class="inset_uKQm"><div><code>ctx<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/ToolTypes#Context">Context</a></code><code>,</code></div><div><code>draw<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Engine#Draw">Draw</a></code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Starts a new chain: forgets every point, as Enter does.</p>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;Preview&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ctx&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Context&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;draw&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Draw&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the build from the first point to the mouse, or the start marker before the first click&quot;,
+                    &quot;lua_type&quot;: &quot;Preview&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 284,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Click&quot;,
+            &quot;desc&quot;: &quot;The first click fixes the start; later clicks start the rise stage or build.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ctx&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Context&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;draw&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Draw&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;preview&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Preview?&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 477,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Lock&quot;,
+            &quot;desc&quot;: &quot;Turns an axis lock on or off. Y drags the height of shapes with `HeightDrag`; other shapes only\ntake Y as a plane lock (Alt+Y), except the block, which grows up along it.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ctx&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Context&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;draw&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Draw&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;axis&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;AxisLock.Axis&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;plane&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 520,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Tool&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;shape&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Shape&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the drawing tool for the shape&quot;,
+                    &quot;lua_type&quot;: &quot;Tool&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 550,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Reset&quot;,
+            &quot;desc&quot;: &quot;Starts a new chain: forgets every point, as Enter does.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ctx&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Context&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;draw&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Draw&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 597,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [],
+    &quot;types&quot;: [
+        {
+            &quot;name&quot;: &quot;Segment&quot;,
+            &quot;desc&quot;: &quot;The last segment of a chain, kept so the next segment can join it at a bend.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;model&quot;,
+                    &quot;lua_type&quot;: &quot;Instance&quot;,
+                    &quot;desc&quot;: &quot;what the segment built&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;dir&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;its flat direction&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;strips&quot;,
+                    &quot;lua_type&quot;: &quot;{ Shapes.Strip }&quot;,
+                    &quot;desc&quot;: &quot;the layers across it, which a bend lines up&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 49,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentState&quot;,
+            &quot;desc&quot;: &quot;The vent tools&#x27; extra drawing state. Vents start against surfaces and other vents, so they\nremember what they started on.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Normal&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;,
+                    &quot;desc&quot;: &quot;the normal of the surface the run started on&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Host&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;,
+                    &quot;desc&quot;: &quot;the direction of the vent the run started from&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Shift&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;how far the run is pushed so it sits against its surface or host&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;HitNormal&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;,
+                    &quot;desc&quot;: &quot;the surface normal under the cursor before the first click&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;HitHost&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;,
+                    &quot;desc&quot;: &quot;the vent direction under the cursor before the first click&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Marks&quot;,
+                    &quot;lua_type&quot;: &quot;{ Vector3 }&quot;,
+                    &quot;desc&quot;: &quot;the points a vent can start from near the cursor&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Ends&quot;,
+                    &quot;lua_type&quot;: &quot;{ Vector3 }?&quot;,
+                    &quot;desc&quot;: &quot;the two duct ends of the previewed build, centered&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 65,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Draw&quot;,
+            &quot;desc&quot;: &quot;The state of one drawing tool.&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 81,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Sized&quot;,
+            &quot;desc&quot;: &quot;What the preview worked out, handed to a shape&#x27;s `Build`.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Live&quot;,
+                    &quot;lua_type&quot;: &quot;Settings&quot;,
+                    &quot;desc&quot;: &quot;the settings to build with: the fine grid while Shift is held, the dragged height, a doorway&#x27;s size&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Height&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;,
+                    &quot;desc&quot;: &quot;the height from the Y drag or rise stage, when one runs&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Signed&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;,
+                    &quot;desc&quot;: &quot;the same height with its sign, for parts that can go down&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 112,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Built&quot;,
+            &quot;desc&quot;: &quot;What a shape&#x27;s `Commit` gets after its build was placed, inside the undo step.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Placed&quot;,
+                    &quot;lua_type&quot;: &quot;Instance&quot;,
+                    &quot;desc&quot;: &quot;the Model (or loose Part) placed&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Model&quot;,
+                    &quot;lua_type&quot;: &quot;Model?&quot;,
+                    &quot;desc&quot;: &quot;`Placed` when it is a Model&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Segment&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;the flat vector from the first point to the end point&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Joint&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;the first point, where the segment meets the one before it&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Previous&quot;,
+                    &quot;lua_type&quot;: &quot;Segment?&quot;,
+                    &quot;desc&quot;: &quot;the segment before this one, if chained&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 125,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Shape&quot;,
+            &quot;desc&quot;: &quot;What makes one drawing tool different from the others. Only `Id`, `Start` and `Build` are\nrequired.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Id&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;,
+                    &quot;desc&quot;: &quot;the tool mode&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Start&quot;,
+                    &quot;lua_type&quot;: &quot;(ctx, draw) -&gt; Vector3?&quot;,
+                    &quot;desc&quot;: &quot;the point under the cursor before the first click&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Next&quot;,
+                    &quot;lua_type&quot;: &quot;((ctx, draw, origin) -&gt; Vector3?)?&quot;,
+                    &quot;desc&quot;: &quot;the point under the cursor after it; default the grid on the first point&#x27;s level&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Build&quot;,
+                    &quot;lua_type&quot;: &quot;(ctx, draw, a, b, sized) -&gt; { Spec }&quot;,
+                    &quot;desc&quot;: &quot;what to build between two points&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Readout&quot;,
+                    &quot;lua_type&quot;: &quot;((draw, a, b, specs, sized) -&gt; string)?&quot;,
+                    &quot;desc&quot;: &quot;the size label; default the length&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Problem&quot;,
+                    &quot;lua_type&quot;: &quot;((specs) -&gt; string?)?&quot;,
+                    &quot;desc&quot;: &quot;why nothing could be built, when `Build` returned nothing&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Idle&quot;,
+                    &quot;lua_type&quot;: &quot;((ctx, draw, point) -&gt; { Spec }?)?&quot;,
+                    &quot;desc&quot;: &quot;the marker before the first click; default a small block&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Constrain&quot;,
+                    &quot;lua_type&quot;: &quot;((ctx, draw, a, b) -&gt; (Vector3, Vector3))?&quot;,
+                    &quot;desc&quot;: &quot;bends the drawn points, such as a vent turning only at right angles&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;RiseOrigin&quot;,
+                    &quot;lua_type&quot;: &quot;((draw, a) -&gt; Vector3)?&quot;,
+                    &quot;desc&quot;: &quot;moves the first point during the rise stage&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;OnStart&quot;,
+                    &quot;lua_type&quot;: &quot;((ctx, draw) -&gt; ())?&quot;,
+                    &quot;desc&quot;: &quot;the first click was made&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Commit&quot;,
+                    &quot;lua_type&quot;: &quot;((ctx, draw, built) -&gt; ())?&quot;,
+                    &quot;desc&quot;: &quot;runs inside the undo step after the build was placed&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Built&quot;,
+                    &quot;lua_type&quot;: &quot;((draw) -&gt; ())?&quot;,
+                    &quot;desc&quot;: &quot;runs after a successful build, to clear what one segment kept&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;HeightDrag&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;Y drags the height&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Rise&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;a click after the run starts a rise stage&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Shaft&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;the first click goes straight to the rise stage&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Chain&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;keep drawing from the end point after a build&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Loose&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;place loose Parts instead of one Model&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Joins&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;preview where the build joins rooms and corridors&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Vents&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;keeps a `VentState` in `draw.Vent`&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 159,
+                &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+            }
+        }
+    ],
+    &quot;name&quot;: &quot;Engine&quot;,
+    &quot;desc&quot;: &quot;The engine behind every point-to-point tool: walls, rooms, corridors, stairs, vents and the rest.\n\nThe engine owns the drawing: the first point, the mouse point, axis locks, the Y height drag, the\nrise stage of stairs and sloped vents, typed lengths and chaining one segment onto the next. A\nshape (see `Shape`) only says what is different about it: where its points may land, what it\nbuilds between two points, and what to do after building. Turn a shape into a tool with\n`Engine.Tool(shape)`.\n\nThe flow, with the state field that holds each step:\n\n1. Before the first click the cursor is shown where a build would start (`Current`).\n2. The first click fixes `First`. Moving the mouse previews the build from `First` to `Current`.\n3. A shape with `Rise` takes one more click: the next one fixes the run and starts the rise\n   (`Rise`), and the mouse then sets the height.\n4. The next click builds. A chaining shape keeps going from the end point (`Chained`); the last\n   segment is kept in `Previous` so the next one can join it.&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 23,
+        &quot;path&quot;: &quot;src/Tools/Draw/Engine.luau&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#Built" class="table-of-contents__link toc-highlight">Built</a></li><li><a href="#Draw" class="table-of-contents__link toc-highlight">Draw</a></li><li><a href="#Segment" class="table-of-contents__link toc-highlight">Segment</a></li><li><a href="#Shape" class="table-of-contents__link toc-highlight">Shape</a></li><li><a href="#Sized" class="table-of-contents__link toc-highlight">Sized</a></li><li><a href="#VentState" class="table-of-contents__link toc-highlight">VentState</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Click" class="table-of-contents__link toc-highlight">.Click</a></li><li><a href="#Lock" class="table-of-contents__link toc-highlight">.Lock</a></li><li><a href="#Preview" class="table-of-contents__link toc-highlight">.Preview</a></li><li><a href="#Reset" class="table-of-contents__link toc-highlight">.Reset</a></li><li><a href="#Tool" class="table-of-contents__link toc-highlight">.Tool</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 Vlux-Entertainment. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+</body>
+</html>

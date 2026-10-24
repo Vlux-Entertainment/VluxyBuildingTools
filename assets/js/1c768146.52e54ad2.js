@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[7147],{22495:e=>{e.exports=JSON.parse('{"functions":[],"properties":[],"types":[],"name":"PluginInfo","desc":"Name and version of the plugin, for the toolbar and the tests.","source":{"line":8,"path":"src/Pure/PluginInfo.luau"}}')}}]);

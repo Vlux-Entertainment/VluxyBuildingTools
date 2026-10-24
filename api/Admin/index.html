@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="plugin-moonwave plugin-id-moonwave" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">Admin | VluxyBuildingTools</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Admin"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Admin | VluxyBuildingTools"><meta data-rh="true" name="description" content="Who is working in the working folder, and which of them is its admin. While the panel is open,
+this user leaves a heartbeat and a joined time as attributes on the folder (`AdminRules` names
+them); the admin alone changes the shared map settings and hides parts. These attributes are not
+undoable edits, so they are written outside any recording and cleared on leaving. This user&#x27;s
+last activity is published too, about once a minute, so teammates may take over an idle admin.
+
+The rules live in `Pure/AdminRules`. Only the user who should become admin writes the change,
+so two clients never race to claim it. The result is mirrored into `AppState` for the panel."><meta data-rh="true" property="og:description" content="Who is working in the working folder, and which of them is its admin. While the panel is open,
+this user leaves a heartbeat and a joined time as attributes on the folder (`AdminRules` names
+them); the admin alone changes the shared map settings and hides parts. These attributes are not
+undoable edits, so they are written outside any recording and cleared on leaving. This user&#x27;s
+last activity is published too, about once a minute, so teammates may take over an idle admin.
+
+The rules live in `Pure/AdminRules`. Only the user who should become admin writes the change,
+so two clients never race to claim it. The result is mirrored into `AppState` for the panel."><link data-rh="true" rel="icon" href="/VluxyBuildingTools/VluxFavicon.ico"><link data-rh="true" rel="canonical" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Admin"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Admin" hreflang="en"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Admin" hreflang="x-default"><link rel="stylesheet" href="/VluxyBuildingTools/assets/css/styles.5ec48d9a.css">
+<script src="/VluxyBuildingTools/assets/js/runtime~main.afcab08f.js" defer="defer"></script>
+<script src="/VluxyBuildingTools/assets/js/main.bf70fa6e.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/VluxyBuildingTools/"><b class="navbar__title text--truncate">VluxyBuildingTools</b></a><a class="navbar__item navbar__link" href="/VluxyBuildingTools/docs/intro">Docs</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/VluxyBuildingTools/api/">API</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/Ebbp9UgBUD" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/Vlux-Entertainment/VluxyBuildingTools" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input id="search_input_react" type="search" placeholder="Loading..." aria-label="Search" class="navbar__search-input search-bar" disabled=""></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0 docPageContainer_wNNk"><div class="docPage_Dpn1"><div class="docSidebarContainer_o_re"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/App"><span title="App" class="categoryLinkLabel_W154">App</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Store"><span title="State" class="categoryLinkLabel_W154">State</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/VluxyBuildingTools/api/Edit"><span title="Services" class="categoryLinkLabel_W154">Services</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Edit"><span title="​Edit" class="linkLabel_WmDU">​Edit</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Display"><span title="​Display" class="linkLabel_WmDU">​Display</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/WorkingFolder"><span title="​Working​Folder" class="linkLabel_WmDU">​Working​Folder</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Cursor"><span title="​Cursor" class="linkLabel_WmDU">​Cursor</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/CameraLight"><span title="​Camera​Light" class="linkLabel_WmDU">​Camera​Light</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Status"><span title="​Status" class="linkLabel_WmDU">​Status</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/VluxyBuildingTools/api/Admin"><span title="​Admin" class="linkLabel_WmDU">​Admin</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/EditSounds"><span title="​Edit​Sounds" class="linkLabel_WmDU">​Edit​Sounds</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Runner"><span title="Tools" class="categoryLinkLabel_W154">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Host"><span title="Modal actions" class="categoryLinkLabel_W154">Modal actions</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Areas"><span title="Builders" class="categoryLinkLabel_W154">Builders</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Geometry"><span title="Core" class="categoryLinkLabel_W154">Core</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Settings"><span title="Pure (tested under Lune)" class="categoryLinkLabel_W154">Pure (tested under Lune)</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Panel"><span title="Panel" class="categoryLinkLabel_W154">Panel</span></a></div></li></ul></nav></div></div><main class="docMainContainer_HJE1"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_MU3C"><div class="docItemContainer_Wv98"><article><div class="member_J0w1 markdown"><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_oUs_"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><header><h1 class="docTitle_mZRt" style="text-decoration:none"><span style="display:inline-block">Admin</span></h1><div class="luaClassTags_EipM"></div><div>
+<p>
+  Who is working in the working folder, and which of them is its admin. While the panel is open,
+  this user leaves a heartbeat and a joined time as attributes on the folder (<code>AdminRules</code> names
+  them); the admin alone changes the shared map settings and hides parts. These attributes are not
+  undoable edits, so they are written outside any recording and cleared on leaving. This user's
+  last activity is published too, about once a minute, so teammates may take over an idle admin.
+</p>
+<p>
+  The rules live in <code>Pure/AdminRules</code>. Only the user who should become admin writes the change,
+  so two clients never race to claim it. The result is mirrored into <code>AppState</code> for the panel.
+</p>
+</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="new"><code style="text-decoration:none">new</code><a href="#new" class="hash-link" aria-label="Direct link to new" title="Direct link to new" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L194"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">new</code><code>(</code><div class="inset_uKQm"><div><code>deps<!-- -->: </code><code class="blue_P4bS">Deps</code><code>,</code></div><div><code>trove<!-- -->: </code><code class="blue_P4bS">Trove</code><span class="inlineDescription_G7Er">-- <span>
+<p>stops the lookups and drops the folder and activity watches when the plugin unloads</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="NameOf"><code style="text-decoration:none">NameOf</code><a href="#NameOf" class="hash-link" aria-label="Direct link to NameOf" title="Direct link to NameOf" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L236"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">NameOf</code><code>(</code><div class="inset_uKQm"><div><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>,</code></div><div><code>id<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code class="blue_P4bS">string</code><span class="inlineDescription_G7Er">-- <span>
+<p>the user's name, or a stand-in until it loads</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="AdminName"><code style="text-decoration:none">AdminName</code><a href="#AdminName" class="hash-link" aria-label="Direct link to AdminName" title="Direct link to AdminName" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L246"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">AdminName</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code class="blue_P4bS">string</code><span class="inlineDescription_G7Er">-- <span>
+<p>the admin's name, for messages</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Refresh"><code style="text-decoration:none">Refresh</code><a href="#Refresh" class="hash-link" aria-label="Direct link to Refresh" title="Direct link to Refresh" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L267"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">Refresh</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  Rereads the folder: claims admin when this user should have it, forgets long-gone users, and
+  updates the people, admin and request shown in the panel.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Leave"><code style="text-decoration:none">Leave</code><a href="#Leave" class="hash-link" aria-label="Direct link to Leave" title="Direct link to Leave" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L361"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">Leave</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Stops being present on the folder: clears this user's attributes, and hands admin on.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Step"><code style="text-decoration:none">Step</code><a href="#Step" class="hash-link" aria-label="Direct link to Step" title="Direct link to Step" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L439"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">Step</code><code>(</code><div class="inset_uKQm"><div><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>,</code></div><div><code>dt<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  Runs every frame: follows the working folder and the panel being open, beats every
+  <code>AdminRules.HEARTBEAT</code> seconds, and publishes new activity at most every <code>AdminRules.ACTIVE_EVERY</code>
+  seconds. Rereads the folder once a second or when it changes.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Allows"><code style="text-decoration:none">Allows</code><a href="#Allows" class="hash-link" aria-label="Direct link to Allows" title="Direct link to Allows" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L485"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">Allows</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether this user may change shared settings now; says who may when not</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="OthersOn"><code style="text-decoration:none">OthersOn</code><a href="#OthersOn" class="hash-link" aria-label="Direct link to OthersOn" title="Direct link to OthersOn" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L500"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">OthersOn</code><code>(</code><div class="inset_uKQm"><div><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>,</code></div><div><code>folder<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div></div><code>) → </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether someone else is present on the folder now</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="OthersHere"><code style="text-decoration:none">OthersHere</code><a href="#OthersHere" class="hash-link" aria-label="Direct link to OthersHere" title="Direct link to OthersHere" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L514"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">OthersHere</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether a teammate has the plugin open on this folder, or an older plugin open anywhere</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Give"><code style="text-decoration:none">Give</code><a href="#Give" class="hash-link" aria-label="Direct link to Give" title="Direct link to Give" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L538"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">Give</code><code>(</code><div class="inset_uKQm"><div><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>,</code></div><div><code>userId<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Hands admin to another user present on the folder. Only the admin may.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Request"><code style="text-decoration:none">Request</code><a href="#Request" class="hash-link" aria-label="Direct link to Request" title="Direct link to Request" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L560"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">Request</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Asks the admin to hand admin over; the request runs out after <code>AdminRules.REQUEST_FOR</code> seconds.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="CanTakeOver"><code style="text-decoration:none">CanTakeOver</code><a href="#CanTakeOver" class="hash-link" aria-label="Direct link to CanTakeOver" title="Direct link to CanTakeOver" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L593"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">CanTakeOver</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether someone else is admin, present and idle, so this user may take over</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="TakeOver"><code style="text-decoration:none">TakeOver</code><a href="#TakeOver" class="hash-link" aria-label="Direct link to TakeOver" title="Direct link to TakeOver" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L604"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">TakeOver</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Takes admin from an idle admin, after checking again that they are still idle.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Ignore"><code style="text-decoration:none">Ignore</code><a href="#Ignore" class="hash-link" aria-label="Direct link to Ignore" title="Direct link to Ignore" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Services/Admin.luau#L636"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Admin<!-- -->.</code><code class="green_DgR4">Ignore</code><code>(</code><code>self<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Admin">Admin</a></code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Turns down the open admin request. Only the admin may.</p>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;new&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;deps&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Deps&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;trove&quot;,
+                    &quot;desc&quot;: &quot;stops the lookups and drops the folder and activity watches when the plugin unloads&quot;,
+                    &quot;lua_type&quot;: &quot;Trove&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 194,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;NameOf&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;id&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the user&#x27;s name, or a stand-in until it loads&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 236,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;AdminName&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the admin&#x27;s name, for messages&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 246,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Refresh&quot;,
+            &quot;desc&quot;: &quot;Rereads the folder: claims admin when this user should have it, forgets long-gone users, and\nupdates the people, admin and request shown in the panel.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 267,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Leave&quot;,
+            &quot;desc&quot;: &quot;Stops being present on the folder: clears this user&#x27;s attributes, and hands admin on.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 361,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Step&quot;,
+            &quot;desc&quot;: &quot;Runs every frame: follows the working folder and the panel being open, beats every\n`AdminRules.HEARTBEAT` seconds, and publishes new activity at most every `AdminRules.ACTIVE_EVERY`\nseconds. Rereads the folder once a second or when it changes.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;dt&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 439,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Allows&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;whether this user may change shared settings now; says who may when not&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 485,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;OthersOn&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;folder&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Instance&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;whether someone else is present on the folder now&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 500,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;OthersHere&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;whether a teammate has the plugin open on this folder, or an older plugin open anywhere&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 514,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Give&quot;,
+            &quot;desc&quot;: &quot;Hands admin to another user present on the folder. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;userId&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 538,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Request&quot;,
+            &quot;desc&quot;: &quot;Asks the admin to hand admin over; the request runs out after `AdminRules.REQUEST_FOR` seconds.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 560,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;CanTakeOver&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;whether someone else is admin, present and idle, so this user may take over&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 593,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;TakeOver&quot;,
+            &quot;desc&quot;: &quot;Takes admin from an idle admin, after checking again that they are still idle.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 604,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Ignore&quot;,
+            &quot;desc&quot;: &quot;Turns down the open admin request. Only the admin may.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;self&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Admin&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 636,
+                &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [],
+    &quot;types&quot;: [],
+    &quot;name&quot;: &quot;Admin&quot;,
+    &quot;desc&quot;: &quot;Who is working in the working folder, and which of them is its admin. While the panel is open,\nthis user leaves a heartbeat and a joined time as attributes on the folder (`AdminRules` names\nthem); the admin alone changes the shared map settings and hides parts. These attributes are not\nundoable edits, so they are written outside any recording and cleared on leaving. This user&#x27;s\nlast activity is published too, about once a minute, so teammates may take over an idle admin.\n\nThe rules live in `Pure/AdminRules`. Only the user who should become admin writes the change,\nso two clients never race to claim it. The result is mirrored into `AppState` for the panel.&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 15,
+        &quot;path&quot;: &quot;src/Services/Admin.luau&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#AdminName" class="table-of-contents__link toc-highlight">.AdminName</a></li><li><a href="#Allows" class="table-of-contents__link toc-highlight">.Allows</a></li><li><a href="#CanTakeOver" class="table-of-contents__link toc-highlight">.CanTakeOver</a></li><li><a href="#Give" class="table-of-contents__link toc-highlight">.Give</a></li><li><a href="#Ignore" class="table-of-contents__link toc-highlight">.Ignore</a></li><li><a href="#Leave" class="table-of-contents__link toc-highlight">.Leave</a></li><li><a href="#NameOf" class="table-of-contents__link toc-highlight">.NameOf</a></li><li><a href="#new" class="table-of-contents__link toc-highlight">.new</a></li><li><a href="#OthersHere" class="table-of-contents__link toc-highlight">.OthersHere</a></li><li><a href="#OthersOn" class="table-of-contents__link toc-highlight">.OthersOn</a></li><li><a href="#Refresh" class="table-of-contents__link toc-highlight">.Refresh</a></li><li><a href="#Request" class="table-of-contents__link toc-highlight">.Request</a></li><li><a href="#Step" class="table-of-contents__link toc-highlight">.Step</a></li><li><a href="#TakeOver" class="table-of-contents__link toc-highlight">.TakeOver</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 Vlux-Entertainment. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+</body>
+</html>

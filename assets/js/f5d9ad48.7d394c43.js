@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[8406],{64772:e=>{e.exports=JSON.parse('{"functions":[],"properties":[],"types":[],"name":"Pillar","desc":"Pillar: click to stand a square pillar on a floor, or on the floor level setting when there is\\nno floor under the cursor.","source":{"line":9,"path":"src/Tools/Pillar.luau"}}')}}]);

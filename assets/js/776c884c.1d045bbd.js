@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[5531],{66390:s=>{s.exports=JSON.parse('{"functions":[],"properties":[],"types":[],"name":"DrawSlopes","desc":"Stairs, ramps and arches. Stairs and ramps take a third click: after the run is drawn, the mouse\\nsets the rise.","source":{"line":9,"path":"src/Tools/Draw/Slopes.luau"}}')}}]);
