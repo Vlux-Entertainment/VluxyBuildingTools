@@ -133,7 +133,7 @@ Tips.Entries = {
 	["Random rotation"] = { Text = "Turn each brush copy a random amount." },
 	["Randomize prop rotation"] = { Text = "Turn each prop a small random amount." },
 	["Set cut depth with mouse"] = { Text = "Move the mouse to set how deep the opening goes." },
-	VentSize = { Text = "The outside width of a vent duct." },
+	VentSize = { Text = "The clear space inside a vent; the sheets go outside it." },
 	VentThickness = { Text = "How thick the vent metal is." },
 	BrushRadius = { Text = "How far from the cursor copies scatter." },
 	BrushSizeMin = { Text = "The smallest copy, as a multiple of the original." },

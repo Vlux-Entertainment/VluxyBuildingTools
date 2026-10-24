@@ -30,7 +30,7 @@ local quadPrism = Shapes.QuadPrism
 	@return { Strip } -- the floor, ceiling and two side sheets of a vent, measured from its bottom
 ]=]
 function Vents.VentStrips(settings: Settings): { Strip }
-	local w, t = settings.VentSize, settings.VentThickness
+	local w, t = Settings.VentOuter(settings), settings.VentThickness
 	local inner = math.max(0.05, w - 2 * t)
 	local pad = 0.03
 
@@ -162,7 +162,7 @@ function Vents.VentDuct(settings: Settings, a: Vector3, b: Vector3): { Spec }
 		return out
 	end
 
-	local w, t = settings.VentSize, settings.VentThickness
+	local w, t = Settings.VentOuter(settings), settings.VentThickness
 	local length = (b - a).Magnitude
 	local inner = math.max(0.05, w - 2 * t)
 	local reach = w / 2 - t / 2
@@ -234,7 +234,7 @@ function Vents.VentCutters(settings: Settings, a: Vector3, b: Vector3): { Cutter
 		return cutters
 	end
 
-	local w, t = settings.VentSize, settings.VentThickness
+	local w, t = Settings.VentOuter(settings), settings.VentThickness
 	local length = (b - a).Magnitude
 	local inner = math.max(0.05, w - 2 * t)
 
@@ -271,7 +271,7 @@ function Vents.VentJoinCutters(settings: Settings, a: Vector3, b: Vector3): { Cu
 		return cutters
 	end
 
-	local w, t = settings.VentSize, settings.VentThickness
+	local w, t = Settings.VentOuter(settings), settings.VentThickness
 	local inner = math.max(0.05, w - 2 * t)
 	local reach = w / 2 + 0.4
 
@@ -304,7 +304,7 @@ function Vents.VentCover(settings: Settings, center: Vector3, normal: Vector3): 
 	local u = reference:Cross(n).Unit
 	local v = n:Cross(u)
 	local frame = CFrame.fromMatrix(center, u, v, n)
-	local size = settings.VentSize + 0.4
+	local size = Settings.VentOuter(settings) + 0.4
 	local bar, depth = 0.2, 0.15
 	local edge = size / 2 - bar / 2
 
@@ -346,7 +346,7 @@ end
 ]=]
 function Vents.VentCap(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
-	local size = settings.VentSize
+	local size = Settings.VentOuter(settings)
 
 	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, 0.05), "VentCap")
 
@@ -364,7 +364,7 @@ end
 function Vents.VentFan(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
 	local frame = surfaceFrame(center, normal)
-	local size = settings.VentSize
+	local size = Settings.VentOuter(settings)
 	local bar, depth = 0.25, 0.35
 	local edge = size / 2 - bar / 2
 	local hub = 0.6

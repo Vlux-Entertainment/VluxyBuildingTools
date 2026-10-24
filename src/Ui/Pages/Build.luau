@@ -471,7 +471,21 @@ return function(ui: Ui): { Instance }
 			Controls.Switch(ui, { Title = "Railing", Key = "PorchRailing", Visible = when(modes("Porch")) }),
 			number("RailHeight", "Railing height", 0.1, 256, nil, when(modes("Porch", "Railing", "HalfWall"))),
 			number("BalusterSpacing", "Bar spacing", 0.3, 64, nil, when(modes("Railing"))),
-			number("VentSize", "Vent size", 0.5, 64, nil, when(VENT_SIZED)),
+			number("VentSize", "Vent inside size", 0.5, 64, nil, when(VENT_SIZED)),
+			Controls.Choice(ui, {
+				Options = {
+					{ Value = "Inside", Tip = "Cut a hole the vent's inside size." },
+					{ Value = "Outside", Tip = "Cut a hole the vent's outside size, so a vent fits through." },
+				},
+				Columns = 2,
+				Get = function()
+					return Store.Get(store, "VentHoleFit")
+				end,
+				Set = function(value)
+					Store.Set(store, "VentHoleFit", value)
+				end,
+				Visible = when(modes("VentHole")),
+			}),
 			number("RoofThickness", "Roof sheet thickness", 0.05, 64, nil, when(modes("Roof"), true)),
 			number("Yaw", "Copy rotation", -360, 360, 90, when(modes("Place"))),
 			number("BrushRadius", "Brush radius", 0, 200, 1, when(modes("Place"))),

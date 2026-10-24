@@ -11,6 +11,7 @@
 local Cursor = require("../../Services/Cursor")
 local Engine = require("./Engine")
 local Joints = require("../../Core/Joints")
+local Settings = require("../../Pure/Settings")
 local Snapper = require("../../Core/Snapper")
 local Types = require("../Types")
 
@@ -222,7 +223,7 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 		return nil
 	end
 
-	local size = ctx.Settings.VentSize
+	local size = Settings.VentOuter(ctx.Settings)
 	local step = math.max(0.05, Cursor.Grid(cursor))
 	local endPoint, openEnd, owner = Snapper.VentConnect(hit.Position, size * 1.1, step)
 
