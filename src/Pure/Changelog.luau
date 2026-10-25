@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.2",
+		Date = "2026-10-25",
+		Changes = {
+			"Dragging with Studio's own tools snaps onto measuring guides too: let go with the mouse near a guide point and the selection's nearest corner or centre jumps onto it, as its own undo step.",
+		},
+	},
+	{
 		Version = "1.7.1",
 		Date = "2026-10-25",
 		Changes = {

@@ -113,4 +113,44 @@ function Guides.NearOnScreen(mouse: Vector2, pixels: number): Vector3?
 	return best
 end
 
+--[=[
+	@param center Vector3 -- the middle of a level box
+	@param size Vector3
+	@return { Vector3 } -- the box's corners, edge middles, face centres and centre
+]=]
+function Guides.BoxAnchors(center: Vector3, size: Vector3): { Vector3 }
+	local out: { Vector3 } = {}
+
+	for _, x in { -1, 0, 1 } do
+		for _, y in { -1, 0, 1 } do
+			for _, z in { -1, 0, 1 } do
+				table.insert(out, center + size * Vector3.new(x, y, z) * 0.5)
+			end
+		end
+	end
+
+	return out
+end
+
+--[=[
+	@param anchors { Vector3 } -- points of the thing being moved
+	@param target Vector3 -- a guide point
+	@param reach number
+	@return Vector3? -- the move that puts the anchor nearest the target onto it, when one is within reach
+]=]
+function Guides.Pull(anchors: { Vector3 }, target: Vector3, reach: number): Vector3?
+	local best: Vector3? = nil
+	local bestDistance = reach
+
+	for _, anchor in anchors do
+		local distance = (target - anchor).Magnitude
+
+		if distance <= bestDistance then
+			best, bestDistance = target - anchor, distance
+		end
+	end
+
+	return best
+end
+
 return Guides

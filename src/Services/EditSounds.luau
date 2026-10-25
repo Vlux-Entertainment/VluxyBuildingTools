@@ -20,6 +20,8 @@ export type Deps = {
 	Sound: (name: string) -> (),
 	--[=[ True while the plugin itself moves or builds, so its own changes make no extra sound. ]=]
 	Busy: () -> boolean,
+	--[=[ Called when one of Studio's drags has finished, after its sound. ]=]
+	Dropped: (() -> ())?,
 }
 
 local SETTLE = 0.3
@@ -50,6 +52,12 @@ function EditSounds.new(deps: Deps, trove: Trove.Trove)
 
 		if name and not deps.Busy() and os.clock() >= quietUntil then
 			deps.Sound(name)
+
+			local dropped = deps.Dropped
+
+			if name == "StudioDrag" and dropped then
+				dropped()
+			end
 		end
 	end
 

@@ -28,6 +28,7 @@ local Cursor = require("../Services/Cursor")
 local Display = require("../Services/Display")
 local Edit = require("../Services/Edit")
 local EditSounds = require("../Services/EditSounds")
+local GuideSnap = require("../Services/GuideSnap")
 local Hidden = require("../Core/Hidden")
 local Host = require("../Modal/Host")
 local Input = require("./Input")
@@ -264,6 +265,12 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Sound = sound,
 		Busy = function()
 			return os.clock() - pluginBusyAt < PLUGIN_QUIET
+		end,
+		Dropped = function()
+			GuideSnap.AfterDrag(
+				Store.Get(store, "GrabGuides") == true and Store.Get(store, "SnapToParts") == true,
+				edit
+			)
 		end,
 	}, trove)
 

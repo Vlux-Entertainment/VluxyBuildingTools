@@ -84,7 +84,7 @@ Tips.Entries = {
 	StandardDoorHeight = { Text = "The doorway height every tool starts from." },
 	["Join rooms and corridors"] = { Text = "Cut openings where rooms and corridors meet." },
 	["Grab snaps to measure guides"] = {
-		Text = "While grabbing with G, a corner or centre of the selection snaps onto measuring guide points.",
+		Text = "Dragging with Studio or with G snaps a corner or the centre of the selection onto a measuring guide point near the mouse.",
 	},
 	["MEASURE GUIDES"] = { Text = "How the measurements kept in the viewport look." },
 	GuideThickness = { Text = "How thick the guide lines are." },
