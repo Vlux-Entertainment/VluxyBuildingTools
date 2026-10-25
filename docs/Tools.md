@@ -69,7 +69,6 @@ Cut openings into walls, or grow blocks.
 | **Archway** | Click a plain wall. |
 | **Cut Shape** | Click corners on a wall; click the first corner again or press Enter to cut. |
 | **Vent Hole** | Click a wall, floor or vent. |
-| **Face Extend** | Select a block, then drag a green handle outward. The new block gets handles too. |
 
 Openings are centred on the cursor. With **Set cut depth with mouse** on (the default), the first
 click fixes the spot and the mouse sets how deep the cut goes; past the far side it cuts all the
