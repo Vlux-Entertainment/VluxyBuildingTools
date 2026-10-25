@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.9",
+		Date = "2026-10-24",
+		Changes = {
+			"Railing posts keep a small gap from the edge of floors and stairs instead of lining up with it.",
+			"Railing points on a floor snap onto a line just inside each edge, and onto its corners.",
+		},
+	},
+	{
 		Version = "1.5.8",
 		Date = "2026-10-24",
 		Changes = {
