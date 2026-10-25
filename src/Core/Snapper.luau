@@ -14,6 +14,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local VENT_TAG = "VluxyBT_Vent"
 local VENT_PAD = 0.03
+local INDEX_SECONDS = 0.1
 local MAX_PARTS = 120
 local MIN_SIZE = 0.05
 local EDGE_REACH = 0.9
@@ -490,16 +491,88 @@ function Snapper.ReadVentEnds(get: (name: string) -> any, pivot: CFrame): VentEn
 	return { Start = out.Start, StartDir = out.StartDir, End = out.End, EndDir = out.EndDir }
 end
 
---[=[
+--[[
 	@param model Instance -- a vent model
-	@return VentEnds? -- its ends where they are now, following the vent if it was moved or turned
-]=]
-function Snapper.VentEnds(model: Instance): VentEnds?
+	@return VentEnds? -- its ends read from its attributes and pivot
+]]
+local function readEnds(model: Instance): VentEnds?
 	local pivot = if model:IsA("PVInstance") then model:GetPivot() else CFrame.identity
 
 	return Snapper.ReadVentEnds(function(name)
 		return model:GetAttribute(name)
 	end, pivot)
+end
+
+--[[
+	@return string -- the key of the one-stud cell at x, y, z
+]]
+local function cellKey(x: number, y: number, z: number): string
+	return x .. "," .. y .. "," .. z
+end
+
+--[[
+	Every vent's ends, read once and kept for a moment, and each end filed under the one-stud cell
+	it is in. Snapping asks about vent ends many times per mouse move; without this each question
+	read every vent again, which froze Studio on maps with many vents.
+]]
+type VentIndex = {
+	Stamp: number,
+	Ends: { [Instance]: VentEnds },
+	Cells: { [string]: { { Model: Instance, At: Vector3 } } },
+}
+
+local ventCache: VentIndex? = nil
+
+--[[
+	@return VentIndex -- the kept index, rebuilt when it is older than a moment
+]]
+local function ventIndex(): VentIndex
+	local now = os.clock()
+	local kept = ventCache
+
+	if kept and now - kept.Stamp < INDEX_SECONDS then
+		return kept
+	end
+
+	local built: VentIndex = { Stamp = now, Ends = {}, Cells = {} }
+
+	for _, model in CollectionService:GetTagged(VENT_TAG) do
+		local ends = readEnds(model)
+
+		if ends then
+			built.Ends[model] = ends
+
+			for _, at in { ends.Start, ends.End } do
+				local key = cellKey(math.floor(at.X), math.floor(at.Y), math.floor(at.Z))
+				local cell = built.Cells[key] or {}
+
+				table.insert(cell, { Model = model, At = at })
+				built.Cells[key] = cell
+			end
+		end
+	end
+
+	ventCache = built
+
+	return built
+end
+
+--[=[
+	@param model Instance -- a vent model
+	@return VentEnds? -- its ends where they are now, following the vent if it was moved or turned
+]=]
+function Snapper.VentEnds(model: Instance): VentEnds?
+	local known = ventIndex().Ends[model]
+
+	return if known then known else readEnds(model)
+end
+
+--[=[
+	Drops the remembered vent ends, so the next lookup reads every vent again. Call after building
+	or changing a vent; otherwise they are read again a moment later anyway.
+]=]
+function Snapper.ForgetVents()
+	ventCache = nil
 end
 
 --[=[
@@ -736,11 +809,22 @@ end
 	@return boolean -- false when another vent starts or ends there, so the end is already joined
 ]=]
 function Snapper.VentEndOpen(model: Instance, at: Vector3): boolean
-	for _, other in CollectionService:GetTagged(VENT_TAG) do
-		local ends = if other ~= model then Snapper.VentEnds(other) else nil
+	local cells = ventIndex().Cells
+	local x, y, z = math.floor(at.X), math.floor(at.Y), math.floor(at.Z)
 
-		if ends and ((ends.Start - at).Magnitude < 0.15 or (ends.End - at).Magnitude < 0.15) then
-			return false
+	for dx = -1, 1 do
+		for dy = -1, 1 do
+			for dz = -1, 1 do
+				local cell = cells[cellKey(x + dx, y + dy, z + dz)]
+
+				if cell then
+					for _, entry in cell do
+						if entry.Model ~= model and (entry.At - at).Magnitude < 0.15 then
+							return false
+						end
+					end
+				end
+			end
 		end
 	end
 

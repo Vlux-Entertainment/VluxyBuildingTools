@@ -120,6 +120,7 @@ local function finish(
 	model:SetAttribute("VluxyBT_VentOuter", Settings.VentOuter(settings))
 	model:SetAttribute("VluxyBT_VentThickness", settings.VentThickness)
 	CollectionService:AddTag(model, VENT_TAG)
+	Snapper.ForgetVents()
 
 	local failed = 0
 	local cutters = Vents.VentCutters(settings, a, b)

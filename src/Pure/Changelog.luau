@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.5",
+		Date = "2026-10-25",
+		Changes = {
+			"The vent tools no longer freeze Studio on maps with many vents: vent ends are read once per moment instead of for every check.",
+		},
+	},
+	{
 		Version = "1.6.4",
 		Date = "2026-10-25",
 		Changes = {
