@@ -183,7 +183,7 @@ Select parts, then press:
 
 | Key | Action |
 |---|---|
-| **G** | Grab: move the selection. A corner, side centre or the centre of the selection that comes near a measuring guide point snaps onto it while **Grab snaps to measure guides** is on (Settings tab, or under the Measure tool); hold Shift to stop. |
+| **G** | Grab: move the selection. A corner, side centre or the centre of the selection that comes near a measuring guide point snaps onto it while **Grab snaps to measure guides** is on (Settings tab, Snapping); hold Shift to stop. |
 | **R** | Rotate. The arrow keys turn it 90°. |
 | **C** | Scale. |
 | **V** | Duplicate, then grab the copy. |
