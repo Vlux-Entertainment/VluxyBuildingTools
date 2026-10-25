@@ -21,6 +21,7 @@ type Cutter = Shapes.Cutter
 type Strip = Shapes.Strip
 
 local END_REACH = 1.25
+local END_GAP = 0.02
 
 local Vents = {}
 
@@ -241,7 +242,10 @@ function Vents.VentCutters(settings: Settings, a: Vector3, b: Vector3, reach: { 
 	local length = (b - a).Magnitude
 	local inner = math.max(0.05, w - 2 * t)
 
-	table.insert(cutters, { cf = frame, size = Vector3.new(w - 0.04, w - 0.04, length), cylinder = false })
+	table.insert(
+		cutters,
+		{ cf = frame, size = Vector3.new(w - 0.04, w - 0.04, math.max(0.05, length - 2 * END_GAP)), cylinder = false }
+	)
 
 	for _, side in { -1, 1 } do
 		local endPoint = if side == 1 then b else a
