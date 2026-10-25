@@ -171,6 +171,11 @@ Each finished measurement stays in the viewport as a guide. Its corners, edge mi
 are snap points for every tool. Esc, or **Clear measuring guides**, removes them; they are never
 saved in the place.
 
+While Measure is active you can also drag parts: press on a part in the working folder and move
+the mouse. The part, or the model it is in, slides along the level, snapped to the grid and onto
+the guides (while **Grab snaps to measure guides** is on). Release to drop it; Esc puts it back. A
+press without moving still measures.
+
 ## Extrude (T)
 
 Point at a face of a plain block and press **T**. The mouse pulls the face out into a new block;
