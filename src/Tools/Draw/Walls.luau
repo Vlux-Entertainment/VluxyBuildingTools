@@ -120,13 +120,51 @@ local pillaredWall: Engine.Shape = {
 	end,
 }
 
+--[[ Whether each railing drawing's first point, and the point under the cursor, are on a big post already built. ]]
+local onPost: { [Draw]: { Start: boolean, End: boolean } } = setmetatable({}, { __mode = "k" }) :: any
+
+--[[
+	@param draw Draw
+	@return { Start: boolean, End: boolean }
+]]
+local function postsOf(draw: Draw): { Start: boolean, End: boolean }
+	local found = onPost[draw]
+
+	if not found then
+		found = { Start = false, End = false }
+		onPost[draw] = found
+	end
+
+	return found
+end
+
+--[[ A railing starts on a big post when the cursor is on one, so a new chain grows from it. ]]
+local function railStart(ctx: Context, draw: Draw): Vector3?
+	local post = Points.RailPost(ctx)
+
+	postsOf(draw).Start = post ~= nil
+
+	return post or startOnFloor(ctx, draw)
+end
+
+--[[ A railing ends on a big post when the cursor is on one, so no second post is built there. ]]
+local function railNext(ctx: Context, draw: Draw, origin: Vector3): Vector3?
+	local post = Points.RailPost(ctx)
+
+	postsOf(draw).End = post ~= nil
+
+	return post or nextOnTop(ctx, draw, origin)
+end
+
 local railing: Engine.Shape = {
 	Id = "Railing",
-	Start = startOnFloor,
-	Next = nextOnTop,
+	Start = railStart,
+	Next = railNext,
 	Chain = true,
 	Build = function(_ctx, draw, a, b, sized)
-		return Railings.Railing(sized.Live, a, b, not draw.Chained)
+		local posts = postsOf(draw)
+
+		return Railings.Railing(sized.Live, a, b, not draw.Chained and not posts.Start, not posts.End)
 	end,
 	Commit = remember,
 }

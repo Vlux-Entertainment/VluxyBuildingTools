@@ -20,6 +20,16 @@ return {
 		expect.truthy(bar.cf.Position.Y - bar.size.Y / 2 <= 0, "bars reach the floor")
 	end,
 
+	["a railing starting and ending on posts already built adds none"] = function(expect)
+		local specs = Railings.Railing(Settings.Defaults(), Vector3.new(0, 0, 0), Vector3.new(10, 0, 0), false, false)
+
+		expect.equal(#named(specs, "RailingPillar"), 0)
+		expect.equal(
+			#named(Railings.Railing(Settings.Defaults(), Vector3.zero, Vector3.new(10, 0, 0)), "RailingPillar"),
+			2
+		)
+	end,
+
 	["on stairs the bottom rail is a board over the step edges, reaching into the steps"] = function(expect)
 		local specs = Railings.Railing(Settings.Defaults(), Vector3.new(0, 0, 0), Vector3.new(12, 6, 0), true)
 		local board = named(specs, "BottomRail")[1]
