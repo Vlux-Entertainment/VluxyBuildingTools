@@ -267,6 +267,7 @@ Settings.Page = {
 	"Grid",
 	"FineGrid",
 	"SnapToParts",
+	"GrabGuides",
 	"SnapRadius",
 	"StandardHeight",
 	"StandardThickness",
