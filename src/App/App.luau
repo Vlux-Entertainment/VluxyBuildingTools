@@ -269,11 +269,16 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		Dropped = function()
 			GuideSnap.AfterDrag(
 				Store.Get(store, "GrabGuides") == true and Store.Get(store, "SnapToParts") == true,
-				edit
+				edit,
+				Store.Get(store, "GuideSnapPixels")
 			)
 		end,
 		Moving = function()
-			GuideSnap.Hint(Store.Get(store, "GrabGuides") == true and Store.Get(store, "SnapToParts") == true, overlay)
+			GuideSnap.Hint(
+				Store.Get(store, "GrabGuides") == true and Store.Get(store, "SnapToParts") == true,
+				overlay,
+				Store.Get(store, "GuideSnapPixels")
+			)
 		end,
 		Finished = function()
 			GuideSnap.ClearHint(overlay)
