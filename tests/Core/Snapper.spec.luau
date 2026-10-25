@@ -118,6 +118,60 @@ return {
 		)
 	end,
 
+	["a run stops flush at the corner square of an L, whichever way the corner turns"] = function(expect)
+		local Snapper = Harness.Load("src/Core/Snapper")
+		local function ends(a: any, b: any)
+			return { Start = a, StartDir = (a - b).Unit, End = b, EndDir = (b - a).Unit }
+		end
+		local first = Snapper.VentBox(ends(Vector3.new(0, 2, 0), Vector3.new(10, 2, 0)), 4, true, false)
+		local left = Snapper.VentBox(ends(Vector3.new(10, 2, 0), Vector3.new(10, 2, 10)), 4, false, true)
+		local right = Snapper.VentBox(ends(Vector3.new(10, 2, 0), Vector3.new(10, 2, -10)), 4, false, true)
+
+		expect.equal(vec(first.High), "12,4,2", "the joined end reaches over the corner square")
+		expect.equal(vec(first.Low), "0,0,-2", "the open end stops at the opening")
+		expect.equal(vec(right.High), "12,4,2", "a corner turning the other way covers the same square")
+
+		for _, turn in { left, right } do
+			local boxes = { first, turn }
+
+			expect.near(
+				Snapper.StopAt(Vector3.new(30, 2, 0), Vector3.new(-1, 0, 0), 2, boxes),
+				18,
+				nil,
+				"flush at the corner's outer face"
+			)
+			expect.near(
+				Snapper.StopAt(Vector3.new(30, 2, 0), Vector3.new(-1, 0, 0), 1.5, boxes),
+				18,
+				nil,
+				"a smaller vent too"
+			)
+		end
+
+		expect.near(
+			Snapper.StopAt(Vector3.new(10, 2, -20), Vector3.new(0, 0, 1), 2, { first, left }),
+			18,
+			nil,
+			"from the open side of the corner, flush at the corner square"
+		)
+		expect.near(
+			Snapper.StopAt(Vector3.new(30, 2, 5), Vector3.new(-1, 0, 0), 2, { first, left }),
+			18,
+			nil,
+			"beside the corner, flush at the side of the other leg"
+		)
+		expect.equal(
+			Snapper.StopAt(Vector3.new(30, 2, 9), Vector3.new(1, 0, 0), 2, { first, left }),
+			nil,
+			"nothing ahead"
+		)
+		expect.equal(
+			Snapper.StopAt(Vector3.new(30, 9, 0), Vector3.new(-1, 0, 0), 2, { first, left }),
+			nil,
+			"passes over"
+		)
+	end,
+
 	["TopCenter moves a point onto the middle line of a thin wall, and to its end near the end"] = function(expect)
 		local Snapper = Harness.Load("src/Core/Snapper")
 		local wall = Harness.Part(Vector3.new(1, 12, 20), CFrame.new(0, 6, 0))

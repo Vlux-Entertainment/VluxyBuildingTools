@@ -13,6 +13,7 @@ local Geometry = require("./Geometry")
 local CollectionService = game:GetService("CollectionService")
 
 local VENT_TAG = "VluxyBT_Vent"
+local VENT_PAD = 0.03
 local MAX_PARTS = 120
 local MIN_SIZE = 0.05
 local EDGE_REACH = 0.9
@@ -295,6 +296,150 @@ function Snapper.VentEnds(model: Instance): VentEnds?
 	return Snapper.ReadVentEnds(function(name)
 		return model:GetAttribute(name)
 	end, pivot)
+end
+
+--[=[
+	The space a straight vent fills: its outside size around the middle line, and at a joined end
+	the corner square past the end as well.
+
+	@param ends VentEnds
+	@param outer number -- the vent's outside size
+	@param openStart boolean -- whether nothing joins the first end
+	@param openEnd boolean -- whether nothing joins the other end
+	@return { Low: Vector3, High: Vector3 }? -- the box; nil for a vent that is not along X, Y or Z
+]=]
+function Snapper.VentBox(
+	ends: VentEnds,
+	outer: number,
+	openStart: boolean,
+	openEnd: boolean
+): { Low: Vector3, High: Vector3 }?
+	local s, e = ends.Start, ends.End
+	local d = e - s
+	local count = (if math.abs(d.X) > 0.05 then 1 else 0)
+		+ (if math.abs(d.Y) > 0.05 then 1 else 0)
+		+ (if math.abs(d.Z) > 0.05 then 1 else 0)
+
+	if count ~= 1 then
+		return nil
+	end
+
+	local reach = outer / 2
+	local unit = d.Unit
+	local along = Vector3.new(math.abs(unit.X), math.abs(unit.Y), math.abs(unit.Z))
+	local forward = d.X + d.Y + d.Z > 0
+	local lowReach = if if forward then openStart else openEnd then 0 else reach
+	local highReach = if if forward then openEnd else openStart then 0 else reach
+
+	return {
+		Low = s:Min(e) - Vector3.one * reach + along * (reach - lowReach),
+		High = s:Max(e) + Vector3.one * reach - along * (reach - highReach),
+	}
+end
+
+--[=[
+	How far a straight duct along X or Z runs before its front face meets one of the boxes.
+
+	@param origin Vector3 -- the start of the run, on its middle line
+	@param direction Vector3 -- along X or Z
+	@param half number -- half the run's outside size
+	@param boxes { { Low: Vector3, High: Vector3 } }
+	@return number? -- the distance to the nearest box face ahead, or nil when none is in the way
+]=]
+function Snapper.StopAt(
+	origin: Vector3,
+	direction: Vector3,
+	half: number,
+	boxes: { { Low: Vector3, High: Vector3 } }
+): number?
+	local axis = if math.abs(direction.X) > 0.5 then "X" else "Z"
+	local sign = if axis == "X" then math.sign(direction.X) else math.sign(direction.Z)
+	local grow = half - 0.05
+	local nearest: number? = nil
+
+	for _, box in boxes do
+		local low, high = box.Low :: any, box.High :: any
+		local at = origin :: any
+		local inside = true
+
+		for _, other in { "X", "Y", "Z" } do
+			if other ~= axis and (at[other] <= low[other] - grow or at[other] >= high[other] + grow) then
+				inside = false
+			end
+		end
+
+		local face: number = if sign > 0 then low[axis] else high[axis]
+		local distance = (face - at[axis]) * sign
+
+		if inside and distance > 0.05 and (nearest == nil or distance < nearest) then
+			nearest = distance
+		end
+	end
+
+	return nearest
+end
+
+--[=[
+	How far a straight duct along X or Z can run before its front face meets a vent already built,
+	a corner square included, so a run stops flush against it.
+
+	@param origin Vector3 -- the start of the run, on its middle line
+	@param direction Vector3 -- the run's direction, along X or Z
+	@param half number -- half the run's outside size
+	@param fallback number -- the outside size of vents that do not record one
+	@param skip { Instance } -- vents the run starts from or continues
+	@return number? -- the distance to the first vent face ahead, or nil when nothing is in the way
+]=]
+function Snapper.VentStop(
+	origin: Vector3,
+	direction: Vector3,
+	half: number,
+	fallback: number,
+	skip: { Instance }
+): number?
+	local boxes: { { Low: Vector3, High: Vector3 } } = {}
+
+	for _, model in CollectionService:GetTagged(VENT_TAG) do
+		local ends = if table.find(skip, model) then nil else Snapper.VentEnds(model)
+		local box = if ends
+			then Snapper.VentBox(
+				ends,
+				Snapper.VentSizing(model) or fallback,
+				Snapper.VentEndOpen(model, ends.Start),
+				Snapper.VentEndOpen(model, ends.End)
+			)
+			else nil
+
+		if box then
+			table.insert(boxes, box)
+		end
+	end
+
+	return Snapper.StopAt(origin, direction, half, boxes)
+end
+
+--[=[
+	The size a vent was built at, so a vent continued from it matches. Vents record it; older level
+	vents are measured from their floor sheet, which is the outside size plus a small pad wide.
+
+	@param model Instance -- a vent model
+	@return number? -- the outside size
+	@return number? -- the sheet thickness
+]=]
+function Snapper.VentSizing(model: Instance): (number?, number?)
+	local outer, thickness = model:GetAttribute("VluxyBT_VentOuter"), model:GetAttribute("VluxyBT_VentThickness")
+
+	if type(outer) == "number" and type(thickness) == "number" then
+		return outer, thickness
+	end
+
+	local floor = model:FindFirstChild("VentFloor")
+
+	if floor and floor:IsA("Part") then
+		return floor.Size.X - 2 * VENT_PAD, floor.Size.Y - VENT_PAD
+	end
+
+	return nil, nil
 end
 
 --[=[

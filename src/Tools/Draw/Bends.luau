@@ -41,7 +41,9 @@ end
 
 --[=[
 	Bends the previous segment to meet the one just placed, and remembers the new one as the segment
-	the next will join. Runs inside the build's undo step.
+	the next will join. Each layer grows or shrinks toward the joint, along the previous direction,
+	whichever way its piece faces, so a vent continued from the end it was started at bends right.
+	Runs inside the build's undo step.
 
 	@param draw Draw
 	@param built Built
@@ -67,7 +69,7 @@ function Bends.Join(draw: Draw, built: Built, strips: { Shapes.Strip }): boolean
 
 				if delta and delta ~= 0 then
 					child.Size += Vector3.new(0, 0, delta)
-					child.CFrame *= CFrame.new(0, 0, -delta / 2)
+					child.CFrame += before.dir.Unit * (delta / 2)
 				end
 			end
 		end

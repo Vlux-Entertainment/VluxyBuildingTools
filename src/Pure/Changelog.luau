@@ -19,6 +19,16 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.0",
+		Date = "2026-10-24",
+		Changes = {
+			"A corner made at the end a vent was started from is closed; the old vent grows over the corner instead of away from it.",
+			"A vent continued from another, or started on its corner, takes that vent's size, so the joint lines up.",
+			"A vent drawn toward another stops flush at the first vent in its way, including the corner square of an L.",
+			"A branch off the side of a vent of another size starts flush at its side.",
+		},
+	},
+	{
 		Version = "1.4.9",
 		Date = "2026-10-24",
 		Changes = {

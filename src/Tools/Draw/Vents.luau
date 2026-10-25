@@ -84,6 +84,16 @@ end
 
 --[[
 	@param ctx Context
+	@param draw Draw
+	@return Settings -- the settings to build with: a vent continued from another takes that vent's size, so the two meet flush
+]]
+local function sizing(ctx: Context, draw: Draw): Settings.Settings
+	return ventOf(draw).Match or ctx.Settings
+end
+
+--[[
+	@param ctx Context
+	@param settings Settings.Settings -- the sizes the vent was built at
 	@param model Model -- the vent just built
 	@param a Vector3 -- one end of the duct, on its middle line
 	@param b Vector3 -- the other end
@@ -92,7 +102,14 @@ end
 	Records the vent's open ends, then cuts the duct and its openings out of every other part it
 	passes through, and opens the side of any vent it joins.
 ]]
-local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: { Instance })
+local function finish(
+	ctx: Context,
+	settings: Settings.Settings,
+	model: Model,
+	a: Vector3,
+	b: Vector3,
+	skip: { Instance }
+)
 	if (b - a).Magnitude < 0.05 then
 		return
 	end
@@ -100,10 +117,12 @@ local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: 
 	local dir = Snapper.VentFacing(b - a)
 
 	Snapper.RememberVentEnds(model, { Start = a, StartDir = -dir, End = b, EndDir = dir }, model:GetPivot())
+	model:SetAttribute("VluxyBT_VentOuter", Settings.VentOuter(settings))
+	model:SetAttribute("VluxyBT_VentThickness", settings.VentThickness)
 	CollectionService:AddTag(model, VENT_TAG)
 
 	local failed = 0
-	local cutters = Vents.VentCutters(ctx.Settings, a, b)
+	local cutters = Vents.VentCutters(settings, a, b)
 
 	for part in
 		touched(cutters, function(candidate)
@@ -115,7 +134,7 @@ local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: 
 		end
 	end
 
-	local joins = Vents.VentJoinCutters(ctx.Settings, a, b)
+	local joins = Vents.VentJoinCutters(settings, a, b)
 
 	for part in
 		touched(joins, function(candidate)
@@ -164,7 +183,7 @@ local function commit(ctx: Context, draw: Draw, built: Built)
 	end
 
 	if ends and built.Model then
-		finish(ctx, built.Model, ends[1], ends[2], skip)
+		finish(ctx, sizing(ctx, draw), built.Model, ends[1], ends[2], skip)
 	end
 end
 
@@ -226,9 +245,26 @@ local function onStart(keepNormal: boolean, chains: boolean): (ctx: Context, dra
 
 		local ends = if owner then Snapper.VentEnds(owner) else nil
 		local level = ends ~= nil and math.abs(ends.End.Y - ends.Start.Y) < 0.05
+		local outer, thickness = if owner then Snapper.VentSizing(owner) else nil, nil
+
+		vent.Match = nil
+
+		if owner and (vent.End or vent.Corner) and outer and thickness then
+			local matched = table.clone(ctx.Settings)
+
+			matched.VentThickness = thickness
+			matched.VentSize = math.max(0.05, outer - 2 * thickness)
+			vent.Match = matched
+
+			if draw.First then
+				local drop = (Settings.VentOuter(ctx.Settings) - outer) / 2
+
+				draw.First += Vector3.new(0, drop, 0)
+			end
+		end
 
 		if chains and owner and vent.End and level then
-			draw.Previous = { model = owner, dir = vent.End, strips = Vents.VentStrips(ctx.Settings) }
+			draw.Previous = { model = owner, dir = vent.End, strips = Vents.VentStrips(sizing(ctx, draw)) }
 			draw.Chained = true
 		end
 	end
@@ -244,48 +280,22 @@ local function built(draw: Draw)
 end
 
 --[[
-	@param ctx Context
-	@param origin Vector3
-	@param direction Vector3 -- the run's direction along X or Z
-	@return number? -- how far the run may go before it meets the side of a level vent under the cursor, so it ends flush against it
+	@param draw Draw
+	@return { Instance } -- the vents a run may touch: the one it continues, and the one it starts from unless that is a corner it leaves
 ]]
-local function meetHost(ctx: Context, origin: Vector3, direction: Vector3): number?
-	local size = Settings.VentOuter(ctx.Settings)
-	local aim = Cursor.Hit(ctx.Cursor)
-	local _, _, owner = if aim then Snapper.VentConnect(aim.Position, size * 1.1, 1) else nil, nil, nil
-	local ends = if owner then Snapper.VentEnds(owner) else nil
+local function skipped(draw: Draw): { Instance }
+	local skip: { Instance } = {}
+	local owner = ventOf(draw).Owner
 
-	if not ends or math.abs(ends.End.Y - ends.Start.Y) >= 0.05 then
-		return nil
+	if draw.Previous then
+		table.insert(skip, draw.Previous.model)
 	end
 
-	local hostA, hostB = ends.Start, ends.End
-
-	local along = Vector3.new(hostB.X - hostA.X, 0, hostB.Z - hostA.Z)
-
-	if along.Magnitude <= 0.05 then
-		return nil
+	if owner and not ventOf(draw).Corner then
+		table.insert(skip, owner)
 	end
 
-	local hostDir = along.Unit
-	local cross = direction.X * hostDir.Z - direction.Z * hostDir.X
-	local reachTo = Vector3.new(hostA.X - origin.X, 0, hostA.Z - origin.Z)
-	local s = (reachTo.X * hostDir.Z - reachTo.Z * hostDir.X) / (if cross == 0 then 1 else cross)
-	local meet = origin + direction * s
-	local position = Vector3.new(meet.X - hostA.X, 0, meet.Z - hostA.Z):Dot(hostDir)
-	local centreY = origin.Y + size / 2
-
-	if
-		math.abs(cross) > 0.9
-		and math.abs(hostA.Y - centreY) < size * 0.5
-		and position > -0.1
-		and position < along.Magnitude + 0.1
-		and s - size / 2 > 0.1
-	then
-		return s - size / 2
-	end
-
-	return nil
+	return skip
 end
 
 --[[
@@ -332,41 +342,44 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 
 	b = a + direction * math.max(0, (b - a):Dot(direction))
 
-	local meet = meetHost(ctx, a, direction)
+	local half = Settings.VentOuter(sizing(ctx, draw)) / 2
+	local endShifts = true
 
-	if meet then
-		b = a + direction * meet
-	end
+	vent.Shift = Vector3.zero
 
 	if not draw.Chained and vent.Corner then
-		vent.Shift = direction * (Settings.VentOuter(ctx.Settings) / 2)
+		vent.Shift, endShifts = direction * half, false
+	elseif not draw.Chained and vent.Host then
+		local into = math.abs(direction:Dot(vent.Host)) < 0.5
+		local hostOuter = if vent.Owner then Snapper.VentSizing(vent.Owner) else nil
+		local hostHalf = if hostOuter then hostOuter / 2 else half
 
-		return a + vent.Shift, b
-	end
-
-	if not draw.Chained and vent.Normal then
+		vent.Shift, endShifts = if into then direction * hostHalf else Vector3.zero, false
+	elseif not draw.Chained and vent.Normal then
 		local sideways = math.abs(direction:Dot(vent.Normal)) < 0.5
 
-		vent.Shift = if sideways then vent.Normal * (Settings.VentOuter(ctx.Settings) / 2 - 0.03) else Vector3.zero
+		vent.Shift = if sideways then vent.Normal * (half - 0.03) else Vector3.zero
 	end
 
-	if not draw.Chained and vent.Host then
-		local into = math.abs(direction:Dot(vent.Host)) < 0.5
+	local from = a + vent.Shift
+	local to = if endShifts then b + vent.Shift else b
+	local up = Vector3.new(0, half, 0)
+	local stop = Snapper.VentStop(from + up, direction, half, Settings.VentOuter(ctx.Settings), skipped(draw))
 
-		vent.Shift = if into then direction * (Settings.VentOuter(ctx.Settings) / 2) else Vector3.zero
-
-		return a + vent.Shift, b
+	if stop and stop < (to - from):Dot(direction) then
+		to = from + direction * stop
 	end
 
-	return a + vent.Shift, b + vent.Shift
+	return from, to
 end
 
 --[[
 	@param ctx Context
+	@param draw Draw
 	@return Vector3 -- from the floor of the duct to its middle line
 ]]
-local function lift(ctx: Context): Vector3
-	return Vector3.new(0, Settings.VentOuter(ctx.Settings) / 2, 0)
+local function lift(ctx: Context, draw: Draw): Vector3
+	return Vector3.new(0, Settings.VentOuter(sizing(ctx, draw)) / 2, 0)
 end
 
 --[[
@@ -377,18 +390,7 @@ end
 	@return boolean -- whether the run would pass through a vent other than the ones it starts from
 ]]
 local function blocked(ctx: Context, draw: Draw, a: Vector3, b: Vector3): boolean
-	local skip: { Instance } = {}
-	local owner = ventOf(draw).Owner
-
-	if draw.Previous then
-		table.insert(skip, draw.Previous.model)
-	end
-
-	if owner and not ventOf(draw).Corner then
-		table.insert(skip, owner)
-	end
-
-	return (b - a).Magnitude > 0.1 and Snapper.VentBlocked(a, b, Settings.VentOuter(ctx.Settings), skip)
+	return (b - a).Magnitude > 0.1 and Snapper.VentBlocked(a, b, Settings.VentOuter(sizing(ctx, draw)), skipped(draw))
 end
 
 local vent: Engine.Shape = {
@@ -401,7 +403,7 @@ local vent: Engine.Shape = {
 	Built = built,
 	Chain = true,
 	Build = function(ctx, draw, a, b)
-		local up = lift(ctx)
+		local up = lift(ctx, draw)
 
 		if blocked(ctx, draw, a + up, b + up) then
 			ventOf(draw).Ends = nil
@@ -414,12 +416,12 @@ local vent: Engine.Shape = {
 		ventOf(draw).Ends = { a + up, b + up }
 
 		if draw.Chained and draw.Previous then
-			return Vents.VentRun(ctx.Settings, a, b, draw.Previous.dir)
+			return Vents.VentRun(sizing(ctx, draw), a, b, draw.Previous.dir)
 		elseif outward then
-			return Vents.VentRun(ctx.Settings, a - outward * OVERLAP, b, outward)
+			return Vents.VentRun(sizing(ctx, draw), a - outward * OVERLAP, b, outward)
 		end
 
-		return Vents.VentRun(ctx.Settings, a, b, nil)
+		return Vents.VentRun(sizing(ctx, draw), a, b, nil)
 	end,
 	Problem = function(_specs, draw)
 		local ends = ventOf(draw).Ends
@@ -427,7 +429,7 @@ local vent: Engine.Shape = {
 		return if ends == nil and draw.First then "That would run into another vent; start beside it." else nil
 	end,
 	Commit = function(ctx, draw, result)
-		Bends.Join(draw, result, Vents.VentStrips(ctx.Settings))
+		Bends.Join(draw, result, Vents.VentStrips(sizing(ctx, draw)))
 		commit(ctx, draw, result)
 	end,
 }
@@ -506,7 +508,7 @@ local function slope(ctx: Context, draw: Draw, from: Vector3, to: Vector3): { Ge
 		to += along * (OVERLAP + 0.03)
 	end
 
-	return Vents.VentDuct(ctx.Settings, from, to)
+	return Vents.VentDuct(sizing(ctx, draw), from, to)
 end
 
 local ventRamp: Engine.Shape = {
@@ -526,7 +528,7 @@ local ventRamp: Engine.Shape = {
 		return a + ventOf(draw).Shift
 	end,
 	Build = function(ctx, draw, a, b, sized)
-		local up = lift(ctx)
+		local up = lift(ctx, draw)
 		local state = ventOf(draw)
 		local target = state.Target
 
@@ -553,7 +555,7 @@ local ventRamp: Engine.Shape = {
 
 			return slope(ctx, draw, a + up, stop + Vector3.new(0, rise, 0) + up)
 		elseif not draw.Rise then
-			return Vents.VentRun(ctx.Settings, a, b, nil)
+			return Vents.VentRun(sizing(ctx, draw), a, b, nil)
 		end
 
 		local run = Vector3.new(b.X - a.X, 0, b.Z - a.Z).Magnitude
@@ -576,7 +578,7 @@ local ventShaft: Engine.Shape = {
 	Built = built,
 	Shaft = true,
 	Build = function(ctx, draw, a, _b, sized)
-		local size = Settings.VentOuter(ctx.Settings)
+		local size = Settings.VentOuter(sizing(ctx, draw))
 		local host = ventOf(draw).Host
 		local top = a + Vector3.new(0, sized.Signed, 0)
 		local bottom = a
@@ -587,7 +589,7 @@ local ventShaft: Engine.Shape = {
 
 		ventOf(draw).Ends = { bottom, top }
 
-		return Vents.VentDuct(ctx.Settings, bottom, top)
+		return Vents.VentDuct(sizing(ctx, draw), bottom, top)
 	end,
 	Commit = commit,
 }
