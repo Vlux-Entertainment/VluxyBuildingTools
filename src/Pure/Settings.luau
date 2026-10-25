@@ -126,7 +126,7 @@ local DOOR_KEYS =
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Version = 6,
+		Version = 7,
 		Grid = 4,
 		FineGrid = 0.25,
 		Elevation = 0,
@@ -164,7 +164,7 @@ function Settings.Defaults(): Settings
 		StairHeight = 6,
 		RampHeight = 6,
 		Yaw = 0,
-		VentSize = 3,
+		VentSize = 3.5,
 		VentThickness = 0.2,
 		VentHoleFit = "Inside",
 		BrushRadius = 6,
@@ -484,6 +484,11 @@ function Settings.Load(saved: any): Settings
 		if settings.SnapRadius == 5 then
 			settings.SnapRadius = fresh.SnapRadius
 		end
+	end
+
+	-- Vents became 3.5 inside by default in version 7; a size left at the old default follows.
+	if version < 7 and settings.VentSize == 3 then
+		settings.VentSize = fresh.VentSize
 	end
 
 	-- The floor level has no field on the panel any more, so it is always the ground.

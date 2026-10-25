@@ -122,7 +122,7 @@ Square ducts and their end pieces.
 | **Fan End** | Click a vent opening. Closes it with a fan. |
 | **Peek Cover** | Click a wall or vent opening. A small cover to look out of. |
 
-Options: **Vent inside size** (the clear space inside; the sheets go outside it). Advanced: **Vent sheet thickness**.
+Options: **Vent inside size** (the clear space inside, 3.5 by default; the sheets go outside it). Advanced: **Vent sheet thickness**.
 
 ## Railings (Ctrl+6)
 
