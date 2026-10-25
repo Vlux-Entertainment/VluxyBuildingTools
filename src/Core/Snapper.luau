@@ -12,6 +12,7 @@ local Geometry = require("./Geometry")
 
 local CollectionService = game:GetService("CollectionService")
 
+local VENT_TAG = "VluxyBT_Vent"
 local MAX_PARTS = 120
 local MIN_SIZE = 0.05
 local EDGE_REACH = 0.9
@@ -194,22 +195,177 @@ function Snapper.VentEnd(point: Vector3, radius: number): (Vector3?, Vector3?)
 	local bestDirection: Vector3? = nil
 	local bestDistance = radius
 
-	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
-		for _, name in { "Start", "End" } do
-			local at = model:GetAttribute("VluxyBT_Vent" .. name)
-			local out = model:GetAttribute("VluxyBT_Vent" .. name .. "Dir")
+	for _, model in CollectionService:GetTagged(VENT_TAG) do
+		local ends = Snapper.VentEnds(model)
 
-			if typeof(at) == "Vector3" and typeof(out) == "Vector3" then
-				local distance = (at - point).Magnitude
+		if ends then
+			for _, side in { { ends.Start, ends.StartDir }, { ends.End, ends.EndDir } } do
+				local distance = (side[1] - point).Magnitude
 
-				if distance < bestDistance and Snapper.VentEndOpen(model, at) then
-					bestDistance, best, bestDirection = distance, at, Snapper.VentFacing(out)
+				if distance < bestDistance and Snapper.VentEndOpen(model, side[1]) then
+					bestDistance, best, bestDirection = distance, side[1], Snapper.VentFacing(side[2])
 				end
 			end
 		end
 	end
 
 	return best, bestDirection
+end
+
+--[=[
+	The two ends of a vent, where the openings are and which way each looks out.
+
+	@interface VentEnds
+	@within Snapper
+	.Start Vector3 -- the first end, on the middle line
+	.StartDir Vector3 -- the way out of the first end
+	.End Vector3 -- the other end
+	.EndDir Vector3 -- the way out of it
+]=]
+export type VentEnds = { Start: Vector3, StartDir: Vector3, End: Vector3, EndDir: Vector3 }
+
+local END_KEYS = { "Start", "StartDir", "End", "EndDir" }
+
+--[=[
+	Records a vent's ends on its model. They are kept relative to the model's pivot, so they stay on
+	the openings when the vent is moved or turned, and in world space too for older readers.
+
+	@param model Instance -- the vent
+	@param ends VentEnds
+	@param pivot CFrame -- the model's pivot now
+]=]
+function Snapper.RememberVentEnds(model: Instance, ends: VentEnds, pivot: CFrame)
+	for _, key in END_KEYS do
+		local value = (ends :: any)[key] :: Vector3
+		local isDirection = string.sub(key, -3) == "Dir"
+
+		model:SetAttribute("VluxyBT_Vent" .. key, value)
+		model:SetAttribute(
+			"VluxyBT_Vent" .. key .. "Local",
+			if isDirection then pivot:VectorToObjectSpace(value) else pivot:PointToObjectSpace(value)
+		)
+	end
+end
+
+--[=[
+	Reads a vent's ends through a getter, so it works on any attribute source.
+
+	@param get (name: string) -> any -- reads one attribute
+	@param pivot CFrame -- the vent's pivot now
+	@return VentEnds? -- in world space; nil when the vent has no ends recorded
+]=]
+function Snapper.ReadVentEnds(get: (name: string) -> any, pivot: CFrame): VentEnds?
+	local out: { [string]: Vector3 } = {}
+	local relative = true
+
+	for _, key in END_KEYS do
+		if typeof(get("VluxyBT_Vent" .. key .. "Local")) ~= "Vector3" then
+			relative = false
+		end
+	end
+
+	for _, key in END_KEYS do
+		local value = get("VluxyBT_Vent" .. key .. (if relative then "Local" else ""))
+
+		if typeof(value) ~= "Vector3" then
+			return nil
+		elseif not relative then
+			out[key] = value
+		elseif string.sub(key, -3) == "Dir" then
+			out[key] = pivot:VectorToWorldSpace(value)
+		else
+			out[key] = pivot:PointToWorldSpace(value)
+		end
+	end
+
+	if (out.End - out.Start).Magnitude <= 0.05 then
+		return nil
+	end
+
+	return { Start = out.Start, StartDir = out.StartDir, End = out.End, EndDir = out.EndDir }
+end
+
+--[=[
+	@param model Instance -- a vent model
+	@return VentEnds? -- its ends where they are now, following the vent if it was moved or turned
+]=]
+function Snapper.VentEnds(model: Instance): VentEnds?
+	local pivot = if model:IsA("PVInstance") then model:GetPivot() else CFrame.identity
+
+	return Snapper.ReadVentEnds(function(name)
+		return model:GetAttribute(name)
+	end, pivot)
+end
+
+--[=[
+	Picks the opening a ray aims into: the one whose middle passes closest to the ray, within a
+	little over half the vent size, and not hidden behind what the ray hits first.
+
+	@param origin Vector3
+	@param direction Vector3
+	@param openings { { At: Vector3, Dir: Vector3 } }
+	@param size number -- the outside size of the vents
+	@param limit number? -- how far the ray goes before it hits something
+	@return number? -- the index of the opening aimed at
+]=]
+function Snapper.AimedOpening(
+	origin: Vector3,
+	direction: Vector3,
+	openings: { { At: Vector3, Dir: Vector3 } },
+	size: number,
+	limit: number?
+): number?
+	local unit = direction.Unit
+	local best: number? = nil
+	local bestMiss = size * 0.6
+
+	for index, opening in openings do
+		local along = (opening.At - origin):Dot(unit)
+		local miss = (origin + unit * along - opening.At).Magnitude
+
+		if along > 0 and along < (limit or math.huge) + size / 2 and miss < bestMiss then
+			best, bestMiss = index, miss
+		end
+	end
+
+	return best
+end
+
+--[=[
+	Finds the open vent end the mouse ray aims into. Unlike a hit point, which lands deep inside a
+	duct when the mouse looks into it, this works from any angle and from either side of a wall.
+
+	@param ray Ray
+	@param size number -- the outside size of the vents
+	@param limit number? -- how far the ray goes before it hits something
+	@return Vector3? -- the middle of the opening
+	@return Vector3? -- the way the opening faces
+	@return Instance? -- the vent
+]=]
+function Snapper.VentEndOnRay(ray: Ray, size: number, limit: number?): (Vector3?, Vector3?, Instance?)
+	local openings: { { At: Vector3, Dir: Vector3 } } = {}
+	local owners: { Instance } = {}
+
+	for _, model in CollectionService:GetTagged(VENT_TAG) do
+		local ends = Snapper.VentEnds(model)
+
+		if ends then
+			for _, side in { { ends.Start, ends.StartDir }, { ends.End, ends.EndDir } } do
+				if Snapper.VentEndOpen(model, side[1]) then
+					table.insert(openings, { At = side[1], Dir = Snapper.VentFacing(side[2]) })
+					table.insert(owners, model)
+				end
+			end
+		end
+	end
+
+	local index = Snapper.AimedOpening(ray.Origin, ray.Direction, openings, size, limit)
+
+	if not index then
+		return nil, nil, nil
+	end
+
+	return openings[index].At, openings[index].Dir, owners[index]
 end
 
 --[=[
@@ -230,15 +386,11 @@ end
 	@return boolean -- false when another vent starts or ends there, so the end is already joined
 ]=]
 function Snapper.VentEndOpen(model: Instance, at: Vector3): boolean
-	for _, other in CollectionService:GetTagged("VluxyBT_Vent") do
-		if other ~= model then
-			for _, name in { "VluxyBT_VentStart", "VluxyBT_VentEnd" } do
-				local there = other:GetAttribute(name)
+	for _, other in CollectionService:GetTagged(VENT_TAG) do
+		local ends = if other ~= model then Snapper.VentEnds(other) else nil
 
-				if typeof(there) == "Vector3" and (there - at).Magnitude < 0.15 then
-					return false
-				end
-			end
+		if ends and ((ends.Start - at).Magnitude < 0.15 or (ends.End - at).Magnitude < 0.15) then
+			return false
 		end
 	end
 
@@ -268,24 +420,25 @@ function Snapper.VentConnect(
 	local bestModel: Instance? = nil
 	local bestDistance = radius
 	local bestA, bestD, bestAlong = Vector3.zero, Vector3.zero, 0
+	local bestEnds: VentEnds? = nil
 
-	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
-		local a = model:GetAttribute("VluxyBT_VentStart")
-		local b = model:GetAttribute("VluxyBT_VentEnd")
+	for _, model in CollectionService:GetTagged(VENT_TAG) do
+		local ends = Snapper.VentEnds(model)
 
-		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 then
-			local d = b - a
+		if ends then
+			local a = ends.Start
+			local d = ends.End - a
 			local along = math.clamp((point - a):Dot(d) / d.Magnitude, 0, d.Magnitude)
 			local distance = (a + d.Unit * along - point).Magnitude
 
 			if distance < bestDistance then
-				bestDistance, bestModel = distance, model
+				bestDistance, bestModel, bestEnds = distance, model, ends
 				bestA, bestD, bestAlong = a, d, along
 			end
 		end
 	end
 
-	if not bestModel then
+	if not bestModel or not bestEnds then
 		return nil, nil, nil, false
 	end
 
@@ -298,7 +451,9 @@ function Snapper.VentConnect(
 		local near = if name == "Start" then bestAlong < reach else length - bestAlong < reach
 
 		if near and Snapper.VentEndOpen(bestModel, at) then
-			return at, Snapper.VentFacing(bestModel:GetAttribute(`VluxyBT_Vent{name}Dir`) :: Vector3), bestModel, false
+			local out = if name == "Start" then bestEnds.StartDir else bestEnds.EndDir
+
+			return at, Snapper.VentFacing(out), bestModel, false
 		elseif near then
 			return at, nil, bestModel, true
 		end
@@ -329,11 +484,11 @@ function Snapper.VentBlocked(a: Vector3, b: Vector3, size: number, skip: { Insta
 	low += Vector3.new(math.abs(along.X), math.abs(along.Y), math.abs(along.Z)) * (half + 0.05)
 	high -= Vector3.new(math.abs(along.X), math.abs(along.Y), math.abs(along.Z)) * (half + 0.05)
 
-	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
-		local s = model:GetAttribute("VluxyBT_VentStart")
-		local e = model:GetAttribute("VluxyBT_VentEnd")
+	for _, model in CollectionService:GetTagged(VENT_TAG) do
+		local ends = if table.find(skip, model) then nil else Snapper.VentEnds(model)
 
-		if not table.find(skip, model) and typeof(s) == "Vector3" and typeof(e) == "Vector3" then
+		if ends then
+			local s, e = ends.Start, ends.End
 			local d = e - s
 			local level = math.abs(d.Y) < 0.05
 			local upright = Vector3.new(d.X, 0, d.Z).Magnitude < 0.05
