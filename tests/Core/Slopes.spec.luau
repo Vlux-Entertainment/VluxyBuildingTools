@@ -12,7 +12,56 @@ local Slopes = Harness.Load("src/Core/Builders/Slopes")
 local BOTTOM = Vector3.new(0, 0, 0)
 local TOP = Vector3.new(0, 0, -9)
 
+--[[
+	@param specs { any }
+	@return number -- the lowest point of any piece, from its corners; a wedge has no top front edge
+]]
+local function lowest(specs: { any }): number
+	local low = math.huge
+
+	for _, spec in specs do
+		local h = spec.size / 2
+
+		for _, sx in { -1, 1 } do
+			for _, sy in { -1, 1 } do
+				for _, sz in { -1, 1 } do
+					if spec.class ~= "WedgePart" or sy < 0 or sz > 0 then
+						low = math.min(low, spec.cf:PointToWorldSpace(Vector3.new(sx * h.X, sy * h.Y, sz * h.Z)).Y)
+					end
+				end
+			end
+		end
+	end
+
+	return low
+end
+
 return {
+	["a sloped underside keeps each step one rise tall over a slab under the inner corners"] = function(expect)
+		local settings = Settings.Defaults()
+
+		settings.StairUnder = "Slope"
+
+		local specs = Slopes.Stairs(settings, BOTTOM, TOP, false)
+		local steps, slab = Harness.Named(specs, "Step_6"), Harness.Named(specs, "StairSlab")
+
+		expect.near(steps[1].size.Y, 1, nil, "the top step is only one rise tall")
+		expect.near(steps[1].cf.Position.Y, 5.5, nil, "sitting between the fifth and sixth rise")
+		expect.truthy(#slab > 0, "a slab under the steps")
+		expect.truthy(lowest(specs) > -1e-3, "nothing goes below the ground")
+		expect.near(Slopes.UnderDepth(settings, 9, 6), 1.5 * math.sqrt(81 + 36) / 9, 1e-9, "1.5 square to the slope")
+	end,
+
+	["an underside thicker than the stairs are tall keeps them solid"] = function(expect)
+		local settings = Settings.Defaults()
+
+		settings.StairUnder = "Slope"
+		settings.StairUnderThickness = 20
+
+		expect.equal(Slopes.UnderDepth(settings, 9, 6), nil)
+		expect.near(Harness.Named(Slopes.Stairs(settings, BOTTOM, TOP, false), "Step_6")[1].size.Y, 6, nil)
+	end,
+
 	["stairs take one step per run length and rise evenly to the stair height"] = function(expect)
 		local specs = Slopes.Stairs(Settings.Defaults(), BOTTOM, TOP, false)
 

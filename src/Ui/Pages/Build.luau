@@ -426,6 +426,30 @@ return function(ui: Ui): { Instance }
 				end,
 				Visible = when(modes("Stairs", "Ramp")),
 			}),
+			Controls.Choice(ui, {
+				Options = {
+					{ Value = "Full", Tip = "Solid all the way down to the ground." },
+					{ Value = "Slope", Tip = "A sloped underside, as thick as Underside thickness." },
+				},
+				Columns = 2,
+				Get = function()
+					return Store.Get(store, "StairUnder")
+				end,
+				Set = function(value)
+					Store.Set(store, "StairUnder", value)
+				end,
+				Visible = when(modes("Stairs", "Ramp")),
+			}),
+			number(
+				"StairUnderThickness",
+				"Underside thickness",
+				0.1,
+				64,
+				nil,
+				when(modes("Stairs", "Ramp"), nil, function()
+					return Store.Get(store, "StairUnder") == "Slope"
+				end)
+			),
 			number("ArchHeight", "Clear height", 0.1, 1024, nil, when(modes("Arch"))),
 			number("ArchDepth", "Frame depth", 0.1, 256, nil, when(modes("Arch"))),
 			number("OpenWidth", "Archway width", 0.1, 1024, nil, when(modes("ArchOpening"))),

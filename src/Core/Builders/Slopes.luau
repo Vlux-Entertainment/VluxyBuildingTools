@@ -57,6 +57,29 @@ function Slopes.StairLayout(settings: Settings, a: Vector3, b: Vector3, ramp: bo
 end
 
 --[=[
+	How deep a sloped underside reaches straight down from the line of the steps' inner corners,
+	for the thickness measured square to the slope.
+
+	@param settings Settings
+	@param length number -- the run
+	@param height number -- the rise
+	@return number? -- nil when the slab would reach the ground everywhere, so the stairs stay solid
+]=]
+function Slopes.UnderDepth(settings: Settings, length: number, height: number): number?
+	if length <= 0 or height <= 0 then
+		return nil
+	end
+
+	local depth = settings.StairUnderThickness * math.sqrt(length * length + height * height) / length
+
+	return if depth < height then depth else nil
+end
+
+--[=[
+	Stairs or a ramp. With `StairUnder` set to "Slope" the underside is a sloped slab as thick as
+	`StairUnderThickness`, measured square to the slope from the line of the steps' inner corners,
+	instead of solid down to the ground.
+
 	@param settings Settings
 	@param a Vector3 -- the first step
 	@param b Vector3 -- the end of the run
@@ -77,7 +100,28 @@ function Slopes.Stairs(settings: Settings, a: Vector3, b: Vector3, ramp: boolean
 	local height = layout.Rise * count
 	local rise = layout.Rise
 
-	if ramp then
+	local under = if settings.StairUnder == "Slope" then Slopes.UnderDepth(settings, length, height) else nil
+
+	--[[ A point in the stairs' side profile: `along` up the run from the first step, `y` up. ]]
+	local function profile(along: number, y: number): Vector3
+		return cf:PointToWorldSpace(Vector3.new(0, y, -along))
+	end
+
+	if under then
+		local foot = math.min(length, under * length / height)
+
+		quadPrism(
+			out,
+			profile(0, 0),
+			profile(length, height),
+			profile(length, height - under),
+			profile(foot, 0),
+			settings.Width,
+			if ramp then "Ramp" else "StairSlab"
+		)
+	end
+
+	if ramp and not under then
 		-- A WedgePart rises toward local +Z, so turn it to rise away from the first click.
 		add(
 			out,
@@ -87,22 +131,26 @@ function Slopes.Stairs(settings: Settings, a: Vector3, b: Vector3, ramp: boolean
 			nil,
 			"WedgePart"
 		)
-	else
+	elseif not ramp then
 		for i = 1, count do
+			local low = if under then rise * (i - 1) else 0
+
 			add(
 				out,
-				Vector3.new(settings.Width, rise * i, run),
-				cf * CFrame.new(0, rise * i / 2, -run * (i - 0.5)),
+				Vector3.new(settings.Width, rise * i - low, run),
+				cf * CFrame.new(0, (rise * i + low) / 2, -run * (i - 0.5)),
 				"Step_" .. i
 			)
 		end
 	end
 
 	if settings.Landing > 0 then
+		local thick = if under then math.min(under, height) else height
+
 		add(
 			out,
-			Vector3.new(settings.Width, height, settings.Landing),
-			cf * CFrame.new(0, height / 2, -length - settings.Landing / 2),
+			Vector3.new(settings.Width, thick, settings.Landing),
+			cf * CFrame.new(0, height - thick / 2, -length - settings.Landing / 2),
 			"Landing"
 		)
 	end
