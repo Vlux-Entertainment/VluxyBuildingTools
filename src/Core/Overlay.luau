@@ -23,6 +23,7 @@ export type Overlay = {
 	_holes: { BoxHandleAdornment },
 	_snap: SphereHandleAdornment?,
 	_measureLine: WireframeHandleAdornment,
+	_guides: WireframeHandleAdornment,
 	_boxes: { [string]: WireframeHandleAdornment },
 	_fills: { [string]: BoxHandleAdornment },
 	_hud: ScreenGui,
@@ -38,6 +39,8 @@ export type Overlay = {
 
 local ACCENT = Color3.fromRGB(255, 138, 36)
 local CUT_COLOR = Color3.fromRGB(255, 70, 70)
+local GUIDE_COLOR = Color3.fromRGB(110, 215, 235)
+local READOUT_LINE = 18
 local MAX_GHOSTS = 600
 local WEDGE_EDGES = { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 3, 4 }, { 3, 5 }, { 4, 6 }, { 5, 6 }, { 1, 5 }, { 2, 6 } }
 
@@ -107,6 +110,9 @@ function Overlay.new(trove: Trove.Trove): Overlay
 
 	local previewWire = wire(folder, "ShapedPreviews", ACCENT, 2)
 	local measureLine = wire(folder, "Measurement", ACCENT, 2)
+	local guides = wire(folder, "MeasureGuides", GUIDE_COLOR, 2)
+
+	guides.Transparency = 0.25
 	measureLine.AlwaysOnTop = true
 
 	local boxes: { [string]: WireframeHandleAdornment } = {
@@ -239,6 +245,7 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		_planeGrid = planeGrid,
 		_previewWire = previewWire,
 		_measureLine = measureLine,
+		_guides = guides,
 		_boxes = boxes,
 		_fills = fills,
 		_hud = hud,
@@ -586,9 +593,58 @@ end
 	@param text string
 ]=]
 function Overlay.Readout(self: Overlay, position: Vector3, text: string)
+	local lines = #string.split(text, "\n")
+
 	self._readoutPosition = position
 	self._label.Text = text
+	self._label.Size = UDim2.fromOffset(if lines > 1 then 250 else 210, 28 + READOUT_LINE * lines)
 	self._hud.Enabled = true
+end
+
+--[[
+	@param target WireframeHandleAdornment
+	@param lines { { Vector3 } } -- pairs of world points
+	@param points { Vector3 } -- world points to mark with a small cross
+]]
+local function drawLines(target: WireframeHandleAdornment, lines: { { Vector3 } }, points: { Vector3 })
+	local base = workspace.Terrain.CFrame
+
+	for _, line in lines do
+		target:AddLine(base:PointToObjectSpace(line[1]), base:PointToObjectSpace(line[2]))
+	end
+
+	for _, point in points do
+		for _, axis in { Vector3.xAxis, Vector3.yAxis, Vector3.zAxis } do
+			target:AddLine(base:PointToObjectSpace(point - axis * 0.2), base:PointToObjectSpace(point + axis * 0.2))
+		end
+	end
+end
+
+--[=[
+	Draws the measurement being made: its lines and the points it will offer as snap points.
+
+	@param self Overlay
+	@param lines { { Vector3 } }
+	@param points { Vector3 }
+]=]
+function Overlay.DrawMeasureShape(self: Overlay, lines: { { Vector3 } }, points: { Vector3 })
+	self._measureLine:Clear()
+	drawLines(self._measureLine, lines, points)
+end
+
+--[=[
+	Draws every kept measuring guide, replacing what was drawn before. They stay drawn whatever
+	tool is in use, until cleared.
+
+	@param self Overlay
+	@param guides { { Lines: { { Vector3 } }, Points: { Vector3 } } }
+]=]
+function Overlay.DrawGuides(self: Overlay, guides: { { Lines: { { Vector3 } }, Points: { Vector3 } } })
+	self._guides:Clear()
+
+	for _, guide in guides do
+		drawLines(self._guides, guide.Lines, guide.Points)
+	end
 end
 
 --[=[

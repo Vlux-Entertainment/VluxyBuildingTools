@@ -19,10 +19,18 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.4",
+		Date = "2026-10-25",
+		Changes = {
+			"Measure: Line, Square, Box, Circle or Ball, showing their sizes and their area or volume.",
+			"Kept measurements stay as guides whose corners, edge middles and centres every tool snaps to; Esc or Clear measuring guides removes them.",
+		},
+	},
+	{
 		Version = "1.6.3",
 		Date = "2026-10-25",
 		Changes = {
-			"Removed the Face Extend tool from Additive, and its length setting. The E key still extrudes faces.",
+			"Removed the Face Extend tool from Additive, and its length setting. The T key still extrudes faces.",
 		},
 	},
 	{

@@ -157,7 +157,19 @@ Options: **Rotation**, **Prop size**, **Randomize prop rotation** with how far (
 
 ## Measure (Ctrl+0)
 
-Click two points to see the distance between them. The label stays until Esc or the next measurement.
+Pick a shape on the Build tab, then click its points:
+
+| Shape | Clicks | Shows |
+|---|---|---|
+| **Line** | Two points | Length, and the distance along X, Y and Z |
+| **Square** | Two opposite corners, level with the first | Width, depth, area |
+| **Box** | A square, then move up or down for the height | Width, depth, height, volume, surface |
+| **Circle** | The centre, then a point on the rim | Radius, diameter, circumference, area |
+| **Ball** | The centre, then a point on its surface | Radius, diameter, surface, volume |
+
+Each finished measurement stays in the viewport as a guide. Its corners, edge middles and centre
+are snap points for every tool. Esc, or **Clear measuring guides**, removes them; they are never
+saved in the place.
 
 ## Extrude (T)
 

@@ -252,7 +252,7 @@ Tools.List = {
 		Label = "Measure",
 		Glyph = "↔",
 		Key = nil,
-		Description = "Measure the distance between two points.",
+		Description = "Measure lines, squares, boxes, circles and balls; kept ones are snap guides.",
 	},
 } :: { Tool }
 
@@ -318,7 +318,7 @@ Tools.Grid = {
 		Label = "Measure",
 		Glyph = "↔",
 		Key = "0",
-		Description = "Measure the distance between two points.",
+		Description = "Measure lines, squares, boxes, circles and balls; kept ones are snap guides.",
 		Modes = { "Measure" },
 	},
 } :: { Tile }
@@ -363,7 +363,7 @@ Tools.Instructions = {
 	TriangleWindow = "Click a plain wall.",
 	Window = "Click a plain wall.",
 	Place = "Select an object, then click or drag over surfaces.",
-	Measure = "Click two points; Esc clears the label.",
+	Measure = "Pick a shape, then click its points; kept measurements are snap guides, Esc clears them.",
 } :: { [string]: string }
 
 --[=[
