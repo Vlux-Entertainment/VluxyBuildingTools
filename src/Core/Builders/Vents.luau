@@ -22,6 +22,7 @@ type Strip = Shapes.Strip
 
 local END_REACH = 1.25
 local END_GAP = 0.02
+local EDGE_PAD = 0.02
 
 local Vents = {}
 
@@ -240,7 +241,7 @@ function Vents.VentCutters(settings: Settings, a: Vector3, b: Vector3, reach: { 
 
 	local w, t = Settings.VentOuter(settings), settings.VentThickness
 	local length = (b - a).Magnitude
-	local inner = math.max(0.05, w - 2 * t)
+	local inner = math.max(0.05, w - 2 * t) + 2 * math.min(EDGE_PAD, t * 0.4)
 
 	table.insert(
 		cutters,
