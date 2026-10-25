@@ -24,6 +24,13 @@ return {
 		expect.equal(Settings.Load({ Version = 7, VentSize = 3 }).VentSize, 3)
 	end,
 
+	["a default vent is 4 studs outside, and a thickness left at the old default follows"] = function(expect)
+		expect.equal(Settings.VentOuter(Settings.Defaults()), 4)
+		expect.equal(Settings.Load({ Version = 7, VentThickness = 0.2 }).VentThickness, 0.25)
+		expect.equal(Settings.Load({ Version = 7, VentThickness = 0.3 }).VentThickness, 0.3)
+		expect.equal(Settings.Load({ Version = 8, VentThickness = 0.2 }).VentThickness, 0.2)
+	end,
+
 	["a bad save falls back to the defaults"] = function(expect)
 		expect.equal(Settings.Load("nope").Grid, 4)
 		expect.equal(Settings.Load("nope").FineGrid, 0.25)
