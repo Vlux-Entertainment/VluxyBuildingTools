@@ -10,6 +10,7 @@
 local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
 local Points = require("./Points")
+local Settings = require("../../Pure/Settings")
 local Slopes = require("../../Core/Builders/Slopes")
 local Types = require("../Types")
 
@@ -48,6 +49,16 @@ local function slope(ramp: boolean): Engine.Shape
 				settings = table.clone(settings)
 				settings.StairHeight = sized.Height
 				settings.RampHeight = sized.Height
+			end
+
+			local offset = Settings.StairOffset(settings)
+			local flat = Vector3.new(b.X - a.X, 0, b.Z - a.Z)
+
+			if offset ~= 0 and flat.Magnitude > 0.05 then
+				local right = flat.Unit:Cross(Vector3.yAxis)
+
+				a += right * offset
+				b += right * offset
 			end
 
 			return Slopes.Stairs(settings, a, b, ramp)

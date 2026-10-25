@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.4",
+		Date = "2026-10-24",
+		Changes = {
+			"Stairs and Ramp: Center, Left or Right picks which line of the stairs your clicks mark, to snap them along the side of a wall.",
+			"Vent covers, caps and fans snap onto vent holes, including holes cut into a vent.",
+		},
+	},
+	{
 		Version = "1.5.3",
 		Date = "2026-10-24",
 		Changes = {

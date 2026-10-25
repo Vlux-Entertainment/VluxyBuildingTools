@@ -3,7 +3,7 @@
 --[=[
 	The one-click vent pieces: a grate cover, a plain end cap, a fan, a small louvred peek cover, and
 	the vent hole, which cuts a vent-sized hole through whatever it is clicked on. Covers, caps and
-	fans snap onto an open vent end near the cursor.
+	fans snap onto an open vent end, or a vent hole, the cursor aims at.
 
 	@class VentPieces
 ]=]
@@ -56,11 +56,24 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 	local aimed, aimedOut = nil, nil
 
 	if magnet then
-		aimed, aimedOut = Snapper.VentEndOnRay(Cursor.Ray(ctx.Cursor), size, if hit then hit.Distance else nil)
+		local ray = Cursor.Ray(ctx.Cursor)
+		local limit = if hit then hit.Distance else nil
+
+		aimed, aimedOut = Snapper.VentEndOnRay(ray, size, limit)
+
+		if aimed and aimedOut then
+			aimed -= aimedOut * DUCT_INSET
+		else
+			local hole = VentHoles.Find(ray, nil, limit)
+
+			if hole then
+				aimed, aimedOut = hole.Center, hole.Normal
+			end
+		end
 	end
 
 	if aimed and aimedOut then
-		local specs = BUILDERS[mode](ctx.Settings, aimed - aimedOut * DUCT_INSET + aimedOut * 0.075, aimedOut)
+		local specs = BUILDERS[mode](ctx.Settings, aimed + aimedOut * 0.075, aimedOut)
 
 		return { Specs = specs, Valid = #specs > 0, Message = "Click to place it." }
 	elseif not hit then
