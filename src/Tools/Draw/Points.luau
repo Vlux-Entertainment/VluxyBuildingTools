@@ -264,12 +264,15 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean, headOn: boolean?)
 		return hole.Center - Vector3.new(0, size / 2, 0)
 	end
 
-	if not hit then
+	local step = math.max(0.05, Cursor.Grid(cursor))
+	local endPoint, openEnd, owner = Snapper.VentEndOnRay(Cursor.Ray(cursor), size, if hit then hit.Distance else nil)
+	local corner = false
+
+	if not endPoint and hit then
+		endPoint, openEnd, owner, corner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
+	elseif not endPoint then
 		return nil
 	end
-
-	local step = math.max(0.05, Cursor.Grid(cursor))
-	local endPoint, openEnd, owner, corner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
 
 	vent.HitNormal, vent.HitHost, vent.HitOwner, vent.HitEnd, vent.HitFace = nil, nil, owner, openEnd, nil
 	vent.HitCorner = corner
@@ -281,11 +284,10 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean, headOn: boolean?)
 	end
 
 	if endPoint and owner then
-		local a = owner:GetAttribute("VluxyBT_VentStart")
-		local b = owner:GetAttribute("VluxyBT_VentEnd")
+		local ends = Snapper.VentEnds(owner)
 
-		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 and not openEnd then
-			vent.HitHost = if corner and not shaft then nil else (b - a).Unit
+		if ends and hit and not openEnd then
+			vent.HitHost = if corner and not shaft then nil else (ends.End - ends.Start).Unit
 			vent.HitFace = hit.Normal
 		end
 
@@ -301,6 +303,10 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean, headOn: boolean?)
 		cursor.Mark = endPoint
 
 		return if shaft then endPoint else endPoint - Vector3.new(0, size / 2, 0)
+	end
+
+	if not hit then
+		return nil
 	end
 
 	local normal = hit.Normal

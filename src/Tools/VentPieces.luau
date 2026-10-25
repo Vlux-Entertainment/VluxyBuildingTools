@@ -51,7 +51,19 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 
 	state.Cut = nil
 
-	if not hit then
+	local magnet = ctx.Settings.SnapToParts and not Cursor.Fine() and mode ~= "VentPeek"
+	local size = Settings.VentOuter(ctx.Settings)
+	local aimed, aimedOut = nil, nil
+
+	if magnet then
+		aimed, aimedOut = Snapper.VentEndOnRay(Cursor.Ray(ctx.Cursor), size, if hit then hit.Distance else nil)
+	end
+
+	if aimed and aimedOut then
+		local specs = BUILDERS[mode](ctx.Settings, aimed - aimedOut * DUCT_INSET + aimedOut * 0.075, aimedOut)
+
+		return { Specs = specs, Valid = #specs > 0, Message = "Click to place it." }
+	elseif not hit then
 		return Common.Empty()
 	end
 
@@ -68,11 +80,10 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 			cylinder = false,
 		}
 	else
-		local magnet = ctx.Settings.SnapToParts and not Cursor.Fine()
 		local endPoint, outward
 
 		if magnet then
-			endPoint, outward = Snapper.VentEnd(hit.Position, math.max(Settings.VentOuter(ctx.Settings), 3))
+			endPoint, outward = Snapper.VentEnd(hit.Position, math.max(size, 3))
 		end
 
 		if endPoint and outward then

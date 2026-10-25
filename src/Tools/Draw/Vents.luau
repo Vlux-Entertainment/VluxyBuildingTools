@@ -99,10 +99,7 @@ local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: 
 
 	local dir = Snapper.VentFacing(b - a)
 
-	model:SetAttribute("VluxyBT_VentStart", a)
-	model:SetAttribute("VluxyBT_VentStartDir", -dir)
-	model:SetAttribute("VluxyBT_VentEnd", b)
-	model:SetAttribute("VluxyBT_VentEndDir", dir)
+	Snapper.RememberVentEnds(model, { Start = a, StartDir = -dir, End = b, EndDir = dir }, model:GetPivot())
 	CollectionService:AddTag(model, VENT_TAG)
 
 	local failed = 0
@@ -227,9 +224,8 @@ local function onStart(keepNormal: boolean, chains: boolean): (ctx: Context, dra
 		vent.End = if outward and math.abs(outward.Y) < 0.5 then outward else nil
 		vent.Corner = vent.HitCorner and not vent.Host
 
-		local a = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
-		local b = if owner then owner:GetAttribute("VluxyBT_VentEnd") else nil
-		local level = typeof(a) == "Vector3" and typeof(b) == "Vector3" and math.abs(b.Y - a.Y) < 0.05
+		local ends = if owner then Snapper.VentEnds(owner) else nil
+		local level = ends ~= nil and math.abs(ends.End.Y - ends.Start.Y) < 0.05
 
 		if chains and owner and vent.End and level then
 			draw.Previous = { model = owner, dir = vent.End, strips = Vents.VentStrips(ctx.Settings) }
@@ -257,12 +253,13 @@ local function meetHost(ctx: Context, origin: Vector3, direction: Vector3): numb
 	local size = Settings.VentOuter(ctx.Settings)
 	local aim = Cursor.Hit(ctx.Cursor)
 	local _, _, owner = if aim then Snapper.VentConnect(aim.Position, size * 1.1, 1) else nil, nil, nil
-	local hostA = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
-	local hostB = if owner then owner:GetAttribute("VluxyBT_VentEnd") else nil
+	local ends = if owner then Snapper.VentEnds(owner) else nil
 
-	if typeof(hostA) ~= "Vector3" or typeof(hostB) ~= "Vector3" or math.abs(hostB.Y - hostA.Y) >= 0.05 then
+	if not ends or math.abs(ends.End.Y - ends.Start.Y) >= 0.05 then
 		return nil
 	end
+
+	local hostA, hostB = ends.Start, ends.End
 
 	local along = Vector3.new(hostB.X - hostA.X, 0, hostB.Z - hostA.Z)
 
