@@ -116,7 +116,7 @@ local function finish(
 
 	local dir = Snapper.VentFacing(b - a)
 
-	Snapper.RememberVentEnds(model, { Start = a, StartDir = -dir, End = b, EndDir = dir }, model:GetPivot())
+	Snapper.RememberVentEnds(model, { Start = a, StartDir = -dir, End = b, EndDir = dir }, Snapper.FixPivot(model))
 	model:SetAttribute("VluxyBT_VentOuter", Settings.VentOuter(settings))
 	model:SetAttribute("VluxyBT_VentThickness", settings.VentThickness)
 	CollectionService:AddTag(model, VENT_TAG)
