@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="plugin-moonwave plugin-id-moonwave" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">Snapper | VluxyBuildingTools</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Snapper"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Snapper | VluxyBuildingTools"><meta data-rh="true" name="description" content="Snaps a point to the corners and edges of the parts already built nearby, like Roblox&#x27;s own
+building tools do. It works on the outline of each part seen from above, so the height of the
+point is never changed."><meta data-rh="true" property="og:description" content="Snaps a point to the corners and edges of the parts already built nearby, like Roblox&#x27;s own
+building tools do. It works on the outline of each part seen from above, so the height of the
+point is never changed."><link data-rh="true" rel="icon" href="/VluxyBuildingTools/VluxFavicon.ico"><link data-rh="true" rel="canonical" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Snapper"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Snapper" hreflang="en"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Snapper" hreflang="x-default"><link rel="stylesheet" href="/VluxyBuildingTools/assets/css/styles.5ec48d9a.css">
+<script src="/VluxyBuildingTools/assets/js/runtime~main.2acd776e.js" defer="defer"></script>
+<script src="/VluxyBuildingTools/assets/js/main.d9c7c1a3.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/VluxyBuildingTools/"><b class="navbar__title text--truncate">VluxyBuildingTools</b></a><a class="navbar__item navbar__link" href="/VluxyBuildingTools/docs/intro">Docs</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/VluxyBuildingTools/api/">API</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/Ebbp9UgBUD" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/Vlux-Entertainment/VluxyBuildingTools" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input id="search_input_react" type="search" placeholder="Loading..." aria-label="Search" class="navbar__search-input search-bar" disabled=""></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0 docPageContainer_wNNk"><div class="docPage_Dpn1"><div class="docSidebarContainer_o_re"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/App"><span title="App" class="categoryLinkLabel_W154">App</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Store"><span title="State" class="categoryLinkLabel_W154">State</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Edit"><span title="Services" class="categoryLinkLabel_W154">Services</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Runner"><span title="Tools" class="categoryLinkLabel_W154">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Host"><span title="Modal actions" class="categoryLinkLabel_W154">Modal actions</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Areas"><span title="Builders" class="categoryLinkLabel_W154">Builders</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/VluxyBuildingTools/api/Geometry"><span title="Core" class="categoryLinkLabel_W154">Core</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Geometry"><span title="​Geometry" class="linkLabel_WmDU">​Geometry</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Joints"><span title="​Joints" class="linkLabel_WmDU">​Joints</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/VluxyBuildingTools/api/Snapper"><span title="​Snapper" class="linkLabel_WmDU">​Snapper</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Transform"><span title="​Transform" class="linkLabel_WmDU">​Transform</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Arrange"><span title="​Arrange" class="linkLabel_WmDU">​Arrange</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Colors"><span title="​Colors" class="linkLabel_WmDU">​Colors</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/SurfaceGrid"><span title="​Surface​Grid" class="linkLabel_WmDU">​Surface​Grid</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Hidden"><span title="​Hidden" class="linkLabel_WmDU">​Hidden</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Overlay"><span title="​Overlay" class="linkLabel_WmDU">​Overlay</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Props"><span title="​Props" class="linkLabel_WmDU">​Props</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Brushes"><span title="​Brushes" class="linkLabel_WmDU">​Brushes</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Sounds"><span title="​Sounds" class="linkLabel_WmDU">​Sounds</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Settings"><span title="Pure (tested under Lune)" class="categoryLinkLabel_W154">Pure (tested under Lune)</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Panel"><span title="Panel" class="categoryLinkLabel_W154">Panel</span></a></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/VluxyBuildingTools/api/StairSnap"><span title="​Stair​Snap" class="linkLabel_WmDU">​Stair​Snap</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/VluxyBuildingTools/api/VentHoles"><span title="​Vent​Holes" class="linkLabel_WmDU">​Vent​Holes</span></a></li></ul></nav></div></div><main class="docMainContainer_HJE1"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_MU3C"><div class="docItemContainer_Wv98"><article><div class="member_J0w1 markdown"><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_oUs_"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><header><h1 class="docTitle_mZRt" style="text-decoration:none"><span style="display:inline-block">Snapper</span></h1><div class="luaClassTags_EipM"></div><div>
+<p>
+  Snaps a point to the corners and edges of the parts already built nearby, like Roblox's own
+  building tools do. It works on the outline of each part seen from above, so the height of the
+  point is never changed.
+</p>
+</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="types">Types<a href="#types" class="hash-link" aria-label="Direct link to Types" title="Direct link to Types" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="WallLine"><code style="text-decoration:none">WallLine</code><a href="#WallLine" class="hash-link" aria-label="Direct link to WallLine" title="Direct link to WallLine" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L95"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>WallLine<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Part<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/BasePart" target="_blank" rel="noopener noreferrer">BasePart<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div><div><code>Start<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>one end of the middle line, at the foot of the wall</p>
+</span></span></div><div><code>Axis<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the level direction from Start to the other end</p>
+</span></span></div><div><code>Length<!-- -->: </code><code class="blue_P4bS">number</code></div><div><code>Half<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>half the wall's thickness</p>
+</span></span></div><div><code>AlongZ<!-- -->: </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether the part's own Z runs along the wall, as for walls this plugin builds</p>
+</span></span></div></div><code>}</code></div><div>
+<p>The middle line of a wall along its foot: a thin, upright part whose long side is level.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentEnds"><code style="text-decoration:none">VentEnds</code><a href="#VentEnds" class="hash-link" aria-label="Direct link to VentEnds" title="Direct link to VentEnds" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L408"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>VentEnds<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Start<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the first end, on the middle line</p>
+</span></span></div><div><code>StartDir<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the way out of the first end</p>
+</span></span></div><div><code>End<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the other end</p>
+</span></span></div><div><code>EndDir<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the way out of it</p>
+</span></span></div></div><code>}</code></div><div>
+<p>The two ends of a vent, where the openings are and which way each looks out.</p>
+</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="TopPoints"><code style="text-decoration:none">TopPoints</code><a href="#TopPoints" class="hash-link" aria-label="Direct link to TopPoints" title="Direct link to TopPoints" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L72"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">TopPoints</code><code>(</code><code>part<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/BasePart" target="_blank" rel="noopener noreferrer">BasePart<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>) → </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">}</code></div><div>
+<p>
+  The points a drawing point can snap to on a part, looking from above: the four corners of its
+  outline and the middle of each side.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="WallLineOf"><code style="text-decoration:none">WallLineOf</code><a href="#WallLineOf" class="hash-link" aria-label="Direct link to WallLineOf" title="Direct link to WallLineOf" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L108"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">WallLineOf</code><code>(</code><code>part<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/BasePart" target="_blank" rel="noopener noreferrer">BasePart<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Snapper#WallLine">WallLine?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the part's middle line, or nil when it is not a wall</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="SpotOnWall"><code style="text-decoration:none">SpotOnWall</code><a href="#SpotOnWall" class="hash-link" aria-label="Direct link to SpotOnWall" title="Direct link to SpotOnWall" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L148"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">SpotOnWall</code><code>(</code><div class="inset_uKQm"><div><code>line<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Snapper#WallLine">WallLine</a></code><code>,</code></div><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>where the cursor is</p>
+</span></span></div><div><code>reach<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>how far past the wall's face still counts, and how close to an end or the middle snaps to it</p>
+</span></span></div><div><code>grid<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the spot on the middle line at the wall's foot; nil when the point is not near the wall</p>
+</span></span></div><div><code class="blue_P4bS">string</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>"End" or "Side"</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>for an end, the way out of the wall through it</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Where a point near a wall snaps on its middle line: an end, the middle, or the grid step along
+  it measured from an end.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="WallSpot"><code style="text-decoration:none">WallSpot</code><a href="#WallSpot" class="hash-link" aria-label="Direct link to WallSpot" title="Direct link to WallSpot" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L183"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">WallSpot</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>where the cursor is</p>
+</span></span></div><div><code>reach<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code></div><div><code>grid<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code></div><div><code>level<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>only walls standing at this height</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the spot on the wall's middle line</p>
+</span></span></div><div><code class="blue_P4bS">string</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>"End" or "Side"</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>for an end, the way out of the wall through it</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Snapper#WallLine">WallLine?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the wall</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Finds the wall near a point and where the point snaps on it. Only the working folder is searched
+  when one is set.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="BoxPoints"><code style="text-decoration:none">BoxPoints</code><a href="#BoxPoints" class="hash-link" aria-label="Direct link to BoxPoints" title="Direct link to BoxPoints" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L226"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">BoxPoints</code><code>(</code><code>part<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/BasePart" target="_blank" rel="noopener noreferrer">BasePart<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>) → </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">}</code></div><div>
+<p>
+  The points of a part's box a point can snap to in three dimensions: its eight corners and the
+  middle of each of its twelve edges.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Find"><code style="text-decoration:none">Find</code><a href="#Find" class="hash-link" aria-label="Direct link to Find" title="Direct link to Find" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L271"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">Find</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the point to move, already snapped to the grid</p>
+</span></span></div><div><code>radius<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>how far away a corner or edge can be and still attract the point</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the snapped point, or the same point when nothing was near</p>
+</span></span></div><div><code class="blue_P4bS">boolean</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether it moved to a part</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/BasePart" target="_blank" rel="noopener noreferrer">BasePart?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the part it moved to</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Finds the nearest corner or side middle of a nearby part within the radius, else the nearest
+  edge within most of it. Only the working folder is searched when one is set.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Vertex"><code style="text-decoration:none">Vertex</code><a href="#Vertex" class="hash-link" aria-label="Direct link to Vertex" title="Direct link to Vertex" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L333"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">Vertex</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>where the cursor hit</p>
+</span></span></div><div><code>radius<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the corner, or the same point when none is near</p>
+</span></span></div><div><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether it moved to a corner</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Finds the nearest of the eight corners of any part within the radius, in all three dimensions.
+  The Measure tool uses it so a distance starts and ends exactly on a vertex.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentEnd"><code style="text-decoration:none">VentEnd</code><a href="#VentEnd" class="hash-link" aria-label="Direct link to VentEnd" title="Direct link to VentEnd" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L376"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentEnd</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code></div><div><code>radius<!-- -->: </code><code class="blue_P4bS">number</code></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the middle of the opening</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the direction pointing out of the vent</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Finds the open end of a vent built by this plugin near the point. Each vent model records its
+  two ends in attributes so a new vent, or a cover, can start exactly on one.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="RememberVentEnds"><code style="text-decoration:none">RememberVentEnds</code><a href="#RememberVentEnds" class="hash-link" aria-label="Direct link to RememberVentEnds" title="Direct link to RememberVentEnds" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L422"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">RememberVentEnds</code><code>(</code><div class="inset_uKQm"><div><code>model<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the vent</p>
+</span></span></div><div><code>ends<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Snapper#VentEnds">VentEnds</a></code><code>,</code></div><div><code>pivot<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/CFrame" target="_blank" rel="noopener noreferrer">CFrame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the model's pivot now</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  Records a vent's ends on its model. They are kept relative to the model's pivot, so they stay on
+  the openings when the vent is moved or turned, and in world space too for older readers. The
+  caller fixes the pivot first (see <code>FixPivot</code>), so it cannot drift when the vent's sheets change.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="FixPivot"><code style="text-decoration:none">FixPivot</code><a href="#FixPivot" class="hash-link" aria-label="Direct link to FixPivot" title="Direct link to FixPivot" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L445"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">FixPivot</code><code>(</code><code>model<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Model" target="_blank" rel="noopener noreferrer">Model<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/CFrame" target="_blank" rel="noopener noreferrer">CFrame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the pivot</p>
+</span></span></div><div>
+<p>
+  Sets a vent model's pivot to where it is now. A model whose pivot was never set can take it from
+  its parts, so it would move when a corner stretches the vent's sheets and carry the recorded ends
+  off the openings; a set pivot only moves with the whole vent.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ReadVentEnds"><code style="text-decoration:none">ReadVentEnds</code><a href="#ReadVentEnds" class="hash-link" aria-label="Direct link to ReadVentEnds" title="Direct link to ReadVentEnds" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L462"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">ReadVentEnds</code><code>(</code><div class="inset_uKQm"><div><code>get<!-- -->: </code><code class="purple_ieR2">(</code><code>name<!-- -->: </code><code class="blue_P4bS">string</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="blue_P4bS">any</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>reads one attribute</p>
+</span></span></div><div><code>pivot<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/CFrame" target="_blank" rel="noopener noreferrer">CFrame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the vent's pivot now</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Snapper#VentEnds">VentEnds?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>in world space; nil when the vent has no ends recorded</p>
+</span></span></div><div>
+<p>
+  Reads a vent's ends through a getter, so it works on any attribute source. Ends relative to the
+  pivot are used only on vents whose pivot was fixed when they were recorded; others, including
+  vents whose pivot may have drifted, use their world ends.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentEnds"><code style="text-decoration:none">VentEnds</code><a href="#VentEnds" class="hash-link" aria-label="Direct link to VentEnds" title="Direct link to VentEnds" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L497"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentEnds</code><code>(</code><div class="inset_uKQm"><div><code>model<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a vent model</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Snapper#VentEnds">VentEnds?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>its ends where they are now, following the vent if it was moved or turned</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentBox"><code style="text-decoration:none">VentBox</code><a href="#VentBox" class="hash-link" aria-label="Direct link to VentBox" title="Direct link to VentBox" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L515"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentBox</code><code>(</code><div class="inset_uKQm"><div><code>ends<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Snapper#VentEnds">VentEnds</a></code><code>,</code></div><div><code>outer<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the vent's outside size</p>
+</span></span></div><div><code>openStart<!-- -->: </code><code class="blue_P4bS">boolean</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether nothing joins the first end</p>
+</span></span></div><div><code>openEnd<!-- -->: </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether nothing joins the other end</p>
+</span></span></div></div><code>) → </code><code class="purple_ieR2">{</code><div class="inset_uKQm"><code>Low<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">,</code></div><div class="inset_uKQm"><code>High<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div><code class="purple_ieR2">}</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the box; nil for a vent that is not along X, Y or Z</p>
+</span></span></div><div>
+<p>
+  The space a straight vent fills: its outside size around the middle line, and at a joined end
+  the corner square past the end as well.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="StopAt"><code style="text-decoration:none">StopAt</code><a href="#StopAt" class="hash-link" aria-label="Direct link to StopAt" title="Direct link to StopAt" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L553"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">StopAt</code><code>(</code><div class="inset_uKQm"><div><code>origin<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the start of the run, on its middle line</p>
+</span></span></div><div><code>direction<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>along X or Z</p>
+</span></span></div><div><code>half<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>half the run's outside size</p>
+</span></span></div><div><code>boxes<!-- -->: </code><code class="purple_ieR2">{</code><code class="green_DgR4">{</code><div class="inset_uKQm"><code>Low<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code>High<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div><code class="green_DgR4">}</code><code class="purple_ieR2">}</code></div></div><code>) → </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the distance to the nearest box face ahead, or nil when none is in the way</p>
+</span></span></div><div>
+<p>How far a straight duct along X or Z runs before its front face meets one of the boxes.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentStop"><code style="text-decoration:none">VentStop</code><a href="#VentStop" class="hash-link" aria-label="Direct link to VentStop" title="Direct link to VentStop" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L597"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentStop</code><code>(</code><div class="inset_uKQm"><div><code>origin<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the start of the run, on its middle line</p>
+</span></span></div><div><code>direction<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the run's direction, along X or Z</p>
+</span></span></div><div><code>half<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>half the run's outside size</p>
+</span></span></div><div><code>fallback<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the outside size of vents that do not record one</p>
+</span></span></div><div><code>skip<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+<p>vents the run starts from or continues</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the distance to the first vent face ahead, or nil when nothing is in the way</p>
+</span></span></div><div>
+<p>
+  How far a straight duct along X or Z can run before its front face meets a vent already built,
+  a corner square included, so a run stops flush against it.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentSizing"><code style="text-decoration:none">VentSizing</code><a href="#VentSizing" class="hash-link" aria-label="Direct link to VentSizing" title="Direct link to VentSizing" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L633"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentSizing</code><code>(</code><div class="inset_uKQm"><div><code>model<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a vent model</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS">number?</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the outside size</p>
+</span></span></div><div><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the sheet thickness</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  The size a vent was built at, so a vent continued from it matches. Vents record it; older level
+  vents are measured from their floor sheet, which is the outside size plus a small pad wide.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="AimedOpening"><code style="text-decoration:none">AimedOpening</code><a href="#AimedOpening" class="hash-link" aria-label="Direct link to AimedOpening" title="Direct link to AimedOpening" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L660"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">AimedOpening</code><code>(</code><div class="inset_uKQm"><div><code>origin<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code></div><div><code>direction<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code></div><div><code>openings<!-- -->: </code><code class="purple_ieR2">{</code><code class="green_DgR4">{</code><div class="inset_uKQm"><code>At<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="green_DgR4">,</code></div><div class="inset_uKQm"><code>Dir<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code></div><code class="green_DgR4">}</code><code class="purple_ieR2">}</code><code>,</code></div><div><code>size<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the outside size of the vents</p>
+</span></span></div><div><code>limit<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>how far the ray goes before it hits something</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the index of the opening aimed at</p>
+</span></span></div><div>
+<p>
+  Picks the opening a ray aims into: the one whose middle passes closest to the ray, within a
+  little over half the vent size, and not hidden behind what the ray hits first.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentEndOnRay"><code style="text-decoration:none">VentEndOnRay</code><a href="#VentEndOnRay" class="hash-link" aria-label="Direct link to VentEndOnRay" title="Direct link to VentEndOnRay" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L695"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentEndOnRay</code><code>(</code><div class="inset_uKQm"><div><code>ray<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Ray" target="_blank" rel="noopener noreferrer">Ray<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code></div><div><code>size<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the outside size of the vents</p>
+</span></span></div><div><code>limit<!-- -->: </code><code class="blue_P4bS">number?</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>how far the ray goes before it hits something</p>
+</span></span></div><div><code>skip<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a vent whose openings are left out, such as the one being drawn from</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the middle of the opening</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the way the opening faces</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the vent</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Finds the open vent end the mouse ray aims into. Unlike a hit point, which lands deep inside a
+  duct when the mouse looks into it, this works from any angle and from either side of a wall.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentFacing"><code style="text-decoration:none">VentFacing</code><a href="#VentFacing" class="hash-link" aria-label="Direct link to VentFacing" title="Direct link to VentFacing" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L727"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentFacing</code><code>(</code><div class="inset_uKQm"><div><code>direction<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the recorded way out of a vent end</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the way the opening faces: level unless the vent is a vertical shaft</p>
+</span></span></div><div>
+<p>A sloped vent's ends are cut upright, so the way out of one is level even though the duct tilts.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentEndOpen"><code style="text-decoration:none">VentEndOpen</code><a href="#VentEndOpen" class="hash-link" aria-label="Direct link to VentEndOpen" title="Direct link to VentEndOpen" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L738"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentEndOpen</code><code>(</code><div class="inset_uKQm"><div><code>model<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the vent the end belongs to</p>
+</span></span></div><div><code>at<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the end, on the vent's middle line</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>false when another vent starts or ends there, so the end is already joined</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentCorner"><code style="text-decoration:none">VentCorner</code><a href="#VentCorner" class="hash-link" aria-label="Direct link to VentCorner" title="Direct link to VentCorner" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L759"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentCorner</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>where the cursor hit</p>
+</span></span></div><div><code>fallback<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>the outside size of vents that do not record one</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the middle of the corner, on the vents' middle lines</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a vent that ends there</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Whether a point is on a vent corner: the square block around a joined end, where one vent turns
+  into the next. Any spot on the block's faces counts, however far from its middle.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="InCorner"><code style="text-decoration:none">InCorner</code><a href="#InCorner" class="hash-link" aria-label="Direct link to InCorner" title="Direct link to InCorner" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L793"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">InCorner</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code></div><div><code>corners<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">}</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the middles of corner blocks</p>
+</span></span></div><div><code>halves<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS">number</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+<p>half the side of each block</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the index of the block the point is on or in, allowing a little for its faces</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentConnect"><code style="text-decoration:none">VentConnect</code><a href="#VentConnect" class="hash-link" aria-label="Direct link to VentConnect" title="Direct link to VentConnect" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L820"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentConnect</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>where the cursor hit</p>
+</span></span></div><div><code>radius<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>how far from the middle line still counts</p>
+</span></span></div><div><code>step<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the spacing of the points along a vent</p>
+</span></span></div><div><code>margin<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>how far side spots keep from the ends; half the vent size</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the point on the middle line</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the way out of the vent when the point is an open end, else nil</p>
+</span></span></div><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the vent model the point is on</p>
+</span></span></div><div><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether the point is a corner: an end another vent already continues</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Finds a connection point on a vent built by this plugin: an open end, or a spot along its middle
+  line snapped to the step. Spots along the side stay <code>margin</code> from the ends, so a vent started
+  there sits wholly against the side and never runs into a corner.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VentBlocked"><code style="text-decoration:none">VentBlocked</code><a href="#VentBlocked" class="hash-link" aria-label="Direct link to VentBlocked" title="Direct link to VentBlocked" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L890"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VentBlocked</code><code>(</code><div class="inset_uKQm"><div><code>a<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>one end of the new duct, on its middle line</p>
+</span></span></div><div><code>b<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the other end</p>
+</span></span></div><div><code>size<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the outside size of the ducts</p>
+</span></span></div><div><code>skip<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Instance" target="_blank" rel="noopener noreferrer">Instance<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+<p>vents the new one is allowed to touch: the one it starts from</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS">boolean</code></div><div>
+<p>
+  Whether a straight level duct would run into a vent already built. Ends that meet flush, and the
+  vents named in <code>skip</code>, do not count.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="VertexNear"><code style="text-decoration:none">VertexNear</code><a href="#VertexNear" class="hash-link" aria-label="Direct link to VertexNear" title="Direct link to VertexNear" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L939"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">VertexNear</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>where the cursor hit</p>
+</span></span></div><div><code>mouse<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector2" target="_blank" rel="noopener noreferrer">Vector2<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the mouse in screen coordinates</p>
+</span></span></div><div><code>pixels<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>how close on screen counts</p>
+</span></span></div></div><code>) → </code><code>(</code><div class="inset_uKQm"><div><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the corner, or the same point when none is near</p>
+</span></span></div><div><code class="blue_P4bS">boolean</code><span class="inlineDescription_G7Er">-- <span>
+<p>whether it moved to a corner</p>
+</span></span></div></div><code>)</code></div><div>
+<p>
+  Finds the corner, or the middle of an edge, of a nearby part that sits closest to the mouse on the
+  screen, within a few pixels. Unlike a distance in studs, this only grabs one when the cursor is on it.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="TopCenter"><code style="text-decoration:none">TopCenter</code><a href="#TopCenter" class="hash-link" aria-label="Direct link to TopCenter" title="Direct link to TopCenter" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L987"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">TopCenter</code><code>(</code><div class="inset_uKQm"><div><code>part<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/BasePart" target="_blank" rel="noopener noreferrer">BasePart<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code></div><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>where the cursor hit the top</p>
+</span></span></div><div><code>grid<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code></div><div><code>endReach<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>how close to an end counts as the end</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the point on the centre line, or nil when the part is not thin</p>
+</span></span></div><div>
+<p>
+  Moves a point on the top of a thin part, such as a wall, onto its centre line, so a wall built
+  on top of a wall sits on it instead of beside it. Along the part it snaps to its ends or its middle,
+  else to the grid measured from one end.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Doorway"><code style="text-decoration:none">Doorway</code><a href="#Doorway" class="hash-link" aria-label="Direct link to Doorway" title="Direct link to Doorway" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Core/Snapper.luau#L1023"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Snapper<!-- -->.</code><code class="green_DgR4">Doorway</code><code>(</code><div class="inset_uKQm"><div><code>point<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Vector3" target="_blank" rel="noopener noreferrer">Vector3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code>,</code></div><div><code>radius<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>how far from the middle of the opening still counts</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS">Doorway?</code></div><div>
+<p>
+  Finds a doorway made by the Additive tools near the point: a rectangular or arched opening
+  that reaches the floor. The result is the middle of the opening on the face of the wall the point is
+  on, with the direction pointing away from that face, so a corridor can start there.
+</p>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;TopPoints&quot;,
+            &quot;desc&quot;: &quot;The points a drawing point can snap to on a part, looking from above: the four corners of its\noutline and the middle of each side.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;part&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;BasePart&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;{ Vector3 }&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 72,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;WallLineOf&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;part&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;BasePart&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the part&#x27;s middle line, or nil when it is not a wall&quot;,
+                    &quot;lua_type&quot;: &quot;WallLine?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 108,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;SpotOnWall&quot;,
+            &quot;desc&quot;: &quot;Where a point near a wall snaps on its middle line: an end, the middle, or the grid step along\nit measured from an end.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;line&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;WallLine&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;where the cursor is&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;reach&quot;,
+                    &quot;desc&quot;: &quot;how far past the wall&#x27;s face still counts, and how close to an end or the middle snaps to it&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;grid&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the spot on the middle line at the wall&#x27;s foot; nil when the point is not near the wall&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;\&quot;End\&quot; or \&quot;Side\&quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;for an end, the way out of the wall through it&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 148,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;WallSpot&quot;,
+            &quot;desc&quot;: &quot;Finds the wall near a point and where the point snaps on it. Only the working folder is searched\nwhen one is set.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;where the cursor is&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;reach&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;grid&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;level&quot;,
+                    &quot;desc&quot;: &quot;only walls standing at this height&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the spot on the wall&#x27;s middle line&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;\&quot;End\&quot; or \&quot;Side\&quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;for an end, the way out of the wall through it&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the wall&quot;,
+                    &quot;lua_type&quot;: &quot;WallLine?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 183,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;BoxPoints&quot;,
+            &quot;desc&quot;: &quot;The points of a part&#x27;s box a point can snap to in three dimensions: its eight corners and the\nmiddle of each of its twelve edges.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;part&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;BasePart&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;{ Vector3 }&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 226,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Find&quot;,
+            &quot;desc&quot;: &quot;Finds the nearest corner or side middle of a nearby part within the radius, else the nearest\nedge within most of it. Only the working folder is searched when one is set.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;the point to move, already snapped to the grid&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;radius&quot;,
+                    &quot;desc&quot;: &quot;how far away a corner or edge can be and still attract the point&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the snapped point, or the same point when nothing was near&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;whether it moved to a part&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the part it moved to&quot;,
+                    &quot;lua_type&quot;: &quot;BasePart?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 271,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Vertex&quot;,
+            &quot;desc&quot;: &quot;Finds the nearest of the eight corners of any part within the radius, in all three dimensions.\nThe Measure tool uses it so a distance starts and ends exactly on a vertex.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;where the cursor hit&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;radius&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the corner, or the same point when none is near&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;whether it moved to a corner&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 333,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentEnd&quot;,
+            &quot;desc&quot;: &quot;Finds the open end of a vent built by this plugin near the point. Each vent model records its\ntwo ends in attributes so a new vent, or a cover, can start exactly on one.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;radius&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the middle of the opening&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the direction pointing out of the vent&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 376,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;RememberVentEnds&quot;,
+            &quot;desc&quot;: &quot;Records a vent&#x27;s ends on its model. They are kept relative to the model&#x27;s pivot, so they stay on\nthe openings when the vent is moved or turned, and in world space too for older readers. The\ncaller fixes the pivot first (see `FixPivot`), so it cannot drift when the vent&#x27;s sheets change.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;model&quot;,
+                    &quot;desc&quot;: &quot;the vent&quot;,
+                    &quot;lua_type&quot;: &quot;Instance&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;ends&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;VentEnds&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;pivot&quot;,
+                    &quot;desc&quot;: &quot;the model&#x27;s pivot now&quot;,
+                    &quot;lua_type&quot;: &quot;CFrame&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 422,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;FixPivot&quot;,
+            &quot;desc&quot;: &quot;Sets a vent model&#x27;s pivot to where it is now. A model whose pivot was never set can take it from\nits parts, so it would move when a corner stretches the vent&#x27;s sheets and carry the recorded ends\noff the openings; a set pivot only moves with the whole vent.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;model&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Model&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the pivot&quot;,
+                    &quot;lua_type&quot;: &quot;CFrame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 445,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ReadVentEnds&quot;,
+            &quot;desc&quot;: &quot;Reads a vent&#x27;s ends through a getter, so it works on any attribute source. Ends relative to the\npivot are used only on vents whose pivot was fixed when they were recorded; others, including\nvents whose pivot may have drifted, use their world ends.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;get&quot;,
+                    &quot;desc&quot;: &quot;reads one attribute&quot;,
+                    &quot;lua_type&quot;: &quot;(name: string) -&gt; any&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;pivot&quot;,
+                    &quot;desc&quot;: &quot;the vent&#x27;s pivot now&quot;,
+                    &quot;lua_type&quot;: &quot;CFrame&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;in world space; nil when the vent has no ends recorded&quot;,
+                    &quot;lua_type&quot;: &quot;VentEnds?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 462,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentEnds&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;model&quot;,
+                    &quot;desc&quot;: &quot;a vent model&quot;,
+                    &quot;lua_type&quot;: &quot;Instance&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;its ends where they are now, following the vent if it was moved or turned&quot;,
+                    &quot;lua_type&quot;: &quot;VentEnds?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 497,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentBox&quot;,
+            &quot;desc&quot;: &quot;The space a straight vent fills: its outside size around the middle line, and at a joined end\nthe corner square past the end as well.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ends&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;VentEnds&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;outer&quot;,
+                    &quot;desc&quot;: &quot;the vent&#x27;s outside size&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;openStart&quot;,
+                    &quot;desc&quot;: &quot;whether nothing joins the first end&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;openEnd&quot;,
+                    &quot;desc&quot;: &quot;whether nothing joins the other end&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the box; nil for a vent that is not along X, Y or Z&quot;,
+                    &quot;lua_type&quot;: &quot;{ Low: Vector3, High: Vector3 }?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 515,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;StopAt&quot;,
+            &quot;desc&quot;: &quot;How far a straight duct along X or Z runs before its front face meets one of the boxes.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;origin&quot;,
+                    &quot;desc&quot;: &quot;the start of the run, on its middle line&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;direction&quot;,
+                    &quot;desc&quot;: &quot;along X or Z&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;half&quot;,
+                    &quot;desc&quot;: &quot;half the run&#x27;s outside size&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;boxes&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;{ { Low: Vector3, High: Vector3 } }&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the distance to the nearest box face ahead, or nil when none is in the way&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 553,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentStop&quot;,
+            &quot;desc&quot;: &quot;How far a straight duct along X or Z can run before its front face meets a vent already built,\na corner square included, so a run stops flush against it.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;origin&quot;,
+                    &quot;desc&quot;: &quot;the start of the run, on its middle line&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;direction&quot;,
+                    &quot;desc&quot;: &quot;the run&#x27;s direction, along X or Z&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;half&quot;,
+                    &quot;desc&quot;: &quot;half the run&#x27;s outside size&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;fallback&quot;,
+                    &quot;desc&quot;: &quot;the outside size of vents that do not record one&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;skip&quot;,
+                    &quot;desc&quot;: &quot;vents the run starts from or continues&quot;,
+                    &quot;lua_type&quot;: &quot;{ Instance }&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the distance to the first vent face ahead, or nil when nothing is in the way&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 597,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentSizing&quot;,
+            &quot;desc&quot;: &quot;The size a vent was built at, so a vent continued from it matches. Vents record it; older level\nvents are measured from their floor sheet, which is the outside size plus a small pad wide.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;model&quot;,
+                    &quot;desc&quot;: &quot;a vent model&quot;,
+                    &quot;lua_type&quot;: &quot;Instance&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the outside size&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the sheet thickness&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 633,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;AimedOpening&quot;,
+            &quot;desc&quot;: &quot;Picks the opening a ray aims into: the one whose middle passes closest to the ray, within a\nlittle over half the vent size, and not hidden behind what the ray hits first.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;origin&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;direction&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;openings&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;{ { At: Vector3, Dir: Vector3 } }&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;size&quot;,
+                    &quot;desc&quot;: &quot;the outside size of the vents&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;limit&quot;,
+                    &quot;desc&quot;: &quot;how far the ray goes before it hits something&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the index of the opening aimed at&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 660,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentEndOnRay&quot;,
+            &quot;desc&quot;: &quot;Finds the open vent end the mouse ray aims into. Unlike a hit point, which lands deep inside a\nduct when the mouse looks into it, this works from any angle and from either side of a wall.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ray&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ray&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;size&quot;,
+                    &quot;desc&quot;: &quot;the outside size of the vents&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;limit&quot;,
+                    &quot;desc&quot;: &quot;how far the ray goes before it hits something&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;skip&quot;,
+                    &quot;desc&quot;: &quot;a vent whose openings are left out, such as the one being drawn from&quot;,
+                    &quot;lua_type&quot;: &quot;Instance?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the middle of the opening&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the way the opening faces&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the vent&quot;,
+                    &quot;lua_type&quot;: &quot;Instance?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 695,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentFacing&quot;,
+            &quot;desc&quot;: &quot;A sloped vent&#x27;s ends are cut upright, so the way out of one is level even though the duct tilts.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;direction&quot;,
+                    &quot;desc&quot;: &quot;the recorded way out of a vent end&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the way the opening faces: level unless the vent is a vertical shaft&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 727,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentEndOpen&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;model&quot;,
+                    &quot;desc&quot;: &quot;the vent the end belongs to&quot;,
+                    &quot;lua_type&quot;: &quot;Instance&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;at&quot;,
+                    &quot;desc&quot;: &quot;the end, on the vent&#x27;s middle line&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;false when another vent starts or ends there, so the end is already joined&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 738,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentCorner&quot;,
+            &quot;desc&quot;: &quot;Whether a point is on a vent corner: the square block around a joined end, where one vent turns\ninto the next. Any spot on the block&#x27;s faces counts, however far from its middle.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;where the cursor hit&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;fallback&quot;,
+                    &quot;desc&quot;: &quot;the outside size of vents that do not record one&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the middle of the corner, on the vents&#x27; middle lines&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;a vent that ends there&quot;,
+                    &quot;lua_type&quot;: &quot;Instance?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 759,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;InCorner&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;corners&quot;,
+                    &quot;desc&quot;: &quot;the middles of corner blocks&quot;,
+                    &quot;lua_type&quot;: &quot;{ Vector3 }&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;halves&quot;,
+                    &quot;desc&quot;: &quot;half the side of each block&quot;,
+                    &quot;lua_type&quot;: &quot;{ number }&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the index of the block the point is on or in, allowing a little for its faces&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 793,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentConnect&quot;,
+            &quot;desc&quot;: &quot;Finds a connection point on a vent built by this plugin: an open end, or a spot along its middle\nline snapped to the step. Spots along the side stay `margin` from the ends, so a vent started\nthere sits wholly against the side and never runs into a corner.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;where the cursor hit&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;radius&quot;,
+                    &quot;desc&quot;: &quot;how far from the middle line still counts&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;step&quot;,
+                    &quot;desc&quot;: &quot;the spacing of the points along a vent&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;margin&quot;,
+                    &quot;desc&quot;: &quot;how far side spots keep from the ends; half the vent size&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the point on the middle line&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the way out of the vent when the point is an open end, else nil&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;the vent model the point is on&quot;,
+                    &quot;lua_type&quot;: &quot;Instance?&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;whether the point is a corner: an end another vent already continues&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 820,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentBlocked&quot;,
+            &quot;desc&quot;: &quot;Whether a straight level duct would run into a vent already built. Ends that meet flush, and the\nvents named in `skip`, do not count.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;a&quot;,
+                    &quot;desc&quot;: &quot;one end of the new duct, on its middle line&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;b&quot;,
+                    &quot;desc&quot;: &quot;the other end&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;size&quot;,
+                    &quot;desc&quot;: &quot;the outside size of the ducts&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;skip&quot;,
+                    &quot;desc&quot;: &quot;vents the new one is allowed to touch: the one it starts from&quot;,
+                    &quot;lua_type&quot;: &quot;{ Instance }&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 890,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VertexNear&quot;,
+            &quot;desc&quot;: &quot;Finds the corner, or the middle of an edge, of a nearby part that sits closest to the mouse on the\nscreen, within a few pixels. Unlike a distance in studs, this only grabs one when the cursor is on it.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;where the cursor hit&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;mouse&quot;,
+                    &quot;desc&quot;: &quot;the mouse in screen coordinates&quot;,
+                    &quot;lua_type&quot;: &quot;Vector2&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;pixels&quot;,
+                    &quot;desc&quot;: &quot;how close on screen counts&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the corner, or the same point when none is near&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;desc&quot;: &quot;whether it moved to a corner&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 939,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;TopCenter&quot;,
+            &quot;desc&quot;: &quot;Moves a point on the top of a thin part, such as a wall, onto its centre line, so a wall built\non top of a wall sits on it instead of beside it. Along the part it snaps to its ends or its middle,\nelse to the grid measured from one end.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;part&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;BasePart&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;where the cursor hit the top&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;grid&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;endReach&quot;,
+                    &quot;desc&quot;: &quot;how close to an end counts as the end&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the point on the centre line, or nil when the part is not thin&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 987,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Doorway&quot;,
+            &quot;desc&quot;: &quot;Finds a doorway made by the Additive tools near the point: a rectangular or arched opening\nthat reaches the floor. The result is the middle of the opening on the face of the wall the point is\non, with the direction pointing away from that face, so a corridor can start there.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;point&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;radius&quot;,
+                    &quot;desc&quot;: &quot;how far from the middle of the opening still counts&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Doorway?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 1023,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [],
+    &quot;types&quot;: [
+        {
+            &quot;name&quot;: &quot;WallLine&quot;,
+            &quot;desc&quot;: &quot;The middle line of a wall along its foot: a thin, upright part whose long side is level.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Part&quot;,
+                    &quot;lua_type&quot;: &quot;BasePart&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Start&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;one end of the middle line, at the foot of the wall&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Axis&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;the level direction from Start to the other end&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Length&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Half&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;,
+                    &quot;desc&quot;: &quot;half the wall&#x27;s thickness&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;AlongZ&quot;,
+                    &quot;lua_type&quot;: &quot;boolean&quot;,
+                    &quot;desc&quot;: &quot;whether the part&#x27;s own Z runs along the wall, as for walls this plugin builds&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 95,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;VentEnds&quot;,
+            &quot;desc&quot;: &quot;The two ends of a vent, where the openings are and which way each looks out.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Start&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;the first end, on the middle line&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;StartDir&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;the way out of the first end&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;End&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;the other end&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;EndDir&quot;,
+                    &quot;lua_type&quot;: &quot;Vector3&quot;,
+                    &quot;desc&quot;: &quot;the way out of it&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 408,
+                &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+            }
+        }
+    ],
+    &quot;name&quot;: &quot;Snapper&quot;,
+    &quot;desc&quot;: &quot;Snaps a point to the corners and edges of the parts already built nearby, like Roblox&#x27;s own\nbuilding tools do. It works on the outline of each part seen from above, so the height of the\npoint is never changed.&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 10,
+        &quot;path&quot;: &quot;src/Core/Snapper.luau&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#VentEnds" class="table-of-contents__link toc-highlight">VentEnds</a></li><li><a href="#WallLine" class="table-of-contents__link toc-highlight">WallLine</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#AimedOpening" class="table-of-contents__link toc-highlight">.AimedOpening</a></li><li><a href="#BoxPoints" class="table-of-contents__link toc-highlight">.BoxPoints</a></li><li><a href="#Doorway" class="table-of-contents__link toc-highlight">.Doorway</a></li><li><a href="#Find" class="table-of-contents__link toc-highlight">.Find</a></li><li><a href="#FixPivot" class="table-of-contents__link toc-highlight">.FixPivot</a></li><li><a href="#InCorner" class="table-of-contents__link toc-highlight">.InCorner</a></li><li><a href="#ReadVentEnds" class="table-of-contents__link toc-highlight">.ReadVentEnds</a></li><li><a href="#RememberVentEnds" class="table-of-contents__link toc-highlight">.RememberVentEnds</a></li><li><a href="#SpotOnWall" class="table-of-contents__link toc-highlight">.SpotOnWall</a></li><li><a href="#StopAt" class="table-of-contents__link toc-highlight">.StopAt</a></li><li><a href="#TopCenter" class="table-of-contents__link toc-highlight">.TopCenter</a></li><li><a href="#TopPoints" class="table-of-contents__link toc-highlight">.TopPoints</a></li><li><a href="#VentBlocked" class="table-of-contents__link toc-highlight">.VentBlocked</a></li><li><a href="#VentBox" class="table-of-contents__link toc-highlight">.VentBox</a></li><li><a href="#VentConnect" class="table-of-contents__link toc-highlight">.VentConnect</a></li><li><a href="#VentCorner" class="table-of-contents__link toc-highlight">.VentCorner</a></li><li><a href="#VentEnd" class="table-of-contents__link toc-highlight">.VentEnd</a></li><li><a href="#VentEndOnRay" class="table-of-contents__link toc-highlight">.VentEndOnRay</a></li><li><a href="#VentEndOpen" class="table-of-contents__link toc-highlight">.VentEndOpen</a></li><li><a href="#VentEnds" class="table-of-contents__link toc-highlight">.VentEnds</a></li><li><a href="#VentFacing" class="table-of-contents__link toc-highlight">.VentFacing</a></li><li><a href="#VentSizing" class="table-of-contents__link toc-highlight">.VentSizing</a></li><li><a href="#VentStop" class="table-of-contents__link toc-highlight">.VentStop</a></li><li><a href="#Vertex" class="table-of-contents__link toc-highlight">.Vertex</a></li><li><a href="#VertexNear" class="table-of-contents__link toc-highlight">.VertexNear</a></li><li><a href="#WallLineOf" class="table-of-contents__link toc-highlight">.WallLineOf</a></li><li><a href="#WallSpot" class="table-of-contents__link toc-highlight">.WallSpot</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 Vlux-Entertainment. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+</body>
+</html>

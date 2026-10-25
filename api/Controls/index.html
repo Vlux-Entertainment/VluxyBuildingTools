@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="plugin-moonwave plugin-id-moonwave" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">Controls | VluxyBuildingTools</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Controls"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Controls | VluxyBuildingTools"><meta data-rh="true" name="description" content="The panel&#x27;s controls: cards, text, buttons, number fields, switches, a slider and choice rows.
+Each control that shows a setting reads it from the `Store` reactively and writes it back through
+the `Store`, so it always shows the saved value and every change is saved.
+
+Every control takes a `Visible` that may be a function; the control shows only while it returns
+true. That is how the panel shows just the options of the active tool. A control may also take
+`Locked`: while it returns true the control is greyed, takes no input, and its hover text names
+the working folder&#x27;s admin, who alone may change it."><meta data-rh="true" property="og:description" content="The panel&#x27;s controls: cards, text, buttons, number fields, switches, a slider and choice rows.
+Each control that shows a setting reads it from the `Store` reactively and writes it back through
+the `Store`, so it always shows the saved value and every change is saved.
+
+Every control takes a `Visible` that may be a function; the control shows only while it returns
+true. That is how the panel shows just the options of the active tool. A control may also take
+`Locked`: while it returns true the control is greyed, takes no input, and its hover text names
+the working folder&#x27;s admin, who alone may change it."><link data-rh="true" rel="icon" href="/VluxyBuildingTools/VluxFavicon.ico"><link data-rh="true" rel="canonical" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Controls"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Controls" hreflang="en"><link data-rh="true" rel="alternate" href="https://Vlux-Entertainment.github.io/VluxyBuildingTools/api/Controls" hreflang="x-default"><link rel="stylesheet" href="/VluxyBuildingTools/assets/css/styles.5ec48d9a.css">
+<script src="/VluxyBuildingTools/assets/js/runtime~main.2acd776e.js" defer="defer"></script>
+<script src="/VluxyBuildingTools/assets/js/main.d9c7c1a3.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/VluxyBuildingTools/"><b class="navbar__title text--truncate">VluxyBuildingTools</b></a><a class="navbar__item navbar__link" href="/VluxyBuildingTools/docs/intro">Docs</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/VluxyBuildingTools/api/">API</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/Ebbp9UgBUD" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/Vlux-Entertainment/VluxyBuildingTools" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input id="search_input_react" type="search" placeholder="Loading..." aria-label="Search" class="navbar__search-input search-bar" disabled=""></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0 docPageContainer_wNNk"><div class="docPage_Dpn1"><div class="docSidebarContainer_o_re"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/App"><span title="App" class="categoryLinkLabel_W154">App</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Store"><span title="State" class="categoryLinkLabel_W154">State</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Edit"><span title="Services" class="categoryLinkLabel_W154">Services</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Runner"><span title="Tools" class="categoryLinkLabel_W154">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Host"><span title="Modal actions" class="categoryLinkLabel_W154">Modal actions</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Areas"><span title="Builders" class="categoryLinkLabel_W154">Builders</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Geometry"><span title="Core" class="categoryLinkLabel_W154">Core</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/VluxyBuildingTools/api/Settings"><span title="Pure (tested under Lune)" class="categoryLinkLabel_W154">Pure (tested under Lune)</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/VluxyBuildingTools/api/Panel"><span title="Panel" class="categoryLinkLabel_W154">Panel</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Panel"><span title="​Panel" class="linkLabel_WmDU">​Panel</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/VluxyBuildingTools/api/Controls"><span title="​Controls" class="linkLabel_WmDU">​Controls</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Kit"><span title="​Kit" class="linkLabel_WmDU">​Kit</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Popups"><span title="​Popups" class="linkLabel_WmDU">​Popups</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/Theme"><span title="​Theme" class="linkLabel_WmDU">​Theme</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/BuildPage"><span title="​Build​Page" class="linkLabel_WmDU">​Build​Page</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/PropsPage"><span title="​Props​Page" class="linkLabel_WmDU">​Props​Page</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/ArrangePage"><span title="​Arrange​Page" class="linkLabel_WmDU">​Arrange​Page</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/DisplayPage"><span title="​Display​Page" class="linkLabel_WmDU">​Display​Page</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/HotkeysPage"><span title="​Hotkeys​Page" class="linkLabel_WmDU">​Hotkeys​Page</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/SettingsPage"><span title="​Settings​Page" class="linkLabel_WmDU">​Settings​Page</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/VluxyBuildingTools/api/FolderCard"><span title="​Folder​Card" class="linkLabel_WmDU">​Folder​Card</span></a></li></ul></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/VluxyBuildingTools/api/StairSnap"><span title="​Stair​Snap" class="linkLabel_WmDU">​Stair​Snap</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/VluxyBuildingTools/api/VentHoles"><span title="​Vent​Holes" class="linkLabel_WmDU">​Vent​Holes</span></a></li></ul></nav></div></div><main class="docMainContainer_HJE1"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_MU3C"><div class="docItemContainer_Wv98"><article><div class="member_J0w1 markdown"><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_oUs_"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><header><h1 class="docTitle_mZRt" style="text-decoration:none"><span style="display:inline-block">Controls</span></h1><div class="luaClassTags_EipM"></div><div>
+<p>
+  The panel's controls: cards, text, buttons, number fields, switches, a slider and choice rows.
+  Each control that shows a setting reads it from the <code>Store</code> reactively and writes it back through
+  the <code>Store</code>, so it always shows the saved value and every change is saved.
+</p>
+<p>
+  Every control takes a <code>Visible</code> that may be a function; the control shows only while it returns
+  true. That is how the panel shows just the options of the active tool. A control may also take
+  <code>Locked</code>: while it returns true the control is greyed, takes no input, and its hover text names
+  the working folder's admin, who alone may change it.
+</p>
+</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="types">Types<a href="#types" class="hash-link" aria-label="Direct link to Types" title="Direct link to Types" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Ui"><code style="text-decoration:none">Ui</code><a href="#Ui" class="hash-link" aria-label="Direct link to Ui" title="Direct link to Ui" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L39"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Ui<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>App<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/AppTypes#App">App</a></code></div><div><code>Popups<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Popups">Popups</a></code></div><div><code>Root<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/GuiObject" target="_blank" rel="noopener noreferrer">GuiObject<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the panel's scrolling root, which sees mouse moves anywhere in the panel</p>
+</span></span></div></div><code>}</code></div><div>
+<p>What every control is built with.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="NumberSpec"><code style="text-decoration:none">NumberSpec</code><a href="#NumberSpec" class="hash-link" aria-label="Direct link to NumberSpec" title="Direct link to NumberSpec" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L279"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>NumberSpec<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Key<!-- -->: </code><code class="blue_P4bS">string</code><span class="inlineDescription_G7Er">-- <span>
+<p>the setting</p>
+</span></span></div><div><code>Title<!-- -->: </code><code class="blue_P4bS">string</code></div><div><code>Min<!-- -->: </code><code class="blue_P4bS">number</code></div><div><code>Max<!-- -->: </code><code class="blue_P4bS">number</code></div><div><code>Step<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>what − and + add; the snap increment by default</p>
+</span></span></div><div><code>Integer<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>round down to a whole number</p>
+</span></span></div><div><code>Visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code></div><div><code>Locked<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">boolean</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>greys the field and blocks it while true</p>
+</span></span></div></div><code>}</code></div><div>
+<p>A number setting.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="SwitchSpec"><code style="text-decoration:none">SwitchSpec</code><a href="#SwitchSpec" class="hash-link" aria-label="Direct link to SwitchSpec" title="Direct link to SwitchSpec" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L416"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>SwitchSpec<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Title<!-- -->: </code><code class="blue_P4bS">string</code></div><div><code>Key<!-- -->: </code><code class="blue_P4bS">string?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the boolean setting it shows and sets</p>
+</span></span></div><div><code>Get<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">boolean</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>read reactively, when there is no Key</p>
+</span></span></div><div><code>Set<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code>on<!-- -->: </code><code class="blue_P4bS">boolean</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>when there is no Key</p>
+</span></span></div><div><code>After<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code>on<!-- -->: </code><code class="blue_P4bS">boolean</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>runs after a change, such as saying what it did</p>
+</span></span></div><div><code>Danger<!-- -->: </code><code class="blue_P4bS">boolean?</code><span class="inlineDescription_G7Er">-- <span>
+<p>shown in red, for settings that are risky to turn on</p>
+</span></span></div><div><code>Visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code></div><div><code>Locked<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">boolean</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>greys the switch and blocks it while true</p>
+</span></span></div></div><code>}</code></div><div>
+<p>An on/off switch, for a setting (<code>Key</code>) or for anything else (<code>Get</code> and <code>Set</code>).</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Option"><code style="text-decoration:none">Option</code><a href="#Option" class="hash-link" aria-label="Direct link to Option" title="Direct link to Option" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L645"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Option<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Value<!-- -->: </code><code class="blue_P4bS">string</code></div><div><code>Label<!-- -->: </code><code class="blue_P4bS">string?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the button text, the value by default</p>
+</span></span></div><div><code>Tip<!-- -->: </code><code class="blue_P4bS">string?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the tooltip</p>
+</span></span></div><div><code>Key<!-- -->: </code><code class="blue_P4bS">string?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the hotkey shown in the tooltip</p>
+</span></span></div></div><code>}</code></div><div>
+<p>One option of a choice row.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ChoiceSpec"><code style="text-decoration:none">ChoiceSpec</code><a href="#ChoiceSpec" class="hash-link" aria-label="Direct link to ChoiceSpec" title="Direct link to ChoiceSpec" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L659"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>ChoiceSpec<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Options<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Option">Option</a></code><code class="purple_ieR2">}</code></div><div><code>Columns<!-- -->: </code><code class="blue_P4bS">number</code></div><div><code>Get<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="blue_P4bS">string?</code><span class="inlineDescription_G7Er">-- <span>
+<p>the picked value, read reactively</p>
+</span></span></div><div><code>Set<!-- -->: </code><code class="purple_ieR2">(</code><code>value<!-- -->: </code><code class="blue_P4bS">string</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code></div><div><code>Visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code></div><div><code>Locked<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">boolean</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>greys the row and blocks it while true</p>
+</span></span></div></div><code>}</code></div><div>
+<p>A row of buttons where one is picked, such as roof styles or color themes.</p>
+</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Safe"><code style="text-decoration:none">Safe</code><a href="#Safe" class="hash-link" aria-label="Direct link to Safe" title="Direct link to Safe" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L54"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Safe</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>run<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code></div></div><code>) → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><span class="inlineDescription_G7Er">-- <span>
+<p>runs <code>run</code>, and shows an error in the status line instead of letting it escape</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Lock"><code style="text-decoration:none">Lock</code><a href="#Lock" class="hash-link" aria-label="Direct link to Lock" title="Direct link to Lock" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L73"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Lock</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>locked<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">boolean</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/TextButton" target="_blank" rel="noopener noreferrer">TextButton?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>nil when the control never locks</p>
+</span></span></div><div>
+<p>
+  A see-through cover that greys a row and takes its clicks while <code>locked</code> returns true; hovering
+  it says who may change the control.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Card"><code style="text-decoration:none">Card</code><a href="#Card" class="hash-link" aria-label="Direct link to Card" title="Direct link to Card" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L124"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Card</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>title<!-- -->: </code><code class="blue_P4bS">string?</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>shown small and muted at the top; hovering it shows its description from <code>Tips</code></p>
+</span></span></div><div><code>children<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS">any</code><code class="purple_ieR2">}</code><code>,</code></div><div><code>visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Frame" target="_blank" rel="noopener noreferrer">Frame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a rounded card holding rows</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Text"><code style="text-decoration:none">Text</code><a href="#Text" class="hash-link" aria-label="Direct link to Text" title="Direct link to Text" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L161"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Text</code><code>(</code><div class="inset_uKQm"><div><code>_ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>text<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">string</code><code class="op_lSLc">&gt;</code><code>,</code></div><div><code>color<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/Color3" target="_blank" rel="noopener noreferrer">Color3<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code><code>,</code></div><div><code>visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/TextLabel" target="_blank" rel="noopener noreferrer">TextLabel<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>wrapping text, muted by default</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Button"><code style="text-decoration:none">Button</code><a href="#Button" class="hash-link" aria-label="Direct link to Button" title="Direct link to Button" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L186"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Button</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>label<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">string</code><code class="op_lSLc">&gt;</code><code>,</code></div><div><code>run<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code>,</code></div><div><code>primary<!-- -->: </code><code class="blue_P4bS">boolean?</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>the orange call to action</p>
+</span></span></div><div><code>visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code><code>,</code></div><div><code>locked<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">boolean</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>greys the button and blocks it while true</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Frame" target="_blank" rel="noopener noreferrer">Frame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a full-width button row</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ButtonRow"><code style="text-decoration:none">ButtonRow</code><a href="#ButtonRow" class="hash-link" aria-label="Direct link to ButtonRow" title="Direct link to ButtonRow" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L233"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">ButtonRow</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>items<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Item">Item</a></code><code class="purple_ieR2">}</code><code>,</code></div><div><code>visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Frame" target="_blank" rel="noopener noreferrer">Frame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>buttons side by side, sharing the row equally</p>
+</span></span></div><h3>Types</h3><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Item"><a href="#Item" class="hash-link" aria-label="Direct link to Item" title="Direct link to Item" translate="no">​</a></h3><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>Item<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>Text<!-- -->: </code><code class="blue_P4bS">string</code></div><div><code>Run<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code></div><div><code>Primary<!-- -->: </code><code class="blue_P4bS">boolean?</code></div></div><code>}</code></div><div></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Number"><code style="text-decoration:none">Number</code><a href="#Number" class="hash-link" aria-label="Direct link to Number" title="Direct link to Number" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L322"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Number</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>spec<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#NumberSpec">NumberSpec</a></code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Frame" target="_blank" rel="noopener noreferrer">Frame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a labelled number box with − and + buttons. A field that overrides its standard value is marked with *.</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Switch"><code style="text-decoration:none">Switch</code><a href="#Switch" class="hash-link" aria-label="Direct link to Switch" title="Direct link to Switch" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L432"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Switch</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>spec<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#SwitchSpec">SwitchSpec</a></code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Frame" target="_blank" rel="noopener noreferrer">Frame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a labelled switch</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Slider"><code style="text-decoration:none">Slider</code><a href="#Slider" class="hash-link" aria-label="Direct link to Slider" title="Direct link to Slider" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L515"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Slider</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>key<!-- -->: </code><code class="blue_P4bS">string</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>a number setting from 0 to 1</p>
+</span></span></div><div><code>title<!-- -->: </code><code class="blue_P4bS">string</code><code>,</code></div><div><code>visible<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Prop">Prop</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">boolean</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">?</code><code>,</code></div><div><code>locked<!-- -->: </code><code class="purple_ieR2">(</code><code class="green_DgR4">(</code><code class="green_DgR4">)</code><code class="green_DgR4"> → </code><code class="blue_P4bS">boolean</code><code class="purple_ieR2">)</code><code class="blue_P4bS">?</code><span class="inlineDescription_G7Er">-- <span>
+<p>greys the slider and blocks it while true</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Frame" target="_blank" rel="noopener noreferrer">Frame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>a draggable slider showing the value as a percent. It saves when the drag ends.</p>
+</span></span></div><div></div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="Choice"><code style="text-decoration:none">Choice</code><a href="#Choice" class="hash-link" aria-label="Direct link to Choice" title="Direct link to Choice" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/Vlux-Entertainment/VluxyBuildingTools/blob/main/src/Ui/Controls.luau#L673"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Controls<!-- -->.</code><code class="green_DgR4">Choice</code><code>(</code><div class="inset_uKQm"><div><code>ui<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#Ui">Ui</a></code><code>,</code></div><div><code>spec<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/VluxyBuildingTools/api/Controls#ChoiceSpec">ChoiceSpec</a></code></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/class/Frame" target="_blank" rel="noopener noreferrer">Frame<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>the buttons in a grid, the picked one lit</p>
+</span></span></div><div></div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;Safe&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;run&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; ()&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;runs `run`, and shows an error in the status line instead of letting it escape&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; ()&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 54,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Lock&quot;,
+            &quot;desc&quot;: &quot;A see-through cover that greys a row and takes its clicks while `locked` returns true; hovering\nit says who may change the control.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;locked&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;(() -&gt; boolean)?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;nil when the control never locks&quot;,
+                    &quot;lua_type&quot;: &quot;TextButton?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 73,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Card&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;title&quot;,
+                    &quot;desc&quot;: &quot;shown small and muted at the top; hovering it shows its description from `Tips`&quot;,
+                    &quot;lua_type&quot;: &quot;string?&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;children&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;{ any }&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;visible&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;a rounded card holding rows&quot;,
+                    &quot;lua_type&quot;: &quot;Frame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 124,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Text&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;_ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;text&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;string&gt;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;color&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;Color3&gt;?&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;visible&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;wrapping text, muted by default&quot;,
+                    &quot;lua_type&quot;: &quot;TextLabel&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 161,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Button&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;label&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;string&gt;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;run&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; ()&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;primary&quot;,
+                    &quot;desc&quot;: &quot;the orange call to action&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;visible&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;locked&quot;,
+                    &quot;desc&quot;: &quot;greys the button and blocks it while true&quot;,
+                    &quot;lua_type&quot;: &quot;(() -&gt; boolean)?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;a full-width button row&quot;,
+                    &quot;lua_type&quot;: &quot;Frame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 186,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ButtonRow&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;items&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;{ Item }&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;visible&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;buttons side by side, sharing the row equally&quot;,
+                    &quot;lua_type&quot;: &quot;Frame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 233,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Number&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;spec&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;NumberSpec&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;a labelled number box with − and + buttons. A field that overrides its standard value is marked with *.&quot;,
+                    &quot;lua_type&quot;: &quot;Frame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 322,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Switch&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;spec&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;SwitchSpec&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;a labelled switch&quot;,
+                    &quot;lua_type&quot;: &quot;Frame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 432,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Slider&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;key&quot;,
+                    &quot;desc&quot;: &quot;a number setting from 0 to 1&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;title&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;visible&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;locked&quot;,
+                    &quot;desc&quot;: &quot;greys the slider and blocks it while true&quot;,
+                    &quot;lua_type&quot;: &quot;(() -&gt; boolean)?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;a draggable slider showing the value as a percent. It saves when the drag ends.&quot;,
+                    &quot;lua_type&quot;: &quot;Frame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 515,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Choice&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;ui&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;Ui&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;spec&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;ChoiceSpec&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;the buttons in a grid, the picked one lit&quot;,
+                    &quot;lua_type&quot;: &quot;Frame&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 673,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [],
+    &quot;types&quot;: [
+        {
+            &quot;name&quot;: &quot;Ui&quot;,
+            &quot;desc&quot;: &quot;What every control is built with.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;App&quot;,
+                    &quot;lua_type&quot;: &quot;App&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Popups&quot;,
+                    &quot;lua_type&quot;: &quot;Popups&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Root&quot;,
+                    &quot;lua_type&quot;: &quot;GuiObject&quot;,
+                    &quot;desc&quot;: &quot;the panel&#x27;s scrolling root, which sees mouse moves anywhere in the panel&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 39,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Item&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Text&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Run&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; ()&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Primary&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 225,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;NumberSpec&quot;,
+            &quot;desc&quot;: &quot;A number setting.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Key&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;,
+                    &quot;desc&quot;: &quot;the setting&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Title&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Min&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Max&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Step&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;,
+                    &quot;desc&quot;: &quot;what − and + add; the snap increment by default&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Integer&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;round down to a whole number&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Visible&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Locked&quot;,
+                    &quot;lua_type&quot;: &quot;(() -&gt; boolean)?&quot;,
+                    &quot;desc&quot;: &quot;greys the field and blocks it while true&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 279,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;SwitchSpec&quot;,
+            &quot;desc&quot;: &quot;An on/off switch, for a setting (`Key`) or for anything else (`Get` and `Set`).&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Title&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Key&quot;,
+                    &quot;lua_type&quot;: &quot;string?&quot;,
+                    &quot;desc&quot;: &quot;the boolean setting it shows and sets&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Get&quot;,
+                    &quot;lua_type&quot;: &quot;(() -&gt; boolean)?&quot;,
+                    &quot;desc&quot;: &quot;read reactively, when there is no Key&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Set&quot;,
+                    &quot;lua_type&quot;: &quot;((on: boolean) -&gt; ())?&quot;,
+                    &quot;desc&quot;: &quot;when there is no Key&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;After&quot;,
+                    &quot;lua_type&quot;: &quot;((on: boolean) -&gt; ())?&quot;,
+                    &quot;desc&quot;: &quot;runs after a change, such as saying what it did&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Danger&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;,
+                    &quot;desc&quot;: &quot;shown in red, for settings that are risky to turn on&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Visible&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Locked&quot;,
+                    &quot;lua_type&quot;: &quot;(() -&gt; boolean)?&quot;,
+                    &quot;desc&quot;: &quot;greys the switch and blocks it while true&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 416,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Option&quot;,
+            &quot;desc&quot;: &quot;One option of a choice row.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Value&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Label&quot;,
+                    &quot;lua_type&quot;: &quot;string?&quot;,
+                    &quot;desc&quot;: &quot;the button text, the value by default&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Tip&quot;,
+                    &quot;lua_type&quot;: &quot;string?&quot;,
+                    &quot;desc&quot;: &quot;the tooltip&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Key&quot;,
+                    &quot;lua_type&quot;: &quot;string?&quot;,
+                    &quot;desc&quot;: &quot;the hotkey shown in the tooltip&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 645,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ChoiceSpec&quot;,
+            &quot;desc&quot;: &quot;A row of buttons where one is picked, such as roof styles or color themes.&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;Options&quot;,
+                    &quot;lua_type&quot;: &quot;{ Option }&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Columns&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Get&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; string?&quot;,
+                    &quot;desc&quot;: &quot;the picked value, read reactively&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Set&quot;,
+                    &quot;lua_type&quot;: &quot;(value: string) -&gt; ()&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Visible&quot;,
+                    &quot;lua_type&quot;: &quot;Prop&lt;boolean&gt;?&quot;,
+                    &quot;desc&quot;: &quot;&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Locked&quot;,
+                    &quot;lua_type&quot;: &quot;(() -&gt; boolean)?&quot;,
+                    &quot;desc&quot;: &quot;greys the row and blocks it while true&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 659,
+                &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+            }
+        }
+    ],
+    &quot;name&quot;: &quot;Controls&quot;,
+    &quot;desc&quot;: &quot;The panel&#x27;s controls: cards, text, buttons, number fields, switches, a slider and choice rows.\nEach control that shows a setting reads it from the `Store` reactively and writes it back through\nthe `Store`, so it always shows the saved value and every change is saved.\n\nEvery control takes a `Visible` that may be a function; the control shows only while it returns\ntrue. That is how the panel shows just the options of the active tool. A control may also take\n`Locked`: while it returns true the control is greyed, takes no input, and its hover text names\nthe working folder&#x27;s admin, who alone may change it.&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 16,
+        &quot;path&quot;: &quot;src/Ui/Controls.luau&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#ChoiceSpec" class="table-of-contents__link toc-highlight">ChoiceSpec</a></li><li><a href="#Item" class="table-of-contents__link toc-highlight">Item</a></li><li><a href="#NumberSpec" class="table-of-contents__link toc-highlight">NumberSpec</a></li><li><a href="#Option" class="table-of-contents__link toc-highlight">Option</a></li><li><a href="#SwitchSpec" class="table-of-contents__link toc-highlight">SwitchSpec</a></li><li><a href="#Ui" class="table-of-contents__link toc-highlight">Ui</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Button" class="table-of-contents__link toc-highlight">.Button</a></li><li><a href="#ButtonRow" class="table-of-contents__link toc-highlight">.ButtonRow</a></li><li><a href="#Card" class="table-of-contents__link toc-highlight">.Card</a></li><li><a href="#Choice" class="table-of-contents__link toc-highlight">.Choice</a></li><li><a href="#Lock" class="table-of-contents__link toc-highlight">.Lock</a></li><li><a href="#Number" class="table-of-contents__link toc-highlight">.Number</a></li><li><a href="#Safe" class="table-of-contents__link toc-highlight">.Safe</a></li><li><a href="#Slider" class="table-of-contents__link toc-highlight">.Slider</a></li><li><a href="#Switch" class="table-of-contents__link toc-highlight">.Switch</a></li><li><a href="#Text" class="table-of-contents__link toc-highlight">.Text</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 Vlux-Entertainment. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+</body>
+</html>
