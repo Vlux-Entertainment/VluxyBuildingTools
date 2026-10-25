@@ -17,8 +17,7 @@ local Geometry = require("../Core/Geometry")
 local Guides = require("../Core/Guides")
 local Overlay = require("../Core/Overlay")
 
-local PIXELS = 24
-local REACH = 3
+local MIN_REACH = 6
 
 local GuideSnap = {}
 
@@ -36,14 +35,15 @@ local GuideSnap = {}
 type Plan = { Roots: { PVInstance }, Target: Vector3, Pull: Vector3, Box: CFrame, Size: Vector3 }
 
 --[[
+	@param pixels number -- how close on screen the mouse must be to a guide point
 	@return Plan? -- the snap for the selection and the mouse now, or nil when the mouse is not near a guide point a selection point can reach
 ]]
-local function plan(): Plan?
+local function plan(pixels: number): Plan?
 	if Guides.Count() == 0 then
 		return nil
 	end
 
-	local target = Guides.NearOnScreen(UserInputService:GetMouseLocation(), PIXELS)
+	local target = Guides.NearOnScreen(UserInputService:GetMouseLocation(), pixels)
 
 	if not target then
 		return nil
@@ -73,7 +73,8 @@ local function plan(): Plan?
 	end
 
 	local box, size = Geometry.Bounds(parts)
-	local pull = Guides.Pull(Guides.BoxAnchors(box.Position, size), target, REACH)
+	local reach = math.max(MIN_REACH, math.max(size.X, size.Y, size.Z) * 0.6)
+	local pull = Guides.Pull(Guides.BoxAnchors(box.Position, size), target, reach)
 
 	if not pull or pull.Magnitude < 1e-3 then
 		return nil
@@ -100,8 +101,9 @@ end
 
 	@param enabled boolean -- whether snapping to guides is on
 	@param overlay Overlay.Overlay
+	@param pixels number -- how close on screen the mouse must be to a guide point
 ]=]
-function GuideSnap.Hint(enabled: boolean, overlay: Overlay.Overlay)
+function GuideSnap.Hint(enabled: boolean, overlay: Overlay.Overlay, pixels: number)
 	if hintQueued then
 		return
 	end
@@ -111,7 +113,7 @@ function GuideSnap.Hint(enabled: boolean, overlay: Overlay.Overlay)
 	task.defer(function()
 		hintQueued = false
 
-		local found = if enabled then plan() else nil
+		local found = if enabled then plan(pixels) else nil
 
 		if found then
 			Overlay.DrawSnapHint(overlay, found.Target, { cf = found.Box + found.Pull, size = found.Size })
@@ -127,9 +129,10 @@ end
 
 	@param enabled boolean -- whether snapping to guides is on
 	@param edit Edit.Edit
+	@param pixels number -- how close on screen the mouse must be to a guide point
 ]=]
-function GuideSnap.AfterDrag(enabled: boolean, edit: Edit.Edit)
-	local found = if enabled then plan() else nil
+function GuideSnap.AfterDrag(enabled: boolean, edit: Edit.Edit, pixels: number)
+	local found = if enabled then plan(pixels) else nil
 
 	if not found then
 		return

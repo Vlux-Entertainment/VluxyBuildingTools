@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.4",
+		Date = "2026-10-25",
+		Changes = {
+			"Snapping to measuring guides reaches much further: 60 pixels on screen by default (Snap distance in the Measure guides settings), and a selection can jump 6 studs or more.",
+		},
+	},
+	{
 		Version = "1.7.3",
 		Date = "2026-10-25",
 		Changes = {

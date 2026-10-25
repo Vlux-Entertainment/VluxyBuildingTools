@@ -109,7 +109,7 @@ local function follow(ctx: Context, drag: Transform.Session)
 		Cursor.Screen(),
 		Cursor.Ray(cursor),
 		Cursor.Look(),
-		if snaps then math.max(1.5, ctx.Settings.SnapRadius * 1.5) else nil
+		if snaps then math.max(3, ctx.Settings.SnapRadius * 3) else nil
 	)
 
 	Overlay.Readout(ctx.Overlay, at, text)

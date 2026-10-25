@@ -81,6 +81,7 @@ return function(ui: Ui): { Instance }
 			Controls.ColorRow(ui, "GuideColor", "Guide color"),
 			number("GuideThickness", "Line thickness", 1, 10, 1),
 			Controls.Slider(ui, "GuideFill", "Inside transparency"),
+			number("GuideSnapPixels", "Snap distance (pixels)", 10, 300, 10),
 		}),
 		Controls.Card(ui, "VIEWPORT", {
 			Controls.Switch(ui, { Title = "Previews use the UI color", Key = "PreviewsFollowUi" }),

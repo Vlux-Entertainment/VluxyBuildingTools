@@ -88,6 +88,7 @@ Tips.Entries = {
 	},
 	["MEASURE GUIDES"] = { Text = "How the measurements kept in the viewport look." },
 	GuideThickness = { Text = "How thick the guide lines are." },
+	GuideSnapPixels = { Text = "How close on screen the mouse must come to a guide point for a drag to snap to it." },
 	GuideFill = { Text = "How see-through the inside of a measured shape is; 100% hides it." },
 	["Snap to parts"] = { Text = "Snap points to corners and edges of nearby parts." },
 	SnapRadius = { Text = "How close the cursor must be to snap to a part." },
