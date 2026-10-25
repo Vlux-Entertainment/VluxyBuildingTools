@@ -30,6 +30,7 @@ type Cut = Shapes.Cutter
 type Piece = { Cut: Cut? }
 
 local PEEK_WIDTH = 2.4
+local DUCT_INSET = 0.03
 
 local BUILDERS: { [string]: (Settings.Settings, Vector3, Vector3) -> { Geometry.Spec } } = {
 	VentCover = Vents.VentCover,
@@ -74,7 +75,7 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 		end
 
 		if endPoint and outward then
-			center, normal = endPoint, outward
+			center, normal = endPoint - outward * DUCT_INSET, outward
 		else
 			center = Common.SnapOnSurface(center, normal, function(value)
 				return Cursor.Snap(ctx.Cursor, value)

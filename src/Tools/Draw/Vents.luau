@@ -84,17 +84,17 @@ end
 	@param model Model -- the vent just built
 	@param a Vector3 -- one end of the duct, on its middle line
 	@param b Vector3 -- the other end
-	@param skip Instance? -- the vent this one continues, left uncut
+	@param skip { Instance } -- the vents this one continues end to end, left uncut
 
 	Records the vent's open ends, then cuts the duct and its openings out of every other part it
 	passes through, and opens the side of any vent it joins.
 ]]
-local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: Instance?)
+local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: { Instance })
 	if (b - a).Magnitude < 0.05 then
 		return
 	end
 
-	local dir = (b - a).Unit
+	local dir = Snapper.VentFacing(b - a)
 
 	model:SetAttribute("VluxyBT_VentStart", a)
 	model:SetAttribute("VluxyBT_VentStartDir", -dir)
@@ -123,7 +123,7 @@ local function finish(ctx: Context, model: Model, a: Vector3, b: Vector3, skip: 
 
 			return owner ~= nil
 				and owner ~= model
-				and owner ~= skip
+				and not table.find(skip, owner)
 				and owner:IsA("Model")
 				and CollectionService:HasTag(owner, VENT_TAG)
 		end)
@@ -146,17 +146,21 @@ end
 	Finishes the vent from the ends the preview worked out.
 ]]
 local function commit(ctx: Context, draw: Draw, built: Built)
-	local ends = ventOf(draw).Ends
+	local vent = ventOf(draw)
+	local ends = vent.Ends
 	local previous = built.Previous
+	local skip: { Instance } = {}
+
+	if previous then
+		table.insert(skip, previous.model)
+	end
+
+	if vent.Owner and vent.End then
+		table.insert(skip, vent.Owner)
+	end
 
 	if ends and built.Model then
-		finish(
-			ctx,
-			built.Model,
-			ends[1],
-			ends[2],
-			if previous and previous.model:IsA("Model") then previous.model else nil
-		)
+		finish(ctx, built.Model, ends[1], ends[2], skip)
 	end
 end
 
@@ -170,37 +174,67 @@ local function start(shaft: boolean): (ctx: Context, draw: Draw) -> Vector3?
 	end
 end
 
---[[ Before the first click on a surface, the marker is the vent's outline on that surface. ]]
+--[[
+	Before the first click the marker is the outline of the duct where it will start, with a cross
+	through its middle: on the surface it starts against, on the open vent end it continues, or on
+	the side of the vent it branches from.
+]]
 local function idle(ctx: Context, draw: Draw, _point: Vector3): { Geometry.Spec }?
-	local normal, mark = ventOf(draw).HitNormal, ctx.Cursor.Mark
+	local vent, mark = ventOf(draw), ctx.Cursor.Mark
+	local size = Settings.VentOuter(ctx.Settings)
+	local center, facing
 
-	if normal and mark then
-		return Vents.VentHoleMark(mark + normal * 0.05, normal, Settings.VentOuter(ctx.Settings))
+	if not mark then
+		return nil
+	elseif vent.HitEnd then
+		local sideways = math.abs(vent.HitEnd.Y) > 0.9 and not draw.Shape.Shaft
+
+		center, facing = if sideways then mark + vent.HitEnd * (size / 2) else mark, vent.HitEnd
+	elseif vent.HitFace then
+		center, facing = mark + vent.HitFace * (size / 2), vent.HitFace
+	elseif vent.HitNormal then
+		center, facing = mark, vent.HitNormal
+	else
+		return nil
 	end
 
-	return nil
+	return Vents.VentStartMark(center + facing * 0.05, facing, size)
 end
 
 --[[
 	@param keepNormal boolean -- whether the run remembers the surface it started on
+	@param chains boolean -- whether a run started on the open end of a level vent turns its corner like a chained section
 
 	@return (ctx, draw) -> () -- records what the vent started on at the first click
 ]]
-local function onStart(keepNormal: boolean): (ctx: Context, draw: Draw) -> ()
-	return function(_ctx: Context, draw: Draw)
+local function onStart(keepNormal: boolean, chains: boolean): (ctx: Context, draw: Draw) -> ()
+	return function(ctx: Context, draw: Draw)
 		local vent = ventOf(draw)
+		local owner, outward = vent.HitOwner, vent.HitEnd
 
 		vent.Normal = if keepNormal then vent.HitNormal else nil
 		vent.Host = vent.HitHost
 		vent.Shift = Vector3.zero
+		vent.Owner = owner
+		vent.End = if outward and math.abs(outward.Y) < 0.5 then outward else nil
+
+		local a = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
+		local b = if owner then owner:GetAttribute("VluxyBT_VentEnd") else nil
+		local level = typeof(a) == "Vector3" and typeof(b) == "Vector3" and math.abs(b.Y - a.Y) < 0.05
+
+		if chains and owner and vent.End and level then
+			draw.Previous = { model = owner, dir = vent.End, strips = Vents.VentStrips(ctx.Settings) }
+			draw.Chained = true
+		end
 	end
 end
 
---[[ After a build the next section starts in the open, not against a surface. ]]
+--[[ After a build the next section starts in the open, not against a surface or another vent. ]]
 local function built(draw: Draw)
 	local vent = ventOf(draw)
 
 	vent.Normal, vent.Shift, vent.Host = nil, Vector3.zero, nil
+	vent.Owner, vent.End = nil, nil
 end
 
 --[[
@@ -272,9 +306,24 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 		sign = if alongX then (if d.X >= 0 then 1 else -1) else (if d.Z >= 0 then 1 else -1)
 	end
 
-	local direction = axis * sign
+	local host = vent.Host
 
-	b = a + direction * (if alongX then math.abs(d.X) else math.abs(d.Z))
+	if not draw.Chained and host and math.abs(host.Y) < 0.9 and math.abs(axis:Dot(host)) >= 0.5 then
+		alongX = not alongX
+		axis = if alongX then Vector3.xAxis else Vector3.zAxis
+		sign = if alongX then (if d.X >= 0 then 1 else -1) else (if d.Z >= 0 then 1 else -1)
+	end
+
+	local direction = axis * sign
+	local outward = vent.End
+
+	if not draw.Chained and outward then
+		direction = if math.abs(outward.X) >= math.abs(outward.Z)
+			then Vector3.xAxis * math.sign(outward.X)
+			else Vector3.zAxis * math.sign(outward.Z)
+	end
+
+	b = a + direction * math.max(0, (b - a):Dot(direction))
 
 	local meet = meetHost(ctx, a, direction)
 
@@ -307,21 +356,54 @@ local function lift(ctx: Context): Vector3
 	return Vector3.new(0, Settings.VentOuter(ctx.Settings) / 2, 0)
 end
 
+--[[
+	@param ctx Context
+	@param draw Draw
+	@param a Vector3 -- the start, on the middle line
+	@param b Vector3 -- the end, on the middle line
+	@return boolean -- whether the run would pass through a vent other than the ones it starts from
+]]
+local function blocked(ctx: Context, draw: Draw, a: Vector3, b: Vector3): boolean
+	local skip: { Instance } = {}
+	local owner = ventOf(draw).Owner
+
+	if draw.Previous then
+		table.insert(skip, draw.Previous.model)
+	end
+
+	if owner then
+		table.insert(skip, owner)
+	end
+
+	return (b - a).Magnitude > 0.1 and Snapper.VentBlocked(a, b, Settings.VentOuter(ctx.Settings), skip)
+end
+
 local vent: Engine.Shape = {
 	Id = "Vent",
 	Vents = true,
 	Start = start(false),
 	Idle = idle,
-	OnStart = onStart(true),
+	OnStart = onStart(true, true),
 	Constrain = constrain,
 	Built = built,
 	Chain = true,
 	Build = function(ctx, draw, a, b)
 		local up = lift(ctx)
 
+		if blocked(ctx, draw, a + up, b + up) then
+			ventOf(draw).Ends = nil
+
+			return {}
+		end
+
 		ventOf(draw).Ends = { a + up, b + up }
 
 		return Vents.VentRun(ctx.Settings, a, b, if draw.Chained and draw.Previous then draw.Previous.dir else nil)
+	end,
+	Problem = function(_specs, draw)
+		local ends = ventOf(draw).Ends
+
+		return if ends == nil and draw.First then "That would run into another vent; start beside it." else nil
 	end,
 	Commit = function(ctx, draw, result)
 		Bends.Join(draw, result, Vents.VentStrips(ctx.Settings))
@@ -334,7 +416,7 @@ local ventRamp: Engine.Shape = {
 	Vents = true,
 	Start = start(false),
 	Idle = idle,
-	OnStart = onStart(true),
+	OnStart = onStart(true, false),
 	Constrain = constrain,
 	Built = built,
 	Rise = true,
@@ -363,7 +445,7 @@ local ventShaft: Engine.Shape = {
 	Vents = true,
 	Start = start(true),
 	Idle = idle,
-	OnStart = onStart(false),
+	OnStart = onStart(false, false),
 	Built = built,
 	Shaft = true,
 	Build = function(ctx, draw, a, _b, sized)

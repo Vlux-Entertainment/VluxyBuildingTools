@@ -346,9 +346,9 @@ end
 ]=]
 function Vents.VentCap(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
-	local size = Settings.VentOuter(settings)
+	local size = Settings.VentOuter(settings) + 0.06
 
-	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, 0.05), "VentCap")
+	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, 0.025), "VentCap")
 
 	return out
 end
@@ -440,6 +440,26 @@ function Vents.VentHoleMark(center: Vector3, normal: Vector3, size: number): { S
 	add(out, Vector3.new(size, bar, depth), frame * CFrame.new(0, -half, 0), "VentHoleMark")
 	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(half, 0, 0), "VentHoleMark")
 	add(out, Vector3.new(bar, size - 2 * bar, depth), frame * CFrame.new(-half, 0, 0), "VentHoleMark")
+
+	return out
+end
+
+--[=[
+	The outline of a vent's cross-section with a cross through its middle, showing exactly where a
+	new duct will start.
+
+	@param center Vector3
+	@param normal Vector3 -- the way the duct will leave
+	@param size number -- the outside size of the duct
+	@return { Spec }
+]=]
+function Vents.VentStartMark(center: Vector3, normal: Vector3, size: number): { Spec }
+	local out = Vents.VentHoleMark(center, normal, size)
+	local frame = surfaceFrame(center, normal)
+	local bar = 0.08
+
+	add(out, Vector3.new(size - 0.3, bar, 0.06), frame, "VentHoleMark")
+	add(out, Vector3.new(bar, size - 0.3, 0.06), frame, "VentHoleMark")
 
 	return out
 end
