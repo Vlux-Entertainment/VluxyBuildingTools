@@ -30,6 +30,21 @@ return {
 		expect.equal(vec(part.CFrame.Position), "8,0,0")
 	end,
 
+	["Grab pulls a corner of the selection onto a measuring guide point near it"] = function(expect)
+		local context = Harness.new()
+		local Transform = context:Require("src/Core/Transform")
+		local Guides = context:Require("src/Core/Guides")
+		local part = Harness.Part(Vector3.new(2, 2, 2), CFrame.new())
+		local session = Transform.Begin("Grab", { part }, Vector2.zero, rayAt(0), LOOK)
+
+		Guides.Add({ Lines = {}, Points = { Vector3.new(9.4, 1, 1) } })
+		Transform.Update(session, 4, Vector2.zero, rayAt(9.1), LOOK, 1.5)
+		expect.equal(vec(part.CFrame.Position), "8.4,0,0", "the corner lands on the guide point")
+
+		Transform.Update(session, 4, Vector2.zero, rayAt(9.1), LOOK, nil)
+		expect.equal(vec(part.CFrame.Position), "8,0,0", "with guide snapping off, the grid alone")
+	end,
+
 	["a typed number on a locked axis moves exactly that far"] = function(expect)
 		local Transform = Harness.Load("src/Core/Transform")
 		local NumericInput = Harness.Load("src/Pure/NumericInput")

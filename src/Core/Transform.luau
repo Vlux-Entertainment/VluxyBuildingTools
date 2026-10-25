@@ -9,6 +9,7 @@
 
 local AxisLock = require("../Pure/AxisLock")
 local Geometry = require("./Geometry")
+local Guides = require("./Guides")
 local NumericInput = require("../Pure/NumericInput")
 local Snap = require("../Pure/Snap")
 
@@ -26,6 +27,7 @@ export type Session = {
 	_center: Vector3,
 	_startMouse: Vector2,
 	_base: Vector3?,
+	_anchors: { Vector3 },
 }
 
 local DEGREES_PER_PIXEL = 0.5
@@ -75,6 +77,36 @@ local function reading(self: Session, ray: Ray, look: Vector3): Vector3?
 	return if t > 0 then ray.Origin + ray.Direction * t else nil
 end
 
+--[[
+	@param self Session
+	@param delta Vector3 -- the move so far
+	@param reach number
+	@return Vector3? -- the extra move that puts the selection point nearest a measuring guide point onto it, kept to the axis or plane locked; nil when none is within reach
+]]
+local function toGuide(self: Session, delta: Vector3, reach: number): Vector3?
+	local best: Vector3? = nil
+	local bestDistance = reach
+
+	for _, anchor in self._anchors do
+		local moved = anchor + delta
+		local guide = Guides.Near(moved, reach)
+
+		if guide and (guide - moved).Magnitude < bestDistance then
+			best, bestDistance = guide - moved, (guide - moved).Magnitude
+		end
+	end
+
+	local lock = self.Lock
+
+	if not best or not lock then
+		return best
+	end
+
+	local axis = Geometry.FromVec(AxisLock.Unit(lock.Axis))
+
+	return if lock.Plane then best - axis * best:Dot(axis) else axis * best:Dot(axis)
+end
+
 --[=[
 	@param kind Kind
 	@param parts { BasePart } -- every Part that moves
@@ -90,7 +122,18 @@ function Transform.Begin(kind: Kind, parts: { BasePart }, mouse: Vector2, ray: R
 		original[part] = { Cf = part.CFrame, Size = part.Size }
 	end
 
-	local center = Geometry.Bounds(parts).Position
+	local box, size = Geometry.Bounds(parts)
+	local center = box.Position
+	local anchors: { Vector3 } = {}
+
+	for _, x in { -1, 0, 1 } do
+		for _, y in { -1, 0, 1 } do
+			for _, z in { -1, 0, 1 } do
+				table.insert(anchors, center + size * Vector3.new(x, y, z) * 0.5)
+			end
+		end
+	end
+
 	local self: Session = {
 		Kind = kind,
 		Parts = parts,
@@ -101,6 +144,7 @@ function Transform.Begin(kind: Kind, parts: { BasePart }, mouse: Vector2, ray: R
 		_center = center,
 		_startMouse = mouse,
 		_base = nil,
+		_anchors = anchors,
 	}
 
 	self._base = reading(self, ray, look)
@@ -149,10 +193,18 @@ end
 	@param mouse Vector2
 	@param ray Ray
 	@param look Vector3
+	@param guideReach number? -- how close a corner, side centre or the centre of the selection must come to a measuring guide point to snap onto it; nil turns guide snapping off
 	@return string -- the text for the floating readout
 	@return Vector3 -- where to show it
 ]=]
-function Transform.Update(self: Session, grid: number, mouse: Vector2, ray: Ray, look: Vector3): (string, Vector3)
+function Transform.Update(
+	self: Session,
+	grid: number,
+	mouse: Vector2,
+	ray: Ray,
+	look: Vector3,
+	guideReach: number?
+): (string, Vector3)
 	local typed = NumericInput.Value(self.Numeric)
 	local lock = self.Lock
 	local suffix = if lock then `  [{if lock.Plane then "plane " else ""}{lock.Axis}]` else ""
@@ -170,6 +222,13 @@ function Transform.Update(self: Session, grid: number, mouse: Vector2, ray: Ray,
 				local move = point - base
 
 				delta = Vector3.new(Snap.Round(move.X, grid), Snap.Round(move.Y, grid), Snap.Round(move.Z, grid))
+			end
+
+			local pull = if guideReach then toGuide(self, delta, guideReach) else nil
+
+			if pull then
+				delta += pull
+				suffix ..= "  [guide]"
 			end
 		end
 
