@@ -243,12 +243,13 @@ end
 	@param ctx Context
 	@param draw Draw -- must have vent state
 	@param shaft boolean -- true for a vertical vent, whose point is on the surface itself
-	@return Vector3? -- where a vent starts: on an open vent end, else against the surface under the cursor so the duct sits beside it, on top of it or under it
+	@param headOn boolean? -- only start on a vent's open end, never on its side, top or corner
+	@return Vector3? -- where a vent starts: on a vent hole or an open vent end, else against the surface under the cursor so the duct sits beside it, on top of it or under it
 
 	Fills `draw.Vent` with what is under the cursor: the surface normal, the vent it would join and
 	the spots a vent can start from.
 ]=]
-function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
+function Points.Vent(ctx: Context, draw: Draw, shaft: boolean, headOn: boolean?): Vector3?
 	local cursor = ctx.Cursor
 	local vent = draw.Vent :: Engine.VentState
 	local hit = Cursor.Hit(cursor)
@@ -272,6 +273,12 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 
 	vent.HitNormal, vent.HitHost, vent.HitOwner, vent.HitEnd, vent.HitFace = nil, nil, owner, openEnd, nil
 	vent.HitCorner = corner
+
+	if headOn and endPoint and not (openEnd and math.abs(openEnd.Y) < 0.5) then
+		vent.HitOwner, vent.HitEnd, vent.HitCorner = nil, nil, false
+
+		return nil
+	end
 
 	if endPoint and owner then
 		local a = owner:GetAttribute("VluxyBT_VentStart")
