@@ -133,6 +133,9 @@ Tips.Entries = {
 	["Random rotation"] = { Text = "Turn each brush copy a random amount." },
 	["Randomize prop rotation"] = { Text = "Turn each prop a small random amount." },
 	["Set cut depth with mouse"] = { Text = "Move the mouse to set how deep the opening goes." },
+	StairUnderThickness = {
+		Text = "How thick the sloped underside is, square to the slope, under the steps' inner corners.",
+	},
 	VentSize = { Text = "The clear space inside a vent; the sheets go outside it." },
 	VentThickness = { Text = "How thick the vent metal is." },
 	BrushRadius = { Text = "How far from the cursor copies scatter." },

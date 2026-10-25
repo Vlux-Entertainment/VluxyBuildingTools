@@ -50,7 +50,7 @@ Options: **Height**, **Thickness**, **Pillar width**, the floor's **Transparency
 
 | Tool | How to use it |
 |---|---|
-| **Stairs** | Click the bottom step, then the end of the run. **Center**, **Left** or **Right** picks which line of the stairs the clicks mark, so you can snap them along the side of a wall. |
+| **Stairs** | Click the bottom step, then the end of the run. **Center**, **Left** or **Right** picks which line of the stairs the clicks mark, so you can snap them along the side of a wall. **Full** or **Slope** sets the underside: solid to the ground, or a sloped slab as thick as **Underside thickness** under the steps. |
 | **Ramp** | Click the bottom, then the top. **Center**, **Left** or **Right** works as for stairs. |
 
 Options: **Clear width**, **Total stair rise** or **Ramp rise**. Advanced: **Approx. step depth**

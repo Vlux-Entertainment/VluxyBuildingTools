@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.7",
+		Date = "2026-10-24",
+		Changes = {
+			"Stairs and Ramp: Full or Slope underside. Slope builds a sloped slab under the steps, 1.5 thick by default, measured square to the slope from the steps' inner corners.",
+		},
+	},
+	{
 		Version = "1.5.6",
 		Date = "2026-10-24",
 		Changes = {
