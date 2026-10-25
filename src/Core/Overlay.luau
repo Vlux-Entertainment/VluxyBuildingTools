@@ -2,7 +2,7 @@
 
 --[=[
 	Everything the tools draw into the viewport: the box previews, the construction grid, wedge
-	outlines, the measuring line, the drag handles and the floating number. All of it lives in
+	outlines, the measuring line and the floating number. All of it lives in
 	CoreGui, so only the person using the plugin sees it and nothing is saved in the place.
 
 	@class Overlay
@@ -15,7 +15,6 @@ local Geometry = require("./Geometry")
 local Trove = require("../Packages/Trove")
 
 export type Overlay = {
-	FaceHandles: Handles,
 	_ghosts: { BoxHandleAdornment },
 	_folder: Folder,
 	_planeGrid: WireframeHandleAdornment,
@@ -101,14 +100,6 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	tag(folder)
 	trove:Add(folder)
 	trove:Add(Overlay.Sweep)
-
-	local faceHandles = Instance.new("Handles")
-	faceHandles.Name = "DragToExtend"
-	faceHandles.Style = Enum.HandlesStyle.Resize
-	faceHandles.Color3 = Color3.fromRGB(115, 220, 190)
-	faceHandles.Visible = false
-	faceHandles.Parent = folder
-	tag(faceHandles)
 
 	local planeGrid = wire(folder, "ConstructionGrid", Color3.fromRGB(145, 165, 185), 1)
 	planeGrid.Transparency = 0.85
@@ -242,7 +233,6 @@ function Overlay.new(trove: Trove.Trove): Overlay
 	hintLayout.Parent = barHints
 
 	return {
-		FaceHandles = faceHandles,
 		_ghosts = {},
 		_holes = {},
 		_folder = folder,

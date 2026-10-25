@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.3",
+		Date = "2026-10-25",
+		Changes = {
+			"Removed the Face Extend tool from Additive, and its length setting. The E key still extrudes faces.",
+		},
+	},
+	{
 		Version = "1.6.2",
 		Date = "2026-10-24",
 		Changes = {

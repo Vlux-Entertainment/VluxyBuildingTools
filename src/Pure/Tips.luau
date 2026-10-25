@@ -160,7 +160,6 @@ Tips.Entries = {
 	["Relative Offset"] = { Text = "Space copies by the selection's own size." },
 	["Constant Offset"] = { Text = "Space copies by a fixed number of studs." },
 	["Apply Array"] = { Text = "Make the previewed copies." },
-	Extend = { Text = "How far a face extend grows by default." },
 	GridTextureSize = { Text = "How many studs one grid tile covers." },
 } :: { [string]: Tip }
 

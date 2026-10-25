@@ -25,6 +25,5 @@ return {
 		Railings = "",
 		Place = "",
 		Measure = "",
-		Extend = "",
 	},
 }

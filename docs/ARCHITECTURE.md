@@ -112,7 +112,7 @@ one tool does can leak into the next. The runner is the only caller.
 - **A tool keeps its state in its state table**, never in module-level locals.
 - **The panel holds no logic.** It shows `AppState` and the Store and calls `App/Actions` or a
   service. Anything worth testing goes in `Pure/`.
-- **Connections are cleaned up**: into a Trove (services, tools such as Extend keep their own) or
+- **Connections are cleaned up**: into a Trove (services, tools keep their own) or
   `vide.cleanup` (panel).
 - **vide runs with `strict` and `defaults` off** (set in `App.new`). Strict mode would run effects
   twice, doubling side effects; vide's instance defaults differ from Roblox's.

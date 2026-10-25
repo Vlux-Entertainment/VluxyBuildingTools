@@ -53,7 +53,6 @@ return function(ui: Ui): { Instance }
 			number("StandardThickness", "Wall thickness", 0.05, 512),
 			number("StandardDoorWidth", "Doorway width", 0.1, 1024),
 			number("StandardDoorHeight", "Doorway height", 0.1, 1024),
-			number("Extend", "Face extend length", 0.1, 2048),
 		}),
 		Controls.Card(ui, "INTERFACE", {
 			Controls.Choice(ui, {

@@ -426,15 +426,15 @@ end
 	@param settings Settings
 	@param part BasePart -- the block being extended
 	@param normal Vector3 -- world-space normal of the face
-	@param distance number? -- how far to grow; the panel's Extend setting when left out
+	@param distance number -- how far to grow
 	@return { Spec }
 ]=]
-function Openings.Extend(settings: Settings, part: BasePart, normal: Vector3, distance: number?): { Spec }
+function Openings.Extend(settings: Settings, part: BasePart, normal: Vector3, distance: number): { Spec }
 	local out: { Spec } = {}
 	local axis, side = Openings.FaceAxis(part, normal)
 	local unit = if axis == 1 then Vector3.xAxis elseif axis == 2 then Vector3.yAxis else Vector3.zAxis
 	local old = if axis == 1 then part.Size.X elseif axis == 2 then part.Size.Y else part.Size.Z
-	local length = distance or settings.Extend
+	local length = distance
 	local size = if axis == 1
 		then Vector3.new(length, part.Size.Y, part.Size.Z)
 		elseif axis == 2 then Vector3.new(part.Size.X, length, part.Size.Z)

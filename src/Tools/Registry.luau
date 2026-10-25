@@ -22,7 +22,6 @@ local FAMILIES: { { Types.Tool } } = {
 	require("./Prop"),
 	require("./Brush"),
 	require("./Measure"),
-	require("./Extend"),
 }
 
 local Registry: { [string]: Types.Tool } = {}

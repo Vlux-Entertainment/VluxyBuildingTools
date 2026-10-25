@@ -241,13 +241,6 @@ Tools.List = {
 		Description = "Cut any shape out of a wall.",
 	},
 	{
-		Id = "Extend",
-		Label = "Face Extend",
-		Glyph = "⧉",
-		Key = nil,
-		Description = "Drag a face handle to grow a block.",
-	},
-	{
 		Id = "Place",
 		Label = "Brush",
 		Glyph = "❐",
@@ -286,7 +279,7 @@ Tools.Grid = {
 		Glyph = "▯",
 		Key = "3",
 		Description = "Cut doorways, windows and other openings into walls.",
-		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "CutShape", "VentHole", "Extend" },
+		Modes = { "Door", "Window", "CircleWindow", "TriangleWindow", "ArchOpening", "CutShape", "VentHole" },
 	},
 	{
 		Id = "Structures",
@@ -369,7 +362,6 @@ Tools.Instructions = {
 	CutShape = "Click corners on a wall; Enter cuts the shape.",
 	TriangleWindow = "Click a plain wall.",
 	Window = "Click a plain wall.",
-	Extend = "Select a block, then drag a green handle outward.",
 	Place = "Select an object, then click or drag over surfaces.",
 	Measure = "Click two points; Esc clears the label.",
 } :: { [string]: string }
