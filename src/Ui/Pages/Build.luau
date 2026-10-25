@@ -428,6 +428,10 @@ return function(ui: Ui): { Instance }
 				end,
 				Visible = when(modes("Measure")),
 			}),
+			Controls.Switch(
+				ui,
+				{ Title = "Grab snaps to measure guides", Key = "GrabGuides", Visible = when(modes("Measure")) }
+			),
 			Controls.Button(ui, "Clear measuring guides", function()
 				Actions.ClearGuides(app)
 			end, false, when(modes("Measure"))),

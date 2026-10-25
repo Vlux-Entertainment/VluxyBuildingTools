@@ -83,6 +83,9 @@ Tips.Entries = {
 	StandardDoorWidth = { Text = "The doorway width every tool starts from." },
 	StandardDoorHeight = { Text = "The doorway height every tool starts from." },
 	["Join rooms and corridors"] = { Text = "Cut openings where rooms and corridors meet." },
+	["Grab snaps to measure guides"] = {
+		Text = "While grabbing with G, a corner or centre of the selection snaps onto measuring guide points.",
+	},
 	["Snap to parts"] = { Text = "Snap points to corners and edges of nearby parts." },
 	SnapRadius = { Text = "How close the cursor must be to snap to a part." },
 	FloorTransparency = { Text = "How see-through the floor is." },
