@@ -17,19 +17,22 @@ return {
 
 		expect.truthy(bottom, "a bottom rail")
 		expect.near(bottom.cf.Position.Y - bottom.size.Y / 2, 0, 1e-6, "touching the floor")
-		expect.near(bar.cf.Position.Y - bar.size.Y / 2, 0, 1e-6, "bars reach the floor")
+		expect.truthy(bar.cf.Position.Y - bar.size.Y / 2 <= 0, "bars reach the floor")
 	end,
 
-	["on a slope there is no bottom rail, and the bars reach below the line"] = function(expect)
+	["on stairs the bottom rail is a board over the step edges, reaching into the steps"] = function(expect)
 		local specs = Railings.Railing(Settings.Defaults(), Vector3.new(0, 0, 0), Vector3.new(12, 6, 0), true)
+		local board = named(specs, "BottomRail")[1]
 
-		expect.equal(#named(specs, "BottomRail"), 0)
+		expect.truthy(board, "a board along the stairs")
+		expect.near(board.cf.Position.Y - 3, 0.5 / 2 - 0.5, 1e-6, "its middle sits a little under the line")
+		expect.truthy(board.size.Y > 0.9, "tall enough to cover the steps")
 
 		for _, bar in named(specs, "Baluster") do
-			local along = bar.cf.Position.X / 12
-			local line = 6 * along
+			local line = 6 * bar.cf.Position.X / 12
+			local foot = bar.cf.Position.Y - bar.size.Y / 2
 
-			expect.truthy(bar.cf.Position.Y - bar.size.Y / 2 < line - 0.4, "the bar sinks into the steps")
+			expect.near(foot, line + 0.45, 1e-6, "the bars stand on the board")
 		end
 	end,
 }
