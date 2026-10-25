@@ -92,6 +92,21 @@ local function sizing(ctx: Context, draw: Draw): Settings.Settings
 end
 
 --[[
+	@param part BasePart
+	@param point Vector3 -- where the vent ends against the part
+	@param outward Vector3 -- the way the vent points out of that end
+	@return number -- how far past the point the part's far face lies along outward, plus a margin, so the opening cuts all the way through however thick the part is
+]]
+local function wallReach(part: BasePart, point: Vector3, outward: Vector3): number
+	local cf, half = part.CFrame, part.Size / 2
+	local extent = math.abs(outward:Dot(cf.XVector)) * half.X
+		+ math.abs(outward:Dot(cf.YVector)) * half.Y
+		+ math.abs(outward:Dot(cf.ZVector)) * half.Z
+
+	return (cf.Position - point):Dot(outward) + extent + 0.25
+end
+
+--[[
 	@param ctx Context
 	@param settings Settings.Settings -- the sizes the vent was built at
 	@param model Model -- the vent just built
@@ -124,6 +139,20 @@ local function finish(
 
 	local failed = 0
 	local cutters = Vents.VentCutters(settings, a, b)
+	local ends = { -dir, dir }
+	local reach = { 0, 0 }
+
+	for index, point in { a, b } do
+		for part in
+			touched({ cutters[index + 1] }, function(candidate)
+				return not inVent(candidate) and not candidate:IsA("Terrain")
+			end)
+		do
+			reach[index] = math.max(reach[index], wallReach(part, point, ends[index]))
+		end
+	end
+
+	cutters = Vents.VentCutters(settings, a, b, reach)
 
 	for part in
 		touched(cutters, function(candidate)

@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.7",
+		Date = "2026-10-25",
+		Changes = {
+			"A vent's end openings reach through the full thickness of the wall they end in, so two close walls are cut clean.",
+		},
+	},
+	{
 		Version = "1.7.6",
 		Date = "2026-10-25",
 		Changes = {
