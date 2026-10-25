@@ -60,7 +60,7 @@ end
 --[=[
 	Where a post goes on a level top, in the top's own frame (X and Z from its middle). The lines a
 	post edge can follow are `inset` in from each edge; a cursor within `reach` of one snaps onto
-	it, so near a corner it snaps onto the corner. Elsewhere the grid spot is kept, held inside the
+	it, so near a corner it snaps onto the corner, and near the middle of a side onto that middle. Elsewhere the grid spot is kept, held inside the
 	lines. A top too narrow for the inset puts the post on its middle.
 
 	@param halfX number -- half the top's size across X
@@ -85,29 +85,29 @@ function Snap.TopSpot(
 	inset: number,
 	reach: number
 ): (number, number, boolean)
-	local snapped = false
-
 	--[[ One axis: onto the line near the cursor, else the grid spot kept inside the lines. ]]
-	local function axis(half: number, cursor: number, grid: number): number
+	local function axis(half: number, cursor: number, grid: number): (number, boolean)
 		local line = half - inset
 
 		if line <= 0 then
-			snapped = true
-
-			return 0
+			return 0, true
 		elseif math.abs(math.abs(cursor) - line) <= reach then
-			snapped = true
-
-			return if cursor >= 0 then line else -line
+			return if cursor >= 0 then line else -line, true
 		end
 
-		return math.clamp(grid, -line, line)
+		return math.clamp(grid, -line, line), false
 	end
 
-	local x = axis(halfX, cursorX, gridX)
-	local z = axis(halfZ, cursorZ, gridZ)
+	local x, onX = axis(halfX, cursorX, gridX)
+	local z, onZ = axis(halfZ, cursorZ, gridZ)
 
-	return x, z, snapped
+	if onX and not onZ and math.abs(cursorZ) <= reach then
+		z, onZ = 0, true
+	elseif onZ and not onX and math.abs(cursorX) <= reach then
+		x, onX = 0, true
+	end
+
+	return x, z, onX or onZ
 end
 
 return Snap

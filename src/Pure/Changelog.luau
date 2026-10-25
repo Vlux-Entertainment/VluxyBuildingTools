@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.1",
+		Date = "2026-10-24",
+		Changes = {
+			"Drawing tools snap to every corner of floors and walls and to the middle of each side and edge, as well as the ends and middle of a wall top.",
+			"Railing points snap to the middle of a floor's side too.",
+		},
+	},
+	{
 		Version = "1.6.0",
 		Date = "2026-10-24",
 		Changes = {

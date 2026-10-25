@@ -62,6 +62,50 @@ local function outline(part: BasePart): { Vector3 }
 	}
 end
 
+--[=[
+	The points a drawing point can snap to on a part, looking from above: the four corners of its
+	outline and the middle of each side.
+
+	@param part BasePart
+	@return { Vector3 }
+]=]
+function Snapper.TopPoints(part: BasePart): { Vector3 }
+	local corners = outline(part)
+	local out = table.clone(corners)
+
+	for index, corner in corners do
+		table.insert(out, (corner + corners[index % #corners + 1]) / 2)
+	end
+
+	return out
+end
+
+--[=[
+	The points of a part's box a point can snap to in three dimensions: its eight corners and the
+	middle of each of its twelve edges.
+
+	@param part BasePart
+	@return { Vector3 }
+]=]
+function Snapper.BoxPoints(part: BasePart): { Vector3 }
+	local half = part.Size / 2
+	local out: { Vector3 } = {}
+
+	for _, x in { -1, 0, 1 } do
+		for _, y in { -1, 0, 1 } do
+			for _, z in { -1, 0, 1 } do
+				local zeros = (if x == 0 then 1 else 0) + (if y == 0 then 1 else 0) + (if z == 0 then 1 else 0)
+
+				if zeros <= 1 then
+					table.insert(out, part.CFrame:PointToWorldSpace(Vector3.new(half.X * x, half.Y * y, half.Z * z)))
+				end
+			end
+		end
+	end
+
+	return out
+end
+
 --[[
 	@return Vector3 -- the point on the segment a to b nearest to p, looking from above
 ]]
@@ -79,8 +123,8 @@ local function onSegment(p: Vector3, a: Vector3, b: Vector3): Vector3
 end
 
 --[=[
-	Finds the nearest corner of a nearby part within the radius, else the nearest edge within most
-	of it. Only the working folder is searched when one is set.
+	Finds the nearest corner or side middle of a nearby part within the radius, else the nearest
+	edge within most of it. Only the working folder is searched when one is set.
 
 	@param point Vector3 -- the point to move, already snapped to the grid
 	@param radius number -- how far away a corner or edge can be and still attract the point
@@ -110,14 +154,16 @@ function Snapper.Find(point: Vector3, radius: number): (Vector3, boolean, BasePa
 		if part.Size.X > MIN_SIZE and part.Size.Z > MIN_SIZE and not part:IsA("Terrain") then
 			local corners = outline(part)
 
-			for index, corner in corners do
-				local flat = Vector3.new(corner.X - point.X, 0, corner.Z - point.Z).Magnitude
+			for _, spot in Snapper.TopPoints(part) do
+				local flat = Vector3.new(spot.X - point.X, 0, spot.Z - point.Z).Magnitude
 
 				if flat < cornerDistance then
-					cornerDistance, bestCorner = flat, Vector3.new(corner.X, point.Y, corner.Z)
+					cornerDistance, bestCorner = flat, Vector3.new(spot.X, point.Y, spot.Z)
 					cornerPart = part
 				end
+			end
 
+			for index, corner in corners do
 				local nextCorner = corners[index % #corners + 1]
 				local nearest = onSegment(point, corner, nextCorner)
 				local distance = Vector3.new(nearest.X - point.X, 0, nearest.Z - point.Z).Magnitude
@@ -745,8 +791,8 @@ function Snapper.VentBlocked(a: Vector3, b: Vector3, size: number, skip: { Insta
 end
 
 --[=[
-	Finds the corner of a nearby part that sits closest to the mouse on the screen, within a few
-	pixels. Unlike a distance in studs, this only grabs a corner when the cursor is really on it.
+	Finds the corner, or the middle of an edge, of a nearby part that sits closest to the mouse on the
+	screen, within a few pixels. Unlike a distance in studs, this only grabs one when the cursor is on it.
 
 	@param point Vector3 -- where the cursor hit
 	@param mouse Vector2 -- the mouse in screen coordinates
@@ -770,21 +816,14 @@ function Snapper.VertexNear(point: Vector3, mouse: Vector2, pixels: number): (Ve
 
 	for _, part in workspace:GetPartBoundsInRadius(point, 30, params) do
 		if not part:IsA("Terrain") then
-			local half = part.Size / 2
+			for _, corner in Snapper.BoxPoints(part) do
+				local screen = camera:WorldToScreenPoint(corner)
 
-			for _, x in { -1, 1 } do
-				for _, y in { -1, 1 } do
-					for _, z in { -1, 1 } do
-						local corner = part.CFrame:PointToWorldSpace(Vector3.new(half.X * x, half.Y * y, half.Z * z))
-						local screen = camera:WorldToScreenPoint(corner)
+				if screen.Z > 0 then
+					local distance = (Vector2.new(screen.X, screen.Y) - mouse).Magnitude
 
-						if screen.Z > 0 then
-							local distance = (Vector2.new(screen.X, screen.Y) - mouse).Magnitude
-
-							if distance < bestDistance then
-								bestDistance, best = distance, corner
-							end
-						end
+					if distance < bestDistance then
+						bestDistance, best = distance, corner
 					end
 				end
 			end
@@ -800,8 +839,8 @@ end
 
 --[=[
 	Moves a point on the top of a thin part, such as a wall, onto its centre line, so a wall built
-	on top of a wall sits on it instead of beside it. Along the part it snaps to its ends, else to
-	the grid measured from one end.
+	on top of a wall sits on it instead of beside it. Along the part it snaps to its ends or its middle,
+	else to the grid measured from one end.
 
 	@param part BasePart
 	@param point Vector3 -- where the cursor hit the top
@@ -824,6 +863,8 @@ function Snapper.TopCenter(part: BasePart, point: Vector3, grid: number, endReac
 
 	if half - math.abs(along) <= endReach then
 		along = if along >= 0 then half else -half
+	elseif math.abs(along) <= endReach then
+		along = 0
 	elseif grid > 0 then
 		along = math.clamp(math.round((along + half) / grid) * grid - half, -half, half)
 	end

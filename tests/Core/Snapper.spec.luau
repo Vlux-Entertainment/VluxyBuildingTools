@@ -217,12 +217,29 @@ return {
 		)
 	end,
 
+	["a floor offers its corners and the middle of each side; a box its corners and edge middles"] = function(expect)
+		local Snapper = Harness.Load("src/Core/Snapper")
+		local floor = Harness.Part(Vector3.new(20, 1, 12), CFrame.new(0, 0.5, 0))
+		local spots = {}
+
+		for _, spot in Snapper.TopPoints(floor) do
+			table.insert(spots, string.format("%g,%g", spot.X, spot.Z))
+		end
+
+		expect.equal(#spots, 8)
+		expect.truthy(table.find(spots, "10,6"), "a corner")
+		expect.truthy(table.find(spots, "0,-6"), "the middle of a long side")
+		expect.truthy(table.find(spots, "-10,0"), "the middle of a short side")
+		expect.equal(#Snapper.BoxPoints(floor), 20, "8 corners and 12 edge middles")
+	end,
+
 	["TopCenter moves a point onto the middle line of a thin wall, and to its end near the end"] = function(expect)
 		local Snapper = Harness.Load("src/Core/Snapper")
 		local wall = Harness.Part(Vector3.new(1, 12, 20), CFrame.new(0, 6, 0))
 
 		expect.equal(vec(Snapper.TopCenter(wall, Vector3.new(0.3, 12, 3.1), 4, 1)), "0,12,2", "snapped along the wall")
 		expect.equal(vec(Snapper.TopCenter(wall, Vector3.new(0.3, 12, 9.5), 4, 1)), "0,12,10", "the end")
+		expect.equal(vec(Snapper.TopCenter(wall, Vector3.new(0.3, 12, 0.7), 4, 1)), "0,12,0", "the middle")
 		expect.equal(Snapper.TopCenter(Harness.Part(Vector3.new(8, 1, 8), CFrame.new()), Vector3.zero, 4, 1), nil)
 	end,
 }
