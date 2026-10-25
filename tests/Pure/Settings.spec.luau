@@ -196,6 +196,10 @@ return {
 		expect.falsy(snapped, "the middle of the floor is left to the grid")
 		expect.equal(x, 2)
 
+		x, z = Snap.TopSpot(10, 6, 0.6, -5.8, 1, -6, 0.5, 1.25)
+		expect.equal(x, 0, "the middle of a side")
+		expect.equal(z, -5.5)
+
 		x, z = Snap.TopSpot(0.5, 6, 0.3, 2, 0, 2, 0.5, 1.25)
 		expect.equal(x, 0, "a top narrower than a post puts it in the middle")
 	end,
