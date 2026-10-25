@@ -28,6 +28,7 @@ export type Session = {
 	_startMouse: Vector2,
 	_base: Vector3?,
 	_anchors: { Vector3 },
+	_delta: Vector3,
 }
 
 local DEGREES_PER_PIXEL = 0.5
@@ -145,6 +146,7 @@ function Transform.Begin(kind: Kind, parts: { BasePart }, mouse: Vector2, ray: R
 		_startMouse = mouse,
 		_base = nil,
 		_anchors = anchors,
+		_delta = Vector3.zero,
 	}
 
 	self._base = reading(self, ray, look)
@@ -168,6 +170,33 @@ function Transform.Restore(self: Session)
 	Geometry.MovePivots(self._pivots, function(pivot)
 		return pivot
 	end)
+end
+
+--[=[
+	Moves every Part, and the pivots of the models that move whole, by a delta from where they
+	started.
+
+	@param self Session
+	@param delta Vector3
+]=]
+function Transform.Apply(self: Session, delta: Vector3)
+	self._delta = delta
+
+	for part, original in self._original do
+		part.CFrame = original.Cf + delta
+	end
+
+	Geometry.MovePivots(self._pivots, function(pivot)
+		return pivot + delta
+	end)
+end
+
+--[=[
+	@param self Session
+	@return Vector3 -- how far the last grab update moved the selection
+]=]
+function Transform.Delta(self: Session): Vector3
+	return self._delta
 end
 
 --[=[
@@ -232,13 +261,7 @@ function Transform.Update(
 			end
 		end
 
-		for part, original in self._original do
-			part.CFrame = original.Cf + delta
-		end
-
-		Geometry.MovePivots(self._pivots, function(pivot)
-			return pivot + delta
-		end)
+		Transform.Apply(self, delta)
 
 		return string.format("Move  X %.2f  Y %.2f  Z %.2f", delta.X, delta.Y, delta.Z) .. suffix .. typedSuffix,
 			self._center + delta

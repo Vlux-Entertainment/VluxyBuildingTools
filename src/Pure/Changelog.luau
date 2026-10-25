@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.0",
+		Date = "2026-10-25",
+		Changes = {
+			"Measure: drag parts and models without leaving the tool. They slide along the level, snapped to the grid and onto measuring guides; Esc puts them back, and a click without moving still measures.",
+		},
+	},
+	{
 		Version = "1.6.9",
 		Date = "2026-10-25",
 		Changes = {

@@ -9,14 +9,23 @@
 	height. Circle: the centre, then a point on the rim, level with it. Ball: the centre, then a
 	point on its surface.
 
+	Pressing on a part in the working folder and moving the mouse drags it instead: the part, or
+	the model it belongs to, slides along the level, snapped to the grid and to the measuring
+	guides, as one undo step. A press without moving still measures, on release.
+
 	@class Measure
 ]=]
 
+local Selection = game:GetService("Selection")
+local UserInputService = game:GetService("UserInputService")
+
 local Common = require("./Common")
 local Cursor = require("../Services/Cursor")
+local Geometry = require("../Core/Geometry")
 local Guides = require("../Core/Guides")
 local MeasureText = require("../Pure/MeasureText")
 local Overlay = require("../Core/Overlay")
+local Transform = require("../Core/Transform")
 local Types = require("./Types")
 
 type Context = Types.Context
@@ -29,15 +38,109 @@ type Guide = Guides.Guide
 	.Second Vector3? -- a box's far corner, once picked, while its height is set
 	.Current Vector3? -- the point under the cursor
 	.Shown { Guide: Guide, Text: string, At: Vector3 }? -- what the preview would keep
+	.Pressed { Mouse: Vector2, Root: Instance }? -- a press on a part that becomes a drag if the mouse moves
+	.Drag Transform.Session? -- the drag under way
 ]=]
 type MeasureState = {
 	First: Vector3?,
 	Second: Vector3?,
 	Current: Vector3?,
 	Shown: { Guide: Guide, Text: string, At: Vector3 }?,
+	Pressed: { Mouse: Vector2, Root: Instance }?,
+	Drag: Transform.Session?,
 }
 
 local SEGMENTS = 48
+local DRAG_PIXELS = 6
+
+--[[
+	@param part Instance
+	@return Instance? -- what a press on the part drags: the outermost model it is in below the working folder, else the part; nil outside the working folder or for a locked part
+]]
+local function dragRoot(part: Instance): Instance?
+	local scope = Geometry.GetScope()
+
+	if not part:IsA("BasePart") or part:IsA("Terrain") or part.Locked or (scope and not part:IsDescendantOf(scope)) then
+		return nil
+	end
+
+	local root: Instance = part
+	local parent = part.Parent
+
+	while parent and parent ~= scope and parent ~= workspace and parent:IsA("Model") do
+		root = parent
+		parent = parent.Parent
+	end
+
+	return root
+end
+
+--[[
+	@param root Instance
+	@return { BasePart } -- every Part that moves with it
+]]
+local function partsOf(root: Instance): { BasePart }
+	if root:IsA("BasePart") then
+		return { root }
+	end
+
+	local out: { BasePart } = {}
+
+	for _, child in root:GetDescendants() do
+		if child:IsA("BasePart") then
+			table.insert(out, child)
+		end
+	end
+
+	return out
+end
+
+--[[
+	@param ctx Context
+	@param drag Transform.Session
+	Moves the dragged parts to follow the mouse, along the level, snapped to the grid and guides.
+]]
+local function follow(ctx: Context, drag: Transform.Session)
+	local cursor = ctx.Cursor
+	local snaps = ctx.Settings.SnapToParts and ctx.Settings.GrabGuides and not Cursor.Fine()
+	local text, at = Transform.Update(
+		drag,
+		Cursor.Grid(cursor),
+		Cursor.Screen(),
+		Cursor.Ray(cursor),
+		Cursor.Look(),
+		if snaps then math.max(1.5, ctx.Settings.SnapRadius * 1.5) else nil
+	)
+
+	Overlay.Readout(ctx.Overlay, at, text)
+end
+
+--[[
+	@param ctx Context
+	@param state MeasureState
+	Ends the drag: puts the parts back and moves them again as one undo step.
+]]
+local function drop(ctx: Context, state: MeasureState)
+	local drag = state.Drag
+
+	state.Drag, state.Pressed = nil, nil
+
+	if not drag then
+		return
+	end
+
+	local delta = Transform.Delta(drag)
+
+	Transform.Restore(drag)
+	Overlay.HideReadout(ctx.Overlay)
+
+	if delta.Magnitude > 1e-4 then
+		ctx.Edit("Drag", function()
+			Transform.Apply(drag, delta)
+		end)
+		ctx.Sound("StudioDrag")
+	end
+end
 
 --[[
 	@param ctx Context
@@ -256,6 +359,48 @@ local function redraw(ctx: Context)
 	Overlay.DrawGuides(ctx.Overlay, Guides.All())
 end
 
+--[[
+	@param ctx Context
+	@param state MeasureState
+	A measuring click: starts a measurement, picks a box's far corner, or keeps the measurement.
+]]
+local function measureClick(ctx: Context, state: MeasureState)
+	local current = state.Current
+
+	if not state.First then
+		if current then
+			state.First = current
+			ctx.Say(
+				if ctx.Settings.MeasureShape == "Circle" or ctx.Settings.MeasureShape == "Ball"
+					then "Click the rim."
+					else "Click the second point."
+			)
+		end
+
+		return
+	end
+
+	local shown = state.Shown
+
+	if not shown then
+		return
+	end
+
+	if ctx.Settings.MeasureShape == "Box" and not state.Second then
+		local corner = onLevel(ctx, (state.First :: Vector3).Y)
+
+		state.Second = corner
+
+		return
+	end
+
+	Guides.Add(shown.Guide)
+	redraw(ctx)
+	state.First, state.Second = nil, nil
+	Overlay.ClearMeasurement(ctx.Overlay)
+	ctx.Say((string.gsub(shown.Text, "\n", "; ")) .. ". Kept as a guide; Esc clears guides.")
+end
+
 local tool: Types.Tool = {
 	Id = "Measure",
 	Begin = function(ctx: Context): MeasureState
@@ -264,6 +409,32 @@ local tool: Types.Tool = {
 		return { First = nil, Second = nil, Current = nil, Shown = nil }
 	end,
 	Preview = function(ctx: Context, state: MeasureState): Types.Preview?
+		local held = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+		local pressed, drag = state.Pressed, state.Drag
+
+		if drag and not held then
+			drop(ctx, state)
+		elseif drag then
+			follow(ctx, drag)
+
+			return Common.Empty("Release to drop it; Shift moves freely.")
+		elseif pressed and held and (Cursor.Screen() - pressed.Mouse).Magnitude > DRAG_PIXELS then
+			local cursor = ctx.Cursor
+			local parts = partsOf(pressed.Root)
+
+			if #parts > 0 then
+				local session = Transform.Begin("Grab", parts, pressed.Mouse, Cursor.Ray(cursor), Cursor.Look())
+
+				Transform.SetLock(session, { Axis = "Y", Plane = true }, Cursor.Ray(cursor), Cursor.Look())
+				state.Drag = session
+				Selection:Set({ pressed.Root })
+				Overlay.ClearMeasurement(ctx.Overlay)
+				follow(ctx, session)
+
+				return Common.Empty("Release to drop it; Shift moves freely.")
+			end
+		end
+
 		state.Current = pick(ctx)
 		state.Shown = nil
 
@@ -286,43 +457,35 @@ local tool: Types.Tool = {
 		return Common.Empty(message)
 	end,
 	Click = function(ctx: Context, state: MeasureState)
-		local current = state.Current
+		local hit = if state.First then nil else Cursor.Hit(ctx.Cursor)
+		local root = if hit then dragRoot(hit.Instance) else nil
 
-		if not state.First then
-			if current then
-				state.First = current
-				ctx.Say(
-					if ctx.Settings.MeasureShape == "Circle" or ctx.Settings.MeasureShape == "Ball"
-						then "Click the rim."
-						else "Click the second point."
-				)
-			end
+		if root then
+			state.Pressed = { Mouse = Cursor.Screen(), Root = root }
 
 			return
 		end
 
-		local shown = state.Shown
-
-		if not shown then
-			return
+		measureClick(ctx, state)
+	end,
+	Release = function(ctx: Context, state: MeasureState)
+		if state.Drag then
+			drop(ctx, state)
+		elseif state.Pressed then
+			state.Pressed = nil
+			measureClick(ctx, state)
 		end
-
-		if ctx.Settings.MeasureShape == "Box" and not state.Second then
-			local corner = onLevel(ctx, (state.First :: Vector3).Y)
-
-			state.Second = corner
-
-			return
-		end
-
-		Guides.Add(shown.Guide)
-		redraw(ctx)
-		state.First, state.Second = nil, nil
-		Overlay.ClearMeasurement(ctx.Overlay)
-		ctx.Say((string.gsub(shown.Text, "\n", "; ")) .. ". Kept as a guide; Esc clears guides.")
 	end,
 	Back = function(ctx: Context, state: MeasureState): string?
-		if state.First then
+		local drag = state.Drag
+
+		if drag then
+			state.Drag, state.Pressed = nil, nil
+			Transform.Restore(drag)
+			Overlay.HideReadout(ctx.Overlay)
+
+			return "Drag cancelled."
+		elseif state.First then
 			state.First, state.Second = nil, nil
 			Overlay.ClearMeasurement(ctx.Overlay)
 			Overlay.HideReadout(ctx.Overlay)
@@ -338,7 +501,14 @@ local tool: Types.Tool = {
 
 		return nil
 	end,
-	Finish = function(ctx: Context)
+	Finish = function(ctx: Context, state: MeasureState)
+		local drag = state.Drag
+
+		if drag then
+			state.Drag = nil
+			Transform.Restore(drag)
+		end
+
 		Overlay.ClearMeasurement(ctx.Overlay)
 		Overlay.HideReadout(ctx.Overlay)
 	end,

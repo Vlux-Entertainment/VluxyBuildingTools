@@ -45,6 +45,28 @@ return {
 		expect.equal(vec(part.CFrame.Position), "8,0,0", "with guide snapping off, the grid alone")
 	end,
 
+	["a drag along the level keeps its height, and can be put back and moved again in one step"] = function(expect)
+		local Transform = Harness.Load("src/Core/Transform")
+		local part = Harness.Part(Vector3.new(2, 2, 2), CFrame.new(), roblox.Instance.new("Folder"))
+		local session = Transform.Begin("Grab", { part }, Vector2.zero, rayAt(0), LOOK)
+
+		Transform.SetLock(
+			session,
+			{ Axis = "Y", Plane = true },
+			Ray.new(Vector3.new(0, 10, 0), Vector3.new(0, -1, 0)),
+			LOOK
+		)
+		Transform.Update(session, 1, Vector2.zero, Ray.new(Vector3.new(3, 10, 2), Vector3.new(0, -1, 0)), LOOK)
+
+		local delta = Transform.Delta(session)
+
+		expect.equal(vec(delta), "3,0,2", "slid along the level")
+		Transform.Restore(session)
+		expect.equal(vec(part.CFrame.Position), "0,0,0")
+		Transform.Apply(session, delta)
+		expect.equal(vec(part.CFrame.Position), "3,0,2", "moved again to where it was dropped")
+	end,
+
 	["a typed number on a locked axis moves exactly that far"] = function(expect)
 		local Transform = Harness.Load("src/Core/Transform")
 		local NumericInput = Harness.Load("src/Pure/NumericInput")
