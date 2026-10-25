@@ -1,6 +1,6 @@
 [package]
 name = "green/vluxybuildingtools"
-version = "1.6.4"
+version = "1.6.5"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 authors = ["Viper <greenviper126@gmail.com>"]
