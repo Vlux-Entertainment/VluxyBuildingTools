@@ -83,6 +83,9 @@ return function(ui: Ui): { Instance }
 			Controls.Slider(ui, "GuideFill", "Inside transparency"),
 			number("GuideSnapPixels", "Snap distance (pixels)", 10, 300, 10),
 		}),
+		Controls.Card(ui, "EXPLORER", {
+			Controls.Switch(ui, { Title = "Tint folders by name", Key = "FolderTint" }),
+		}),
 		Controls.Card(ui, "VIEWPORT", {
 			Controls.Switch(ui, { Title = "Previews use the UI color", Key = "PreviewsFollowUi" }),
 			Controls.Switch(ui, { Title = "Hint bar", Key = "HintBar" }),

@@ -28,6 +28,7 @@ local Cursor = require("../Services/Cursor")
 local Display = require("../Services/Display")
 local Edit = require("../Services/Edit")
 local EditSounds = require("../Services/EditSounds")
+local FolderTint = require("../Services/FolderTint")
 local GuideSnap = require("../Services/GuideSnap")
 local Hidden = require("../Core/Hidden")
 local Host = require("../Modal/Host")
@@ -176,6 +177,8 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 		end,
 		IsAdmin = isAdmin,
 	}, trove)
+
+	FolderTint.new({ Store = store }, trove)
 
 	local folder = WorkingFolder.new({
 		Store = store,
