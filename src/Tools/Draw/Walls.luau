@@ -8,14 +8,18 @@
 ]=]
 
 local Bends = require("./Bends")
+local Cursor = require("../../Services/Cursor")
 local Engine = require("./Engine")
 local Paths = require("../../Core/Builders/Paths")
 local Points = require("./Points")
 local Railings = require("../../Core/Builders/Railings")
+local Snap = require("../../Pure/Snap")
 local Types = require("../Types")
 
 type Context = Types.Context
 type Draw = Engine.Draw
+
+local ALIGN = math.rad(12)
 
 --[[
 	@param draw Draw
@@ -39,9 +43,47 @@ local function startOnFloor(ctx: Context, draw: Draw): Vector3?
 	return Points.StairEdge(ctx) or Points.InsetOnTop(ctx, Points.Floor(ctx, draw, {}))
 end
 
---[[ After the first point a railing snaps to stair edges the same way, then to any top. ]]
-local function nextOnTop(ctx: Context, _draw: Draw, _origin: Vector3): Vector3?
-	return Points.StairEdge(ctx) or Points.InsetOnTop(ctx, Points.SurfaceTop(ctx))
+--[[ The direction of each chain's last section, so the next one can line up with it. ]]
+local lastRun: { [Draw]: Vector3? } = setmetatable({}, { __mode = "k" }) :: any
+
+--[[
+	After the first point a railing snaps to stair edges the same way, then to any top. Off the
+	stairs, a point that nearly continues the last section, or nearly turns square from it, lines
+	up exactly, so a railing coming up stairs runs on along their edge and turns square around the
+	opening.
+]]
+local function nextOnTop(ctx: Context, draw: Draw, origin: Vector3): Vector3?
+	local onStairs = Points.StairEdge(ctx)
+
+	if onStairs then
+		return onStairs
+	end
+
+	local point = Points.InsetOnTop(ctx, Points.SurfaceTop(ctx))
+	local last = lastRun[draw]
+
+	if not point or not last or not draw.Chained or Cursor.Fine() then
+		return point
+	end
+
+	local dx, dz, lined = Snap.Align(point.X - origin.X, point.Z - origin.Z, last.X, last.Z, ALIGN)
+
+	if not lined then
+		return point
+	end
+
+	local aligned = Vector3.new(origin.X + dx, point.Y, origin.Z + dz)
+
+	ctx.Cursor.Mark = aligned
+
+	return aligned
+end
+
+--[[ Remembers the direction of the section just built, for the next one to line up with. ]]
+local function remember(_ctx: Context, draw: Draw, built: Engine.Built)
+	local run = built.Segment
+
+	lastRun[draw] = if run.Magnitude > 0.05 then run.Unit else nil
 end
 
 local wall: Engine.Shape = {
@@ -86,6 +128,7 @@ local railing: Engine.Shape = {
 	Build = function(_ctx, draw, a, b, sized)
 		return Railings.Railing(sized.Live, a, b, not draw.Chained)
 	end,
+	Commit = remember,
 }
 
 local halfWall: Engine.Shape = {
@@ -97,6 +140,7 @@ local halfWall: Engine.Shape = {
 	Build = function(_ctx, draw, a, b, sized)
 		return Railings.HalfWall(sized.Live, a, b, not draw.Chained)
 	end,
+	Commit = remember,
 }
 
 local fence: Engine.Shape = {
@@ -106,6 +150,7 @@ local fence: Engine.Shape = {
 	Build = function(_ctx, draw, a, b, sized)
 		return Railings.Fence(sized.Live, a, b, not draw.Chained)
 	end,
+	Commit = remember,
 }
 
 return {

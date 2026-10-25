@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.6",
+		Date = "2026-10-24",
+		Changes = {
+			"Railing on stairs: the bottom rail is back as a tall board over the step edges that reaches into the steps, with the bars standing on it.",
+			"Railings, half walls and fences: a point that nearly continues the last section, or nearly turns square from it, lines up exactly, so a railing runs on from the stairs and wraps around the opening.",
+		},
+	},
+	{
 		Version = "1.5.5",
 		Date = "2026-10-24",
 		Changes = {

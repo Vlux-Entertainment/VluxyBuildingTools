@@ -157,6 +157,29 @@ return {
 		expect.falsy(Settings.ThemeName(5))
 	end,
 
+	["an offset close to a direction, or square to it, lines up with it"] = function(expect)
+		local tolerance = math.rad(12)
+		local x, z, lined = Snap.Align(10, 1, 1, 0, tolerance)
+
+		expect.truthy(lined)
+		expect.near(x, 10, 1e-9, "runs on along the direction")
+		expect.near(z, 0, 1e-9)
+
+		x, z, lined = Snap.Align(0.8, -6, 1, 0, tolerance)
+		expect.truthy(lined)
+		expect.near(x, 0, 1e-9, "turns square")
+		expect.near(z, -6, 1e-9)
+
+		x, z, lined = Snap.Align(5, 5, 1, 0, tolerance)
+		expect.falsy(lined, "a diagonal is left alone")
+		expect.near(x, 5, 1e-9)
+
+		local diagonal = math.sqrt(0.5)
+
+		x, z = Snap.Align(7, 6, diagonal, diagonal, tolerance)
+		expect.near(x, z, 1e-9, "a turned direction works too")
+	end,
+
 	["snap rounds to the grid and never below 0.05"] = function(expect)
 		expect.equal(Snap.Round(7.4, 5), 5)
 		expect.equal(Snap.Round(7.6, 5), 10)

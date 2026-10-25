@@ -19,6 +19,8 @@ type Spec = Geometry.Spec
 local Railings = {}
 
 local add = Geometry.Add
+
+local STRINGER_RISE = 0.5
 local quadPrism = Shapes.QuadPrism
 local fenceRun = Shapes.FenceRun
 
@@ -34,8 +36,8 @@ end
 --[=[
 	A straight indoor railing from a to b: a handrail on top, thin bars between and a pillar at each
 	end. On the flat a bottom rail lies along the floor. When a and b are at different heights it
-	follows the slope with no bottom rail, and the bars reach down past the line between the points
-	so they meet the steps or the slope under them.
+	follows the slope, and the bottom rail is a tall board that rises a little above the step edges
+	and reaches down into the steps, covering them, with the bars standing on it.
 
 	@param settings Settings
 	@param a Vector3 -- the start, on the floor or a stair
@@ -67,20 +69,26 @@ function Railings.Railing(settings: Settings, a: Vector3, b: Vector3, postAtStar
 	local middle = (a + b) * 0.5
 	local sloped = math.abs(d.Y) > 0.05
 	local sink = if sloped then math.max(0.5, 2 * math.abs(d.Y) / flat.Magnitude) else 0
+	local base = if sloped then STRINGER_RISE else 0
 
 	add(out, Vector3.new(0.4, 0.3, length), CFrame.lookAt(middle + up * height, middle + up * height + dir), "Handrail")
 
-	if not sloped then
+	if sloped then
+		local board = middle + up * ((STRINGER_RISE - sink) / 2)
+
+		add(out, Vector3.new(0.35, STRINGER_RISE + sink, length), CFrame.lookAt(board, board + dir), "BottomRail")
+	else
 		add(out, Vector3.new(0.3, 0.2, length), CFrame.lookAt(middle + up * 0.1, middle + up * 0.1 + dir), "BottomRail")
 	end
 
 	local count = math.max(1, math.round(flat.Magnitude / math.max(0.3, settings.BalusterSpacing)))
 
 	for i = 1, count - 1 do
-		local base = a + d * (i / count)
-		local center = base + up * ((height - sink) * 0.5)
+		local foot = a + d * (i / count) + up * (base - 0.05)
+		local reach = height - base + 0.05
+		local center = foot + up * (reach * 0.5)
 
-		add(out, Vector3.new(0.2, height + sink, 0.2), CFrame.lookAt(center, center + flatDir), "Baluster")
+		add(out, Vector3.new(0.2, reach, 0.2), CFrame.lookAt(center, center + flatDir), "Baluster")
 	end
 
 	return out
