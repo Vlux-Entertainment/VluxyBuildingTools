@@ -40,7 +40,7 @@ end
 
 --[[ Railings and half walls follow stairs, so their points sit on whatever top is under the cursor. ]]
 local function startOnFloor(ctx: Context, draw: Draw): Vector3?
-	return Points.StairEdge(ctx) or Points.InsetOnTop(ctx, Points.Floor(ctx, draw, {}))
+	return Points.StairEdge(ctx) or (Points.InsetOnTop(ctx, Points.Floor(ctx, draw, {})))
 end
 
 --[[ The direction of each chain's last section, so the next one can line up with it. ]]
@@ -59,10 +59,10 @@ local function nextOnTop(ctx: Context, draw: Draw, origin: Vector3): Vector3?
 		return onStairs
 	end
 
-	local point = Points.InsetOnTop(ctx, Points.SurfaceTop(ctx))
+	local point, onEdge = Points.InsetOnTop(ctx, Points.SurfaceTop(ctx))
 	local last = lastRun[draw]
 
-	if not point or not last or not draw.Chained or Cursor.Fine() then
+	if not point or onEdge or not last or not draw.Chained or Cursor.Fine() then
 		return point
 	end
 

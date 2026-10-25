@@ -12,6 +12,7 @@ local Cursor = require("../../Services/Cursor")
 local Engine = require("./Engine")
 local Joints = require("../../Core/Joints")
 local Settings = require("../../Pure/Settings")
+local Snap = require("../../Pure/Snap")
 local Snapper = require("../../Core/Snapper")
 local StairSnap = require("../../Pure/StairSnap")
 local Types = require("../Types")
@@ -195,7 +196,10 @@ function Points.SurfaceTop(ctx: Context): Vector3?
 	)
 end
 
-local RAIL_INSET = 0.35
+local POST_HALF = 0.35
+local EDGE_GAP = 0.15
+local RAIL_INSET = POST_HALF + EDGE_GAP
+local EDGE_REACH = 1.25
 
 --[[
 	@param part Instance -- the part under the cursor
@@ -273,43 +277,46 @@ function Points.StairEdge(ctx: Context): Vector3?
 end
 
 --[=[
-	Keeps a railing post on the top it stands on: a point near an edge or corner of the top face
-	under the cursor moves in by half a post, so the post sits just inside the corner.
+	Puts a railing post on the level top under the cursor: near an edge it snaps onto a line a small
+	gap in from the edge, and near a corner onto the corner, so posts sit just inside and line up.
+	Elsewhere the picked point is kept, moved in from the edges when needed.
 
 	@param ctx Context
 	@param point Vector3? -- the picked point
-	@return Vector3? -- the point, moved in from the edges when needed
+	@return Vector3? -- the post spot
+	@return boolean -- whether it snapped onto an edge or corner line
 ]=]
-function Points.InsetOnTop(ctx: Context, point: Vector3?): Vector3?
+function Points.InsetOnTop(ctx: Context, point: Vector3?): (Vector3?, boolean)
 	local hit = Cursor.Hit(ctx.Cursor)
 
 	if not point or not hit or hit.Normal.Y < 0.7 or Cursor.Fine() or not hit.Instance:IsA("BasePart") then
-		return point
+		return point, false
 	end
 
 	local part = hit.Instance :: BasePart
 	local cf, size = part.CFrame, part.Size
 
 	if cf.UpVector.Y < 0.99 then
-		return point
+		return point, false
 	end
 
+	local cursor = cf:PointToObjectSpace(hit.Position)
 	local spot = cf:PointToObjectSpace(point)
 	local halfX, halfZ = size.X / 2, size.Z / 2
 
-	if math.abs(spot.X) > halfX + 0.05 or math.abs(spot.Z) > halfZ + 0.05 then
-		return point
+	if math.abs(cursor.X) > halfX + 0.05 or math.abs(cursor.Z) > halfZ + 0.05 then
+		return point, false
 	end
 
-	local x = if halfX > RAIL_INSET then math.clamp(spot.X, -halfX + RAIL_INSET, halfX - RAIL_INSET) else 0
-	local z = if halfZ > RAIL_INSET then math.clamp(spot.Z, -halfZ + RAIL_INSET, halfZ - RAIL_INSET) else 0
-	local moved = cf:PointToWorldSpace(Vector3.new(x, spot.Y, z))
+	local reach = if ctx.Settings.SnapToParts then EDGE_REACH else 0
+	local x, z, snapped = Snap.TopSpot(halfX, halfZ, cursor.X, cursor.Z, spot.X, spot.Z, RAIL_INSET, reach)
+	local moved = cf:PointToWorldSpace(Vector3.new(x, size.Y / 2, z))
 
-	if (moved - point).Magnitude > 1e-3 then
+	if snapped or (moved - point).Magnitude > 1e-3 then
 		ctx.Cursor.Mark = moved
 	end
 
-	return moved
+	return moved, snapped
 end
 
 --[[
