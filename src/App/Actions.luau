@@ -19,8 +19,10 @@ local Cycle = require("../Pure/Cycle")
 local Display = require("../Services/Display")
 local Extrude = require("../Modal/Extrude")
 local Geometry = require("../Core/Geometry")
+local Guides = require("../Core/Guides")
 local Host = require("../Modal/Host")
 local Move = require("../Modal/Move")
+local Overlay = require("../Core/Overlay")
 local PropData = require("../Pure/PropData")
 local Runner = require("../Tools/Runner")
 local Settings = require("../Pure/Settings")
@@ -146,6 +148,18 @@ end
 function Actions.BrushesChanged(app: App)
 	Runner.Refresh(app.Runner)
 	app.State.BrushRevision(app.State.BrushRevision() + 1)
+end
+
+--[=[
+	Removes every kept measuring guide from the viewport and from snapping.
+
+	@param app App
+]=]
+function Actions.ClearGuides(app: App)
+	Guides.Clear()
+	Overlay.DrawGuides(app.Overlay, Guides.All())
+	Overlay.HideReadout(app.Overlay)
+	app.Say("Measuring guides cleared.")
 end
 
 --[=[

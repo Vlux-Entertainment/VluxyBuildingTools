@@ -14,6 +14,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local AxisLock = require("../Pure/AxisLock")
 local Geometry = require("../Core/Geometry")
+local Guides = require("../Core/Guides")
 local NumericInput = require("../Pure/NumericInput")
 local Settings = require("../Pure/Settings")
 local Snap = require("../Pure/Snap")
@@ -141,13 +142,22 @@ end
 --[=[
 	@param self Cursor
 	@param point Vector3 -- a grid-snapped point
-	@return Vector3 -- the point moved onto a nearby corner or edge, unless Shift is held or part snapping is off
+	@return Vector3 -- the point moved onto a nearby measuring guide point, corner or edge, unless Shift is held or part snapping is off
 
 	When it snaps, it sets `Mark` and `SnapPart`.
 ]=]
 function Cursor.PartSnap(self: Cursor, point: Vector3): Vector3
 	if Cursor.Fine() or not self._settings.SnapToParts then
 		return point
+	end
+
+	local guide = Guides.Near(point, self._settings.SnapRadius)
+
+	if guide then
+		self.Mark = guide
+		self.SnapPart = nil
+
+		return guide
 	end
 
 	local snapped, found, part = Snapper.Find(point, self._settings.SnapRadius)
@@ -162,9 +172,15 @@ end
 
 --[=[
 	@param point Vector3
-	@return Vector3? -- the nearest part corner within a few pixels of the mouse, or nil
+	@return Vector3? -- the nearest measuring guide point or part corner within a few pixels of the mouse, or nil
 ]=]
 function Cursor.Corner(point: Vector3): Vector3?
+	local guide = Guides.NearOnScreen(Cursor.Screen(), CORNER_PIXELS)
+
+	if guide then
+		return guide
+	end
+
 	local corner, found = Snapper.VertexNear(point, Cursor.Screen(), CORNER_PIXELS)
 
 	return if found then corner else nil

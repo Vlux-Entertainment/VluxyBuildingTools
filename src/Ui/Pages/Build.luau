@@ -413,6 +413,26 @@ return function(ui: Ui): { Instance }
 			number("RampHeight", "Ramp rise", 0.1, 1024, nil, when(modes("Ramp"))),
 			Controls.Choice(ui, {
 				Options = {
+					{ Value = "Line", Tip = "The distance between two points." },
+					{ Value = "Square", Tip = "Two corners on one level: width, depth and area." },
+					{ Value = "Box", Tip = "A square, then a height: the sizes, volume and surface." },
+					{ Value = "Circle", Tip = "The centre, then the rim: radius, circumference and area." },
+					{ Value = "Ball", Tip = "The centre, then the surface: radius, surface and volume." },
+				},
+				Columns = 3,
+				Get = function()
+					return Store.Get(store, "MeasureShape")
+				end,
+				Set = function(value)
+					Store.Set(store, "MeasureShape", value)
+				end,
+				Visible = when(modes("Measure")),
+			}),
+			Controls.Button(ui, "Clear measuring guides", function()
+				Actions.ClearGuides(app)
+			end, false, when(modes("Measure"))),
+			Controls.Choice(ui, {
+				Options = {
 					{ Value = "Center", Tip = "The points you click mark the middle of the stairs." },
 					{ Value = "Left", Tip = "The points mark the left edge; the stairs go to its right." },
 					{ Value = "Right", Tip = "The points mark the right edge; the stairs go to its left." },
