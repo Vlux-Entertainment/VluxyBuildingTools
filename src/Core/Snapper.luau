@@ -226,10 +226,12 @@ end
 export type VentEnds = { Start: Vector3, StartDir: Vector3, End: Vector3, EndDir: Vector3 }
 
 local END_KEYS = { "Start", "StartDir", "End", "EndDir" }
+local PIVOTED = "VluxyBT_VentPivoted"
 
 --[=[
 	Records a vent's ends on its model. They are kept relative to the model's pivot, so they stay on
-	the openings when the vent is moved or turned, and in world space too for older readers.
+	the openings when the vent is moved or turned, and in world space too for older readers. The
+	caller fixes the pivot first (see `FixPivot`), so it cannot drift when the vent's sheets change.
 
 	@param model Instance -- the vent
 	@param ends VentEnds
@@ -246,10 +248,30 @@ function Snapper.RememberVentEnds(model: Instance, ends: VentEnds, pivot: CFrame
 			if isDirection then pivot:VectorToObjectSpace(value) else pivot:PointToObjectSpace(value)
 		)
 	end
+
+	model:SetAttribute(PIVOTED, true)
 end
 
 --[=[
-	Reads a vent's ends through a getter, so it works on any attribute source.
+	Sets a vent model's pivot to where it is now. A model whose pivot was never set can take it from
+	its parts, so it would move when a corner stretches the vent's sheets and carry the recorded ends
+	off the openings; a set pivot only moves with the whole vent.
+
+	@param model Model
+	@return CFrame -- the pivot
+]=]
+function Snapper.FixPivot(model: Model): CFrame
+	local pivot = model:GetPivot()
+
+	model.WorldPivot = pivot
+
+	return pivot
+end
+
+--[=[
+	Reads a vent's ends through a getter, so it works on any attribute source. Ends relative to the
+	pivot are used only on vents whose pivot was fixed when they were recorded; others, including
+	vents whose pivot may have drifted, use their world ends.
 
 	@param get (name: string) -> any -- reads one attribute
 	@param pivot CFrame -- the vent's pivot now
@@ -257,7 +279,7 @@ end
 ]=]
 function Snapper.ReadVentEnds(get: (name: string) -> any, pivot: CFrame): VentEnds?
 	local out: { [string]: Vector3 } = {}
-	local relative = true
+	local relative = get(PIVOTED) == true
 
 	for _, key in END_KEYS do
 		if typeof(get("VluxyBT_Vent" .. key .. "Local")) ~= "Vector3" then

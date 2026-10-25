@@ -92,6 +92,25 @@ return {
 		expect.equal(vec(read.End), "10,2,0")
 	end,
 
+	["a vent recorded before its pivot was fixed reads its world ends, not drifted relative ones"] = function(expect)
+		local Snapper = Harness.Load("src/Core/Snapper")
+		local drifted: { [string]: any } = {
+			VluxyBT_VentStart = Vector3.new(0, 2, 0),
+			VluxyBT_VentStartDir = Vector3.new(-1, 0, 0),
+			VluxyBT_VentEnd = Vector3.new(10, 2, 0),
+			VluxyBT_VentEndDir = Vector3.new(1, 0, 0),
+			VluxyBT_VentStartLocal = Vector3.new(-5, 0, 0),
+			VluxyBT_VentStartDirLocal = Vector3.new(-1, 0, 0),
+			VluxyBT_VentEndLocal = Vector3.new(5, 0, 0),
+			VluxyBT_VentEndDirLocal = Vector3.new(1, 0, 0),
+		}
+		local read = Snapper.ReadVentEnds(function(name)
+			return drifted[name]
+		end, CFrame.new(6, 2, 0))
+
+		expect.equal(vec(read.End), "10,2,0", "the corner end stays where the next vent starts")
+	end,
+
 	["either opening of a vent is found by aiming into it, from any side"] = function(expect)
 		local Snapper = Harness.Load("src/Core/Snapper")
 		local openings = {
