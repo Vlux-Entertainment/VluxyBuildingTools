@@ -138,7 +138,7 @@ function Move.Start(ctx: Context, kind: Transform.Kind, duplicate: boolean): Mod
 				end
 			end
 
-			local snaps = ctx.Settings.SnapToParts and not Cursor.Fine()
+			local snaps = ctx.Settings.SnapToParts and ctx.Settings.GrabGuides and not Cursor.Fine()
 			local text, position = Transform.Update(
 				session,
 				Cursor.Grid(cursor),
