@@ -17,6 +17,13 @@ return {
 		expect.near(Settings.VentHole(settings), 3.4, 1e-6)
 	end,
 
+	["a vent size left at the old default takes the new one"] = function(expect)
+		expect.equal(Settings.Defaults().VentSize, 3.5)
+		expect.equal(Settings.Load({ Version = 6, VentSize = 3 }).VentSize, 3.5)
+		expect.equal(Settings.Load({ Version = 6, VentSize = 4 }).VentSize, 4)
+		expect.equal(Settings.Load({ Version = 7, VentSize = 3 }).VentSize, 3)
+	end,
+
 	["a bad save falls back to the defaults"] = function(expect)
 		expect.equal(Settings.Load("nope").Grid, 4)
 		expect.equal(Settings.Load("nope").FineGrid, 0.25)

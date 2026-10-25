@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.4",
+		Date = "2026-10-24",
+		Changes = {
+			"Vents are 3.5 studs inside by default; a vent size left at the old default of 3 moves to 3.5.",
+		},
+	},
+	{
 		Version = "1.4.3",
 		Date = "2026-10-24",
 		Changes = {
