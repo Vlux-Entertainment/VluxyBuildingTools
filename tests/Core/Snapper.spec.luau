@@ -111,6 +111,11 @@ return {
 		)
 		expect.equal(aim(Vector3.new(18, 6, -4), Vector3.new(10, 1.5, 0), 3), nil, "a part well in front hides it")
 		expect.equal(aim(Vector3.new(5, 10, 10), Vector3.new(5, 2, 0)), nil, "the middle of the vent is no opening")
+		expect.equal(
+			aim(Vector3.new(-12, 14, 0), Vector3.new(0, 2, 0), 30),
+			1,
+			"looking steeply down into an opening, the ray hits deep inside the duct but still finds the opening"
+		)
 	end,
 
 	["TopCenter moves a point onto the middle line of a thin wall, and to its end near the end"] = function(expect)
