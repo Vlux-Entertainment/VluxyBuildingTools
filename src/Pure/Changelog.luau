@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.7",
+		Date = "2026-10-24",
+		Changes = {
+			"Slope Vent only starts head on: on an open vent end, a vent hole, or a plain wall or floor, never on the side or top of a vent.",
+		},
+	},
+	{
 		Version = "1.4.6",
 		Date = "2026-10-24",
 		Changes = {

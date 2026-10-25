@@ -173,11 +173,12 @@ end
 
 --[[
 	@param shaft boolean
+	@param headOn boolean? -- start only on open vent ends, holes and plain surfaces, never on a vent's side or top
 	@return (ctx, draw) -> Vector3? -- a start picker for a vent
 ]]
-local function start(shaft: boolean): (ctx: Context, draw: Draw) -> Vector3?
+local function start(shaft: boolean, headOn: boolean?): (ctx: Context, draw: Draw) -> Vector3?
 	return function(ctx: Context, draw: Draw): Vector3?
-		return Points.Vent(ctx, draw, shaft)
+		return Points.Vent(ctx, draw, shaft, headOn)
 	end
 end
 
@@ -506,7 +507,7 @@ end
 local ventRamp: Engine.Shape = {
 	Id = "VentRamp",
 	Vents = true,
-	Start = start(false),
+	Start = start(false, true),
 	Next = aim,
 	Idle = idle,
 	OnStart = onStart(true, false),
