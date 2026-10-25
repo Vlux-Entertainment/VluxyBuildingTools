@@ -104,6 +104,7 @@ export type VentState = {
 	Why: string?,
 	Match: Settings.Settings?,
 	Ends: { Vector3 }?,
+	Blocked: boolean?,
 }
 
 --[=[

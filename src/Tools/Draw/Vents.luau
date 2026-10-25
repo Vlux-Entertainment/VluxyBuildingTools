@@ -456,9 +456,12 @@ local vent: Engine.Shape = {
 
 		if blocked(ctx, draw, a + up, b + up) then
 			ventOf(draw).Ends = nil
+			ventOf(draw).Blocked = true
 
 			return {}
 		end
+
+		ventOf(draw).Blocked = false
 
 		local outward = ventOf(draw).End
 
@@ -473,9 +476,9 @@ local vent: Engine.Shape = {
 		return Vents.VentRun(sizing(ctx, draw), a, b, nil)
 	end,
 	Problem = function(_specs, draw)
-		local ends = ventOf(draw).Ends
-
-		return if ends == nil and draw.First then "That would run into another vent; start beside it." else nil
+		return if ventOf(draw).Blocked == true and draw.First
+			then "That would run into another vent; start beside it."
+			else nil
 	end,
 	Commit = function(ctx, draw, result)
 		Bends.Join(draw, result, Vents.VentStrips(sizing(ctx, draw)))
