@@ -258,16 +258,17 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 
 	local size = Settings.VentOuter(ctx.Settings)
 	local step = math.max(0.05, Cursor.Grid(cursor))
-	local endPoint, openEnd, owner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
+	local endPoint, openEnd, owner, corner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
 
 	vent.HitNormal, vent.HitHost, vent.HitOwner, vent.HitEnd, vent.HitFace = nil, nil, owner, openEnd, nil
+	vent.HitCorner = corner
 
 	if endPoint and owner then
 		local a = owner:GetAttribute("VluxyBT_VentStart")
 		local b = owner:GetAttribute("VluxyBT_VentEnd")
 
 		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 and not openEnd then
-			vent.HitHost = (b - a).Unit
+			vent.HitHost = if corner and not shaft then nil else (b - a).Unit
 			vent.HitFace = hit.Normal
 		end
 

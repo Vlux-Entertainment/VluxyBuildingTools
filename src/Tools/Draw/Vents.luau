@@ -30,6 +30,8 @@ type Draw = Engine.Draw
 type Built = Engine.Built
 
 local VENT_TAG = "VluxyBT_Vent"
+local OVERLAP = 0.05
+local MAX_STEEP = 2
 
 --[[
 	@param draw Draw
@@ -159,6 +161,10 @@ local function commit(ctx: Context, draw: Draw, built: Built)
 		table.insert(skip, vent.Owner)
 	end
 
+	if vent.TargetOwner and vent.TargetEnd then
+		table.insert(skip, vent.TargetOwner)
+	end
+
 	if ends and built.Model then
 		finish(ctx, built.Model, ends[1], ends[2], skip)
 	end
@@ -217,6 +223,7 @@ local function onStart(keepNormal: boolean, chains: boolean): (ctx: Context, dra
 		vent.Shift = Vector3.zero
 		vent.Owner = owner
 		vent.End = if outward and math.abs(outward.Y) < 0.5 then outward else nil
+		vent.Corner = vent.HitCorner and not vent.Host
 
 		local a = if owner then owner:GetAttribute("VluxyBT_VentStart") else nil
 		local b = if owner then owner:GetAttribute("VluxyBT_VentEnd") else nil
@@ -234,7 +241,8 @@ local function built(draw: Draw)
 	local vent = ventOf(draw)
 
 	vent.Normal, vent.Shift, vent.Host = nil, Vector3.zero, nil
-	vent.Owner, vent.End = nil, nil
+	vent.Owner, vent.End, vent.Corner = nil, nil, nil
+	vent.Target, vent.TargetOwner, vent.TargetEnd = nil, nil, nil
 end
 
 --[[
@@ -331,6 +339,12 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 		b = a + direction * meet
 	end
 
+	if not draw.Chained and vent.Corner then
+		vent.Shift = direction * (Settings.VentOuter(ctx.Settings) / 2)
+
+		return a + vent.Shift, b
+	end
+
 	if not draw.Chained and vent.Normal then
 		local sideways = math.abs(direction:Dot(vent.Normal)) < 0.5
 
@@ -371,7 +385,7 @@ local function blocked(ctx: Context, draw: Draw, a: Vector3, b: Vector3): boolea
 		table.insert(skip, draw.Previous.model)
 	end
 
-	if owner then
+	if owner and not ventOf(draw).Corner then
 		table.insert(skip, owner)
 	end
 
@@ -396,9 +410,17 @@ local vent: Engine.Shape = {
 			return {}
 		end
 
+		local outward = ventOf(draw).End
+
 		ventOf(draw).Ends = { a + up, b + up }
 
-		return Vents.VentRun(ctx.Settings, a, b, if draw.Chained and draw.Previous then draw.Previous.dir else nil)
+		if draw.Chained and draw.Previous then
+			return Vents.VentRun(ctx.Settings, a, b, draw.Previous.dir)
+		elseif outward then
+			return Vents.VentRun(ctx.Settings, a - outward * OVERLAP, b, outward)
+		end
+
+		return Vents.VentRun(ctx.Settings, a, b, nil)
 	end,
 	Problem = function(_specs, draw)
 		local ends = ventOf(draw).Ends
@@ -411,31 +433,110 @@ local vent: Engine.Shape = {
 	end,
 }
 
+--[[
+	@param ctx Context
+	@param draw Draw
+	@param origin Vector3 -- the slope's first point, at the floor of the duct
+	@return Vector3? -- while the cursor is on a vent at another height, the spot under that vent on the start's level, so the slope can run to it
+
+	Records the vent aimed at in `Target`, `TargetOwner` and `TargetEnd`.
+]]
+local function aim(ctx: Context, draw: Draw, origin: Vector3): Vector3?
+	local state = ventOf(draw)
+	local hit = Cursor.Hit(ctx.Cursor)
+
+	state.Target, state.TargetOwner, state.TargetEnd = nil, nil, nil
+
+	if not hit or not ctx.Settings.SnapToParts or Cursor.Fine() then
+		return nil
+	end
+
+	local size = Settings.VentOuter(ctx.Settings)
+	local step = math.max(0.05, Cursor.Grid(ctx.Cursor))
+	local point, outward, owner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
+	local bottom = if point then point.Y - size / 2 else origin.Y
+
+	if not point or not owner or owner == state.Owner or math.abs(bottom - origin.Y) < 0.1 then
+		return nil
+	elseif outward and math.abs(outward.Y) > 0.5 then
+		return nil
+	end
+
+	state.Target, state.TargetOwner, state.TargetEnd = bottom, owner, outward
+	ctx.Cursor.Mark = point
+
+	return Vector3.new(point.X, origin.Y, point.Z)
+end
+
+--[[
+	@param ctx Context
+	@param draw Draw
+	@param from Vector3 -- the low or first end, on the middle line
+	@param to Vector3 -- the other end, on the middle line
+	@return { Spec } -- the sloped duct, reaching a little into the vents it continues so no gap shows
+]]
+local function slope(ctx: Context, draw: Draw, from: Vector3, to: Vector3): { Geometry.Spec }
+	local state = ventOf(draw)
+	local along = (to - from).Unit
+
+	ventOf(draw).Ends = { from, to }
+
+	if state.End then
+		from -= along * (OVERLAP + 0.03)
+	end
+
+	if state.TargetEnd then
+		to += along * (OVERLAP + 0.03)
+	end
+
+	return Vents.VentDuct(ctx.Settings, from, to)
+end
+
 local ventRamp: Engine.Shape = {
 	Id = "VentRamp",
 	Vents = true,
 	Start = start(false),
+	Next = aim,
 	Idle = idle,
 	OnStart = onStart(true, false),
 	Constrain = constrain,
 	Built = built,
 	Rise = true,
+	Reached = function(draw)
+		return ventOf(draw).Target ~= nil
+	end,
 	RiseOrigin = function(draw, a)
 		return a + ventOf(draw).Shift
 	end,
 	Build = function(ctx, draw, a, b, sized)
 		local up = lift(ctx)
+		local state = ventOf(draw)
+		local target = state.Target
 
-		if not draw.Rise then
+		if not draw.Rise and target then
+			local flat = Vector3.new(b.X - a.X, 0, b.Z - a.Z)
+			local stop = if state.TargetEnd or flat.Magnitude < 0.05 then b else b - flat.Unit * up.Y
+			local run = Vector3.new(stop.X - a.X, 0, stop.Z - a.Z).Magnitude
+			local rise = target - a.Y
+
+			if run < 0.5 or math.abs(rise) > run * MAX_STEEP then
+				state.Ends = nil
+
+				return {}
+			end
+
+			return slope(ctx, draw, a + up, stop + Vector3.new(0, rise, 0) + up)
+		elseif not draw.Rise then
 			return Vents.VentRun(ctx.Settings, a, b, nil)
 		end
 
 		local run = Vector3.new(b.X - a.X, 0, b.Z - a.Z).Magnitude
 		local top = b + Vector3.new(0, math.clamp(sized.Signed, -run, run), 0)
 
-		ventOf(draw).Ends = { a + up, top + up }
-
-		return Vents.VentDuct(ctx.Settings, a + up, top + up)
+		return slope(ctx, draw, a + up, top + up)
+	end,
+	Problem = function(_specs, draw)
+		return if ventOf(draw).Target then "Too steep to reach that vent; start the slope further back." else nil
 	end,
 	Commit = commit,
 }
