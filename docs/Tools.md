@@ -115,7 +115,7 @@ Square ducts and their end pieces.
 | Tool | How to use it |
 |---|---|
 | **Vent** | Click points; Enter starts a new chain. Turns at right angles. |
-| **Slope Vent** | Click the start and end, then move up or down and click. |
+| **Slope Vent** | Click the start and end, then move up or down and click. Pointing at a vent at another height instead builds the slope to it with the second click. |
 | **Shaft Vent** | Click a surface, then move up or down and click. |
 | **Vent Cover** | Click a vent opening or any surface. Places a grate. |
 | **End Cap** | Click a vent opening or any surface. Closes it with a plate. |

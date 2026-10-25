@@ -19,6 +19,15 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.3",
+		Date = "2026-10-24",
+		Changes = {
+			"Slope Vent: point at a vent at another height and the slope rises or drops to meet it in one click.",
+			"Vents can start on a corner of another vent and leave through any open face of it.",
+			"No gap where a vent continues a slope vent, or a slope continues a vent.",
+		},
+	},
+	{
 		Version = "1.4.2",
 		Date = "2026-10-24",
 		Changes = {

@@ -62,8 +62,13 @@ export type Segment = { model: Instance, dir: Vector3, strips: { Shapes.Strip } 
 	.HitOwner Instance? -- the vent under the cursor before the first click
 	.HitEnd Vector3? -- the way out of the open vent end under the cursor, before the first click
 	.HitFace Vector3? -- the normal of the vent face under the cursor, before the first click
+	.HitCorner boolean? -- whether the vent spot under the cursor is a corner, before the first click
 	.Owner Instance? -- the vent the run started from
 	.End Vector3? -- the way out of the open end the run started from
+	.Corner boolean? -- whether the run started on a corner, so it may leave in any open direction
+	.Target number? -- the floor height of the vent a slope vent is aimed at
+	.TargetOwner Instance? -- that vent
+	.TargetEnd Vector3? -- the way out of its open end, when the slope meets an end rather than a side
 	.Ends { Vector3 }? -- the two duct ends of the previewed build, centered
 ]=]
 export type VentState = {
@@ -75,8 +80,13 @@ export type VentState = {
 	HitOwner: Instance?,
 	HitEnd: Vector3?,
 	HitFace: Vector3?,
+	HitCorner: boolean?,
 	Owner: Instance?,
 	End: Vector3?,
+	Corner: boolean?,
+	Target: number?,
+	TargetOwner: Instance?,
+	TargetEnd: Vector3?,
 	Ends: { Vector3 }?,
 }
 
@@ -158,6 +168,7 @@ export type Built = {
 	.Built ((draw) -> ())? -- runs after a successful build, to clear what one segment kept
 	.HeightDrag boolean? -- Y drags the height
 	.Rise boolean? -- a click after the run starts a rise stage
+	.Reached ((draw) -> boolean)? -- the run already has its height, so the click builds without the rise stage
 	.Shaft boolean? -- the first click goes straight to the rise stage
 	.Chain boolean? -- keep drawing from the end point after a build
 	.Loose boolean? -- place loose Parts instead of one Model
@@ -179,6 +190,7 @@ export type Shape = {
 	Built: ((draw: Draw) -> ())?,
 	HeightDrag: boolean?,
 	Rise: boolean?,
+	Reached: ((draw: Draw) -> boolean)?,
 	Shaft: boolean?,
 	Chain: boolean?,
 	Loose: boolean?,
@@ -499,7 +511,7 @@ function Engine.Click(ctx: Context, draw: Draw, preview: Types.Preview?)
 		end
 
 		ctx.Sound("Point")
-	elseif valid and shape.Rise and not draw.Rise then
+	elseif valid and shape.Rise and not draw.Rise and not (shape.Reached and shape.Reached(draw)) then
 		startRise(draw, current)
 		ctx.Say("Move up or down to set the height, then click.")
 		ctx.Sound("Point")

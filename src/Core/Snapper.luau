@@ -257,13 +257,14 @@ end
 	@return Vector3? -- the point on the middle line
 	@return Vector3? -- the way out of the vent when the point is an open end, else nil
 	@return Instance? -- the vent model the point is on
+	@return boolean -- whether the point is a corner: an end another vent already continues
 ]=]
 function Snapper.VentConnect(
 	point: Vector3,
 	radius: number,
 	step: number,
 	margin: number?
-): (Vector3?, Vector3?, Instance?)
+): (Vector3?, Vector3?, Instance?, boolean)
 	local bestModel: Instance? = nil
 	local bestDistance = radius
 	local bestA, bestD, bestAlong = Vector3.zero, Vector3.zero, 0
@@ -285,23 +286,28 @@ function Snapper.VentConnect(
 	end
 
 	if not bestModel then
-		return nil, nil, nil
+		return nil, nil, nil, false
 	end
 
 	local length = bestD.Magnitude
 	local b = bestA + bestD
 	local reach = math.max(step * 0.75, (margin or 0) * 0.6)
 
-	if bestAlong < reach and Snapper.VentEndOpen(bestModel, bestA) then
-		return bestA, Snapper.VentFacing(bestModel:GetAttribute("VluxyBT_VentStartDir") :: Vector3), bestModel
-	elseif length - bestAlong < reach and Snapper.VentEndOpen(bestModel, b) then
-		return b, Snapper.VentFacing(bestModel:GetAttribute("VluxyBT_VentEndDir") :: Vector3), bestModel
+	for _, name in { "Start", "End" } do
+		local at = if name == "Start" then bestA else b
+		local near = if name == "Start" then bestAlong < reach else length - bestAlong < reach
+
+		if near and Snapper.VentEndOpen(bestModel, at) then
+			return at, Snapper.VentFacing(bestModel:GetAttribute(`VluxyBT_Vent{name}Dir`) :: Vector3), bestModel, false
+		elseif near then
+			return at, nil, bestModel, true
+		end
 	end
 
 	local keep = math.min(margin or 0, length / 2)
 	local snapped = math.clamp(math.round(bestAlong / step) * step, keep, length - keep)
 
-	return bestA + bestD.Unit * snapped, nil, bestModel
+	return bestA + bestD.Unit * snapped, nil, bestModel, false
 end
 
 --[=[
