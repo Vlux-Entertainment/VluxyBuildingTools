@@ -338,11 +338,12 @@ end
 	@param ray Ray
 	@param size number -- the outside size of the vents
 	@param limit number? -- how far the ray goes before it hits something
+	@param skip Instance? -- a vent whose openings are left out, such as the one being drawn from
 	@return Vector3? -- the middle of the opening
 	@return Vector3? -- the way the opening faces
 	@return Instance? -- the vent
 ]=]
-function Snapper.VentEndOnRay(ray: Ray, size: number, limit: number?): (Vector3?, Vector3?, Instance?)
+function Snapper.VentEndOnRay(ray: Ray, size: number, limit: number?, skip: Instance?): (Vector3?, Vector3?, Instance?)
 	local openings: { { At: Vector3, Dir: Vector3 } } = {}
 	local owners: { Instance } = {}
 
@@ -351,7 +352,7 @@ function Snapper.VentEndOnRay(ray: Ray, size: number, limit: number?): (Vector3?
 
 		if ends then
 			for _, side in { { ends.Start, ends.StartDir }, { ends.End, ends.EndDir } } do
-				if Snapper.VentEndOpen(model, side[1]) then
+				if model ~= skip and Snapper.VentEndOpen(model, side[1]) then
 					table.insert(openings, { At = side[1], Dir = Snapper.VentFacing(side[2]) })
 					table.insert(owners, model)
 				end

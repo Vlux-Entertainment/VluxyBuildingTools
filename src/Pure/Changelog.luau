@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.9",
+		Date = "2026-10-24",
+		Changes = {
+			"Slope Vent built down from a high opening to a low one stops flush at the low opening, the same as building it upward.",
+		},
+	},
+	{
 		Version = "1.4.8",
 		Date = "2026-10-24",
 		Changes = {

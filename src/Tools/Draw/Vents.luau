@@ -462,16 +462,24 @@ local function aim(ctx: Context, draw: Draw, origin: Vector3): Vector3?
 	end
 
 	local step = math.max(0.05, Cursor.Grid(ctx.Cursor))
-	local point, outward, owner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
+	local point, outward, owner = Snapper.VentEndOnRay(Cursor.Ray(ctx.Cursor), size, hit.Distance, state.Owner)
+
+	if not point then
+		point, outward, owner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
+	end
+
 	local bottom = if point then point.Y - size / 2 else origin.Y
 
 	if not point or not owner or owner == state.Owner or math.abs(bottom - origin.Y) < 0.1 then
 		return nil
 	elseif outward and math.abs(outward.Y) > 0.5 then
 		return nil
+	elseif outward and outward:Dot(Vector3.new(origin.X - point.X, 0, origin.Z - point.Z)) <= 0 then
+		return nil
 	end
 
 	state.Target, state.TargetOwner, state.TargetEnd = bottom, owner, outward
+	state.TargetAt = if outward then point else nil
 	ctx.Cursor.Mark = point
 
 	return Vector3.new(point.X, origin.Y, point.Z)
@@ -531,7 +539,7 @@ local ventRamp: Engine.Shape = {
 			local aside = if at then Vector3.new(at.X - stop.X, 0, at.Z - stop.Z).Magnitude else 0
 
 			state.Why = if aside > 0.15
-				then string.format("The holes are %.2f studs out of line; line them up along X or Z.", aside)
+				then string.format("The openings are %.2f studs out of line; line them up along X or Z.", aside)
 				elseif
 					run < 0.5 or math.abs(rise) > run * MAX_STEEP
 				then "Too steep to reach that vent; start the slope further back."
