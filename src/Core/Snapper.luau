@@ -544,6 +544,62 @@ function Snapper.VentEndOpen(model: Instance, at: Vector3): boolean
 end
 
 --[=[
+	Whether a point is on a vent corner: the square block around a joined end, where one vent turns
+	into the next. Any spot on the block's faces counts, however far from its middle.
+
+	@param point Vector3 -- where the cursor hit
+	@param fallback number -- the outside size of vents that do not record one
+	@return Vector3? -- the middle of the corner, on the vents' middle lines
+	@return Instance? -- a vent that ends there
+]=]
+function Snapper.VentCorner(point: Vector3, fallback: number): (Vector3?, Instance?)
+	local corners: { Vector3 } = {}
+	local halves: { number } = {}
+	local owners: { Instance } = {}
+
+	for _, model in CollectionService:GetTagged(VENT_TAG) do
+		local ends = Snapper.VentEnds(model)
+
+		if ends then
+			for _, at in { ends.Start, ends.End } do
+				if not Snapper.VentEndOpen(model, at) then
+					table.insert(corners, at)
+					table.insert(halves, (Snapper.VentSizing(model) or fallback) / 2)
+					table.insert(owners, model)
+				end
+			end
+		end
+	end
+
+	local index = Snapper.InCorner(point, corners, halves)
+
+	if not index then
+		return nil, nil
+	end
+
+	return corners[index], owners[index]
+end
+
+--[=[
+	@param point Vector3
+	@param corners { Vector3 } -- the middles of corner blocks
+	@param halves { number } -- half the side of each block
+	@return number? -- the index of the block the point is on or in, allowing a little for its faces
+]=]
+function Snapper.InCorner(point: Vector3, corners: { Vector3 }, halves: { number }): number?
+	for index, at in corners do
+		local offset = point - at
+		local reach = halves[index] + 0.15
+
+		if math.abs(offset.X) <= reach and math.abs(offset.Y) <= reach and math.abs(offset.Z) <= reach then
+			return index
+		end
+	end
+
+	return nil
+end
+
+--[=[
 	Finds a connection point on a vent built by this plugin: an open end, or a spot along its middle
 	line snapped to the step. Spots along the side stay `margin` from the ends, so a vent started
 	there sits wholly against the side and never runs into a corner.
@@ -563,6 +619,12 @@ function Snapper.VentConnect(
 	step: number,
 	margin: number?
 ): (Vector3?, Vector3?, Instance?, boolean)
+	local cornerAt, cornerOwner = Snapper.VentCorner(point, radius / 1.1)
+
+	if cornerAt and cornerOwner then
+		return cornerAt, nil, cornerOwner, true
+	end
+
 	local bestModel: Instance? = nil
 	local bestDistance = radius
 	local bestA, bestD, bestAlong = Vector3.zero, Vector3.zero, 0

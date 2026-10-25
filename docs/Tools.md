@@ -38,7 +38,7 @@ Walls, floors, blocks, pillars and arches.
 |---|---|
 | **Walls** | Click points; Enter starts a new chain. Y drags the height. |
 | **Pillared Wall** | Like Walls, with a pillar at each end. |
-| **Floor** | Click two corners. Started on a floor already built, it stays level with that floor; elsewhere it sits on top. |
+| **Floor** | Click two corners. The top of the floor is level with what you click. |
 | **Block** | Click two corners, then press Y to drag it up. |
 | **Pillar** | Click to place a square pillar. |
 | **Arch** | Click the two inner edges at ground level. |

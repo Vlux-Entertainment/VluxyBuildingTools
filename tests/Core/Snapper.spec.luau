@@ -172,6 +172,32 @@ return {
 		)
 	end,
 
+	["anywhere on a corner block counts as the corner, in both turning directions"] = function(expect)
+		local Snapper = Harness.Load("src/Core/Snapper")
+		local corners = { Vector3.new(10, 2, 0) }
+		local halves = { 2 }
+
+		for _, spot in
+			{
+				Vector3.new(12, 2, 1.8),
+				Vector3.new(12, 3.9, -1.9),
+				Vector3.new(8.2, 2, -2),
+				Vector3.new(11.9, 0.1, -2),
+				Vector3.new(10, 4, 0),
+			}
+		do
+			expect.equal(Snapper.InCorner(spot, corners, halves), 1, vec(spot))
+		end
+
+		expect.equal(Snapper.InCorner(Vector3.new(12, 2, 3), corners, halves), nil, "past the block, on the next leg")
+		expect.equal(Snapper.InCorner(Vector3.new(7, 2, -2), corners, halves), nil, "back along the first leg")
+		expect.equal(
+			Snapper.InCorner(Vector3.new(12, 2, 1.8), { Vector3.new(10, 2, 0) }, { 1.5 }),
+			nil,
+			"a smaller vent's block"
+		)
+	end,
+
 	["TopCenter moves a point onto the middle line of a thin wall, and to its end near the end"] = function(expect)
 		local Snapper = Harness.Load("src/Core/Snapper")
 		local wall = Harness.Part(Vector3.new(1, 12, 20), CFrame.new(0, 6, 0))

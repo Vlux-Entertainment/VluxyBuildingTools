@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.2",
+		Date = "2026-10-24",
+		Changes = {
+			"Extending a vent from a corner works from anywhere on the corner block: the new vent starts on the face under the cursor, centred on the corner.",
+			"Floor: the top of the floor is level with what you click, not a floor thickness above it.",
+		},
+	},
+	{
 		Version = "1.5.1",
 		Date = "2026-10-24",
 		Changes = {
