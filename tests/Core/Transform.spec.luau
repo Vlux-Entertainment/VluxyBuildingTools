@@ -37,9 +37,9 @@ return {
 		local part = Harness.Part(Vector3.new(2, 2, 2), CFrame.new())
 		local session = Transform.Begin("Grab", { part }, Vector2.zero, rayAt(0), LOOK)
 
-		Guides.Add({ Lines = {}, Points = { Vector3.new(9.4, 1, 1) } })
+		Guides.Add({ Lines = {}, Points = { Vector3.new(10.4, 1, 1) } })
 		Transform.Update(session, 4, Vector2.zero, rayAt(9.1), LOOK, 1.5)
-		expect.equal(vec(part.CFrame.Position), "8.4,0,0", "the corner lands on the guide point")
+		expect.equal(vec(part.CFrame.Position), "9.4,0,0", "the corner lands on the guide point, between grid steps")
 
 		Transform.Update(session, 4, Vector2.zero, rayAt(9.1), LOOK, nil)
 		expect.equal(vec(part.CFrame.Position), "8,0,0", "with guide snapping off, the grid alone")

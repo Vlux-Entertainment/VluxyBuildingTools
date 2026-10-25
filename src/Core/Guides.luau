@@ -13,8 +13,20 @@
 	@within Guides
 	.Lines { { Vector3 } } -- pairs of points to draw between
 	.Points { Vector3 } -- the points other tools snap to
+	.Fill Fill? -- the shape's inside, drawn see-through
 ]=]
-export type Guide = { Lines: { { Vector3 } }, Points: { Vector3 } }
+export type Guide = { Lines: { { Vector3 } }, Points: { Vector3 }, Fill: Fill? }
+
+--[=[
+	The inside of a measured shape: a box (a square is a flat one), a flat disc or a ball.
+
+	@interface Fill
+	@within Guides
+	.Shape string -- "Box", "Disc" or "Ball"
+	.CFrame CFrame -- its middle
+	.Size Vector3 -- a box's size; for a disc or ball, the radius is X / 2
+]=]
+export type Fill = { Shape: string, CFrame: CFrame, Size: Vector3 }
 
 local kept: { Guide } = {}
 

@@ -86,6 +86,9 @@ Tips.Entries = {
 	["Grab snaps to measure guides"] = {
 		Text = "While grabbing with G, a corner or centre of the selection snaps onto measuring guide points.",
 	},
+	["MEASURE GUIDES"] = { Text = "How the measurements kept in the viewport look." },
+	GuideThickness = { Text = "How thick the guide lines are." },
+	GuideFill = { Text = "How see-through the inside of a measured shape is; 100% hides it." },
 	["Snap to parts"] = { Text = "Snap points to corners and edges of nearby parts." },
 	SnapRadius = { Text = "How close the cursor must be to snap to a part." },
 	FloorTransparency = { Text = "How see-through the floor is." },

@@ -77,6 +77,11 @@ return function(ui: Ui): { Instance }
 				return Store.Get(store, "Tooltips") == true
 			end),
 		}),
+		Controls.Card(ui, "MEASURE GUIDES", {
+			Controls.ColorRow(ui, "GuideColor", "Guide color"),
+			number("GuideThickness", "Line thickness", 1, 10, 1),
+			Controls.Slider(ui, "GuideFill", "Inside transparency"),
+		}),
 		Controls.Card(ui, "VIEWPORT", {
 			Controls.Switch(ui, { Title = "Previews use the UI color", Key = "PreviewsFollowUi" }),
 			Controls.Switch(ui, { Title = "Hint bar", Key = "HintBar" }),

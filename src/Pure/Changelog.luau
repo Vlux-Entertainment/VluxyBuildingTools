@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.1",
+		Date = "2026-10-25",
+		Changes = {
+			"Settings: a Measure guides card sets the guides' color, line thickness and inside transparency; measured shapes now show a see-through inside.",
+			"Grab and the Measure drag snap to a guide point near the mouse even between grid steps.",
+		},
+	},
+	{
 		Version = "1.7.0",
 		Date = "2026-10-25",
 		Changes = {

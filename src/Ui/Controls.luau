@@ -665,6 +665,94 @@ export type ChoiceSpec = {
 	Locked: (() -> boolean)?,
 }
 
+--[[
+	@param hex string -- six hex digits, with or without a leading #
+	@return Color3 -- the color, white when the text is not one
+]]
+local function hexColor(hex: string): Color3
+	local digits = string.match(hex, "^#?(%x%x%x%x%x%x)$")
+
+	if not digits then
+		return Color3.new(1, 1, 1)
+	end
+
+	local value = tonumber(digits, 16) :: number
+
+	return Color3.fromRGB(bit32.rshift(value, 16), bit32.band(bit32.rshift(value, 8), 255), bit32.band(value, 255))
+end
+
+Controls.HexColor = hexColor
+
+local SWATCHES = { "FFFFFF", "FF8A24", "6ED7EB", "FFB3BA", "BAFFC9", "BAE1FF", "9AA0AA", "000000" }
+
+--[=[
+	A row of color swatches and a hex box for a color setting stored as six hex digits.
+
+	@param ui Ui
+	@param key string -- the setting
+	@param name string -- what the color is for, shown on the swatches' tips
+	@param visible Prop<boolean>?
+	@param locked (() -> boolean)? -- greys the row and blocks it while true
+	@return Frame
+]=]
+function Controls.ColorRow(ui: Ui, key: string, name: string, visible: Prop<boolean>?, locked: (() -> boolean)?): Frame
+	local store = ui.App.Store
+	local hexBox: TextBox
+
+	--[[ Saves a typed or picked color when it is six hex digits, then shows the saved one. ]]
+	local function setColor(hex: string)
+		if string.match(hex, "^#?%x%x%x%x%x%x$") then
+			Store.Set(store, key, string.upper((string.gsub(hex, "^#", ""))))
+		end
+
+		hexBox.Text = (store.Values :: any)[key]
+	end
+
+	hexBox = Kit.New("TextBox")({
+		Size = UDim2.new(0, 70, 1, -2),
+		Position = UDim2.new(1, -70, 0, 0),
+		BackgroundColor3 = Theme.Field,
+		BorderSizePixel = 0,
+		Text = function()
+			return Store.Get(store, key)
+		end,
+		PlaceholderText = "RRGGBB",
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		ClearTextOnFocus = false,
+		Kit.Corner(6),
+		Kit.Stroke(),
+		FocusLost = function()
+			setColor(hexBox.Text)
+		end,
+	})
+
+	local swatches = {}
+
+	for i, hex in SWATCHES do
+		table.insert(
+			swatches,
+			Kit.New("TextButton")({
+				Size = UDim2.fromOffset(24, 24),
+				Position = UDim2.fromOffset((i - 1) * 28, 2),
+				BackgroundColor3 = hexColor(hex),
+				BorderSizePixel = 0,
+				Text = "",
+				Kit.Corner(6),
+				Kit.Stroke(),
+				ui.Popups.Tip({ Text = name .. " #" .. hex }),
+				MouseButton1Click = function()
+					ui.App.Sound("Click")
+					setColor(hex)
+				end,
+			})
+		)
+	end
+
+	return Kit.Row(30, { swatches, hexBox, Controls.Lock(ui, locked) }, visible)
+end
+
 --[=[
 	@param ui Ui
 	@param spec ChoiceSpec
