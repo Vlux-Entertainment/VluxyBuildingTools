@@ -71,7 +71,7 @@ local room: Engine.Shape = {
 
 local floor: Engine.Shape = {
 	Id = "Floor",
-	Start = onFloor({ Raised = true, Level = true }),
+	Start = onFloor({}),
 	Loose = true,
 	Readout = areaReadout,
 	Build = function(_ctx, _draw, a, b, sized)

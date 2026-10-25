@@ -27,9 +27,8 @@ type Draw = Engine.Draw
 	.Raised boolean? -- stand on top of a floor slab: the point is raised by the floor thickness
 	.Joins boolean? -- start level with the floor of a room or corridor the point snaps to
 	.Doors boolean? -- start in the middle of a doorway near the cursor
-	.Level boolean? -- on a floor already built, stay level with its top instead of stacking on it
 ]=]
-export type FloorRule = { Raised: boolean?, Joins: boolean?, Doors: boolean?, Level: boolean? }
+export type FloorRule = { Raised: boolean?, Joins: boolean?, Doors: boolean? }
 
 local Points = {}
 
@@ -123,10 +122,9 @@ function Points.Floor(ctx: Context, draw: Draw, rule: FloorRule): Vector3?
 		return nil
 	end
 
-	local onFloor = rule.Level == true and hit.Instance.Name == "Floor"
 	local point = Vector3.new(
 		Cursor.Snap(cursor, hit.Position.X),
-		hit.Position.Y + (if rule.Raised and not onFloor then ctx.Settings.Floor else 0),
+		hit.Position.Y + (if rule.Raised then ctx.Settings.Floor else 0),
 		Cursor.Snap(cursor, hit.Position.Z)
 	)
 
