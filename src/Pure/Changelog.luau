@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.11",
+		Date = "2026-10-25",
+		Changes = {
+			'The "would run into another vent" warning only appears when a vent is really in the way, not on the first frame of a new vent.',
+		},
+	},
+	{
 		Version = "1.7.10",
 		Date = "2026-10-25",
 		Changes = {
