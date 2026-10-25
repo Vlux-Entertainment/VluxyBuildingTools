@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.6",
+		Date = "2026-10-25",
+		Changes = {
+			"Grab (G): a corner, side centre or the centre of the selection snaps onto a measuring guide point it comes near; Shift moves freely.",
+		},
+	},
+	{
 		Version = "1.6.5",
 		Date = "2026-10-25",
 		Changes = {

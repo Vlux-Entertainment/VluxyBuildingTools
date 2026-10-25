@@ -138,8 +138,15 @@ function Move.Start(ctx: Context, kind: Transform.Kind, duplicate: boolean): Mod
 				end
 			end
 
-			local text, position =
-				Transform.Update(session, Cursor.Grid(cursor), Cursor.Screen(), Cursor.Ray(cursor), Cursor.Look())
+			local snaps = ctx.Settings.SnapToParts and not Cursor.Fine()
+			local text, position = Transform.Update(
+				session,
+				Cursor.Grid(cursor),
+				Cursor.Screen(),
+				Cursor.Ray(cursor),
+				Cursor.Look(),
+				if snaps then math.max(1.5, ctx.Settings.SnapRadius * 1.5) else nil
+			)
 
 			Overlay.Readout(ctx.Overlay, position, text)
 
