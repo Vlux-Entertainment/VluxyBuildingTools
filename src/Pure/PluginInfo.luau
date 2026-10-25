@@ -8,7 +8,7 @@
 
 local PluginInfo = {
 	Name = "VluxyBuildingTools",
-	Version = "1.7.0",
+	Version = "1.7.1",
 }
 
 return PluginInfo

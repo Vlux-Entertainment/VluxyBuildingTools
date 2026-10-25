@@ -12,7 +12,19 @@ local CollectionService = game:GetService("CollectionService")
 local CoreGui = game:GetService("CoreGui")
 
 local Geometry = require("./Geometry")
+local Guides = require("./Guides")
 local Trove = require("../Packages/Trove")
+
+--[=[
+	How the measuring guides look.
+
+	@interface GuideStyle
+	@within Overlay
+	.Color Color3
+	.Thickness number -- the line thickness
+	.Fill number -- the transparency of the shapes' insides; 1 draws none
+]=]
+export type GuideStyle = { Color: Color3, Thickness: number, Fill: number }
 
 export type Overlay = {
 	_ghosts: { BoxHandleAdornment },
@@ -24,6 +36,9 @@ export type Overlay = {
 	_snap: SphereHandleAdornment?,
 	_measureLine: WireframeHandleAdornment,
 	_guides: WireframeHandleAdornment,
+	_guideFills: { HandleAdornment },
+	_guideList: { Guides.Guide },
+	_guideStyle: GuideStyle,
 	_boxes: { [string]: WireframeHandleAdornment },
 	_fills: { [string]: BoxHandleAdornment },
 	_hud: ScreenGui,
@@ -246,6 +261,9 @@ function Overlay.new(trove: Trove.Trove): Overlay
 		_previewWire = previewWire,
 		_measureLine = measureLine,
 		_guides = guides,
+		_guideFills = {},
+		_guideList = {},
+		_guideStyle = { Color = GUIDE_COLOR, Thickness = 2, Fill = 1 },
 		_boxes = boxes,
 		_fills = fills,
 		_hud = hud,
@@ -632,19 +650,99 @@ function Overlay.DrawMeasureShape(self: Overlay, lines: { { Vector3 } }, points:
 	drawLines(self._measureLine, lines, points)
 end
 
+--[[
+	@param self Overlay
+	@param index number
+	@param shape string -- "Box", "Disc" or "Ball"
+	@return HandleAdornment -- the fill adornment in that slot, made or remade for the shape
+]]
+local function fillSlot(self: Overlay, index: number, shape: string): HandleAdornment
+	local class = if shape == "Ball"
+		then "SphereHandleAdornment"
+		elseif shape == "Disc" then "CylinderHandleAdornment"
+		else "BoxHandleAdornment"
+	local existing = self._guideFills[index]
+
+	if existing and existing.ClassName == class then
+		return existing
+	elseif existing then
+		existing:Destroy()
+	end
+
+	local created = Instance.new(class) :: HandleAdornment
+
+	created.Name = "MeasureGuideFill"
+	created.Adornee = workspace.Terrain
+	created.AlwaysOnTop = false
+	created.ZIndex = 0
+	created.Parent = self._folder
+	tag(created)
+	self._guideFills[index] = created
+
+	return created
+end
+
 --[=[
 	Draws every kept measuring guide, replacing what was drawn before. They stay drawn whatever
 	tool is in use, until cleared.
 
 	@param self Overlay
-	@param guides { { Lines: { { Vector3 } }, Points: { Vector3 } } }
+	@param guides { Guides.Guide }
 ]=]
-function Overlay.DrawGuides(self: Overlay, guides: { { Lines: { { Vector3 } }, Points: { Vector3 } } })
+function Overlay.DrawGuides(self: Overlay, guides: { Guides.Guide })
+	local style = self._guideStyle
+	local terrain = workspace.Terrain.CFrame
+	local used = 0
+
+	self._guideList = guides
 	self._guides:Clear()
+	self._guides.Color3 = style.Color
+	self._guides.Thickness = style.Thickness
 
 	for _, guide in guides do
 		drawLines(self._guides, guide.Lines, guide.Points)
+
+		local fill = guide.Fill
+
+		if fill and style.Fill < 0.99 then
+			used += 1
+
+			local slot = fillSlot(self, used, fill.Shape)
+
+			slot.Color3 = style.Color
+			slot.Transparency = style.Fill
+			slot.Visible = true
+
+			if fill.Shape == "Ball" then
+				(slot :: SphereHandleAdornment).Radius = fill.Size.X / 2
+				slot.CFrame = terrain:ToObjectSpace(fill.CFrame)
+			elseif fill.Shape == "Disc" then
+				local disc = slot :: CylinderHandleAdornment
+
+				disc.Radius = fill.Size.X / 2
+				disc.Height = 0.05
+				slot.CFrame = terrain:ToObjectSpace(fill.CFrame * CFrame.Angles(math.pi / 2, 0, 0))
+			else
+				(slot :: BoxHandleAdornment).Size = fill.Size
+				slot.CFrame = terrain:ToObjectSpace(fill.CFrame)
+			end
+		end
 	end
+
+	for index = used + 1, #self._guideFills do
+		self._guideFills[index].Visible = false
+	end
+end
+
+--[=[
+	Changes how the measuring guides look and draws them again.
+
+	@param self Overlay
+	@param style GuideStyle
+]=]
+function Overlay.SetGuideStyle(self: Overlay, style: GuideStyle)
+	self._guideStyle = style
+	Overlay.DrawGuides(self, self._guideList)
 end
 
 --[=[

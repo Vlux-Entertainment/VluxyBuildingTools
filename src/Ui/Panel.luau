@@ -367,6 +367,13 @@ function Panel.Mount(app: AppTypes.App): () -> ()
 			Overlay.AllowBar(app.Overlay, Store.Get(app.Store, "HintBar") == true)
 		end)
 		vide.effect(function()
+			Overlay.SetGuideStyle(app.Overlay, {
+				Color = Controls.HexColor(Store.Get(app.Store, "GuideColor")),
+				Thickness = Store.Get(app.Store, "GuideThickness"),
+				Fill = Store.Get(app.Store, "GuideFill"),
+			})
+		end)
+		vide.effect(function()
 			app.State.Page()
 			app.State.Mode()
 			vide.untrack(popups.HideTip)

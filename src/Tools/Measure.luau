@@ -223,7 +223,17 @@ local function boxGuide(low: Vector3, high: Vector3): Guide
 
 	table.insert(points, (lo + hi) / 2)
 
-	return { Lines = lines, Points = points }
+	local size = hi - lo
+
+	return {
+		Lines = lines,
+		Points = points,
+		Fill = {
+			Shape = "Box",
+			CFrame = CFrame.new((lo + hi) / 2),
+			Size = Vector3.new(size.X, math.max(size.Y, 0.05), size.Z),
+		},
+	}
 end
 
 --[[
@@ -302,7 +312,11 @@ local function measure(ctx: Context, state: MeasureState): ({ Guide: Guide, Text
 		end
 
 		return {
-			Guide = { Lines = ring(first, radius, Vector3.xAxis, Vector3.zAxis), Points = points },
+			Guide = {
+				Lines = ring(first, radius, Vector3.xAxis, Vector3.zAxis),
+				Points = points,
+				Fill = { Shape = "Disc", CFrame = CFrame.new(first), Size = Vector3.one * radius * 2 },
+			},
 			Text = MeasureText.Circle(radius),
 			At = first,
 		},
@@ -331,7 +345,15 @@ local function measure(ctx: Context, state: MeasureState): ({ Guide: Guide, Text
 			table.insert(points, first - offset * radius)
 		end
 
-		return { Guide = { Lines = lines, Points = points }, Text = MeasureText.Ball(radius), At = first },
+		return {
+			Guide = {
+				Lines = lines,
+				Points = points,
+				Fill = { Shape = "Ball", CFrame = CFrame.new(first), Size = Vector3.one * radius * 2 },
+			},
+			Text = MeasureText.Ball(radius),
+			At = first,
+		},
 			"Click to keep this ball."
 	end
 

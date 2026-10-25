@@ -246,17 +246,16 @@ function Transform.Update(
 			delta = Geometry.FromVec(AxisLock.Unit(lock.Axis)) * typed
 		else
 			local point, base = reading(self, ray, look), self._base
+			local move = if point and base then point - base else Vector3.zero
 
-			if point and base then
-				local move = point - base
+			delta = Vector3.new(Snap.Round(move.X, grid), Snap.Round(move.Y, grid), Snap.Round(move.Z, grid))
 
-				delta = Vector3.new(Snap.Round(move.X, grid), Snap.Round(move.Y, grid), Snap.Round(move.Z, grid))
-			end
-
-			local pull = if guideReach then toGuide(self, delta, guideReach) else nil
+			-- A guide point near where the mouse really is wins over the grid, which moves in
+			-- steps that can jump right past it.
+			local pull = if guideReach then toGuide(self, move, guideReach) else nil
 
 			if pull then
-				delta += pull
+				delta = move + pull
 				suffix ..= "  [guide]"
 			end
 		end
