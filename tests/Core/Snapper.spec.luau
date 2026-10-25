@@ -233,6 +233,34 @@ return {
 		expect.equal(#Snapper.BoxPoints(floor), 20, "8 corners and 12 edge middles")
 	end,
 
+	["a wall's middle line runs along its foot, and points near it snap to its ends, middle or grid"] = function(
+		expect
+	)
+		local Snapper = Harness.Load("src/Core/Snapper")
+		local wall = Harness.Part(Vector3.new(1, 12, 20), CFrame.new(5, 6, 0))
+		local line = Snapper.WallLineOf(wall)
+
+		expect.truthy(line, "a thin upright part is a wall")
+		expect.near(line.Half, 0.5)
+		expect.near(line.Length, 20)
+		expect.near(line.Start.Y, 0, nil, "at its foot")
+
+		local spot, kind, out = Snapper.SpotOnWall(line, Vector3.new(5.9, 0, 9.6), 1, 1)
+
+		expect.equal(kind, "End")
+		expect.equal(vec(spot), "5,0,10", "the end it is near")
+		expect.equal(vec(out), "0,0,1", "pointing out of the wall")
+
+		spot, kind = Snapper.SpotOnWall(line, Vector3.new(6.2, 0, 0.6), 1, 1)
+		expect.equal(kind, "Side")
+		expect.equal(vec(spot), "5,0,0", "the middle")
+
+		spot = Snapper.SpotOnWall(line, Vector3.new(6.2, 0, 4.3), 1, 1)
+		expect.equal(vec(spot), "5,0,4", "a grid step along it")
+		expect.equal(Snapper.SpotOnWall(line, Vector3.new(9, 0, 4), 1, 1), nil, "too far from the face")
+		expect.equal(Snapper.WallLineOf(Harness.Part(Vector3.new(20, 1, 12), CFrame.new())), nil, "a floor is no wall")
+	end,
+
 	["TopCenter moves a point onto the middle line of a thin wall, and to its end near the end"] = function(expect)
 		local Snapper = Harness.Load("src/Core/Snapper")
 		local wall = Harness.Part(Vector3.new(1, 12, 20), CFrame.new(0, 6, 0))

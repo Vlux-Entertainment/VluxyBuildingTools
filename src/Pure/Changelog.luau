@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.2",
+		Date = "2026-10-24",
+		Changes = {
+			"Walls join like Bloxburg: points snap to other walls' ends, middles and middle lines; starting or ending on a wall's end closes the corner with no gap or overlap, and on its side the walls meet flush.",
+			"Hold Shift to build a wall on top of another wall.",
+		},
+	},
+	{
 		Version = "1.6.1",
 		Date = "2026-10-24",
 		Changes = {
