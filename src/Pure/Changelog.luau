@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.8",
+		Date = "2026-10-24",
+		Changes = {
+			"Railing on stairs: the board rises only as far above the step edges as the flat bottom rail does above the floor, so the two match.",
+		},
+	},
+	{
 		Version = "1.5.7",
 		Date = "2026-10-24",
 		Changes = {

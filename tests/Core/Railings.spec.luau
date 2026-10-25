@@ -25,14 +25,19 @@ return {
 		local board = named(specs, "BottomRail")[1]
 
 		expect.truthy(board, "a board along the stairs")
-		expect.near(board.cf.Position.Y - 3, 0.5 / 2 - 0.5, 1e-6, "its middle sits a little under the line")
+		expect.near(
+			board.cf.Position.Y + board.size.Y / 2,
+			3.2,
+			1e-6,
+			"its top is as high over the step edges as the flat rail is over the floor"
+		)
 		expect.truthy(board.size.Y > 0.9, "tall enough to cover the steps")
 
 		for _, bar in named(specs, "Baluster") do
 			local line = 6 * bar.cf.Position.X / 12
 			local foot = bar.cf.Position.Y - bar.size.Y / 2
 
-			expect.near(foot, line + 0.45, 1e-6, "the bars stand on the board")
+			expect.near(foot, line + 0.15, 1e-6, "the bars stand on the board")
 		end
 	end,
 }
