@@ -44,10 +44,17 @@ end
 	@param settings Settings
 	@param a Vector3 -- the start, on the floor or a stair
 	@param b Vector3 -- the end, on the floor or a stair
-	@param postAtStart boolean? -- false when the railing before this one already has a pillar there
+	@param postAtStart boolean? -- false when the railing before this one, or a post it starts on, is already there
+	@param postAtEnd boolean? -- false when it ends on a post already built
 	@return { Spec }
 ]=]
-function Railings.Railing(settings: Settings, a: Vector3, b: Vector3, postAtStart: boolean?): { Spec }
+function Railings.Railing(
+	settings: Settings,
+	a: Vector3,
+	b: Vector3,
+	postAtStart: boolean?,
+	postAtEnd: boolean?
+): { Spec }
 	local out: { Spec } = {}
 	local d = b - a
 	local length = d.Magnitude
@@ -66,7 +73,9 @@ function Railings.Railing(settings: Settings, a: Vector3, b: Vector3, postAtStar
 		newel(out, a, flatDir, height + 0.3, "RailingPillar")
 	end
 
-	newel(out, b, flatDir, height + 0.3, "RailingPillar")
+	if postAtEnd ~= false then
+		newel(out, b, flatDir, height + 0.3, "RailingPillar")
+	end
 
 	local middle = (a + b) * 0.5
 	local sloped = math.abs(d.Y) > 0.05

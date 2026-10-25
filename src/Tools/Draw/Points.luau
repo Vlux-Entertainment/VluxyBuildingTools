@@ -8,6 +8,8 @@
 	@class Points
 ]=]
 
+local CollectionService = game:GetService("CollectionService")
+
 local Cursor = require("../../Services/Cursor")
 local Engine = require("./Engine")
 local Joints = require("../../Core/Joints")
@@ -31,6 +33,8 @@ type Draw = Engine.Draw
 	.Doors boolean? -- start in the middle of a doorway near the cursor
 ]=]
 export type FloorRule = { Raised: boolean?, Joins: boolean?, Doors: boolean? }
+
+local STAIRS_TAG = "VluxyBT_Stairs"
 
 local Points = {}
 
@@ -202,6 +206,26 @@ local RAIL_INSET = POST_HALF + EDGE_GAP
 local EDGE_REACH = 1.25
 
 --[[
+	@param stairs Instance -- stairs that recorded their step layout
+	@return CFrame -- the stairs' frame in the world now
+	@return StairSnap.Layout
+]]
+local function stairLayout(stairs: Instance): (CFrame, StairSnap.Layout)
+	local relative = stairs:GetAttribute("VluxyBT_StairFrame") :: CFrame
+	local pivot = if stairs:IsA("PVInstance") then stairs:GetPivot() else CFrame.identity
+
+	return pivot * relative,
+		{
+			Run = (stairs:GetAttribute("VluxyBT_StairRun") :: number?) or 1,
+			Rise = (stairs:GetAttribute("VluxyBT_StairRise") :: number?) or 0,
+			Count = (stairs:GetAttribute("VluxyBT_StairCount") :: number?) or 1,
+			Width = (stairs:GetAttribute("VluxyBT_StairWidth") :: number?) or 0,
+			Landing = (stairs:GetAttribute("VluxyBT_StairLanding") :: number?) or 0,
+			Ramp = stairs:GetAttribute("VluxyBT_StairRamp") == true,
+		}
+end
+
+--[[
 	@param part Instance -- the part under the cursor
 	@return Instance? -- the stairs it belongs to that recorded their step layout: the part itself, a union, or its model
 ]]
@@ -233,17 +257,7 @@ function Points.StairEdge(ctx: Context): Vector3?
 	local stairs = stairsOf(part)
 
 	if stairs then
-		local relative = stairs:GetAttribute("VluxyBT_StairFrame") :: CFrame
-		local pivot = if stairs:IsA("PVInstance") then stairs:GetPivot() else CFrame.identity
-		local frame = pivot * relative
-		local layout: StairSnap.Layout = {
-			Run = (stairs:GetAttribute("VluxyBT_StairRun") :: number?) or 1,
-			Rise = (stairs:GetAttribute("VluxyBT_StairRise") :: number?) or 0,
-			Count = (stairs:GetAttribute("VluxyBT_StairCount") :: number?) or 1,
-			Width = (stairs:GetAttribute("VluxyBT_StairWidth") :: number?) or 0,
-			Landing = (stairs:GetAttribute("VluxyBT_StairLanding") :: number?) or 0,
-			Ramp = stairs:GetAttribute("VluxyBT_StairRamp") == true,
-		}
+		local frame, layout = stairLayout(stairs)
 		local spot = frame:PointToObjectSpace(hit.Position)
 		local x, y, z = StairSnap.Spot(layout, spot.X, spot.Z, RAIL_INSET)
 
@@ -274,6 +288,42 @@ function Points.StairEdge(ctx: Context): Vector3?
 	cursor.Mark = point
 
 	return point
+end
+
+--[[
+	@param cursor Vector3 -- where the cursor is on the floor
+	@param point Vector3 -- the post spot so far
+	@param reach number -- how close to a line snaps onto it
+	@return Vector3 -- the spot lined up with the stairwell of stairs nearby, on whichever lines it is near
+	@return boolean -- whether it lined up with any
+]]
+local function aroundStairs(cursor: Vector3, point: Vector3, reach: number): (Vector3, boolean)
+	if reach <= 0 then
+		return point, false
+	end
+
+	for _, stairs in CollectionService:GetTagged(STAIRS_TAG) do
+		if stairs:IsDescendantOf(workspace) then
+			local frame, layout = stairLayout(stairs)
+			local here = frame:PointToObjectSpace(cursor)
+			local total = layout.Run * layout.Count + layout.Landing
+			local near = math.abs(here.X) <= layout.Width / 2 + 3 and -here.Z >= -3 and -here.Z <= total + 3
+
+			if near then
+				local xLines, zLines = StairSnap.FloorLines(layout, RAIL_INSET)
+				local x = StairSnap.Nearest(here.X, xLines, reach)
+				local z = StairSnap.Nearest(here.Z, zLines, reach)
+
+				if x or z then
+					local spot = frame:PointToObjectSpace(point)
+
+					return frame:PointToWorldSpace(Vector3.new(x or spot.X, spot.Y, z or spot.Z)), true
+				end
+			end
+		end
+	end
+
+	return point, false
 end
 
 --[=[
@@ -311,12 +361,36 @@ function Points.InsetOnTop(ctx: Context, point: Vector3?): (Vector3?, boolean)
 	local reach = if ctx.Settings.SnapToParts then EDGE_REACH else 0
 	local x, z, snapped = Snap.TopSpot(halfX, halfZ, cursor.X, cursor.Z, spot.X, spot.Z, RAIL_INSET, reach)
 	local moved = cf:PointToWorldSpace(Vector3.new(x, size.Y / 2, z))
+	local around, lined = aroundStairs(hit.Position, moved, reach)
+
+	if lined then
+		moved, snapped = around, true
+	end
 
 	if snapped or (moved - point).Magnitude > 1e-3 then
 		ctx.Cursor.Mark = moved
 	end
 
 	return moved, snapped
+end
+
+--[=[
+	@param ctx Context
+	@return Vector3? -- when the cursor is on a railing's big post, the middle of its foot, so a railing can start or end on it
+]=]
+function Points.RailPost(ctx: Context): Vector3?
+	local hit = Cursor.Hit(ctx.Cursor)
+	local part = if hit then hit.Instance else nil
+
+	if not part or not part:IsA("BasePart") or part.Name ~= "RailingPillar" or Cursor.Fine() then
+		return nil
+	end
+
+	local foot = part.CFrame:PointToWorldSpace(Vector3.new(0, -part.Size.Y / 2, 0))
+
+	ctx.Cursor.Mark = foot
+
+	return foot
 end
 
 --[[

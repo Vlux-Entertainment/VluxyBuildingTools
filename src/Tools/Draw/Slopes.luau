@@ -7,6 +7,8 @@
 	@class DrawSlopes
 ]=]
 
+local CollectionService = game:GetService("CollectionService")
+
 local Engine = require("./Engine")
 local Geometry = require("../../Core/Geometry")
 local Points = require("./Points")
@@ -19,6 +21,8 @@ type Context = Types.Context
 type Draw = Engine.Draw
 
 --[[ The layout of the stairs each drawing last previewed, recorded on the stairs when built. ]]
+local STAIRS_TAG = "VluxyBT_Stairs"
+
 type Shown = { layout: StairSnap.Layout, frame: CFrame }
 
 local layouts: { [Draw]: Shown? } = setmetatable({}, { __mode = "k" }) :: any
@@ -114,6 +118,8 @@ local function slope(ramp: boolean): Engine.Shape
 				for _, stairs in { union or model, model } do
 					remember(stairs, shown.layout, shown.frame)
 				end
+
+				CollectionService:AddTag(union or model, STAIRS_TAG)
 			end
 		end,
 	}

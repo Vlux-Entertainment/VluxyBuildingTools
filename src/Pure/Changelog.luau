@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.0",
+		Date = "2026-10-24",
+		Changes = {
+			"Railing points on the floor around stairs line up with the stair railing, the stairwell's sides and its ends, even when the floor is one big part.",
+			"Railing: click a big post to start a new chain from it, or end on one; no second post is built there.",
+		},
+	},
+	{
 		Version = "1.5.9",
 		Date = "2026-10-24",
 		Changes = {

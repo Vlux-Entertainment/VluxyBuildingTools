@@ -64,4 +64,41 @@ function StairSnap.Spot(layout: Layout, x: number, z: number, inset: number): (n
 	return side, layout.Rise * step, -lip
 end
 
+--[=[
+	The lines a railing on the floor around stairs lines up with, in the stairs' frame. Across: the
+	stair railing's own line carried on (inside the edge) and the stairwell's side edges (a post
+	outside them). Along: just past the foot of the stairs and just past the top of the landing,
+	the ends of the stairwell.
+
+	@param layout Layout
+	@param inset number -- how far a post's middle stays in from an edge
+	@return { number } -- X lines
+	@return { number } -- Z lines
+]=]
+function StairSnap.FloorLines(layout: Layout, inset: number): ({ number }, { number })
+	local half = layout.Width / 2
+	local total = layout.Run * layout.Count + layout.Landing
+
+	return { half - inset, -(half - inset), half + inset, -(half + inset) }, { inset, -(total + inset) }
+end
+
+--[=[
+	@param value number
+	@param lines { number }
+	@param reach number
+	@return number? -- the line nearest the value, when within reach
+]=]
+function StairSnap.Nearest(value: number, lines: { number }, reach: number): number?
+	local best: number? = nil
+	local gap = reach
+
+	for _, line in lines do
+		if math.abs(value - line) <= gap then
+			best, gap = line, math.abs(value - line)
+		end
+	end
+
+	return best
+end
+
 return StairSnap

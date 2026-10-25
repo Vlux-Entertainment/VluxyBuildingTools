@@ -46,6 +46,17 @@ return {
 		expect.near(z, -6, 1e-9)
 	end,
 
+	["the floor around stairs lines up with the stair rail and the stairwell's edges and ends"] = function(expect)
+		local across, along = StairSnap.FloorLines(STAIRS, 0.5)
+
+		expect.truthy(table.find(across, 3.5), "the stair railing's line carried on")
+		expect.truthy(table.find(across, -4.5), "outside the stairwell's side")
+		expect.truthy(table.find(along, 0.5), "just past the foot")
+		expect.truthy(table.find(along, -16.5), "just past the landing")
+		expect.equal(StairSnap.Nearest(4.2, across, 1.25), 4.5)
+		expect.equal(StairSnap.Nearest(9, across, 1.25), nil)
+	end,
+
 	["off the stairs is nothing"] = function(expect)
 		expect.equal(StairSnap.Spot(STAIRS, 1, 2, 0.35), nil)
 		expect.equal(StairSnap.Spot(STAIRS, 1, -30, 0.35), nil)
