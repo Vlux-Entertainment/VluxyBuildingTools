@@ -19,6 +19,15 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.5",
+		Date = "2026-10-24",
+		Changes = {
+			"Railing on stairs and ramps: no bottom rail, and the bars reach down to the steps.",
+			"Railing on the flat: the bottom rail lies on the floor.",
+			"Railing points on stairs snap to the lip of each step, on the side edge, also on stairs that were joined into one part.",
+		},
+	},
+	{
 		Version = "1.5.4",
 		Date = "2026-10-24",
 		Changes = {

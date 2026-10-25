@@ -12,6 +12,7 @@
 local Geometry = require("../Geometry")
 local Settings = require("../../Pure/Settings")
 local Shapes = require("./Shapes")
+local StairSnap = require("../../Pure/StairSnap")
 
 type Settings = Settings.Settings
 type Spec = Geometry.Spec
@@ -23,6 +24,39 @@ local quadPrism = Shapes.QuadPrism
 local directionCF = Shapes.DirectionCF
 
 --[=[
+	The step layout of stairs or a ramp, which `Stairs` builds from and which is recorded on the
+	built stairs so railings can find each step.
+
+	@param settings Settings
+	@param a Vector3 -- the first step
+	@param b Vector3 -- the end of the run
+	@param ramp boolean
+	@return StairSnap.Layout? -- nil when a and b are the same point
+	@return CFrame? -- the stairs' frame: at a, looking up the run
+]=]
+function Slopes.StairLayout(settings: Settings, a: Vector3, b: Vector3, ramp: boolean): (StairSnap.Layout?, CFrame?)
+	local cf = directionCF(a, b)
+
+	if not cf then
+		return nil, nil
+	end
+
+	local length = (b - a).Magnitude
+	local count = math.clamp(math.ceil(length / settings.Run), 1, 200)
+	local height = if ramp then settings.RampHeight else settings.StairHeight
+
+	return {
+		Run = length / count,
+		Rise = height / count,
+		Count = count,
+		Width = settings.Width,
+		Landing = settings.Landing,
+		Ramp = ramp,
+	},
+		cf
+end
+
+--[=[
 	@param settings Settings
 	@param a Vector3 -- the first step
 	@param b Vector3 -- the end of the run
@@ -31,17 +65,17 @@ local directionCF = Shapes.DirectionCF
 ]=]
 function Slopes.Stairs(settings: Settings, a: Vector3, b: Vector3, ramp: boolean): { Spec }
 	local out: { Spec } = {}
-	local cf = directionCF(a, b)
+	local layout, cf = Slopes.StairLayout(settings, a, b, ramp)
 
-	if not cf then
+	if not layout or not cf then
 		return out
 	end
 
 	local length = (b - a).Magnitude
-	local count = math.clamp(math.ceil(length / settings.Run), 1, 200)
-	local run = length / count
-	local height = if ramp then settings.RampHeight else settings.StairHeight
-	local rise = height / count
+	local count = layout.Count
+	local run = layout.Run
+	local height = layout.Rise * count
+	local rise = layout.Rise
 
 	if ramp then
 		-- A WedgePart rises toward local +Z, so turn it to rise away from the first click.

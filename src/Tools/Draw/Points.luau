@@ -13,6 +13,7 @@ local Engine = require("./Engine")
 local Joints = require("../../Core/Joints")
 local Settings = require("../../Pure/Settings")
 local Snapper = require("../../Core/Snapper")
+local StairSnap = require("../../Pure/StairSnap")
 local Types = require("../Types")
 local VentHoles = require("../../Core/VentHoles")
 
@@ -196,31 +197,75 @@ end
 
 local RAIL_INSET = 0.35
 
+--[[
+	@param part Instance -- the part under the cursor
+	@return Instance? -- the stairs it belongs to that recorded their step layout: the part itself, a union, or its model
+]]
+local function stairsOf(part: Instance): Instance?
+	local parent = part.Parent
+
+	if typeof(part:GetAttribute("VluxyBT_StairFrame")) == "CFrame" then
+		return part
+	elseif parent and typeof(parent:GetAttribute("VluxyBT_StairFrame")) == "CFrame" then
+		return parent
+	end
+
+	return nil
+end
+
 --[=[
 	@param ctx Context
-	@return Vector3? -- when the cursor is on a step or landing of a stair, the spot on its top near the side edge closest to the cursor, in the middle of the step, so a railing lines up with the stair
+	@return Vector3? -- when the cursor is on stairs or a ramp, the railing post spot on its side edge nearest the cursor, at the lip of the step under it (its front edge, facing down the stairs), so a railing follows the line of the step edges
 ]=]
 function Points.StairEdge(ctx: Context): Vector3?
 	local cursor = ctx.Cursor
 	local hit = Cursor.Hit(cursor)
 
-	if not hit or hit.Normal.Y < 0.7 or not ctx.Settings.SnapToParts or Cursor.Fine() then
+	if not hit or not ctx.Settings.SnapToParts or Cursor.Fine() then
 		return nil
 	end
 
 	local part = hit.Instance
+	local stairs = stairsOf(part)
+
+	if stairs then
+		local relative = stairs:GetAttribute("VluxyBT_StairFrame") :: CFrame
+		local pivot = if stairs:IsA("PVInstance") then stairs:GetPivot() else CFrame.identity
+		local frame = pivot * relative
+		local layout: StairSnap.Layout = {
+			Run = (stairs:GetAttribute("VluxyBT_StairRun") :: number?) or 1,
+			Rise = (stairs:GetAttribute("VluxyBT_StairRise") :: number?) or 0,
+			Count = (stairs:GetAttribute("VluxyBT_StairCount") :: number?) or 1,
+			Width = (stairs:GetAttribute("VluxyBT_StairWidth") :: number?) or 0,
+			Landing = (stairs:GetAttribute("VluxyBT_StairLanding") :: number?) or 0,
+			Ramp = stairs:GetAttribute("VluxyBT_StairRamp") == true,
+		}
+		local spot = frame:PointToObjectSpace(hit.Position)
+		local x, y, z = StairSnap.Spot(layout, spot.X, spot.Z, RAIL_INSET)
+
+		if x then
+			local point = frame:PointToWorldSpace(Vector3.new(x, y, z))
+
+			cursor.Mark = point
+
+			return point
+		end
+
+		return nil
+	end
+
 	local step = string.match(part.Name, "^Step_") ~= nil
 	local landing = part.Name == "Landing" and part.Parent ~= nil and part.Parent:FindFirstChild("Step_1") ~= nil
 
-	if not part:IsA("BasePart") or not (step or landing) then
+	if hit.Normal.Y < 0.7 or not part:IsA("BasePart") or not (step or landing) then
 		return nil
 	end
 
 	local cf, size = part.CFrame, part.Size
 	local spot = cf:PointToObjectSpace(hit.Position)
 	local side = math.max(0, size.X / 2 - RAIL_INSET)
-	local along = if step then 0 else math.clamp(spot.Z, -size.Z / 2, size.Z / 2)
-	local point = cf:PointToWorldSpace(Vector3.new(if spot.X >= 0 then side else -side, size.Y / 2, along))
+	local lip = math.max(0, size.Z / 2 - RAIL_INSET)
+	local point = cf:PointToWorldSpace(Vector3.new(if spot.X >= 0 then side else -side, size.Y / 2, lip))
 
 	cursor.Mark = point
 
