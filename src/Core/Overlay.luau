@@ -34,6 +34,8 @@ export type Overlay = {
 	_cut: BoxHandleAdornment?,
 	_holes: { BoxHandleAdornment },
 	_snap: SphereHandleAdornment?,
+	_hintPoint: SphereHandleAdornment?,
+	_hintBox: BoxHandleAdornment?,
 	_measureLine: WireframeHandleAdornment,
 	_guides: WireframeHandleAdornment,
 	_guideFills: { HandleAdornment },
@@ -731,6 +733,64 @@ function Overlay.DrawGuides(self: Overlay, guides: { Guides.Guide })
 
 	for index = used + 1, #self._guideFills do
 		self._guideFills[index].Visible = false
+	end
+end
+
+--[=[
+	Shows where a Studio drag will snap if let go now: the guide point lit up, and the outline of
+	the selection where it will land. Nil hides both.
+
+	@param self Overlay
+	@param point Vector3? -- the guide point
+	@param landing { cf: CFrame, size: Vector3 }? -- the selection's box where it will land
+]=]
+function Overlay.DrawSnapHint(self: Overlay, point: Vector3?, landing: { cf: CFrame, size: Vector3 }?)
+	local terrain = workspace.Terrain.CFrame
+	local marker, box = self._hintPoint, self._hintBox
+
+	if not marker then
+		local created = Instance.new("SphereHandleAdornment")
+
+		created.Name = "GuideSnapPoint"
+		created.Adornee = workspace.Terrain
+		created.AlwaysOnTop = true
+		created.ZIndex = 4
+		created.Radius = 0.5
+		created.Transparency = 0.15
+		created.Parent = self._folder
+		tag(created)
+		self._hintPoint = created
+		marker = created
+	end
+
+	if not box then
+		local created = Instance.new("BoxHandleAdornment")
+
+		created.Name = "GuideSnapLanding"
+		created.Adornee = workspace.Terrain
+		created.AlwaysOnTop = true
+		created.ZIndex = 3
+		created.Transparency = 0.6
+		created.Parent = self._folder
+		tag(created)
+		self._hintBox = created
+		box = created
+	end
+
+	local shownPoint, shownBox = marker :: SphereHandleAdornment, box :: BoxHandleAdornment
+	local color = self._guideStyle.Color
+
+	shownPoint.Visible = point ~= nil
+	shownBox.Visible = landing ~= nil
+	shownPoint.Color3, shownBox.Color3 = color, color
+
+	if point then
+		shownPoint.CFrame = CFrame.new(terrain:PointToObjectSpace(point))
+	end
+
+	if landing then
+		shownBox.Size = landing.size + Vector3.one * 0.05
+		shownBox.CFrame = terrain:ToObjectSpace(landing.cf)
 	end
 end
 

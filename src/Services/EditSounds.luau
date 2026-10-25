@@ -22,6 +22,10 @@ export type Deps = {
 	Busy: () -> boolean,
 	--[=[ Called when one of Studio's drags has finished, after its sound. ]=]
 	Dropped: (() -> ())?,
+	--[=[ Called while Studio moves the selected parts, often; the callee throttles. ]=]
+	Moving: (() -> ())?,
+	--[=[ Called when a change to the selection is over, whatever it was. ]=]
+	Finished: (() -> ())?,
 }
 
 local SETTLE = 0.3
@@ -49,6 +53,12 @@ function EditSounds.new(deps: Deps, trove: Trove.Trove)
 
 		moved, turned, sized = false, false, false
 		token += 1
+
+		local finished = deps.Finished
+
+		if finished then
+			finished()
+		end
 
 		if name and not deps.Busy() and os.clock() >= quietUntil then
 			deps.Sound(name)
@@ -100,6 +110,12 @@ function EditSounds.new(deps: Deps, trove: Trove.Trove)
 							turned = true
 						else
 							moved = true
+
+							local moving = deps.Moving
+
+							if moving and not deps.Busy() then
+								moving()
+							end
 						end
 
 						before = now

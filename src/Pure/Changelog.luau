@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.3",
+		Date = "2026-10-25",
+		Changes = {
+			"While dragging with Studio near a measuring guide point, the point lights up, an outline shows where the selection will land, and a label says Let go to snap.",
+		},
+	},
+	{
 		Version = "1.7.2",
 		Date = "2026-10-25",
 		Changes = {
