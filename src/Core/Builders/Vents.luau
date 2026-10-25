@@ -20,6 +20,9 @@ type Spec = Geometry.Spec
 type Cutter = Shapes.Cutter
 type Strip = Shapes.Strip
 
+local END_REACH = 1.25
+local END_OVER = 0.06
+
 local Vents = {}
 
 local add = Geometry.Add
@@ -224,9 +227,10 @@ end
 	@param settings Settings
 	@param a Vector3 -- one end, on the middle line
 	@param b Vector3 -- the other end
+	@param reach { number }? -- how far each opening (at a, then at b) must reach out past its end, at least the default; lets it clear a thick wall
 	@return { Cutter }
 ]=]
-function Vents.VentCutters(settings: Settings, a: Vector3, b: Vector3): { Cutter }
+function Vents.VentCutters(settings: Settings, a: Vector3, b: Vector3, reach: { number }?): { Cutter }
 	local frame = ductFrame(a, b)
 	local cutters: { Cutter } = {}
 
@@ -238,15 +242,19 @@ function Vents.VentCutters(settings: Settings, a: Vector3, b: Vector3): { Cutter
 	local length = (b - a).Magnitude
 	local inner = math.max(0.05, w - 2 * t)
 
-	table.insert(cutters, { cf = frame, size = Vector3.new(w - 0.04, w - 0.04, length), cylinder = false })
+	table.insert(
+		cutters,
+		{ cf = frame, size = Vector3.new(w - 0.04, w - 0.04, length + 2 * END_OVER), cylinder = false }
+	)
 
 	for _, side in { -1, 1 } do
 		local endPoint = if side == 1 then b else a
 		local level = ductEndFrame(a, b)
+		local out = math.max(END_REACH, (reach and reach[if side == 1 then 2 else 1]) or 0)
 
 		table.insert(cutters, {
-			cf = level + (endPoint - level.Position),
-			size = Vector3.new(inner, inner, 2.5),
+			cf = level + (endPoint - level.Position) + level.LookVector * side * (out - END_REACH) / 2,
+			size = Vector3.new(inner, inner, END_REACH + out),
 			cylinder = false,
 		})
 	end

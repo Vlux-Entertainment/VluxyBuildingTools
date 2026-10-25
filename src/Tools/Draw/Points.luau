@@ -422,9 +422,12 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean, headOn: boolean?)
 	local size = Settings.VentOuter(ctx.Settings)
 	local hole = if not shaft then VentHoles.Find(Cursor.Ray(cursor), nil, if hit then hit.Distance else nil) else nil
 
+	vent.HitAxis = nil
+
 	if hole and math.abs(hole.Normal.Y) < 0.5 then
 		vent.HitNormal, vent.HitHost, vent.HitOwner, vent.HitFace = hole.Normal, nil, nil, nil
-		vent.HitEnd, vent.HitCorner = hole.Normal, false
+		vent.HitEnd, vent.HitCorner = nil, false
+		vent.HitAxis = hole.Normal
 		cursor.Mark = hole.Center
 
 		return hole.Center - Vector3.new(0, size / 2, 0)

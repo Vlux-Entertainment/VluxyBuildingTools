@@ -61,9 +61,11 @@ export type Segment = { model: Instance, dir: Vector3, strips: { Shapes.Strip } 
 	.HitHost Vector3? -- the vent direction under the cursor before the first click
 	.HitOwner Instance? -- the vent under the cursor before the first click
 	.HitEnd Vector3? -- the way out of the open vent end under the cursor, before the first click
+	.HitAxis Vector3? -- the way through the vent hole under the cursor, which a run may follow either way
 	.HitFace Vector3? -- the normal of the vent face under the cursor, before the first click
 	.HitCorner boolean? -- whether the vent spot under the cursor is a corner, before the first click
 	.HitReach number? -- how far the vent face under the cursor is from the vent spot's middle line
+	.Axis Vector3? -- the way through the vent hole the run started on; it runs along it, either way
 	.Face Vector3? -- the vent face the run started on, which it leaves through
 	.Reach number? -- how far that face is from the start's middle line
 	.Owner Instance? -- the vent the run started from
@@ -85,9 +87,11 @@ export type VentState = {
 	HitHost: Vector3?,
 	HitOwner: Instance?,
 	HitEnd: Vector3?,
+	HitAxis: Vector3?,
 	HitFace: Vector3?,
 	HitCorner: boolean?,
 	HitReach: number?,
+	Axis: Vector3?,
 	Face: Vector3?,
 	Reach: number?,
 	Owner: Instance?,

@@ -32,6 +32,7 @@ type Piece = { Cut: Cut? }
 
 local PEEK_WIDTH = 2.4
 local DUCT_INSET = 0.03
+local CUT_MARGIN = 0.25
 
 local BUILDERS: { [string]: (Settings.Settings, Vector3, Vector3) -> { Geometry.Spec } } = {
 	VentCover = Vents.VentCover,
@@ -165,11 +166,11 @@ local hole: Types.Tool = {
 		local extent = math.abs(normal:Dot(cf.XVector)) * part.Size.X
 			+ math.abs(normal:Dot(cf.YVector)) * part.Size.Y
 			+ math.abs(normal:Dot(cf.ZVector)) * part.Size.Z
-		local depth = extent + 0.2
+		local depth = extent + 2 * CUT_MARGIN
 		local inner = math.max(0.5, Settings.VentHole(ctx.Settings))
 
 		state.Cut = {
-			cf = Common.SurfaceFrame(center, normal) * CFrame.new(0, 0, 0.1 - depth / 2),
+			cf = Common.SurfaceFrame(center, normal) * CFrame.new(0, 0, CUT_MARGIN - depth / 2),
 			size = Vector3.new(inner, inner, depth),
 			cylinder = false,
 		}
@@ -187,7 +188,11 @@ local hole: Types.Tool = {
 
 		ctx.Edit("Cut vent hole", function()
 			Common.CarveBox(cut)
-			VentHoles.Remember(cut.cf * CFrame.new(0, 0, cut.size.Z / 2 - 0.1), cut.size.X, cut.size.Z - 0.2)
+			VentHoles.Remember(
+				cut.cf * CFrame.new(0, 0, cut.size.Z / 2 - CUT_MARGIN),
+				cut.size.X,
+				cut.size.Z - 2 * CUT_MARGIN
+			)
 		end)
 	end,
 }

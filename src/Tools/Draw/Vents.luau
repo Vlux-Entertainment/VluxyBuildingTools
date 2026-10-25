@@ -92,6 +92,21 @@ local function sizing(ctx: Context, draw: Draw): Settings.Settings
 end
 
 --[[
+	@param part BasePart
+	@param point Vector3 -- where the vent ends against the part
+	@param outward Vector3 -- the way the vent points out of that end
+	@return number -- how far past the point the part's far face lies along outward, plus a margin, so the opening cuts all the way through however thick the part is
+]]
+local function wallReach(part: BasePart, point: Vector3, outward: Vector3): number
+	local cf, half = part.CFrame, part.Size / 2
+	local extent = math.abs(outward:Dot(cf.XVector)) * half.X
+		+ math.abs(outward:Dot(cf.YVector)) * half.Y
+		+ math.abs(outward:Dot(cf.ZVector)) * half.Z
+
+	return (cf.Position - point):Dot(outward) + extent + 0.25
+end
+
+--[[
 	@param ctx Context
 	@param settings Settings.Settings -- the sizes the vent was built at
 	@param model Model -- the vent just built
@@ -124,6 +139,20 @@ local function finish(
 
 	local failed = 0
 	local cutters = Vents.VentCutters(settings, a, b)
+	local ends = { -dir, dir }
+	local reach = { 0, 0 }
+
+	for index, point in { a, b } do
+		for part in
+			touched({ cutters[index + 1] }, function(candidate)
+				return not inVent(candidate) and not candidate:IsA("Terrain")
+			end)
+		do
+			reach[index] = math.max(reach[index], wallReach(part, point, ends[index]))
+		end
+	end
+
+	cutters = Vents.VentCutters(settings, a, b, reach)
 
 	for part in
 		touched(cutters, function(candidate)
@@ -242,6 +271,7 @@ local function onStart(keepNormal: boolean, chains: boolean): (ctx: Context, dra
 		vent.Shift = Vector3.zero
 		vent.Owner = owner
 		vent.End = if outward and math.abs(outward.Y) < 0.5 then outward else nil
+		vent.Axis = vent.HitAxis
 		vent.Corner = vent.HitCorner and not vent.Host
 		vent.Face, vent.Reach = vent.HitFace, vent.HitReach
 
@@ -277,7 +307,7 @@ local function built(draw: Draw)
 	local vent = ventOf(draw)
 
 	vent.Normal, vent.Shift, vent.Host = nil, Vector3.zero, nil
-	vent.Owner, vent.End, vent.Corner, vent.Face, vent.Reach = nil, nil, nil, nil, nil
+	vent.Owner, vent.End, vent.Corner, vent.Face, vent.Reach, vent.Axis = nil, nil, nil, nil, nil, nil
 	vent.Target, vent.TargetOwner, vent.TargetEnd, vent.TargetAt, vent.Why = nil, nil, nil, nil, nil
 end
 
@@ -340,6 +370,12 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 		direction = if math.abs(outward.X) >= math.abs(outward.Z)
 			then Vector3.xAxis * math.sign(outward.X)
 			else Vector3.zAxis * math.sign(outward.Z)
+	end
+
+	local through = vent.Axis
+
+	if not draw.Chained and through then
+		direction = through * (if (b - a):Dot(through) >= 0 then 1 else -1)
 	end
 
 	local face = vent.Face

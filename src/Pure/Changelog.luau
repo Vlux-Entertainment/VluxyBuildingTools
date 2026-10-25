@@ -19,6 +19,28 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.10",
+		Date = "2026-10-25",
+		Changes = {
+			"A vent that ends on the back face of a wall cuts a clean hole: the duct's cut now runs a little past its ends, so no ring of wall is left around the opening.",
+		},
+	},
+	{
+		Version = "1.7.7",
+		Date = "2026-10-25",
+		Changes = {
+			"A vent's end openings reach through the full thickness of the wall they end in, so two close walls are cut clean.",
+		},
+	},
+	{
+		Version = "1.7.6",
+		Date = "2026-10-25",
+		Changes = {
+			"A vent started on a vent hole can run either way through it.",
+			"Vent holes are cut a little past both wall faces, so no skin is left behind.",
+		},
+	},
+	{
 		Version = "1.7.5",
 		Date = "2026-10-25",
 		Changes = {
