@@ -193,6 +193,39 @@ function Points.SurfaceTop(ctx: Context): Vector3?
 	)
 end
 
+local RAIL_INSET = 0.3
+
+--[=[
+	@param ctx Context
+	@return Vector3? -- when the cursor is on a step or landing of a stair, the spot on its top near the side edge closest to the cursor, in the middle of the step, so a railing lines up with the stair
+]=]
+function Points.StairEdge(ctx: Context): Vector3?
+	local cursor = ctx.Cursor
+	local hit = Cursor.Hit(cursor)
+
+	if not hit or hit.Normal.Y < 0.7 or not ctx.Settings.SnapToParts or Cursor.Fine() then
+		return nil
+	end
+
+	local part = hit.Instance
+	local step = string.match(part.Name, "^Step_") ~= nil
+	local landing = part.Name == "Landing" and part.Parent ~= nil and part.Parent:FindFirstChild("Step_1") ~= nil
+
+	if not part:IsA("BasePart") or not (step or landing) then
+		return nil
+	end
+
+	local cf, size = part.CFrame, part.Size
+	local spot = cf:PointToObjectSpace(hit.Position)
+	local side = math.max(0, size.X / 2 - RAIL_INSET)
+	local along = if step then 0 else math.clamp(spot.Z, -size.Z / 2, size.Z / 2)
+	local point = cf:PointToWorldSpace(Vector3.new(if spot.X >= 0 then side else -side, size.Y / 2, along))
+
+	cursor.Mark = point
+
+	return point
+end
+
 --[[
 	@param part BasePart
 	@return number -- half the part's height in world space, whatever way it is turned
@@ -225,26 +258,17 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 
 	local size = Settings.VentOuter(ctx.Settings)
 	local step = math.max(0.05, Cursor.Grid(cursor))
-	local endPoint, openEnd, owner = Snapper.VentConnect(hit.Position, size * 1.1, step)
+	local endPoint, openEnd, owner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
 
-	vent.HitNormal = nil
-	vent.HitHost = nil
-	table.clear(vent.Marks)
+	vent.HitNormal, vent.HitHost, vent.HitOwner, vent.HitEnd, vent.HitFace = nil, nil, owner, openEnd, nil
 
 	if endPoint and owner then
 		local a = owner:GetAttribute("VluxyBT_VentStart")
 		local b = owner:GetAttribute("VluxyBT_VentEnd")
 
-		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 then
-			for along = 0, (b - a).Magnitude, step do
-				table.insert(vent.Marks, a + (b - a).Unit * along)
-			end
-
-			table.insert(vent.Marks, b)
-
-			if not openEnd then
-				vent.HitHost = (b - a).Unit
-			end
+		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 and not openEnd then
+			vent.HitHost = (b - a).Unit
+			vent.HitFace = hit.Normal
 		end
 
 		if not shaft and openEnd and math.abs(openEnd.Y) > 0.9 then
@@ -280,15 +304,6 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 				if gap < size * 0.75 and gap < best then
 					best, y = gap, height
 				end
-
-				table.insert(
-					vent.Marks,
-					Vector3.new(
-						if math.abs(normal.X) < 0.5 then Cursor.Snap(cursor, hit.Position.X) else hit.Position.X,
-						height,
-						if math.abs(normal.Z) < 0.5 then Cursor.Snap(cursor, hit.Position.Z) else hit.Position.Z
-					)
-				)
 			end
 		end
 	end

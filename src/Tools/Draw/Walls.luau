@@ -36,11 +36,12 @@ end
 
 --[[ Railings and half walls follow stairs, so their points sit on whatever top is under the cursor. ]]
 local function startOnFloor(ctx: Context, draw: Draw): Vector3?
-	return Points.Floor(ctx, draw, {})
+	return Points.StairEdge(ctx) or Points.Floor(ctx, draw, {})
 end
 
+--[[ After the first point a railing snaps to stair edges the same way, then to any top. ]]
 local function nextOnTop(ctx: Context, _draw: Draw, _origin: Vector3): Vector3?
-	return Points.SurfaceTop(ctx)
+	return Points.StairEdge(ctx) or Points.SurfaceTop(ctx)
 end
 
 local wall: Engine.Shape = {

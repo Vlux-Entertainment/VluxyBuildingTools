@@ -19,6 +19,19 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.2",
+		Date = "2026-10-24",
+		Changes = {
+			"Vents show an outline with a cross where the duct will start, in place of the red dots.",
+			"A vent started on an open vent end turns its corner cleanly, like a chained section.",
+			"A vent started on the side of another vent always leaves it at a right angle, never running inside it.",
+			"A vent that would run into another vent is not built, and says why.",
+			"Joining a vent to a sloped vent no longer cuts a hole in the slope.",
+			"Covers on sloped vents sit upright, and end caps sit flush on the vent instead of floating.",
+			"Railings snap to the side edge and middle of each stair step.",
+		},
+	},
+	{
 		Version = "1.4.1",
 		Date = "2026-10-24",
 		Changes = {

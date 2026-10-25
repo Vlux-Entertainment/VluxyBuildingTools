@@ -202,8 +202,8 @@ function Snapper.VentEnd(point: Vector3, radius: number): (Vector3?, Vector3?)
 			if typeof(at) == "Vector3" and typeof(out) == "Vector3" then
 				local distance = (at - point).Magnitude
 
-				if distance < bestDistance then
-					bestDistance, best, bestDirection = distance, at, out
+				if distance < bestDistance and Snapper.VentEndOpen(model, at) then
+					bestDistance, best, bestDirection = distance, at, Snapper.VentFacing(out)
 				end
 			end
 		end
@@ -213,21 +213,60 @@ function Snapper.VentEnd(point: Vector3, radius: number): (Vector3?, Vector3?)
 end
 
 --[=[
-	Finds a connection point on a vent built by this plugin: either open end, or any spot along
-	its middle line, snapped to the step. A new vent or a shaft can start from any of them.
+	A sloped vent's ends are cut upright, so the way out of one is level even though the duct tilts.
+
+	@param direction Vector3 -- the recorded way out of a vent end
+	@return Vector3 -- the way the opening faces: level unless the vent is a vertical shaft
+]=]
+function Snapper.VentFacing(direction: Vector3): Vector3
+	local flat = Vector3.new(direction.X, 0, direction.Z)
+
+	return if math.abs(direction.Unit.Y) > 0.99 or flat.Magnitude < 1e-3 then direction.Unit else flat.Unit
+end
+
+--[=[
+	@param model Instance -- the vent the end belongs to
+	@param at Vector3 -- the end, on the vent's middle line
+	@return boolean -- false when another vent starts or ends there, so the end is already joined
+]=]
+function Snapper.VentEndOpen(model: Instance, at: Vector3): boolean
+	for _, other in CollectionService:GetTagged("VluxyBT_Vent") do
+		if other ~= model then
+			for _, name in { "VluxyBT_VentStart", "VluxyBT_VentEnd" } do
+				local there = other:GetAttribute(name)
+
+				if typeof(there) == "Vector3" and (there - at).Magnitude < 0.15 then
+					return false
+				end
+			end
+		end
+	end
+
+	return true
+end
+
+--[=[
+	Finds a connection point on a vent built by this plugin: an open end, or a spot along its middle
+	line snapped to the step. Spots along the side stay `margin` from the ends, so a vent started
+	there sits wholly against the side and never runs into a corner.
 
 	@param point Vector3 -- where the cursor hit
 	@param radius number -- how far from the middle line still counts
 	@param step number -- the spacing of the points along a vent
+	@param margin number? -- how far side spots keep from the ends; half the vent size
 	@return Vector3? -- the point on the middle line
 	@return Vector3? -- the way out of the vent when the point is an open end, else nil
 	@return Instance? -- the vent model the point is on
 ]=]
-function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vector3?, Vector3?, Instance?)
+function Snapper.VentConnect(
+	point: Vector3,
+	radius: number,
+	step: number,
+	margin: number?
+): (Vector3?, Vector3?, Instance?)
 	local bestModel: Instance? = nil
-	local best: Vector3? = nil
-	local bestDirection: Vector3? = nil
 	local bestDistance = radius
+	local bestA, bestD, bestAlong = Vector3.zero, Vector3.zero, 0
 
 	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
 		local a = model:GetAttribute("VluxyBT_VentStart")
@@ -235,28 +274,83 @@ function Snapper.VentConnect(point: Vector3, radius: number, step: number): (Vec
 
 		if typeof(a) == "Vector3" and typeof(b) == "Vector3" and (b - a).Magnitude > 0.05 then
 			local d = b - a
-			local length = d.Magnitude
-			local along = math.clamp((point - a):Dot(d) / length, 0, length)
-			local onLine = a + d.Unit * along
-			local distance = (onLine - point).Magnitude
+			local along = math.clamp((point - a):Dot(d) / d.Magnitude, 0, d.Magnitude)
+			local distance = (a + d.Unit * along - point).Magnitude
 
 			if distance < bestDistance then
 				bestDistance, bestModel = distance, model
+				bestA, bestD, bestAlong = a, d, along
+			end
+		end
+	end
 
-				if along < step * 0.75 then
-					best, bestDirection = a, model:GetAttribute("VluxyBT_VentStartDir") :: Vector3
-				elseif length - along < step * 0.75 then
-					best, bestDirection = b, model:GetAttribute("VluxyBT_VentEndDir") :: Vector3
-				else
-					local snapped = math.clamp(math.round(along / step) * step, 0, length)
+	if not bestModel then
+		return nil, nil, nil
+	end
 
-					best, bestDirection = a + d.Unit * snapped, nil
+	local length = bestD.Magnitude
+	local b = bestA + bestD
+	local reach = math.max(step * 0.75, (margin or 0) * 0.6)
+
+	if bestAlong < reach and Snapper.VentEndOpen(bestModel, bestA) then
+		return bestA, Snapper.VentFacing(bestModel:GetAttribute("VluxyBT_VentStartDir") :: Vector3), bestModel
+	elseif length - bestAlong < reach and Snapper.VentEndOpen(bestModel, b) then
+		return b, Snapper.VentFacing(bestModel:GetAttribute("VluxyBT_VentEndDir") :: Vector3), bestModel
+	end
+
+	local keep = math.min(margin or 0, length / 2)
+	local snapped = math.clamp(math.round(bestAlong / step) * step, keep, length - keep)
+
+	return bestA + bestD.Unit * snapped, nil, bestModel
+end
+
+--[=[
+	Whether a straight level duct would run into a vent already built. Ends that meet flush, and the
+	vents named in `skip`, do not count.
+
+	@param a Vector3 -- one end of the new duct, on its middle line
+	@param b Vector3 -- the other end
+	@param size number -- the outside size of the ducts
+	@param skip { Instance } -- vents the new one is allowed to touch: the one it starts from
+	@return boolean
+]=]
+function Snapper.VentBlocked(a: Vector3, b: Vector3, size: number, skip: { Instance }): boolean
+	local half = size / 2 - 0.1
+	local low = a:Min(b) - Vector3.one * half
+	local high = a:Max(b) + Vector3.one * half
+	local along = (b - a).Unit
+
+	low += Vector3.new(math.abs(along.X), math.abs(along.Y), math.abs(along.Z)) * (half + 0.05)
+	high -= Vector3.new(math.abs(along.X), math.abs(along.Y), math.abs(along.Z)) * (half + 0.05)
+
+	for _, model in CollectionService:GetTagged("VluxyBT_Vent") do
+		local s = model:GetAttribute("VluxyBT_VentStart")
+		local e = model:GetAttribute("VluxyBT_VentEnd")
+
+		if not table.find(skip, model) and typeof(s) == "Vector3" and typeof(e) == "Vector3" then
+			local d = e - s
+			local level = math.abs(d.Y) < 0.05
+			local upright = Vector3.new(d.X, 0, d.Z).Magnitude < 0.05
+
+			if level or upright then
+				local reach = size / 2 - 0.1
+				local otherLow, otherHigh = s:Min(e) - Vector3.one * reach, s:Max(e) + Vector3.one * reach
+
+				if
+					low.X < otherHigh.X
+					and high.X > otherLow.X
+					and low.Y < otherHigh.Y
+					and high.Y > otherLow.Y
+					and low.Z < otherHigh.Z
+					and high.Z > otherLow.Z
+				then
+					return true
 				end
 			end
 		end
 	end
 
-	return best, bestDirection, bestModel
+	return false
 end
 
 --[=[

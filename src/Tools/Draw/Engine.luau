@@ -59,7 +59,11 @@ export type Segment = { model: Instance, dir: Vector3, strips: { Shapes.Strip } 
 	.Shift Vector3 -- how far the run is pushed so it sits against its surface or host
 	.HitNormal Vector3? -- the surface normal under the cursor before the first click
 	.HitHost Vector3? -- the vent direction under the cursor before the first click
-	.Marks { Vector3 } -- the points a vent can start from near the cursor
+	.HitOwner Instance? -- the vent under the cursor before the first click
+	.HitEnd Vector3? -- the way out of the open vent end under the cursor, before the first click
+	.HitFace Vector3? -- the normal of the vent face under the cursor, before the first click
+	.Owner Instance? -- the vent the run started from
+	.End Vector3? -- the way out of the open end the run started from
 	.Ends { Vector3 }? -- the two duct ends of the previewed build, centered
 ]=]
 export type VentState = {
@@ -68,7 +72,11 @@ export type VentState = {
 	Shift: Vector3,
 	HitNormal: Vector3?,
 	HitHost: Vector3?,
-	Marks: { Vector3 },
+	HitOwner: Instance?,
+	HitEnd: Vector3?,
+	HitFace: Vector3?,
+	Owner: Instance?,
+	End: Vector3?,
 	Ends: { Vector3 }?,
 }
 
@@ -141,7 +149,7 @@ export type Built = {
 	.Next ((ctx, draw, origin) -> Vector3?)? -- the point under the cursor after it; default the grid on the first point's level
 	.Build (ctx, draw, a, b, sized) -> { Spec } -- what to build between two points
 	.Readout ((draw, a, b, specs, sized) -> string)? -- the size label; default the length
-	.Problem ((specs) -> string?)? -- why nothing could be built, when `Build` returned nothing
+	.Problem ((specs, draw) -> string?)? -- why nothing could be built, when `Build` returned nothing
 	.Idle ((ctx, draw, point) -> { Spec }?)? -- the marker before the first click; default a small block
 	.Constrain ((ctx, draw, a, b) -> (Vector3, Vector3))? -- bends the drawn points, such as a vent turning only at right angles
 	.RiseOrigin ((draw, a) -> Vector3)? -- moves the first point during the rise stage
@@ -162,7 +170,7 @@ export type Shape = {
 	Next: ((ctx: Context, draw: Draw, origin: Vector3) -> Vector3?)?,
 	Build: (ctx: Context, draw: Draw, a: Vector3, b: Vector3, sized: Sized) -> { Spec },
 	Readout: ((draw: Draw, a: Vector3, b: Vector3, specs: { Spec }, sized: Sized) -> string)?,
-	Problem: ((specs: { Spec }) -> string?)?,
+	Problem: ((specs: { Spec }, draw: Draw) -> string?)?,
 	Idle: ((ctx: Context, draw: Draw, point: Vector3) -> { Spec }?)?,
 	Constrain: ((ctx: Context, draw: Draw, a: Vector3, b: Vector3) -> (Vector3, Vector3))?,
 	RiseOrigin: ((draw: Draw, a: Vector3) -> Vector3)?,
@@ -198,7 +206,7 @@ local function fresh(shape: Shape): Draw
 		Previous = nil,
 		HoverDoor = nil,
 		StartDoor = nil,
-		Vent = if shape.Vents then { Shift = Vector3.zero, Marks = {} } :: VentState else nil,
+		Vent = if shape.Vents then { Shift = Vector3.zero } :: VentState else nil,
 		Specs = {},
 	}
 end
@@ -360,7 +368,7 @@ function Engine.Preview(ctx: Context, draw: Draw): Types.Preview
 
 		out = shape.Build(ctx, draw, a, b, sized)
 
-		local problem = if #out == 0 and shape.Problem then shape.Problem(out) else nil
+		local problem = if #out == 0 and shape.Problem then shape.Problem(out, draw) else nil
 
 		if problem then
 			message = problem
@@ -395,14 +403,6 @@ function Engine.Preview(ctx: Context, draw: Draw): Types.Preview
 
 	if shape.Joins and settings.ConnectStructures and #out > 0 and draw.First then
 		holes = Joints.Preview("Vlux_" .. shape.Id, out, settings.RoomJoin, draw.Previous and draw.Previous.model)
-	end
-
-	local vent = draw.Vent
-
-	if #holes == 0 and not draw.First and vent then
-		for _, mark in vent.Marks do
-			table.insert(holes, { cf = CFrame.new(mark), size = Vector3.new(0.45, 0.45, 0.45) })
-		end
 	end
 
 	if lock and not lock.Plane and draw.First then
