@@ -242,6 +242,7 @@ local function onStart(keepNormal: boolean, chains: boolean): (ctx: Context, dra
 		vent.Shift = Vector3.zero
 		vent.Owner = owner
 		vent.End = if outward and math.abs(outward.Y) < 0.5 then outward else nil
+		vent.Axis = vent.HitAxis
 		vent.Corner = vent.HitCorner and not vent.Host
 		vent.Face, vent.Reach = vent.HitFace, vent.HitReach
 
@@ -277,7 +278,7 @@ local function built(draw: Draw)
 	local vent = ventOf(draw)
 
 	vent.Normal, vent.Shift, vent.Host = nil, Vector3.zero, nil
-	vent.Owner, vent.End, vent.Corner, vent.Face, vent.Reach = nil, nil, nil, nil, nil
+	vent.Owner, vent.End, vent.Corner, vent.Face, vent.Reach, vent.Axis = nil, nil, nil, nil, nil, nil
 	vent.Target, vent.TargetOwner, vent.TargetEnd, vent.TargetAt, vent.Why = nil, nil, nil, nil, nil
 end
 
@@ -340,6 +341,12 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 		direction = if math.abs(outward.X) >= math.abs(outward.Z)
 			then Vector3.xAxis * math.sign(outward.X)
 			else Vector3.zAxis * math.sign(outward.Z)
+	end
+
+	local through = vent.Axis
+
+	if not draw.Chained and through then
+		direction = through * (if (b - a):Dot(through) >= 0 then 1 else -1)
 	end
 
 	local face = vent.Face
