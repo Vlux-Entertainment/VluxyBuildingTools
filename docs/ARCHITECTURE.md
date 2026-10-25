@@ -34,7 +34,7 @@ Pure/                   plain data and maths, no Roblox API, tested under Lune
 | `Tools/Draw/` | The 19 point-to-point tools: `Engine` (the shared drawing flow) and one small file per family of shapes. |
 | `Modal/` | Extrude (T) and Move (G, R, C, D) behind `Modal/Types.luau`; `Host` runs the active one and the armed flip/rotate. |
 | `Ui/` | `Panel` (shell), `Controls` (number field, switch, slider, choice row…), `Popups` (tooltip, reset menu), `Pages/`. |
-| `Core/` | `Builders/` (what each shape is made of, one file per family: Paths, Areas, Railings, Slopes, Openings, Vents, Place, with shared `Shapes`), `Geometry` (specs → parts, unions), `Joints` (cutting holes), `Overlay` (viewport drawing), `Colors`, `SurfaceGrid`, `Snapper`, `Transform`, `Arrange`, `Hidden`, `Brushes`, `Sounds`, `Props`. |
+| `Core/` | `Builders/` (what each shape is made of, one file per family: Paths, Areas, Railings, Slopes, Openings, Vents, Place, with shared `Shapes`), `Geometry` (specs → parts, unions), `Joints` (cutting holes), `Overlay` (viewport drawing), `Colors`, `SurfaceGrid`, `Snapper`, `VentHoles` (remembered vent holes), `Transform`, `Arrange`, `Hidden`, `Brushes`, `Sounds`, `Props`. |
 | `Pure/` | `Settings`, `Keymap`, `Tools` (labels, glyphs, instructions, tiles), `PropData`, `AxisLock`, `NumericInput`, `Polygon`, `Snap`, `Cycle`, `Tips`, `SoundIds`, `AdminRules`. |
 
 ## How a frame flows

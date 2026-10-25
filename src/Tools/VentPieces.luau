@@ -15,6 +15,7 @@ local Settings = require("../Pure/Settings")
 local Shapes = require("../Core/Builders/Shapes")
 local Snapper = require("../Core/Snapper")
 local Types = require("./Types")
+local VentHoles = require("../Core/VentHoles")
 local Vents = require("../Core/Builders/Vents")
 
 type Context = Types.Context
@@ -162,6 +163,7 @@ local hole: Types.Tool = {
 
 		ctx.Edit("Cut vent hole", function()
 			Common.CarveBox(cut)
+			VentHoles.Remember(cut.cf * CFrame.new(0, 0, cut.size.Z / 2 - 0.1), cut.size.X, cut.size.Z - 0.2)
 		end)
 	end,
 }
