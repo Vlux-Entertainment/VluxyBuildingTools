@@ -47,7 +47,6 @@ return function(ui: Ui): { Instance }
 			number("SnapRadius", "Part snap distance", 0.25, 32, 0.25, function()
 				return Store.Get(store, "SnapToParts") == true
 			end),
-			Controls.Switch(ui, { Title = "Grab snaps to measure guides", Key = "GrabGuides" }),
 		}),
 		Controls.Card(ui, "STANDARD SIZES", {
 			number("StandardHeight", "Wall height", 0.1, 2048),
@@ -78,6 +77,7 @@ return function(ui: Ui): { Instance }
 			end),
 		}),
 		Controls.Card(ui, "MEASURE GUIDES", {
+			Controls.Switch(ui, { Title = "Grab snaps to measure guides", Key = "GrabGuides" }),
 			Controls.ColorRow(ui, "GuideColor", "Guide color"),
 			number("GuideThickness", "Line thickness", 1, 10, 1),
 			Controls.Slider(ui, "GuideFill", "Inside transparency"),
