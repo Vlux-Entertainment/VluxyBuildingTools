@@ -38,7 +38,7 @@ Walls, floors, blocks, pillars and arches.
 |---|---|
 | **Walls** | Click points; Enter starts a new chain. Y drags the height. |
 | **Pillared Wall** | Like Walls, with a pillar at each end. |
-| **Floor** | Click two corners. |
+| **Floor** | Click two corners. Started on a floor already built, it stays level with that floor; elsewhere it sits on top. |
 | **Block** | Click two corners, then press Y to drag it up. |
 | **Pillar** | Click to place a square pillar. |
 | **Arch** | Click the two inner edges at ground level. |
@@ -128,7 +128,7 @@ Options: **Vent inside size** (the clear space inside, 3.5 by default; the sheet
 
 | Tool | How to use it |
 |---|---|
-| **Railing** | Click points; Enter starts a new chain. Follows stairs. |
+| **Railing** | Click points; Enter starts a new chain. Follows stairs, and keeps its posts just inside the edges and corners of what it stands on. |
 | **Half Wall** | Click points. A low solid wall. |
 | **Fence** | Click points. Posts and rails. |
 

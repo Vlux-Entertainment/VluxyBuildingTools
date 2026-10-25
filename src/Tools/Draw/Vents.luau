@@ -215,7 +215,7 @@ local function idle(ctx: Context, draw: Draw, _point: Vector3): { Geometry.Spec 
 
 		center, facing = if sideways then mark + vent.HitEnd * (size / 2) else mark, vent.HitEnd
 	elseif vent.HitFace then
-		center, facing = mark + vent.HitFace * (size / 2), vent.HitFace
+		center, facing = mark + vent.HitFace * (vent.HitReach or size / 2), vent.HitFace
 	elseif vent.HitNormal then
 		center, facing = mark, vent.HitNormal
 	else
@@ -242,6 +242,7 @@ local function onStart(keepNormal: boolean, chains: boolean): (ctx: Context, dra
 		vent.Owner = owner
 		vent.End = if outward and math.abs(outward.Y) < 0.5 then outward else nil
 		vent.Corner = vent.HitCorner and not vent.Host
+		vent.Face, vent.Reach = vent.HitFace, vent.HitReach
 
 		local ends = if owner then Snapper.VentEnds(owner) else nil
 		local level = ends ~= nil and math.abs(ends.End.Y - ends.Start.Y) < 0.05
@@ -275,7 +276,7 @@ local function built(draw: Draw)
 	local vent = ventOf(draw)
 
 	vent.Normal, vent.Shift, vent.Host = nil, Vector3.zero, nil
-	vent.Owner, vent.End, vent.Corner = nil, nil, nil
+	vent.Owner, vent.End, vent.Corner, vent.Face, vent.Reach = nil, nil, nil, nil, nil
 	vent.Target, vent.TargetOwner, vent.TargetEnd, vent.TargetAt, vent.Why = nil, nil, nil, nil, nil
 end
 
@@ -303,7 +304,7 @@ end
 	@param draw Draw
 	@param a Vector3
 	@param b Vector3
-	@return Vector3, Vector3 -- the run pulled onto X or Z, never doubling back on the last section, ending flush against a vent it meets, and pushed against the surface it started on
+	@return Vector3, Vector3 -- the run pulled onto X or Z, never doubling back on the last section, leaving through the vent face it started on, ending flush against a vent it meets, and pushed against the surface it started on
 ]]
 local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vector3, Vector3)
 	local vent = ventOf(draw)
@@ -340,6 +341,15 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 			else Vector3.zAxis * math.sign(outward.Z)
 	end
 
+	local face = vent.Face
+	local leaves = not draw.Chained and (vent.Corner or vent.Host ~= nil) and face ~= nil and math.abs(face.Y) < 0.5
+
+	if leaves and face then
+		direction = if math.abs(face.X) >= math.abs(face.Z)
+			then Vector3.xAxis * math.sign(face.X)
+			else Vector3.zAxis * math.sign(face.Z)
+	end
+
 	b = a + direction * math.max(0, (b - a):Dot(direction))
 
 	local half = Settings.VentOuter(sizing(ctx, draw)) / 2
@@ -347,7 +357,9 @@ local function constrain(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vec
 
 	vent.Shift = Vector3.zero
 
-	if not draw.Chained and vent.Corner then
+	if leaves then
+		vent.Shift, endShifts = direction * (vent.Reach or half), false
+	elseif not draw.Chained and vent.Corner then
 		vent.Shift, endShifts = direction * half, false
 	elseif not draw.Chained and vent.Host then
 		local into = math.abs(direction:Dot(vent.Host)) < 0.5
