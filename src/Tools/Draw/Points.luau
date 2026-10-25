@@ -14,6 +14,7 @@ local Joints = require("../../Core/Joints")
 local Settings = require("../../Pure/Settings")
 local Snapper = require("../../Core/Snapper")
 local Types = require("../Types")
+local VentHoles = require("../../Core/VentHoles")
 
 type Context = Types.Context
 type Draw = Engine.Draw
@@ -251,12 +252,21 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean): Vector3?
 	local cursor = ctx.Cursor
 	local vent = draw.Vent :: Engine.VentState
 	local hit = Cursor.Hit(cursor)
+	local size = Settings.VentOuter(ctx.Settings)
+	local hole = if not shaft then VentHoles.Find(Cursor.Ray(cursor), nil, if hit then hit.Distance else nil) else nil
+
+	if hole and math.abs(hole.Normal.Y) < 0.5 then
+		vent.HitNormal, vent.HitHost, vent.HitOwner, vent.HitFace = hole.Normal, nil, nil, nil
+		vent.HitEnd, vent.HitCorner = hole.Normal, false
+		cursor.Mark = hole.Center
+
+		return hole.Center - Vector3.new(0, size / 2, 0)
+	end
 
 	if not hit then
 		return nil
 	end
 
-	local size = Settings.VentOuter(ctx.Settings)
 	local step = math.max(0.05, Cursor.Grid(cursor))
 	local endPoint, openEnd, owner, corner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
 

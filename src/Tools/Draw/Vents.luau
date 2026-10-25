@@ -23,6 +23,7 @@ local Settings = require("../../Pure/Settings")
 local Shapes = require("../../Core/Builders/Shapes")
 local Snapper = require("../../Core/Snapper")
 local Types = require("../Types")
+local VentHoles = require("../../Core/VentHoles")
 local Vents = require("../../Core/Builders/Vents")
 
 type Context = Types.Context
@@ -242,7 +243,7 @@ local function built(draw: Draw)
 
 	vent.Normal, vent.Shift, vent.Host = nil, Vector3.zero, nil
 	vent.Owner, vent.End, vent.Corner = nil, nil, nil
-	vent.Target, vent.TargetOwner, vent.TargetEnd = nil, nil, nil
+	vent.Target, vent.TargetOwner, vent.TargetEnd, vent.TargetAt, vent.Why = nil, nil, nil, nil, nil
 end
 
 --[[
@@ -445,13 +446,23 @@ local function aim(ctx: Context, draw: Draw, origin: Vector3): Vector3?
 	local state = ventOf(draw)
 	local hit = Cursor.Hit(ctx.Cursor)
 
-	state.Target, state.TargetOwner, state.TargetEnd = nil, nil, nil
+	state.Target, state.TargetOwner, state.TargetEnd, state.TargetAt = nil, nil, nil, nil
+
+	local size = Settings.VentOuter(ctx.Settings)
+	local hole =
+		VentHoles.Find(Cursor.Ray(ctx.Cursor), origin + Vector3.new(0, size / 2, 0), if hit then hit.Distance else nil)
+
+	if hole and math.abs(hole.Normal.Y) < 0.5 and math.abs(hole.Center.Y - size / 2 - origin.Y) >= 0.1 then
+		state.Target, state.TargetEnd, state.TargetAt = hole.Center.Y - size / 2, hole.Normal, hole.Center
+		ctx.Cursor.Mark = hole.Center
+
+		return Vector3.new(hole.Center.X, origin.Y, hole.Center.Z)
+	end
 
 	if not hit or not ctx.Settings.SnapToParts or Cursor.Fine() then
 		return nil
 	end
 
-	local size = Settings.VentOuter(ctx.Settings)
 	local step = math.max(0.05, Cursor.Grid(ctx.Cursor))
 	local point, outward, owner = Snapper.VentConnect(hit.Position, size * 1.1, step, size / 2)
 	local bottom = if point then point.Y - size / 2 else origin.Y
@@ -518,8 +529,17 @@ local ventRamp: Engine.Shape = {
 			local stop = if state.TargetEnd or flat.Magnitude < 0.05 then b else b - flat.Unit * up.Y
 			local run = Vector3.new(stop.X - a.X, 0, stop.Z - a.Z).Magnitude
 			local rise = target - a.Y
+			local at = state.TargetAt
+			local aside = if at then Vector3.new(at.X - stop.X, 0, at.Z - stop.Z).Magnitude else 0
 
-			if run < 0.5 or math.abs(rise) > run * MAX_STEEP then
+			state.Why = if aside > 0.15
+				then string.format("The holes are %.2f studs out of line; line them up along X or Z.", aside)
+				elseif
+					run < 0.5 or math.abs(rise) > run * MAX_STEEP
+				then "Too steep to reach that vent; start the slope further back."
+				else nil
+
+			if state.Why then
 				state.Ends = nil
 
 				return {}
@@ -536,7 +556,7 @@ local ventRamp: Engine.Shape = {
 		return slope(ctx, draw, a + up, top + up)
 	end,
 	Problem = function(_specs, draw)
-		return if ventOf(draw).Target then "Too steep to reach that vent; start the slope further back." else nil
+		return if ventOf(draw).Target then ventOf(draw).Why else nil
 	end,
 	Commit = commit,
 }

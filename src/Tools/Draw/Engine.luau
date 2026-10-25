@@ -69,6 +69,8 @@ export type Segment = { model: Instance, dir: Vector3, strips: { Shapes.Strip } 
 	.Target number? -- the floor height of the vent a slope vent is aimed at
 	.TargetOwner Instance? -- that vent
 	.TargetEnd Vector3? -- the way out of its open end, when the slope meets an end rather than a side
+	.TargetAt Vector3? -- the middle of the vent hole a slope vent is aimed at, to check the two line up
+	.Why string? -- why the aimed slope cannot be built
 	.Ends { Vector3 }? -- the two duct ends of the previewed build, centered
 ]=]
 export type VentState = {
@@ -87,6 +89,8 @@ export type VentState = {
 	Target: number?,
 	TargetOwner: Instance?,
 	TargetEnd: Vector3?,
+	TargetAt: Vector3?,
+	Why: string?,
 	Ends: { Vector3 }?,
 }
 

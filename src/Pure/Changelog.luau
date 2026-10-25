@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.6",
+		Date = "2026-10-24",
+		Changes = {
+			"Vent holes are remembered on their wall: vents and slope vents can start from a hole and go straight out of it.",
+			"Slope Vent: click one vent hole, then another at a different height, and the slope joins them.",
+		},
+	},
+	{
 		Version = "1.4.5",
 		Date = "2026-10-24",
 		Changes = {
