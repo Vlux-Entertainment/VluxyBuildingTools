@@ -19,17 +19,10 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
-		Version = "1.7.9",
+		Version = "1.7.10",
 		Date = "2026-10-25",
 		Changes = {
-			"A vent's wall opening is a hair wider than the duct inside, so no sliver of wall shows at its edge.",
-		},
-	},
-	{
-		Version = "1.7.8",
-		Date = "2026-10-25",
-		Changes = {
-			"The duct's cut stops just short of the wall face a vent ends on, so the cut no longer shares a face with the wall and leaves a skin.",
+			"A vent that ends on the back face of a wall cuts a clean hole: the duct's cut now runs a little past its ends, so no ring of wall is left around the opening.",
 		},
 	},
 	{
