@@ -12,10 +12,40 @@ local Geometry = require("../../Core/Geometry")
 local Points = require("./Points")
 local Settings = require("../../Pure/Settings")
 local Slopes = require("../../Core/Builders/Slopes")
+local StairSnap = require("../../Pure/StairSnap")
 local Types = require("../Types")
 
 type Context = Types.Context
 type Draw = Engine.Draw
+
+--[[ The layout of the stairs each drawing last previewed, recorded on the stairs when built. ]]
+type Shown = { layout: StairSnap.Layout, frame: CFrame }
+
+local layouts: { [Draw]: Shown? } = setmetatable({}, { __mode = "k" }) :: any
+
+--[[
+	@param stairs Instance -- the built stairs: their union, or the model when joining failed
+	@param layout StairSnap.Layout
+	@param frame CFrame -- the stairs' frame in the world
+
+	Records the step layout on the stairs, relative to them, so railings snap to the steps even
+	after the stairs are moved.
+]]
+local function remember(stairs: Instance, layout: StairSnap.Layout, frame: CFrame)
+	local pivot = if stairs:IsA("PVInstance") then stairs:GetPivot() else CFrame.identity
+
+	if stairs:IsA("Model") then
+		stairs.WorldPivot = pivot
+	end
+
+	stairs:SetAttribute("VluxyBT_StairFrame", pivot:ToObjectSpace(frame))
+	stairs:SetAttribute("VluxyBT_StairRun", layout.Run)
+	stairs:SetAttribute("VluxyBT_StairRise", layout.Rise)
+	stairs:SetAttribute("VluxyBT_StairCount", layout.Count)
+	stairs:SetAttribute("VluxyBT_StairWidth", layout.Width)
+	stairs:SetAttribute("VluxyBT_StairLanding", layout.Landing)
+	stairs:SetAttribute("VluxyBT_StairRamp", layout.Ramp)
+end
 
 local function startOnVertex(ctx: Context, _draw: Draw): Vector3?
 	return Points.Vertex(ctx, nil)
@@ -61,13 +91,29 @@ local function slope(ramp: boolean): Engine.Shape
 				b += right * offset
 			end
 
+			local layout, frame = Slopes.StairLayout(settings, a, b, ramp)
+
+			local shown: Shown? = if layout and frame then { layout = layout, frame = frame } else nil
+
+			layouts[draw] = shown
+
 			return Slopes.Stairs(settings, a, b, ramp)
 		end,
-		Commit = function(ctx, _draw, built)
-			local problem = if built.Model then Geometry.UnionAll(built.Model, id) else nil
+		Commit = function(ctx, draw, built)
+			local model = built.Model
+			local problem = if model then Geometry.UnionAll(model, id) else nil
+			local shown = layouts[draw]
 
 			if problem then
 				ctx.Say(problem)
+			end
+
+			if model and shown then
+				local union = model:FindFirstChild(id)
+
+				for _, stairs in { union or model, model } do
+					remember(stairs, shown.layout, shown.frame)
+				end
 			end
 		end,
 	}

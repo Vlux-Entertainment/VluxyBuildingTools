@@ -128,7 +128,7 @@ Options: **Vent inside size** (the clear space inside, 3.5 by default; the sheet
 
 | Tool | How to use it |
 |---|---|
-| **Railing** | Click points; Enter starts a new chain. Follows stairs, and keeps its posts just inside the edges and corners of what it stands on. |
+| **Railing** | Click points; Enter starts a new chain. On stairs it snaps to the lip of each step on the side edge, and has no bottom rail; its posts stay just inside edges and corners. |
 | **Half Wall** | Click points. A low solid wall. |
 | **Fence** | Click points. Posts and rails. |
 

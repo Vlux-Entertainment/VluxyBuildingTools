@@ -32,8 +32,10 @@ local function newel(out: { Spec }, base: Vector3, flatDir: Vector3, top: number
 end
 
 --[=[
-	A straight indoor railing from a to b: a handrail on top, thin bars between, a low bottom rail and
-	a pillar at each end. When a and b are at different heights it follows the slope, so it fits stairs.
+	A straight indoor railing from a to b: a handrail on top, thin bars between and a pillar at each
+	end. On the flat a bottom rail lies along the floor. When a and b are at different heights it
+	follows the slope with no bottom rail, and the bars reach down past the line between the points
+	so they meet the steps or the slope under them.
 
 	@param settings Settings
 	@param a Vector3 -- the start, on the floor or a stair
@@ -63,17 +65,22 @@ function Railings.Railing(settings: Settings, a: Vector3, b: Vector3, postAtStar
 	newel(out, b, flatDir, height + 0.3, "RailingPillar")
 
 	local middle = (a + b) * 0.5
+	local sloped = math.abs(d.Y) > 0.05
+	local sink = if sloped then math.max(0.5, 2 * math.abs(d.Y) / flat.Magnitude) else 0
 
 	add(out, Vector3.new(0.4, 0.3, length), CFrame.lookAt(middle + up * height, middle + up * height + dir), "Handrail")
-	add(out, Vector3.new(0.3, 0.2, length), CFrame.lookAt(middle + up * 0.3, middle + up * 0.3 + dir), "BottomRail")
+
+	if not sloped then
+		add(out, Vector3.new(0.3, 0.2, length), CFrame.lookAt(middle + up * 0.1, middle + up * 0.1 + dir), "BottomRail")
+	end
 
 	local count = math.max(1, math.round(flat.Magnitude / math.max(0.3, settings.BalusterSpacing)))
 
 	for i = 1, count - 1 do
 		local base = a + d * (i / count)
-		local center = base + up * (height * 0.5)
+		local center = base + up * ((height - sink) * 0.5)
 
-		add(out, Vector3.new(0.2, height, 0.2), CFrame.lookAt(center, center + flatDir), "Baluster")
+		add(out, Vector3.new(0.2, height + sink, 0.2), CFrame.lookAt(center, center + flatDir), "Baluster")
 	end
 
 	return out
