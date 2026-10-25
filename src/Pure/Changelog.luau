@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.4.5",
+		Date = "2026-10-24",
+		Changes = {
+			"Vent sheets are 0.25 thick by default, so a default vent is 4 by 4 outside; a thickness left at 0.2 moves to 0.25.",
+		},
+	},
+	{
 		Version = "1.4.4",
 		Date = "2026-10-24",
 		Changes = {

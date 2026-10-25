@@ -126,7 +126,7 @@ local DOOR_KEYS =
 ]]
 function Settings.Defaults(): Settings
 	return {
-		Version = 7,
+		Version = 8,
 		Grid = 4,
 		FineGrid = 0.25,
 		Elevation = 0,
@@ -165,7 +165,7 @@ function Settings.Defaults(): Settings
 		RampHeight = 6,
 		Yaw = 0,
 		VentSize = 3.5,
-		VentThickness = 0.2,
+		VentThickness = 0.25,
 		VentHoleFit = "Inside",
 		BrushRadius = 6,
 		BrushSpacing = 3,
@@ -489,6 +489,11 @@ function Settings.Load(saved: any): Settings
 	-- Vents became 3.5 inside by default in version 7; a size left at the old default follows.
 	if version < 7 and settings.VentSize == 3 then
 		settings.VentSize = fresh.VentSize
+	end
+
+	-- Vent sheets became 0.25 thick by default in version 8, so a default vent is 4 outside.
+	if version < 8 and settings.VentThickness == 0.2 then
+		settings.VentThickness = fresh.VentThickness
 	end
 
 	-- The floor level has no field on the panel any more, so it is always the ground.
