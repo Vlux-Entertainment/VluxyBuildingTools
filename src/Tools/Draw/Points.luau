@@ -27,8 +27,9 @@ type Draw = Engine.Draw
 	.Raised boolean? -- stand on top of a floor slab: the point is raised by the floor thickness
 	.Joins boolean? -- start level with the floor of a room or corridor the point snaps to
 	.Doors boolean? -- start in the middle of a doorway near the cursor
+	.Level boolean? -- on a floor already built, stay level with its top instead of stacking on it
 ]=]
-export type FloorRule = { Raised: boolean?, Joins: boolean?, Doors: boolean? }
+export type FloorRule = { Raised: boolean?, Joins: boolean?, Doors: boolean?, Level: boolean? }
 
 local Points = {}
 
@@ -122,9 +123,10 @@ function Points.Floor(ctx: Context, draw: Draw, rule: FloorRule): Vector3?
 		return nil
 	end
 
+	local onFloor = rule.Level == true and hit.Instance.Name == "Floor"
 	local point = Vector3.new(
 		Cursor.Snap(cursor, hit.Position.X),
-		hit.Position.Y + (if rule.Raised then ctx.Settings.Floor else 0),
+		hit.Position.Y + (if rule.Raised and not onFloor then ctx.Settings.Floor else 0),
 		Cursor.Snap(cursor, hit.Position.Z)
 	)
 
@@ -194,7 +196,7 @@ function Points.SurfaceTop(ctx: Context): Vector3?
 	)
 end
 
-local RAIL_INSET = 0.3
+local RAIL_INSET = 0.35
 
 --[=[
 	@param ctx Context
@@ -225,6 +227,46 @@ function Points.StairEdge(ctx: Context): Vector3?
 	cursor.Mark = point
 
 	return point
+end
+
+--[=[
+	Keeps a railing post on the top it stands on: a point near an edge or corner of the top face
+	under the cursor moves in by half a post, so the post sits just inside the corner.
+
+	@param ctx Context
+	@param point Vector3? -- the picked point
+	@return Vector3? -- the point, moved in from the edges when needed
+]=]
+function Points.InsetOnTop(ctx: Context, point: Vector3?): Vector3?
+	local hit = Cursor.Hit(ctx.Cursor)
+
+	if not point or not hit or hit.Normal.Y < 0.7 or Cursor.Fine() or not hit.Instance:IsA("BasePart") then
+		return point
+	end
+
+	local part = hit.Instance :: BasePart
+	local cf, size = part.CFrame, part.Size
+
+	if cf.UpVector.Y < 0.99 then
+		return point
+	end
+
+	local spot = cf:PointToObjectSpace(point)
+	local halfX, halfZ = size.X / 2, size.Z / 2
+
+	if math.abs(spot.X) > halfX + 0.05 or math.abs(spot.Z) > halfZ + 0.05 then
+		return point
+	end
+
+	local x = if halfX > RAIL_INSET then math.clamp(spot.X, -halfX + RAIL_INSET, halfX - RAIL_INSET) else 0
+	local z = if halfZ > RAIL_INSET then math.clamp(spot.Z, -halfZ + RAIL_INSET, halfZ - RAIL_INSET) else 0
+	local moved = cf:PointToWorldSpace(Vector3.new(x, spot.Y, z))
+
+	if (moved - point).Magnitude > 1e-3 then
+		ctx.Cursor.Mark = moved
+	end
+
+	return moved
 end
 
 --[[
@@ -275,6 +317,7 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean, headOn: boolean?)
 	end
 
 	vent.HitNormal, vent.HitHost, vent.HitOwner, vent.HitEnd, vent.HitFace = nil, nil, owner, openEnd, nil
+	vent.HitReach = nil
 	vent.HitCorner = corner
 
 	if headOn and endPoint and not (openEnd and math.abs(openEnd.Y) < 0.5) then
@@ -289,6 +332,7 @@ function Points.Vent(ctx: Context, draw: Draw, shaft: boolean, headOn: boolean?)
 		if ends and hit and not openEnd then
 			vent.HitHost = if corner and not shaft then nil else (ends.End - ends.Start).Unit
 			vent.HitFace = hit.Normal
+			vent.HitReach = math.max(0, (hit.Position - endPoint):Dot(hit.Normal))
 		end
 
 		if not shaft and openEnd and math.abs(openEnd.Y) > 0.9 then

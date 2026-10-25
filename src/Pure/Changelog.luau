@@ -19,6 +19,15 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.5.1",
+		Date = "2026-10-24",
+		Changes = {
+			"A vent started on the side or corner of another vent starts on the face under the cursor and leaves through it.",
+			"Railing, half wall and fence posts sit just inside the edges and corners of what they stand on.",
+			"A floor started on a floor already built stays level with it instead of a floor thickness above.",
+		},
+	},
+	{
 		Version = "1.5.0",
 		Date = "2026-10-24",
 		Changes = {
