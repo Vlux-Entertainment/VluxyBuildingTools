@@ -13,13 +13,17 @@ local Engine = require("./Engine")
 local Paths = require("../../Core/Builders/Paths")
 local Points = require("./Points")
 local Railings = require("../../Core/Builders/Railings")
+local Settings = require("../../Pure/Settings")
+local Shapes = require("../../Core/Builders/Shapes")
 local Snap = require("../../Pure/Snap")
+local Snapper = require("../../Core/Snapper")
 local Types = require("../Types")
 
 type Context = Types.Context
 type Draw = Engine.Draw
 
 local ALIGN = math.rad(12)
+local WALL_REACH = 1
 
 --[[
 	@param draw Draw
@@ -86,22 +90,215 @@ local function remember(_ctx: Context, draw: Draw, built: Engine.Built)
 	lastRun[draw] = if run.Magnitude > 0.05 then run.Unit else nil
 end
 
+--[=[
+	Where a wall point landed on a wall already built.
+
+	@interface WallHit
+	@within DrawWalls
+	.Kind string -- "End" or "Side"
+	.Out Vector3 -- for an end, the way out of that wall through it
+	.Line Snapper.WallLine
+]=]
+type WallHit = { Kind: string, Out: Vector3, Line: Snapper.WallLine }
+
+--[[ The walls each drawing's first point and the point under the cursor landed on. ]]
+local wallHits: { [Draw]: { Start: WallHit?, End: WallHit? } } = setmetatable({}, { __mode = "k" }) :: any
+
+--[[
+	@param draw Draw
+	@return { Start: WallHit?, End: WallHit? }
+]]
+local function hitsOf(draw: Draw): { Start: WallHit?, End: WallHit? }
+	local found = wallHits[draw]
+
+	if not found then
+		found = {}
+		wallHits[draw] = found
+	end
+
+	return found
+end
+
+--[[
+	@param ctx Context
+	@param level number? -- only walls standing at this height
+	@return Vector3? -- the spot on the middle line of a wall near the cursor: an end, the middle or a grid step along it
+	@return WallHit?
+]]
+local function onWall(ctx: Context, level: number?): (Vector3?, WallHit?)
+	local cursor = ctx.Cursor
+	local hit = Cursor.Hit(cursor)
+
+	if not hit or not ctx.Settings.SnapToParts or Cursor.Fine() then
+		return nil, nil
+	end
+
+	local spot, kind, out, line = Snapper.WallSpot(hit.Position, WALL_REACH, Cursor.Grid(cursor), level)
+
+	if not spot or not line then
+		return nil, nil
+	end
+
+	cursor.Mark = spot
+
+	return spot, { Kind = kind, Out = out, Line = line }
+end
+
+--[[ A wall starts on another wall's end or side when the cursor is near one, else on a corner or floor top. ]]
+local function wallStart(ctx: Context, draw: Draw): Vector3?
+	local spot, found = onWall(ctx, nil)
+
+	hitsOf(draw).Start = found
+
+	return spot or Points.Vertex(ctx, nil)
+end
+
+--[[ A wall ends on another wall's end or side when the cursor is near one, at the level it started on. ]]
+local function wallNext(ctx: Context, draw: Draw, origin: Vector3): Vector3?
+	local spot, found = onWall(ctx, origin.Y)
+
+	hitsOf(draw).End = found
+
+	return spot or Points.Vertex(ctx, origin.Y)
+end
+
+--[[
+	@param settings Settings.Settings
+	@param half number -- half a wall's thickness
+	@return { Shapes.Strip } -- the strip of a wall that thick
+]]
+local function stripsOf(settings: Settings.Settings, half: number): { Shapes.Strip }
+	local sized = table.clone(settings)
+
+	sized.Thickness = half * 2
+
+	return Paths.WallStrips(sized)
+end
+
+--[[
+	Starting on another wall's end continues it like a chain, so the corner closes the same way.
+]]
+local function wallOnStart(ctx: Context, draw: Draw)
+	local start = hitsOf(draw).Start
+
+	if start and start.Kind == "End" and start.Line.AlongZ then
+		local previous: Engine.Segment =
+			{ model = start.Line.Part :: Instance, dir = start.Out, strips = stripsOf(ctx.Settings, start.Line.Half) }
+
+		draw.Previous = previous
+		draw.Chained = true
+	end
+end
+
+--[[
+	@param line Snapper.WallLine
+	@param dir Vector3 -- the level direction of the new wall
+	@return number -- how far a wall running in that direction goes past the middle line to reach the face, or 0 when it runs along the wall
+]]
+local function toFace(line: Snapper.WallLine, dir: Vector3): number
+	local across = math.abs(dir:Dot(line.Axis:Cross(Vector3.yAxis)))
+
+	return if across > 0.3 then line.Half / across else 0
+end
+
+--[[
+	A wall that starts on the side of another starts at its face, and one that ends on a side stops
+	at that face, so they meet flush with no overlap.
+]]
+local function wallConstrain(_ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Vector3, Vector3)
+	local flat = Vector3.new(b.X - a.X, 0, b.Z - a.Z)
+	local hits = hitsOf(draw)
+
+	if flat.Magnitude < 0.05 then
+		return a, b
+	end
+
+	local dir = flat.Unit
+	local start, finish = hits.Start, hits.End
+
+	if not draw.Chained and start and start.Kind == "Side" then
+		a += dir * toFace(start.Line, dir)
+	end
+
+	if finish and finish.Kind == "Side" then
+		b -= dir * toFace(finish.Line, dir)
+	end
+
+	return a, b
+end
+
+--[[
+	@param ctx Context
+	@param draw Draw
+	@param a Vector3
+	@param b Vector3
+	@return Shapes.Bend? -- the corner a wall ending on another wall's end makes with it
+	@return Vector3 -- the new wall's direction
+]]
+local function closing(ctx: Context, draw: Draw, a: Vector3, b: Vector3): (Shapes.Bend?, Vector3)
+	local finish = hitsOf(draw).End
+	local flat = Vector3.new(b.X - a.X, 0, b.Z - a.Z)
+
+	if not finish or finish.Kind ~= "End" or not finish.Line.AlongZ or flat.Magnitude < 0.05 then
+		return nil, Vector3.zero
+	end
+
+	local start = hitsOf(draw).Start
+
+	if start and start.Line.Part == finish.Line.Part and not draw.Chained then
+		return nil, Vector3.zero
+	end
+
+	local strips = Paths.WallStrips(ctx.Settings)
+
+	return Paths.Bend(b, flat.Unit, -finish.Out, strips, stripsOf(ctx.Settings, finish.Line.Half)), flat.Unit
+end
+
 local wall: Engine.Shape = {
 	Id = "Wall",
-	Start = startOnVertex,
-	Next = nextOnVertex,
+	Start = wallStart,
+	Next = wallNext,
+	OnStart = wallOnStart,
+	Constrain = wallConstrain,
 	HeightDrag = true,
 	Chain = true,
 	Loose = true,
-	Build = function(_ctx, draw, a, b, sized)
+	Build = function(ctx, draw, a, b, sized)
 		local path = table.clone(sized.Live)
+		local bend, dir = closing(ctx, draw, a, b)
 
 		path.PillaredWalls = false
 
-		return Paths.Path(path, a, b, false, not draw.Chained, joinDir(draw))
+		if bend then
+			b += dir * (bend.finish.Wall or 0)
+		end
+
+		local specs = Paths.Path(path, a, b, false, not draw.Chained, joinDir(draw))
+
+		if bend then
+			for _, list in { bend.ending, bend.beginning } do
+				for _, spec in list do
+					table.insert(specs, spec)
+				end
+			end
+		end
+
+		return specs
 	end,
 	Commit = function(ctx, draw, built)
+		local finish = hitsOf(draw).End
+		local bend = closing(ctx, draw, built.Joint, built.Joint + built.Segment)
+
 		Bends.Join(draw, built, Paths.WallStrips(ctx.Settings))
+
+		local late = if bend then bend.start.Wall or 0 else 0
+
+		if finish and late ~= 0 then
+			local part = finish.Line.Part
+
+			part.Size -= Vector3.new(0, 0, late)
+			part.CFrame += -finish.Out * (late / 2)
+		end
 	end,
 }
 

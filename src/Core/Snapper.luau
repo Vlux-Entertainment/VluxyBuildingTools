@@ -81,6 +81,142 @@ function Snapper.TopPoints(part: BasePart): { Vector3 }
 end
 
 --[=[
+	The middle line of a wall along its foot: a thin, upright part whose long side is level.
+
+	@interface WallLine
+	@within Snapper
+	.Part BasePart
+	.Start Vector3 -- one end of the middle line, at the foot of the wall
+	.Axis Vector3 -- the level direction from Start to the other end
+	.Length number
+	.Half number -- half the wall's thickness
+	.AlongZ boolean -- whether the part's own Z runs along the wall, as for walls this plugin builds
+]=]
+export type WallLine = {
+	Part: BasePart,
+	Start: Vector3,
+	Axis: Vector3,
+	Length: number,
+	Half: number,
+	AlongZ: boolean,
+}
+
+--[=[
+	@param part BasePart
+	@return WallLine? -- the part's middle line, or nil when it is not a wall
+]=]
+function Snapper.WallLineOf(part: BasePart): WallLine?
+	local cf, size = part.CFrame, part.Size
+	local alongZ = size.Z >= size.X
+	local thin, long = if alongZ then size.X else size.Z, if alongZ then size.Z else size.X
+
+	if cf.UpVector.Y < 0.98 or thin >= long * 0.5 or size.Y <= thin then
+		return nil
+	end
+
+	local axis = if alongZ then cf.LookVector else cf.RightVector
+	local flat = Vector3.new(axis.X, 0, axis.Z)
+
+	if flat.Magnitude < 1e-3 then
+		return nil
+	end
+
+	local foot = cf.Position - Vector3.new(0, size.Y / 2, 0)
+
+	return {
+		Part = part,
+		Start = foot - flat.Unit * (long / 2),
+		Axis = flat.Unit,
+		Length = long,
+		Half = thin / 2,
+		AlongZ = alongZ,
+	}
+end
+
+--[=[
+	Where a point near a wall snaps on its middle line: an end, the middle, or the grid step along
+	it measured from an end.
+
+	@param line WallLine
+	@param point Vector3 -- where the cursor is
+	@param reach number -- how far past the wall's face still counts, and how close to an end or the middle snaps to it
+	@param grid number
+	@return Vector3? -- the spot on the middle line at the wall's foot; nil when the point is not near the wall
+	@return string -- "End" or "Side"
+	@return Vector3 -- for an end, the way out of the wall through it
+]=]
+function Snapper.SpotOnWall(line: WallLine, point: Vector3, reach: number, grid: number): (Vector3?, string, Vector3)
+	local offset = Vector3.new(point.X - line.Start.X, 0, point.Z - line.Start.Z)
+	local along = offset:Dot(line.Axis)
+	local across = (offset - line.Axis * along).Magnitude
+
+	if across > line.Half + reach or along < -reach or along > line.Length + reach then
+		return nil, "Side", Vector3.zero
+	end
+
+	if along <= reach then
+		return line.Start, "End", -line.Axis
+	elseif line.Length - along <= reach then
+		return line.Start + line.Axis * line.Length, "End", line.Axis
+	elseif math.abs(along - line.Length / 2) <= reach then
+		along = line.Length / 2
+	elseif grid > 0 then
+		along = math.clamp(math.round(along / grid) * grid, 0, line.Length)
+	end
+
+	return line.Start + line.Axis * along, "Side", Vector3.zero
+end
+
+--[=[
+	Finds the wall near a point and where the point snaps on it. Only the working folder is searched
+	when one is set.
+
+	@param point Vector3 -- where the cursor is
+	@param reach number
+	@param grid number
+	@param level number? -- only walls standing at this height
+	@return Vector3? -- the spot on the wall's middle line
+	@return string -- "End" or "Side"
+	@return Vector3 -- for an end, the way out of the wall through it
+	@return WallLine? -- the wall
+]=]
+function Snapper.WallSpot(
+	point: Vector3,
+	reach: number,
+	grid: number,
+	level: number?
+): (Vector3?, string, Vector3, WallLine?)
+	local params = OverlapParams.new()
+	local scope = Geometry.GetScope()
+
+	params.MaxParts = MAX_PARTS
+
+	if scope then
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { scope }
+	end
+
+	local best: Vector3? = nil
+	local bestKind, bestOut, bestLine = "Side", Vector3.zero, nil :: WallLine?
+	local bestDistance = math.huge
+
+	for _, part in workspace:GetPartBoundsInRadius(point, reach + 4, params) do
+		local line = if part:IsA("Terrain") then nil else Snapper.WallLineOf(part)
+
+		if line and (level == nil or math.abs(line.Start.Y - level) < 0.1) then
+			local spot, kind, out = Snapper.SpotOnWall(line, point, reach, grid)
+			local distance = if spot then Vector3.new(spot.X - point.X, 0, spot.Z - point.Z).Magnitude else math.huge
+
+			if spot and distance < bestDistance then
+				best, bestKind, bestOut, bestLine, bestDistance = spot, kind, out, line, distance
+			end
+		end
+	end
+
+	return best, bestKind, bestOut, bestLine
+end
+
+--[=[
 	The points of a part's box a point can snap to in three dimensions: its eight corners and the
 	middle of each of its twelve edges.
 

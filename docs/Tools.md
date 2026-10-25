@@ -36,7 +36,7 @@ Walls, floors, blocks, pillars and arches.
 
 | Tool | How to use it |
 |---|---|
-| **Walls** | Click points; Enter starts a new chain. Y drags the height. |
+| **Walls** | Click points; Enter starts a new chain. Y drags the height. Points near another wall snap to its ends, middle or a grid step along it: start or end on a wall's end and the corner closes cleanly; start or end on its side and the walls meet flush. Hold Shift to build on top of a wall instead. |
 | **Pillared Wall** | Like Walls, with a pillar at each end. |
 | **Floor** | Click two corners. The top of the floor is level with what you click. |
 | **Block** | Click two corners, then press Y to drag it up. |

@@ -14,6 +14,14 @@ local START = Vector3.new(0, 0, 0)
 local FINISH = Vector3.new(20, 0, 0)
 
 return {
+	["a square wall corner grows the wall arriving and starts the other a half thickness late"] = function(expect)
+		local strips = Paths.WallStrips(Settings.Defaults())
+		local bend = Paths.Bend(FINISH, Vector3.new(1, 0, 0), Vector3.new(0, 0, 1), strips, strips)
+
+		expect.near(bend.finish.Wall, 0.5, 1e-6, "the arriving wall covers the corner square")
+		expect.near(bend.start.Wall, 0.5, 1e-6, "the other starts past it")
+	end,
+
 	["a wall runs the whole path, as thick and tall as the panel says"] = function(expect)
 		local specs = Paths.Path(Settings.Defaults(), START, FINISH, false)
 
