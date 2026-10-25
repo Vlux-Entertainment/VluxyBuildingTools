@@ -4,7 +4,7 @@
 	Snaps a selection dragged with Studio's own tools onto a measuring guide. Studio's dragger
 	cannot take extra snap points, so when a drag ends with the mouse close to a guide point on the
 	screen, the selection moves so its nearest corner, edge middle or centre lands exactly on that
-	point, as its own undo step.
+	point, as its own undo step. While dragging, a hint shows the point and where it would land.
 
 	@class GuideSnap
 ]=]
@@ -15,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 local Edit = require("./Edit")
 local Geometry = require("../Core/Geometry")
 local Guides = require("../Core/Guides")
+local Overlay = require("../Core/Overlay")
 
 local PIXELS = 24
 local REACH = 3
@@ -22,20 +23,30 @@ local REACH = 3
 local GuideSnap = {}
 
 --[=[
-	Call when one of Studio's drags has finished.
+	Where letting go now would snap the selection.
 
-	@param enabled boolean -- whether snapping to guides is on
-	@param edit Edit.Edit
+	@interface Plan
+	@within GuideSnap
+	.Roots { PVInstance } -- the selected things that move
+	.Target Vector3 -- the guide point
+	.Pull Vector3 -- how far they move
+	.Box CFrame -- the selection's box now
+	.Size Vector3
 ]=]
-function GuideSnap.AfterDrag(enabled: boolean, edit: Edit.Edit)
-	if not enabled or Guides.Count() == 0 then
-		return
+type Plan = { Roots: { PVInstance }, Target: Vector3, Pull: Vector3, Box: CFrame, Size: Vector3 }
+
+--[[
+	@return Plan? -- the snap for the selection and the mouse now, or nil when the mouse is not near a guide point a selection point can reach
+]]
+local function plan(): Plan?
+	if Guides.Count() == 0 then
+		return nil
 	end
 
 	local target = Guides.NearOnScreen(UserInputService:GetMouseLocation(), PIXELS)
 
 	if not target then
-		return
+		return nil
 	end
 
 	local roots: { PVInstance } = {}
@@ -58,17 +69,73 @@ function GuideSnap.AfterDrag(enabled: boolean, edit: Edit.Edit)
 	end
 
 	if #parts == 0 then
-		return
+		return nil
 	end
 
 	local box, size = Geometry.Bounds(parts)
 	local pull = Guides.Pull(Guides.BoxAnchors(box.Position, size), target, REACH)
 
 	if not pull or pull.Magnitude < 1e-3 then
+		return nil
+	end
+
+	return { Roots = roots, Target = target, Pull = pull, Box = box, Size = size }
+end
+
+local hintQueued = false
+
+--[=[
+	Hides the snap hint.
+
+	@param overlay Overlay.Overlay
+]=]
+function GuideSnap.ClearHint(overlay: Overlay.Overlay)
+	Overlay.DrawSnapHint(overlay, nil, nil)
+	Overlay.HideReadout(overlay)
+end
+
+--[=[
+	Call while one of Studio's drags moves the selection. At most once per frame it shows where
+	letting go would snap: the guide point, the selection's landing outline and "Let go to snap".
+
+	@param enabled boolean -- whether snapping to guides is on
+	@param overlay Overlay.Overlay
+]=]
+function GuideSnap.Hint(enabled: boolean, overlay: Overlay.Overlay)
+	if hintQueued then
 		return
 	end
 
-	local move = pull
+	hintQueued = true
+
+	task.defer(function()
+		hintQueued = false
+
+		local found = if enabled then plan() else nil
+
+		if found then
+			Overlay.DrawSnapHint(overlay, found.Target, { cf = found.Box + found.Pull, size = found.Size })
+			Overlay.Readout(overlay, found.Target, "Let go to snap")
+		else
+			GuideSnap.ClearHint(overlay)
+		end
+	end)
+end
+
+--[=[
+	Call when one of Studio's drags has finished.
+
+	@param enabled boolean -- whether snapping to guides is on
+	@param edit Edit.Edit
+]=]
+function GuideSnap.AfterDrag(enabled: boolean, edit: Edit.Edit)
+	local found = if enabled then plan() else nil
+
+	if not found then
+		return
+	end
+
+	local roots, move = found.Roots, found.Pull
 
 	task.defer(function()
 		edit("Snap to guide", function()

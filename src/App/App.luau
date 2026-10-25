@@ -272,6 +272,12 @@ function App.new(plugin: Plugin, widget: DockWidgetPluginGui, trove: Trove.Trove
 				edit
 			)
 		end,
+		Moving = function()
+			GuideSnap.Hint(Store.Get(store, "GrabGuides") == true and Store.Get(store, "SnapToParts") == true, overlay)
+		end,
+		Finished = function()
+			GuideSnap.ClearHint(overlay)
+		end,
 	}, trove)
 
 	local cameraLight = CameraLight.new(settings, trove)
