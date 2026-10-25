@@ -48,6 +48,7 @@ export type Settings = {
 	VentSize: number,
 	VentThickness: number,
 	VentHoleFit: string,
+	StairLine: string,
 	BrushRadius: number,
 	BrushSpacing: number,
 	BrushRandomYaw: boolean,
@@ -167,6 +168,7 @@ function Settings.Defaults(): Settings
 		VentSize = 3.5,
 		VentThickness = 0.25,
 		VentHoleFit = "Inside",
+		StairLine = "Center",
 		BrushRadius = 6,
 		BrushSpacing = 3,
 		BrushRandomYaw = true,
@@ -502,6 +504,23 @@ function Settings.Load(saved: any): Settings
 	Settings.Sync(settings)
 
 	return settings
+end
+
+--[=[
+	Which line of stairs or a ramp the clicked points mark: its middle, or its left or right edge
+	seen walking up, so the points can snap to a wall's corner and the stairs sit beside the wall.
+
+	@param settings Settings
+	@return number -- how far to move the stairs from the drawn line toward their right side
+]=]
+function Settings.StairOffset(settings: Settings): number
+	if settings.StairLine == "Left" then
+		return settings.Width / 2
+	elseif settings.StairLine == "Right" then
+		return -settings.Width / 2
+	end
+
+	return 0
 end
 
 return Settings

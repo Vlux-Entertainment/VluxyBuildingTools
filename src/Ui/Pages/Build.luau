@@ -411,6 +411,21 @@ return function(ui: Ui): { Instance }
 			number("Width", "Clear width", 0.1, 1024, nil, when(modes("Corridor", "ArchedCorridor", "Stairs", "Ramp"))),
 			number("StairHeight", "Total stair rise", 0.1, 1024, nil, when(modes("Stairs"))),
 			number("RampHeight", "Ramp rise", 0.1, 1024, nil, when(modes("Ramp"))),
+			Controls.Choice(ui, {
+				Options = {
+					{ Value = "Center", Tip = "The points you click mark the middle of the stairs." },
+					{ Value = "Left", Tip = "The points mark the left edge; the stairs go to its right." },
+					{ Value = "Right", Tip = "The points mark the right edge; the stairs go to its left." },
+				},
+				Columns = 3,
+				Get = function()
+					return Store.Get(store, "StairLine")
+				end,
+				Set = function(value)
+					Store.Set(store, "StairLine", value)
+				end,
+				Visible = when(modes("Stairs", "Ramp")),
+			}),
 			number("ArchHeight", "Clear height", 0.1, 1024, nil, when(modes("Arch"))),
 			number("ArchDepth", "Frame depth", 0.1, 256, nil, when(modes("Arch"))),
 			number("OpenWidth", "Archway width", 0.1, 1024, nil, when(modes("ArchOpening"))),

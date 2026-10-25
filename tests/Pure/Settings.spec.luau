@@ -31,6 +31,19 @@ return {
 		expect.equal(Settings.Load({ Version = 8, VentThickness = 0.2 }).VentThickness, 0.2)
 	end,
 
+	["stairs drawn from an edge move half their width to the side"] = function(expect)
+		local settings = Settings.Defaults()
+
+		settings.Width = 6
+		expect.equal(Settings.StairOffset(settings), 0)
+
+		settings.StairLine = "Left"
+		expect.equal(Settings.StairOffset(settings), 3)
+
+		settings.StairLine = "Right"
+		expect.equal(Settings.StairOffset(settings), -3)
+	end,
+
 	["a bad save falls back to the defaults"] = function(expect)
 		expect.equal(Settings.Load("nope").Grid, 4)
 		expect.equal(Settings.Load("nope").FineGrid, 0.25)
