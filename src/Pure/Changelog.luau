@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.6.8",
+		Date = "2026-10-25",
+		Changes = {
+			"The Grab snaps to measure guides switch is also on the Settings tab, under Snapping.",
+		},
+	},
+	{
 		Version = "1.6.7",
 		Date = "2026-10-25",
 		Changes = {
