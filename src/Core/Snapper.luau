@@ -962,55 +962,6 @@ function Snapper.VentConnect(
 end
 
 --[=[
-	Whether a straight level duct would run into a vent already built. Ends that meet flush, and the
-	vents named in `skip`, do not count.
-
-	@param a Vector3 -- one end of the new duct, on its middle line
-	@param b Vector3 -- the other end
-	@param size number -- the outside size of the ducts
-	@param skip { Instance } -- vents the new one is allowed to touch: the one it starts from
-	@return boolean
-]=]
-function Snapper.VentBlocked(a: Vector3, b: Vector3, size: number, skip: { Instance }): boolean
-	local half = size / 2 - 0.1
-	local low = a:Min(b) - Vector3.one * half
-	local high = a:Max(b) + Vector3.one * half
-	local along = (b - a).Unit
-
-	low += Vector3.new(math.abs(along.X), math.abs(along.Y), math.abs(along.Z)) * (half + 0.05)
-	high -= Vector3.new(math.abs(along.X), math.abs(along.Y), math.abs(along.Z)) * (half + 0.05)
-
-	for _, model in CollectionService:GetTagged(VENT_TAG) do
-		local ends = if table.find(skip, model) then nil else Snapper.VentEnds(model)
-
-		if ends then
-			local s, e = ends.Start, ends.End
-			local d = e - s
-			local level = math.abs(d.Y) < 0.05
-			local upright = Vector3.new(d.X, 0, d.Z).Magnitude < 0.05
-
-			if level or upright then
-				local reach = size / 2 - 0.1
-				local otherLow, otherHigh = s:Min(e) - Vector3.one * reach, s:Max(e) + Vector3.one * reach
-
-				if
-					low.X < otherHigh.X
-					and high.X > otherLow.X
-					and low.Y < otherHigh.Y
-					and high.Y > otherLow.Y
-					and low.Z < otherHigh.Z
-					and high.Z > otherLow.Z
-				then
-					return true
-				end
-			end
-		end
-	end
-
-	return false
-end
-
---[=[
 	Finds the corner, or the middle of an edge, of a nearby part that sits closest to the mouse on the
 	screen, within a few pixels. Unlike a distance in studs, this only grabs one when the cursor is on it.
 

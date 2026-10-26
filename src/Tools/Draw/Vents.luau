@@ -31,7 +31,6 @@ type Draw = Engine.Draw
 type Built = Engine.Built
 
 local VENT_TAG = "VluxyBT_Vent"
-local OVERLAP = 0.05
 local MAX_STEEP = 2
 
 --[[
@@ -431,17 +430,6 @@ local function lift(ctx: Context, draw: Draw): Vector3
 	return Vector3.new(0, Settings.VentOuter(sizing(ctx, draw)) / 2, 0)
 end
 
---[[
-	@param ctx Context
-	@param draw Draw
-	@param a Vector3 -- the start, on the middle line
-	@param b Vector3 -- the end, on the middle line
-	@return boolean -- whether the run would pass through a vent other than the ones it starts from
-]]
-local function blocked(ctx: Context, draw: Draw, a: Vector3, b: Vector3): boolean
-	return (b - a).Magnitude > 0.1 and Snapper.VentBlocked(a, b, Settings.VentOuter(sizing(ctx, draw)), skipped(draw))
-end
-
 local vent: Engine.Shape = {
 	Id = "Vent",
 	Vents = true,
@@ -453,16 +441,6 @@ local vent: Engine.Shape = {
 	Chain = true,
 	Build = function(ctx, draw, a, b)
 		local up = lift(ctx, draw)
-
-		if blocked(ctx, draw, a + up, b + up) then
-			ventOf(draw).Ends = nil
-			ventOf(draw).Blocked = true
-
-			return {}
-		end
-
-		ventOf(draw).Blocked = false
-
 		local outward = ventOf(draw).End
 
 		ventOf(draw).Ends = { a + up, b + up }
@@ -470,15 +448,10 @@ local vent: Engine.Shape = {
 		if draw.Chained and draw.Previous then
 			return Vents.VentRun(sizing(ctx, draw), a, b, draw.Previous.dir)
 		elseif outward then
-			return Vents.VentRun(sizing(ctx, draw), a - outward * OVERLAP, b, outward)
+			return Vents.VentRun(sizing(ctx, draw), a, b, outward)
 		end
 
 		return Vents.VentRun(sizing(ctx, draw), a, b, nil)
-	end,
-	Problem = function(_specs, draw)
-		return if ventOf(draw).Blocked == true and draw.First
-			then "That would run into another vent; start beside it."
-			else nil
 	end,
 	Commit = function(ctx, draw, result)
 		Bends.Join(draw, result, Vents.VentStrips(sizing(ctx, draw)))
@@ -544,21 +517,10 @@ end
 	@param draw Draw
 	@param from Vector3 -- the low or first end, on the middle line
 	@param to Vector3 -- the other end, on the middle line
-	@return { Spec } -- the sloped duct, reaching a little into the vents it continues so no gap shows
+	@return { Spec } -- the sloped duct, ending flush against the vents it continues
 ]]
 local function slope(ctx: Context, draw: Draw, from: Vector3, to: Vector3): { Geometry.Spec }
-	local state = ventOf(draw)
-	local along = (to - from).Unit
-
 	ventOf(draw).Ends = { from, to }
-
-	if state.End then
-		from -= along * (OVERLAP + 0.03)
-	end
-
-	if state.TargetEnd then
-		to += along * (OVERLAP + 0.03)
-	end
 
 	return Vents.VentDuct(sizing(ctx, draw), from, to)
 end
