@@ -30,3 +30,4 @@ roblox.toml
 # Built plugin
 *.rbxm
 .agents/
+!src/Models/*.rbxm

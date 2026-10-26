@@ -24,6 +24,42 @@ type Context = Types.Context
 ]=]
 type PropState = { Frame: CFrame? }
 
+local MODEL_TURN = CFrame.fromMatrix(Vector3.zero, Vector3.new(0, 1, 0), Vector3.new(0, 0, 1), Vector3.new(1, 0, 0))
+
+--[[
+	Copies the stored model of a prop that has one, exactly as it was saved, and puts it where the
+	prop would stand. The stored models share one pivot turn; `Pivot` is where each pivot sits under the mount point.
+
+	@param def PropData.Prop
+	@param frame CFrame
+	@param scale number
+	@return Model? -- nil when the prop has no stored model
+]]
+local function cloneModel(def: PropData.Prop, frame: CFrame, scale: number): Model?
+	local root = script.Parent and script.Parent.Parent
+	local folder = if root then root:FindFirstChild("Models") else nil
+	local stored = if folder and def.Model then folder:FindFirstChild(def.Model) else nil
+	local pivot = def.Pivot
+
+	if not stored or not stored:IsA("Model") or not pivot then
+		return nil
+	end
+
+	local model = stored:Clone()
+	local factor = math.max(0.1, scale)
+
+	model.Name = "Vlux_Prop_" .. def.Id
+
+	if factor ~= 1 then
+		model:ScaleTo(model:GetScale() * factor)
+	end
+
+	model:PivotTo(frame * CFrame.new(pivot[1] * factor, pivot[2] * factor, pivot[3] * factor) * MODEL_TURN)
+	model.Parent = Geometry.GetScope() or workspace
+
+	return model
+end
+
 --[[
 	@param ctx Context
 	@param def PropData.Prop
@@ -116,6 +152,10 @@ local tool: Types.Tool = {
 		end
 
 		ctx.Edit("Place prop", function()
+			if def and frame and cloneModel(def, frame, settings.PropScale) then
+				return
+			end
+
 			Geometry.Materialize(specs, "Vlux_Prop_" .. id):SetAttribute("VluxyBT_Prop", id)
 		end)
 	end,
