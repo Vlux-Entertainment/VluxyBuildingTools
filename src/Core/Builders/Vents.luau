@@ -22,6 +22,7 @@ type Strip = Shapes.Strip
 
 local END_REACH = 1.25
 local END_OVER = 0.06
+local END_FIT = 0.1
 
 local Vents = {}
 
@@ -348,7 +349,7 @@ end
 ]=]
 function Vents.VentCap(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
-	local size = Settings.VentOuter(settings) + 0.06
+	local size = Settings.VentOuter(settings) + END_FIT
 
 	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, 0.025), "VentCap")
 
@@ -366,7 +367,7 @@ end
 function Vents.VentFan(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
 	local frame = surfaceFrame(center, normal)
-	local size = Settings.VentOuter(settings)
+	local size = Settings.VentOuter(settings) + END_FIT
 	local bar, depth = 0.25, 0.35
 	local edge = size / 2 - bar / 2
 	local hub = 0.6
