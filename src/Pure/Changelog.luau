@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.12",
+		Date = "2026-10-25",
+		Changes = {
+			'The "would run into another vent" check is gone; a vent is never refused for touching another one.',
+			"Vents meet flush: no gap where one duct joins another, a vent hole or a wall, and slopes end exactly against the vents they join instead of overlapping them, which removes the flicker.",
+		},
+	},
+	{
 		Version = "1.7.11",
 		Date = "2026-10-25",
 		Changes = {
