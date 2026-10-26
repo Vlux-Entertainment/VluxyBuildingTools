@@ -23,7 +23,7 @@ type Strip = Shapes.Strip
 local END_REACH = 1.25
 local END_OVER = 0.06
 local END_FIT = 0.1
-local FAN_DEPTH = 0.35
+local FAN_DEPTH = 0.4
 
 local Vents = {}
 

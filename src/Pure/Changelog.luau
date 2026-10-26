@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.17",
+		Date = "2026-10-25",
+		Changes = {
+			"A fan sits fully outside the vent with its back face on the open end, so it no longer clips into the duct or bands. An end cap sits flush on a bare end, or against the front of a fan.",
+		},
+	},
+	{
 		Version = "1.7.16",
 		Date = "2026-10-25",
 		Changes = {
