@@ -89,7 +89,7 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 			aimed -= aimedOut * DUCT_INSET
 
 			if mode == "VentCap" and fanAt(aimed + aimedOut * DUCT_INSET, aimedOut) then
-				return placed(Vents.VentPlug(ctx.Settings, aimed + aimedOut * (0.075 - Vents.FAN_DEPTH / 2), aimedOut))
+				return placed(Vents.VentPlug(ctx.Settings, aimed + aimedOut * (0.075 + Vents.FAN_DEPTH / 2), aimedOut))
 			end
 		else
 			local hole = VentHoles.Find(ray, nil, limit)
@@ -131,7 +131,7 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 			center, normal = endPoint - outward * DUCT_INSET, outward
 
 			if mode == "VentCap" and fanAt(endPoint, outward) then
-				return placed(Vents.VentPlug(ctx.Settings, center + outward * (0.075 - Vents.FAN_DEPTH / 2), outward))
+				return placed(Vents.VentPlug(ctx.Settings, center + outward * (0.075 + Vents.FAN_DEPTH / 2), outward))
 			end
 		else
 			center = Common.SnapOnSurface(center, normal, function(value)
