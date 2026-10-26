@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.18",
+		Date = "2026-10-26",
+		Changes = {
+			"Square windows can have a frame: two side bars, a top bar and a bottom sill that sticks out of the wall you click. Switch it on with Window frame; its width, depth and the sill lip are in the advanced settings.",
+			"Inner frames split a framed window into panes with thin bars; set how many panes across and up, and how wide the bars are.",
+		},
+	},
+	{
 		Version = "1.7.17",
 		Date = "2026-10-25",
 		Changes = {

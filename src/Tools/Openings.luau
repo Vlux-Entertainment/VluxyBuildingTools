@@ -57,7 +57,20 @@ local function dimensions(settings: Settings.Settings, mode: string): { [string]
 		local diameter = math.min(settings.WindowWidth, settings.WindowHeight)
 
 		return { Width = diameter, Height = diameter, Sill = settings.WindowSill }
-	elseif mode == "Window" or mode == "TriangleWindow" then
+	elseif mode == "Window" then
+		return {
+			Width = settings.WindowWidth,
+			Height = settings.WindowHeight,
+			Sill = settings.WindowSill,
+			WindowFrame = settings.WindowFrame,
+			FrameWidth = settings.WindowFrameWidth,
+			FrameDepth = settings.WindowFrameDepth,
+			SillReach = settings.WindowSillReach,
+			Columns = if settings.WindowDividers then settings.WindowColumns else nil,
+			Rows = if settings.WindowDividers then settings.WindowRows else nil,
+			DividerWidth = settings.WindowDividerWidth,
+		}
+	elseif mode == "TriangleWindow" then
 		return { Width = settings.WindowWidth, Height = settings.WindowHeight, Sill = settings.WindowSill }
 	end
 
@@ -149,7 +162,8 @@ local function opening(mode: string): Types.Tool
 		end
 
 		local settings = ctx.Settings
-		local fitted = mode == "Door" and (settings.DoorFrame or settings.DoorPanel)
+		local fitted = (mode == "Door" and (settings.DoorFrame or settings.DoorPanel))
+			or (mode == "Window" and settings.WindowFrame)
 
 		if settings.CutDepth and not fitted and not state.Locked then
 			local hit = Cursor.ScopedHit(ctx.Cursor)

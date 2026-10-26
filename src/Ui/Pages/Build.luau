@@ -271,6 +271,11 @@ return function(ui: Ui): { Instance }
 		end
 	end
 
+	--[[ Whether the window frame and its inner bars are both on. ]]
+	local function dividers(): boolean
+		return Store.Get(store, "WindowFrame") == true and Store.Get(store, "WindowDividers") == true
+	end
+
 	local function number(key: string, title: string, min: number, max: number, step: number?, visible: () -> boolean)
 		return Controls.Number(ui, {
 			Key = key,
@@ -278,7 +283,7 @@ return function(ui: Ui): { Instance }
 			Min = min,
 			Max = max,
 			Step = step,
-			Integer = key == "ArchSegments",
+			Integer = key == "ArchSegments" or key == "WindowColumns" or key == "WindowRows",
 			Visible = visible,
 		})
 	end
@@ -380,6 +385,7 @@ return function(ui: Ui): { Instance }
 	end
 
 	local door = modes("Door")
+	local window = modes("Window")
 
 	return {
 		Controls.Card(ui, "BUILD TOOLS", {
@@ -487,6 +493,14 @@ return function(ui: Ui): { Instance }
 			number("WindowWidth", "Window width", 0.1, 1024, nil, when(WINDOWS)),
 			number("WindowHeight", "Window height", 0.1, 1024, nil, when(WINDOWS)),
 			number("WindowSill", "Bottom above floor", 0, 1024, nil, when(WINDOWS)),
+			Controls.Switch(ui, { Title = "Window frame", Key = "WindowFrame", Visible = when(window) }),
+			Controls.Switch(ui, {
+				Title = "Inner frames",
+				Key = "WindowDividers",
+				Visible = when(window, false, setting("WindowFrame")),
+			}),
+			number("WindowColumns", "Panes across", 1, 32, nil, when(window, false, dividers)),
+			number("WindowRows", "Panes up", 1, 32, nil, when(window, false, dividers)),
 			number("PillarWidth", "Pillar width", 0.1, 256, nil, when(modes("Pillar", "PillaredWall"))),
 			Controls.Choice(ui, {
 				Options = {
@@ -600,6 +614,10 @@ return function(ui: Ui): { Instance }
 				4,
 				when(modes("Arch", "ArchOpening", "ArchedCorridor"), true)
 			),
+			number("WindowFrameWidth", "Frame width", 0.05, 8, nil, when(window, true, setting("WindowFrame"))),
+			number("WindowFrameDepth", "Frame depth", 0.05, 64, nil, when(window, true, setting("WindowFrame"))),
+			number("WindowSillReach", "Sill lip", 0, 8, nil, when(window, true, setting("WindowFrame"))),
+			number("WindowDividerWidth", "Inner bar width", 0.02, 4, nil, when(window, true, dividers)),
 			number("FrameWidth", "Frame width", 0.05, 8, nil, when(door, true, setting("DoorFrame"))),
 			number("FrameDepth", "Frame depth", 0.05, 64, nil, when(door, true, setting("DoorFrame"))),
 			number("DoorThickness", "Door thickness", 0.05, 8, nil, when(door, true, setting("DoorPanel"))),
