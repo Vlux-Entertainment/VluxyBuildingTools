@@ -30,6 +30,8 @@ export type Prop = {
 	Category: string,
 	Mount: string,
 	Parts: { Part },
+	Model: string?,
+	Pivot: { number }?,
 }
 
 export type Category = {
@@ -168,6 +170,8 @@ PropData.Props = {
 		Label = "Ceiling light",
 		Category = "Lighting",
 		Mount = "ceiling",
+		Model = "CeilingLight",
+		Pivot = { 0, -0.12575912, 0 },
 		Parts = {
 			C(0, -0.0455, 0, 1.06, 0.091),
 			glowing(C(0, -0.121, 0, 0.908, 0.061), 144 / 255, 135 / 255, 120 / 255),
@@ -180,6 +184,8 @@ PropData.Props = {
 		Label = "Ceiling fan",
 		Category = "Lighting",
 		Mount = "ceiling",
+		Model = "CeilingFan",
+		Pivot = { 0, -0.8615, 0 },
 		Parts = {
 			C(0, -0.1, 0, 1, 0.2),
 			C(0, -0.55, 0, 0.18, 0.7),
