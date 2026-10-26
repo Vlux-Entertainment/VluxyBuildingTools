@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.21",
+		Date = "2026-10-26",
+		Changes = {
+			"The ceiling light and ceiling fan carry a point light and an upward spot light, like the originals, in a hidden part. They have no attributes or tags.",
+		},
+	},
+	{
 		Version = "1.7.20",
 		Date = "2026-10-26",
 		Changes = {

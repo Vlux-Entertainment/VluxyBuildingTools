@@ -20,9 +20,11 @@ export type Spec = {
 	shape: string?,
 	transparency: number?,
 	collide: boolean?,
+	glow: { number }?,
+	lamp: { Point: number, Range: number }?,
 }
 
-local GLOW_COLOR = Color3.new(1, 0.816, 0.502)
+local LIGHT_COLOR = Color3.new(1, 0.816, 0.502)
 
 local MAX_PART_SIZE = 2048
 local ORIGINAL_COLOR = "VluxGreybox_OriginalColor_v1"
@@ -204,16 +206,37 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 			(part :: Part).Shape = Enum.PartType.Ball
 		end
 
-		if spec.name == "PropGlow" then
+		local glow = spec.glow
+
+		if glow then
 			part.Material = Enum.Material.Neon
-			part.Color = GLOW_COLOR
+			part.Color = Color3.new(glow[1], glow[2], glow[3])
+		end
 
-			local light = Instance.new("PointLight")
+		local lamp = spec.lamp
 
-			light.Color = GLOW_COLOR
-			light.Brightness = 0.3
-			light.Range = 12
-			light.Parent = part
+		if lamp then
+			part.Transparency = 1
+			part.CanCollide = false
+			part.CanTouch = false
+			part.CanQuery = false
+			part.CastShadow = false
+
+			local point = Instance.new("PointLight")
+
+			point.Color = LIGHT_COLOR
+			point.Brightness = lamp.Point
+			point.Range = lamp.Range
+			point.Parent = part
+
+			local spot = Instance.new("SpotLight")
+
+			spot.Color = LIGHT_COLOR
+			spot.Brightness = 0.25
+			spot.Range = 12
+			spot.Angle = 99
+			spot.Face = Enum.NormalId.Top
+			spot.Parent = part
 		end
 
 		if spec.name == "Door_Panel" then
