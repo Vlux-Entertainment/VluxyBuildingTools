@@ -22,7 +22,7 @@ export type Spec = {
 	collide: boolean?,
 	glow: { number }?,
 	lamp: boolean?,
-	lights: boolean?,
+	lights: { Brightness: number, Range: number }?,
 }
 
 local LIGHT_COLOR = Color3.fromRGB(255, 208, 128)
@@ -222,7 +222,9 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 			part.CastShadow = false
 		end
 
-		if spec.lights then
+		local lights = spec.lights
+
+		if lights then
 			part.Name = "Config"
 			part.Material = Enum.Material.Plastic
 			part.Color = Color3.fromRGB(17, 17, 17)
@@ -244,8 +246,8 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 
 			spot.Name = "InnerSpot"
 			spot.Color = LIGHT_COLOR
-			spot.Brightness = 0.25
-			spot.Range = 12
+			spot.Brightness = lights.Brightness * 5 / 6
+			spot.Range = lights.Range * 1.2
 			spot.Angle = 99
 			spot.Face = Enum.NormalId.Top
 			spot.Parent = attachment
@@ -254,8 +256,8 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 
 			point.Name = "Point"
 			point.Color = LIGHT_COLOR
-			point.Brightness = 0.3
-			point.Range = 10
+			point.Brightness = lights.Brightness
+			point.Range = lights.Range
 			point.Parent = attachment
 		end
 
