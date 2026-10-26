@@ -22,9 +22,10 @@ export type Spec = {
 	collide: boolean?,
 	glow: { number }?,
 	lamp: boolean?,
+	lights: boolean?,
 }
 
-local LIGHT_COLOR = Color3.new(1, 0.816, 0.502)
+local LIGHT_COLOR = Color3.fromRGB(255, 208, 128)
 
 local MAX_PART_SIZE = 2048
 local ORIGINAL_COLOR = "VluxGreybox_OriginalColor_v1"
@@ -214,6 +215,14 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 		end
 
 		if spec.lamp then
+			part.Transparency = 1
+			part.CanCollide = false
+			part.CanTouch = false
+			part.CanQuery = false
+			part.CastShadow = false
+		end
+
+		if spec.lights then
 			part.Name = "Config"
 			part.Material = Enum.Material.Plastic
 			part.Color = Color3.fromRGB(17, 17, 17)
@@ -226,7 +235,7 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 			local attachment = Instance.new("Attachment")
 
 			attachment.Name = "Lights"
-			attachment.Position = Vector3.new(0, -0.276, 0)
+			attachment.Position = Vector3.new(0.0029296875, -0.2760047912597656, -0.005126953125)
 			attachment.Orientation = Vector3.new(0, 0, 180)
 			attachment.Visible = false
 			attachment.Parent = part

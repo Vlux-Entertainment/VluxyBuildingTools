@@ -21,6 +21,7 @@ export type Part = {
 	accent: boolean,
 	glow: { number }?,
 	lamp: boolean?,
+	lights: boolean?,
 }
 
 export type Prop = {
@@ -91,12 +92,23 @@ local function glowing(part: Part, r: number, g: number, b: number): Part
 end
 
 --[[
-	@return Part -- a small hidden part, named Config, that holds the prop's point and spot lights
+	@return Part -- a small hidden part with no lights, named PropLamp
 ]]
 local function lamp(x: number, y: number, z: number): Part
 	local part = S(x, y, z, 0.1)
 
 	part.lamp = true
+
+	return part
+end
+
+--[[
+	@return Part -- a small hidden part, named Config, that holds the prop's point and spot lights
+]]
+local function lights(x: number, y: number, z: number): Part
+	local part = S(x, y, z, 0.1)
+
+	part.lights = true
 
 	return part
 end
@@ -157,9 +169,10 @@ PropData.Props = {
 		Category = "Lighting",
 		Mount = "ceiling",
 		Parts = {
-			C(0, -0.046, 0, 1.06, 0.091),
-			glowing(C(0, -0.121, 0, 0.908, 0.061), 0.565, 0.529, 0.471),
-			lamp(0, 1.05, 0),
+			C(0, -0.0455, 0, 1.06, 0.091),
+			glowing(C(0, -0.121, 0, 0.908, 0.061), 144 / 255, 135 / 255, 120 / 255),
+			lamp(0, -0.068, 0),
+			lights(0, 1.0501, 0),
 		},
 	},
 	{
@@ -176,8 +189,9 @@ PropData.Props = {
 			B(-1.975, -1.175, 0, 2.45, 0.12, 0.8, true),
 			B(0, -1.175, 1.975, 0.8, 0.12, 2.45, true),
 			B(0, -1.175, -1.975, 0.8, 0.12, 2.45, true),
-			glowing(S(0, -1.537, 0, 0.372), 1, 0.816, 0.502),
-			lamp(0, -1.4, 0),
+			glowing(S(0, -1.537, 0, 0.372), 1, 208 / 255, 128 / 255),
+			lamp(0, -1.22, 0),
+			lights(0, -1.4, 0),
 		},
 	},
 	-- Bathroom

@@ -26,6 +26,7 @@ function Props.Build(prop: PropData.Prop, frame: CFrame, scale: number): { Geome
 		local at = frame * CFrame.new(part.x * factor, part.y * factor, part.z * factor)
 		local name = if part.lamp
 			then "PropLamp"
+			elseif part.lights then "Config"
 			elseif part.glow then "PropGlow"
 			elseif part.accent then "PropAccent"
 			else "Prop"
@@ -47,9 +48,9 @@ function Props.Build(prop: PropData.Prop, frame: CFrame, scale: number): { Geome
 			Geometry.Add(out, Vector3.new(part.sx, part.sy, part.sz) * factor, at, name, nil, "Part")
 		end
 
-		out[#out].glow, out[#out].lamp = part.glow, part.lamp
+		out[#out].glow, out[#out].lamp, out[#out].lights = part.glow, part.lamp, part.lights
 
-		if part.lamp then
+		if part.lights then
 			out[#out].cf = CFrame.new(at.Position)
 		end
 	end
