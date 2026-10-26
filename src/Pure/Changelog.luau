@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.26",
+		Date = "2026-10-26",
+		Changes = {
+			"Reload prop pictures now reads the live VluxyBuildingTools folder in ServerStorage when it is there, because a plugin saved as a local plugin is only a snapshot and kept drawing the old props.",
+		},
+	},
+	{
 		Version = "1.7.25",
 		Date = "2026-10-26",
 		Changes = {

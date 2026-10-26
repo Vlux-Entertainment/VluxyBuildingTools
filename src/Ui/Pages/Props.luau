@@ -13,6 +13,7 @@
 ]=]
 
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Actions = require("../../App/Actions")
 local Colors = require("../../Core/Colors")
@@ -41,10 +42,13 @@ local copy: Instance? = nil
 
 --[[
 	Copies the plugin's code and loads the copy, so the pictures come from the prop code as it is
-	now, not the version that was loaded when the plugin started. The copy before it is thrown away.
+	now, not the version that was loaded when the plugin started. A plugin saved from the place
+	is a snapshot, so the live VluxyBuildingTools folder in ServerStorage is copied when it is there.
+	The copy before it is thrown away.
 ]]
 local function reconstruct()
-	local root = script.Parent and script.Parent.Parent and script.Parent.Parent.Parent
+	local live = ServerStorage:FindFirstChild("VluxyBuildingTools")
+	local root = if live then live else script.Parent and script.Parent.Parent and script.Parent.Parent.Parent
 	local previous = copy
 
 	if not root then
