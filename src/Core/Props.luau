@@ -48,6 +48,10 @@ function Props.Build(prop: PropData.Prop, frame: CFrame, scale: number): { Geome
 		end
 
 		out[#out].glow, out[#out].lamp = part.glow, part.lamp
+
+		if part.lamp then
+			out[#out].cf = CFrame.new(at.Position)
+		end
 	end
 
 	return out

@@ -21,7 +21,7 @@ export type Spec = {
 	transparency: number?,
 	collide: boolean?,
 	glow: { number }?,
-	lamp: { Point: number, Range: number }?,
+	lamp: boolean?,
 }
 
 local LIGHT_COLOR = Color3.new(1, 0.816, 0.502)
@@ -213,30 +213,41 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 			part.Color = Color3.new(glow[1], glow[2], glow[3])
 		end
 
-		local lamp = spec.lamp
-
-		if lamp then
+		if spec.lamp then
+			part.Name = "Config"
+			part.Material = Enum.Material.Plastic
+			part.Color = Color3.fromRGB(17, 17, 17)
 			part.Transparency = 1
 			part.CanCollide = false
 			part.CanTouch = false
 			part.CanQuery = false
 			part.CastShadow = false
 
-			local point = Instance.new("PointLight")
+			local attachment = Instance.new("Attachment")
 
-			point.Color = LIGHT_COLOR
-			point.Brightness = lamp.Point
-			point.Range = lamp.Range
-			point.Parent = part
+			attachment.Name = "Lights"
+			attachment.Position = Vector3.new(0, -0.276, 0)
+			attachment.Orientation = Vector3.new(0, 0, 180)
+			attachment.Visible = false
+			attachment.Parent = part
 
 			local spot = Instance.new("SpotLight")
 
+			spot.Name = "InnerSpot"
 			spot.Color = LIGHT_COLOR
 			spot.Brightness = 0.25
 			spot.Range = 12
 			spot.Angle = 99
 			spot.Face = Enum.NormalId.Top
-			spot.Parent = part
+			spot.Parent = attachment
+
+			local point = Instance.new("PointLight")
+
+			point.Name = "Point"
+			point.Color = LIGHT_COLOR
+			point.Brightness = 0.3
+			point.Range = 10
+			point.Parent = attachment
 		end
 
 		if spec.name == "Door_Panel" then
