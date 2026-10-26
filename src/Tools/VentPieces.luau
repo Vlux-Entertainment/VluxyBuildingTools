@@ -47,7 +47,7 @@ local BUILDERS: { [string]: (Settings.Settings, Vector3, Vector3) -> { Geometry.
 	@return boolean -- whether a fan already sits on that end
 ]]
 local function fanAt(point: Vector3, outward: Vector3): boolean
-	for _, part in workspace:GetPartBoundsInRadius(point + outward * 0.045, 0.4) do
+	for _, part in workspace:GetPartBoundsInRadius(point + outward * (Vents.FAN_DEPTH / 2), 0.4) do
 		if string.sub(part.Name, 1, 7) == "VentFan" then
 			return true
 		end
@@ -62,6 +62,30 @@ end
 ]]
 local function placed(specs: { Geometry.Spec }): Types.Preview
 	return { Specs = specs, Valid = #specs > 0, Message = "Click to place it." }
+end
+
+--[[
+	Cap and fan sit exactly on the vent's end: the fan's back face on the end, the cap's back face on
+	the end or, over a fan, on the fan's front. Nothing overlaps the duct, so nothing bands.
+
+	@param settings Settings.Settings
+	@param mode string
+	@param point Vector3 -- the middle of the vent's open end
+	@param outward Vector3 -- the way the end faces
+	@return { Geometry.Spec }
+]]
+local function onEnd(settings: Settings.Settings, mode: string, point: Vector3, outward: Vector3): { Geometry.Spec }
+	if mode == "VentFan" then
+		return Vents.VentFan(settings, point + outward * (Vents.FAN_DEPTH / 2), outward)
+	elseif mode == "VentCap" then
+		if fanAt(point, outward) then
+			return Vents.VentPlug(settings, point + outward * Vents.FAN_DEPTH, outward)
+		end
+
+		return Vents.VentCap(settings, point + outward * 0.075, outward)
+	end
+
+	return BUILDERS[mode](settings, point - outward * DUCT_INSET + outward * 0.075, outward)
 end
 
 --[[
@@ -86,11 +110,7 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 		aimed, aimedOut = Snapper.VentEndOnRay(ray, size, limit)
 
 		if aimed and aimedOut then
-			aimed -= aimedOut * DUCT_INSET
-
-			if mode == "VentCap" and fanAt(aimed + aimedOut * DUCT_INSET, aimedOut) then
-				return placed(Vents.VentPlug(ctx.Settings, aimed + aimedOut * (0.075 + Vents.FAN_DEPTH / 2), aimedOut))
-			end
+			return placed(onEnd(ctx.Settings, mode, aimed, aimedOut))
 		else
 			local hole = VentHoles.Find(ray, nil, limit)
 
@@ -128,11 +148,7 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 		end
 
 		if endPoint and outward then
-			center, normal = endPoint - outward * DUCT_INSET, outward
-
-			if mode == "VentCap" and fanAt(endPoint, outward) then
-				return placed(Vents.VentPlug(ctx.Settings, center + outward * (0.075 + Vents.FAN_DEPTH / 2), outward))
-			end
+			return placed(onEnd(ctx.Settings, mode, endPoint, outward))
 		else
 			center = Common.SnapOnSurface(center, normal, function(value)
 				return Cursor.Snap(ctx.Cursor, value)
