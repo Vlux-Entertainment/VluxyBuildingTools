@@ -13,7 +13,7 @@ return {
 		for _, prop in PropData.Props do
 			expect.truthy(known[prop.Category])
 			expect.truthy(#prop.Parts > 0)
-			expect.truthy(prop.Mount == "floor" or prop.Mount == "wall")
+			expect.truthy(prop.Mount == "floor" or prop.Mount == "wall" or prop.Mount == "ceiling")
 		end
 	end,
 
@@ -30,11 +30,15 @@ return {
 		end
 	end,
 
-	["every shape has a positive size and rests on or above the floor"] = function(expect)
+	["every shape has a positive size and rests on the floor, or hangs below the ceiling"] = function(expect)
 		for _, prop in PropData.Props do
 			for _, part in prop.Parts do
 				expect.truthy(part.sx > 0 and part.sy > 0 and part.sz > 0)
-				expect.truthy(part.y - part.sy / 2 >= -0.001)
+				if prop.Mount == "ceiling" then
+					expect.truthy(part.y + part.sy / 2 <= 0.001)
+				else
+					expect.truthy(part.y - part.sy / 2 >= -0.001)
+				end
 			end
 		end
 	end,

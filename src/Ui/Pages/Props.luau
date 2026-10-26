@@ -250,7 +250,12 @@ return function(ui: Ui): { Instance }
 					BackgroundTransparency = 1,
 					Text = "",
 					ZIndex = 5,
-					ui.Popups.Tip({ Text = prop.Label .. if prop.Mount == "wall" then " (hangs on a wall)." else "." }),
+					ui.Popups.Tip({
+						Text = prop.Label .. if prop.Mount == "wall"
+							then " (hangs on a wall)."
+							elseif prop.Mount == "ceiling" then " (hangs from a ceiling)."
+							else ".",
+					}),
 					MouseEnter = function()
 						hovered = prop.Id
 					end,

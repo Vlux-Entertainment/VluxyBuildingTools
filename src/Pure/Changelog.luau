@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.20",
+		Date = "2026-10-26",
+		Changes = {
+			"A Lighting section in Props, with a ceiling light and a ceiling fan built from plain Parts. They hang from the underside of a ceiling; the light and the fan's bulb glow and shine a warm light.",
+		},
+	},
+	{
 		Version = "1.7.19",
 		Date = "2026-10-26",
 		Changes = {
