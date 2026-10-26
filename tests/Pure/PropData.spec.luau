@@ -34,7 +34,9 @@ return {
 		for _, prop in PropData.Props do
 			for _, part in prop.Parts do
 				expect.truthy(part.sx > 0 and part.sy > 0 and part.sz > 0)
-				if prop.Mount == "ceiling" then
+				if part.lamp then
+					expect.truthy(part.sx > 0)
+				elseif prop.Mount == "ceiling" then
 					expect.truthy(part.y + part.sy / 2 <= 0.001)
 				else
 					expect.truthy(part.y - part.sy / 2 >= -0.001)

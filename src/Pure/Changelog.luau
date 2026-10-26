@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.22",
+		Date = "2026-10-26",
+		Changes = {
+			"The ceiling light and ceiling fan now match the corrected versions: the fan's housing, blades and bulb sit right under the rod, and the lights live in a hidden Config part, in an attachment named Lights, with a spot light and a point light.",
+		},
+	},
+	{
 		Version = "1.7.21",
 		Date = "2026-10-26",
 		Changes = {
