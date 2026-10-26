@@ -42,6 +42,29 @@ local BUILDERS: { [string]: (Settings.Settings, Vector3, Vector3) -> { Geometry.
 }
 
 --[[
+	@param point Vector3 -- the middle of a vent's open end
+	@param outward Vector3 -- the way the end faces
+	@return boolean -- whether a fan already sits on that end
+]]
+local function fanAt(point: Vector3, outward: Vector3): boolean
+	for _, part in workspace:GetPartBoundsInRadius(point + outward * 0.045, 0.4) do
+		if string.sub(part.Name, 1, 7) == "VentFan" then
+			return true
+		end
+	end
+
+	return false
+end
+
+--[[
+	@param specs { Geometry.Spec }
+	@return Types.Preview
+]]
+local function placed(specs: { Geometry.Spec }): Types.Preview
+	return { Specs = specs, Valid = #specs > 0, Message = "Click to place it." }
+end
+
+--[[
 	@param ctx Context
 	@param mode string -- VentCover, VentCap, VentFan or VentPeek
 	@param state Piece
@@ -64,6 +87,10 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 
 		if aimed and aimedOut then
 			aimed -= aimedOut * DUCT_INSET
+
+			if mode == "VentCap" and fanAt(aimed + aimedOut * DUCT_INSET, aimedOut) then
+				return placed(Vents.VentPlug(ctx.Settings, aimed + aimedOut * (0.075 - Vents.FAN_DEPTH / 2), aimedOut))
+			end
 		else
 			local hole = VentHoles.Find(ray, nil, limit)
 
@@ -102,6 +129,10 @@ local function piecePreview(ctx: Context, mode: string, state: Piece): Types.Pre
 
 		if endPoint and outward then
 			center, normal = endPoint - outward * DUCT_INSET, outward
+
+			if mode == "VentCap" and fanAt(endPoint, outward) then
+				return placed(Vents.VentPlug(ctx.Settings, center + outward * (0.075 - Vents.FAN_DEPTH / 2), outward))
+			end
 		else
 			center = Common.SnapOnSurface(center, normal, function(value)
 				return Cursor.Snap(ctx.Cursor, value)

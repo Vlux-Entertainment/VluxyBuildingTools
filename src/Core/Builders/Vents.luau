@@ -23,6 +23,7 @@ type Strip = Shapes.Strip
 local END_REACH = 1.25
 local END_OVER = 0.06
 local END_FIT = 0.1
+local FAN_DEPTH = 0.35
 
 local Vents = {}
 
@@ -357,6 +358,24 @@ function Vents.VentCap(settings: Settings, center: Vector3, normal: Vector3): { 
 end
 
 --[=[
+	A plain plate that seals the inside of a vent, its front face at the point and the rest reaching
+	back along the duct, so it fits behind a fan.
+
+	@param settings Settings
+	@param center Vector3 -- the middle of the plate's front face
+	@param normal Vector3 -- the way the opening faces
+	@return { Spec }
+]=]
+function Vents.VentPlug(settings: Settings, center: Vector3, normal: Vector3): { Spec }
+	local out: { Spec } = {}
+	local size = settings.VentSize + 0.04
+
+	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, -0.1), "VentCap")
+
+	return out
+end
+
+--[=[
 	A frame with four fan blades set at an angle, closing the end of a vent.
 
 	@param settings Settings
@@ -368,7 +387,7 @@ function Vents.VentFan(settings: Settings, center: Vector3, normal: Vector3): { 
 	local out: { Spec } = {}
 	local frame = surfaceFrame(center, normal)
 	local size = Settings.VentOuter(settings) + END_FIT
-	local bar, depth = 0.25, 0.35
+	local bar, depth = 0.25, FAN_DEPTH
 	local edge = size / 2 - bar / 2
 	local hub = 0.6
 	local reach = size / 2 - bar
@@ -393,6 +412,7 @@ function Vents.VentFan(settings: Settings, center: Vector3, normal: Vector3): { 
 end
 
 Vents.PEEK_HEIGHT = 1.35
+Vents.FAN_DEPTH = FAN_DEPTH
 
 --[=[
 	A small rectangular louvred cover, for looking out of a vent through a wall.
