@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.19",
+		Date = "2026-10-26",
+		Changes = {
+			"A framed window has Ribs across (X) and Ribs up (Y): how many inner bars it has each way, from 0 up. They replace the Inner frames switch and the pane counts.",
+		},
+	},
+	{
 		Version = "1.7.18",
 		Date = "2026-10-26",
 		Changes = {

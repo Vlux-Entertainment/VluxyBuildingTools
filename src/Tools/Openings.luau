@@ -66,8 +66,8 @@ local function dimensions(settings: Settings.Settings, mode: string): { [string]
 			FrameWidth = settings.WindowFrameWidth,
 			FrameDepth = settings.WindowFrameDepth,
 			SillReach = settings.WindowSillReach,
-			Columns = if settings.WindowDividers then settings.WindowColumns else nil,
-			Rows = if settings.WindowDividers then settings.WindowRows else nil,
+			Columns = math.floor(settings.WindowRibsX) + 1,
+			Rows = math.floor(settings.WindowRibsY) + 1,
 			DividerWidth = settings.WindowDividerWidth,
 		}
 	elseif mode == "TriangleWindow" then
