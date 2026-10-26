@@ -19,6 +19,15 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.29",
+		Date = "2026-10-26",
+		Changes = {
+			"Lights: every light has a Light on switch in the Props tab, so it can be placed dark. The hidden lamp parts no longer show in the prop pictures or the preview.",
+			"The Globe light is now a half globe, cut as a union, with a knob on the bottom. The Chandelier is grander, with two tiers of arms, candles and hanging crystals. The Desk lamp is now an old banker's lamp with a green glass shade. The Tall lamp is gone, the Floor lamp does its job.",
+			"Brightness and range of the lamps are scaled to match the ceiling light.",
+		},
+	},
+	{
 		Version = "1.7.28",
 		Date = "2026-10-26",
 		Changes = {

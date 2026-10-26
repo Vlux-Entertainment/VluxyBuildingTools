@@ -23,6 +23,8 @@ export type Spec = {
 	glow: { number }?,
 	lamp: boolean?,
 	lights: { Brightness: number, Range: number }?,
+	paint: { Color: { number }, Material: string, Transparency: number }?,
+	half: boolean?,
 }
 
 local LIGHT_COLOR = Color3.fromRGB(255, 208, 128)
@@ -181,6 +183,42 @@ function Geometry.Add(out: { Spec }, size: Vector3, cf: CFrame, name: string?, s
 end
 
 --[=[
+	Cuts a ball in half, keeping the half below its centre, and returns the result as a union.
+	The ball itself comes back when the cut fails.
+
+	@param ball Part
+	@return BasePart
+]=]
+function Geometry.Halve(ball: Part): BasePart
+	local cutter = Instance.new("Part")
+	local width = ball.Size.X
+
+	cutter.Anchored = true
+	cutter.Size = Vector3.new(width + 0.2, width / 2 + 0.1, width + 0.2)
+	cutter.CFrame = ball.CFrame * CFrame.new(0, width / 4 + 0.05, 0)
+	cutter.Parent = workspace
+
+	local ok, carved = pcall(function()
+		return ball:SubtractAsync({ cutter })
+	end)
+
+	cutter:Destroy()
+
+	if not ok or not carved then
+		return ball
+	end
+
+	carved.Name = ball.Name
+	carved.Anchored = true
+	carved.Material = ball.Material
+	carved.Color = ball.Color
+	carved.Transparency = ball.Transparency
+	carved.UsePartColor = true
+
+	return carved
+end
+
+--[=[
 	@param specs { Spec }
 	@param title string -- the Model's name
 	@return Model -- parented to the working folder or Workspace, and left unselected so hotkeys keep working
@@ -212,6 +250,15 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 		if glow then
 			part.Material = Enum.Material.Neon
 			part.Color = Color3.new(glow[1], glow[2], glow[3])
+		end
+
+		local paint = spec.paint
+
+		if paint then
+			part.Material = (Enum.Material :: any)[paint.Material]
+			part.Color = Color3.new(paint.Color[1], paint.Color[2], paint.Color[3])
+			part.Transparency = paint.Transparency
+			part:SetAttribute("VluxyBT_Fixed", true)
 		end
 
 		if spec.lamp then
@@ -283,6 +330,10 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 			if typeof(original) == "Color3" then
 				part.Color = original
 			end
+		end
+
+		if spec.half and part:IsA("Part") then
+			part = Geometry.Halve(part :: Part)
 		end
 
 		part.Parent = model

@@ -169,6 +169,10 @@ end
 	@return Color3 -- the color the current theme gives the part; a part that is partly see-through is purple in every theme
 ]]
 local function themed(self: Colors, part: BasePart): Color3
+	if part:GetAttribute("VluxyBT_Fixed") == true then
+		return part.Color
+	end
+
 	if part.Transparency > 0.001 and part.Transparency < 0.999 then
 		return PURPLE
 	end

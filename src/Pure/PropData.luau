@@ -22,6 +22,10 @@ export type Part = {
 	glow: { number }?,
 	lamp: boolean?,
 	lights: { Brightness: number, Range: number }?,
+	yaw: number?,
+	lay: boolean?,
+	half: boolean?,
+	paint: { Color: { number }, Material: string, Transparency: number }?,
 }
 
 export type Prop = {
@@ -89,6 +93,52 @@ end
 ]]
 local function glowing(part: Part, r: number, g: number, b: number): Part
 	part.glow = { r, g, b }
+
+	return part
+end
+
+--[[
+	@param part Part
+	@param degrees number
+	@return Part -- the same shape, turned about the vertical through its own centre
+]]
+local function turned(part: Part, degrees: number): Part
+	part.yaw = degrees
+
+	return part
+end
+
+--[[
+	@param part Part -- a cylinder
+	@return Part -- the same cylinder lying along its X axis instead of standing
+]]
+local function laid(part: Part): Part
+	part.lay = true
+
+	return part
+end
+
+--[[
+	@param part Part -- a ball
+	@return Part -- the same ball cut in half, keeping the lower half, as one union
+]]
+local function halved(part: Part): Part
+	part.half = true
+
+	return part
+end
+
+--[[
+	@param part Part
+	@param r number -- 0 to 1
+	@param g number
+	@param b number
+	@param material string -- an Enum.Material name
+	@param transparency number?
+	@return Part -- the same shape in a fixed color and material that the color themes leave alone
+]]
+local function painted(part: Part, r: number, g: number, b: number, material: string, transparency: number?): Part
+	part.paint = { Color = { r, g, b }, Material = material, Transparency = transparency or 0 }
 
 	return part
 end
@@ -165,6 +215,48 @@ PropData.Categories = {
 	{ Id = "Lighting", Label = "Lighting" },
 } :: { Category }
 
+--[[
+	@return { Part } -- a grand chandelier: a chain and stacked column, and two tiers of arms (four above, eight below) that each end in a candle with a glowing flame and a hanging crystal
+]]
+local function chandelier(): { Part }
+	local parts: { Part } = {
+		C(0, -0.12, 0, 1.3, 0.24, true),
+		C(0, -0.32, 0, 0.5, 0.16),
+		C(0, -1.3, 0, 0.1, 1.8),
+		S(0, -2.3, 0, 0.8, true),
+		C(0, -2.85, 0, 0.28, 0.5),
+		S(0, -3.3, 0, 0.6, true),
+		C(0, -3.7, 0, 0.2, 0.5),
+		S(0, -4.1, 0, 0.5, true),
+		C(0, -4.5, 0, 0.1, 0.4),
+		S(0, -4.75, 0, 0.25),
+	}
+
+	--[[ One tier: `count` arms of length `reach` at height `y`, the first turned `phase` degrees. ]]
+	local function tier(y: number, reach: number, count: number, phase: number)
+		for index = 0, count - 1 do
+			local degrees = phase + index * 360 / count
+			local angle = math.rad(degrees)
+			local ax, az = math.cos(angle), -math.sin(angle)
+			local top = y + index * 0.012
+			local ex, ez = ax * reach, az * reach
+
+			table.insert(parts, turned(B(ax * reach / 2, top, az * reach / 2, reach, 0.1, 0.1, true), degrees))
+			table.insert(parts, C(ex, top + 0.12, ez, 0.36, 0.14, true))
+			table.insert(parts, C(ex, top + 0.38, ez, 0.18, 0.4))
+			table.insert(parts, glowing(S(ex, top + 0.68, ez, 0.22), 1, 0.85, 0.55))
+			table.insert(parts, S(ex, top - 0.3, ez, 0.22))
+		end
+	end
+
+	tier(-2.9, 1.6, 4, 45)
+	tier(-3.7, 2.8, 8, 0)
+	table.insert(parts, lamp(0, -3.4, 0))
+	table.insert(parts, lights(0, -3.4, 0, 0.4, 13))
+
+	return parts
+end
+
 PropData.Props = {
 	-- Lighting
 	{
@@ -188,10 +280,18 @@ PropData.Props = {
 		Mount = "ceiling",
 		Parts = {
 			C(0, -0.05, 0, 2.6, 0.1),
-			glowing(S(0, 0.4, 0, 2.4), 0.94, 0.9, 0.8),
-			lamp(0, -0.2, 0),
-			lights(0, -0.2, 0, 0.6, 22),
+			halved(glowing(S(0, -0.1, 0, 2.4), 0.94, 0.9, 0.8)),
+			S(0, -1.3, 0, 0.4, true),
+			lamp(0, -0.5, 0),
+			lights(0, -0.5, 0, 0.3, 11),
 		},
+	},
+	{
+		Id = "Chandelier",
+		Label = "Chandelier",
+		Category = "Lighting",
+		Mount = "ceiling",
+		Parts = chandelier(),
 	},
 	{
 		Id = "DeskLamp",
@@ -199,11 +299,15 @@ PropData.Props = {
 		Category = "Lighting",
 		Mount = "floor",
 		Parts = {
-			C(0, 0.1, 0, 1.2, 0.2),
-			C(0, 1.2, 0, 0.15, 2.2),
-			glowing(C(0, 2.5, 0, 1.2, 0.8), 1, 0.85, 0.55),
-			lamp(0, 2.5, 0),
-			lights(0, 2.5, 0, 0.4, 12),
+			painted(C(0, 0.12, 0, 1.5, 0.24), 0.72, 0.55, 0.2, "Metal"),
+			painted(C(0, 0.3, 0, 0.9, 0.12), 0.72, 0.55, 0.2, "Metal"),
+			painted(C(0, 0.95, 0, 0.16, 1.2), 0.72, 0.55, 0.2, "Metal"),
+			painted(laid(C(0, 1.95, 0, 0.95, 2.2)), 0.1, 0.45, 0.22, "Glass", 0.35),
+			painted(laid(C(-1.15, 1.95, 0, 0.7, 0.1)), 0.72, 0.55, 0.2, "Metal"),
+			painted(laid(C(1.15, 1.95, 0, 0.7, 0.1)), 0.72, 0.55, 0.2, "Metal"),
+			glowing(S(0, 1.85, 0, 0.45), 1, 0.85, 0.55),
+			lamp(0, 1.85, 0),
+			lights(0, 1.85, 0, 0.2, 7),
 		},
 	},
 	{
@@ -216,36 +320,7 @@ PropData.Props = {
 			C(0, 1.5, 0, 0.2, 0.6),
 			glowing(C(0, 2.1, 0, 1.8, 1.2), 1, 0.85, 0.55),
 			lamp(0, 2.1, 0),
-			lights(0, 2.1, 0, 0.4, 14),
-		},
-	},
-	{
-		Id = "Chandelier",
-		Label = "Chandelier",
-		Category = "Lighting",
-		Mount = "ceiling",
-		Parts = {
-			C(0, -0.1, 0, 0.8, 0.2),
-			C(0, -0.9, 0, 0.1, 1.4),
-			S(0, -1.75, 0, 0.4),
-			C(0, -2.1, 0, 0.2, 0.5),
-			S(0, -2.5, 0, 0.25, true),
-			B(0, -2.2, 0, 3.2, 0.08, 0.08, true),
-			B(0, -2.21, 0, 0.08, 0.08, 3.2, true),
-			C(1.6, -2.12, 0, 0.3, 0.08, true),
-			C(1.6, -1.92, 0, 0.14, 0.32),
-			glowing(S(1.6, -1.7, 0, 0.18), 1, 0.85, 0.55),
-			C(-1.6, -2.12, 0, 0.3, 0.08, true),
-			C(-1.6, -1.92, 0, 0.14, 0.32),
-			glowing(S(-1.6, -1.7, 0, 0.18), 1, 0.85, 0.55),
-			C(0, -2.12, 1.6, 0.3, 0.08, true),
-			C(0, -1.92, 1.6, 0.14, 0.32),
-			glowing(S(0, -1.7, 1.6, 0.18), 1, 0.85, 0.55),
-			C(0, -2.12, -1.6, 0.3, 0.08, true),
-			C(0, -1.92, -1.6, 0.14, 0.32),
-			glowing(S(0, -1.7, -1.6, 0.18), 1, 0.85, 0.55),
-			lamp(0, -1.9, 0),
-			lights(0, -1.9, 0, 0.8, 26),
+			lights(0, 2.1, 0, 0.2, 8),
 		},
 	},
 	{
@@ -578,7 +653,7 @@ PropData.Props = {
 			C(0, 3.1, 0, 0.25, 6),
 			glowing(C(0, 6.4, 0, 1.9, 1.4), 1, 0.85, 0.55),
 			lamp(0, 6.4, 0),
-			lights(0, 6.4, 0, 0.5, 18),
+			lights(0, 6.4, 0, 0.25, 10),
 		},
 	},
 
@@ -931,20 +1006,6 @@ PropData.Props = {
 			B(0, 3.6, -1.7, 3.8, 0.5, 0.5),
 			B(0, 7.6, -1.5, 7.4, 0.5, 2.8, true),
 			B(0, 11, -0.6, 3.6, 7, 1.2),
-		},
-	},
-	{
-		Id = "TallLamp",
-		Label = "Tall lamp",
-		Category = "Lighting",
-		Mount = "floor",
-		Parts = {
-			C(0, 0.2, 0, 2, 0.4),
-			C(0, 4.5, 0, 0.3, 8.6),
-			C(0, 8.4, 0, 2.2, 1.6, true),
-			glowing(S(0, 9.4, 0, 1.2), 1, 0.85, 0.55),
-			lamp(0, 9.4, 0),
-			lights(0, 9.4, 0, 0.5, 18),
 		},
 	},
 	{
@@ -1437,7 +1498,7 @@ PropData.Props = {
 			glowing(B(0, 13.2, 0, 1.2, 1.2, 1.2), 1, 0.85, 0.55),
 			B(0, 14.1, 0, 1.6, 0.4, 1.6),
 			lamp(0, 13.2, 0),
-			lights(0, 13.2, 0, 1, 40),
+			lights(0, 13.2, 0, 0.4, 16),
 		},
 	},
 	{
