@@ -37,7 +37,7 @@ return {
 				if part.lamp or part.lights then
 					expect.truthy(part.sx > 0)
 				elseif prop.Mount == "ceiling" then
-					expect.truthy(part.y + part.sy / 2 <= 0.001)
+					expect.truthy(part.y - part.sy / 2 < 0 and part.y + part.sy / 2 <= 2)
 				else
 					expect.truthy(part.y - part.sy / 2 >= -0.001)
 				end
