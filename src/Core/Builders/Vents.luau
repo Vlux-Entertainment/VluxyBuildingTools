@@ -359,7 +359,7 @@ end
 
 --[=[
 	A plain plate that closes a vent end over a fan, its back face at the point and the rest reaching
-	out along the vent, a little wider than the fan so no face of theirs lines up.
+	out along the vent, wider than the fan.
 
 	@param settings Settings
 	@param center Vector3 -- the middle of the plate's back face, where the fan's front is
@@ -368,7 +368,7 @@ end
 ]=]
 function Vents.VentPlug(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
-	local size = Settings.VentOuter(settings) + END_FIT + 0.04
+	local size = Settings.VentOuter(settings) + END_FIT
 
 	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, 0.1), "VentCap")
 
@@ -386,7 +386,7 @@ end
 function Vents.VentFan(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
 	local frame = surfaceFrame(center, normal)
-	local size = Settings.VentOuter(settings) + END_FIT
+	local size = Settings.VentOuter(settings)
 	local bar, depth = 0.25, FAN_DEPTH
 	local edge = size / 2 - bar / 2
 	local hub = 0.6
