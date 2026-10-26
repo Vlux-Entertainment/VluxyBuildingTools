@@ -112,4 +112,29 @@ return {
 		expect.near(panel.Transparency, 0.5)
 		expect.equal(panel.CanCollide, false)
 	end,
+
+	["a window frame is a sill that sticks out, two side bars and a top bar, with inner bars between"] = function(
+		expect
+	)
+		local _, Openings, wall = setup()
+		local dims = {
+			Width = 4,
+			Height = 3,
+			Sill = 3,
+			WindowFrame = true,
+			FrameWidth = 0.25,
+			FrameDepth = 1.1,
+			SillReach = 0.4,
+			Columns = 2,
+			Rows = 2,
+			DividerWidth = 0.1,
+		}
+		local specs = Openings.Opening(Settings.Defaults(), dims, Harness.Hit(wall, Vector3.new(0, 4, 0.5)), "Rect")
+		local sill = named(specs, "Window_Sill")[1]
+
+		expect.equal(vec(sill.size), "4.5,0.25,1.5", "sill is the full width and sticks out 0.4")
+		expect.equal(#named(specs, "Window_Frame"), 3, "two sides and a top")
+		expect.equal(#named(specs, "Window_Divider"), 3, "one upright and two cross bars")
+		expect.equal(vec(named(specs, "Window_Frame")[3].size), "4,0.25,1.1", "top bar")
+	end,
 }

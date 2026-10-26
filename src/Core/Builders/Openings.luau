@@ -25,6 +25,68 @@ local add = Geometry.Add
 local trianglePrism = Shapes.TrianglePrism
 local quadPrism = Shapes.QuadPrism
 
+--[[
+	Adds the frame of a square window: two side bars and a top bar, a bottom sill that sticks out on the
+	side that was clicked, and, when asked, inner bars that split the glass area into panes. Bars only
+	touch, never overlap.
+
+	@param out { Spec }
+	@param base CFrame -- the bottom middle of the whole frame, in the wall's frame
+	@param w number -- the outside width
+	@param h number -- the outside height
+	@param bar number -- how wide each frame bar is
+	@param reach number -- how thick the frame is through the wall
+	@param dims { SillReach: number?, Columns: number?, Rows: number?, DividerWidth: number? }
+	@param near number -- 1 or -1: which face of the wall the sill sticks out of
+]]
+local function windowFrame(
+	out: { Spec },
+	base: CFrame,
+	w: number,
+	h: number,
+	bar: number,
+	reach: number,
+	dims: { SillReach: number?, Columns: number?, Rows: number?, DividerWidth: number? },
+	near: number
+)
+	local lip = math.max(0, dims.SillReach or 0.4)
+	local innerW, innerH = w - 2 * bar, h - 2 * bar
+	local sideX = w / 2 - bar / 2
+
+	add(out, Vector3.new(w, bar, reach + lip), base * CFrame.new(0, bar / 2, near * lip / 2), "Window_Sill")
+	add(out, Vector3.new(bar, h - bar, reach), base * CFrame.new(-sideX, bar + (h - bar) / 2, 0), "Window_Frame")
+	add(out, Vector3.new(bar, h - bar, reach), base * CFrame.new(sideX, bar + (h - bar) / 2, 0), "Window_Frame")
+	add(out, Vector3.new(innerW, bar, reach), base * CFrame.new(0, h - bar / 2, 0), "Window_Frame")
+
+	local columns = math.max(1, math.floor(dims.Columns or 1))
+	local rows = math.max(1, math.floor(dims.Rows or 1))
+
+	if columns == 1 and rows == 1 then
+		return
+	end
+
+	local thick = math.min(dims.DividerWidth or 0.1, innerW / (2 * columns), innerH / (2 * rows))
+	local depth = math.min(reach, 0.3)
+	local paneW = (innerW - (columns - 1) * thick) / columns
+	local paneH = (innerH - (rows - 1) * thick) / rows
+
+	for column = 1, columns - 1 do
+		local across = -innerW / 2 + column * paneW + (column - 0.5) * thick
+
+		add(out, Vector3.new(thick, innerH, depth), base * CFrame.new(across, bar + innerH / 2, 0), "Window_Divider")
+	end
+
+	for row = 1, rows - 1 do
+		local up = bar + row * paneH + (row - 0.5) * thick
+
+		for column = 1, columns do
+			local across = -innerW / 2 + (column - 0.5) * paneW + (column - 1) * thick
+
+			add(out, Vector3.new(paneW, thick, depth), base * CFrame.new(across, up, 0), "Window_Divider")
+		end
+	end
+end
+
 --[=[
 	Cuts a door, window or arched doorway into the plain wall under the cursor, by rebuilding the
 	wall as separate Parts around the hole.
@@ -48,6 +110,11 @@ function Openings.Opening(
 		Frame: boolean?,
 		FrameWidth: number?,
 		FrameDepth: number?,
+		WindowFrame: boolean?,
+		SillReach: number?,
+		Columns: number?,
+		Rows: number?,
+		DividerWidth: number?,
 		DoorThickness: number?,
 		DoorTransparency: number?,
 		DoorCollide: boolean?,
@@ -93,12 +160,17 @@ function Openings.Opening(
 	local arched = shape == "Arch"
 	local w, h = dims.Width, dims.Height
 	local sill = if arched then 0 else dims.Sill
-	local framed = dims.Frame == true and shape == "Rect" and not (depth and depth < size.Z - 0.01)
-	local bar = if framed then math.min(dims.FrameWidth or 0.25, w / 4, h / 4) else 0
+	local whole = shape == "Rect" and not (depth and depth < size.Z - 0.01)
+	local framed = dims.Frame == true and whole
+	local windowed = dims.WindowFrame == true and whole
+	local bar = if framed or windowed then math.min(dims.FrameWidth or 0.25, w / 4, h / 4) else 0
 
 	if framed then
 		w += 2 * bar
 		h += bar
+	elseif windowed then
+		w += 2 * bar
+		h += 2 * bar
 	end
 
 	if arched and h < w / 2 then
@@ -110,6 +182,7 @@ function Openings.Opening(
 	end
 
 	local localHit = cf:PointToObjectSpace(hit.Position)
+	local near = if localHit.Z >= 0 then 1 else -1
 	local x = Snap.Round(localHit.X, settings.Grid)
 	local bottom = -size.Y / 2 + sill
 	local top = bottom + h
@@ -119,9 +192,13 @@ function Openings.Opening(
 		return out, "Opening must fit inside the wall, with wall remaining on both sides.", nil
 	end
 
-	if (framed or dims.Panel) and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
+	if (framed or windowed or dims.Panel) and shape == "Rect" and not (depth and depth < size.Z - 0.01) then
 		local reach = dims.FrameDepth or 1.1
 		local doorHeight = h - bar
+
+		if windowed then
+			windowFrame(out, cf * CFrame.new(x, bottom, 0), w, h, bar, reach, dims, near)
+		end
 
 		if framed then
 			local sideX = w / 2 - bar / 2
@@ -156,7 +233,6 @@ function Openings.Opening(
 
 	if carve then
 		local reach = if depth and depth < size.Z - 0.01 then depth else size.Z + 0.2
-		local near = if localHit.Z >= 0 then 1 else -1
 		local zMid = if depth and depth < size.Z - 0.01 then near * (size.Z / 2 - reach / 2) else 0
 		local cutters: { Cutter } = {}
 
@@ -356,7 +432,6 @@ function Openings.Opening(
 	local reach = if depth and depth < size.Z - 0.01 then depth else size.Z
 	local openHeight = if shape == "Circle" then math.min(w, h) else h
 	local openWidth = if shape == "Circle" then math.min(w, h) else w
-	local near = if localHit.Z >= 0 then 1 else -1
 	local cut = {
 		cf = cf * CFrame.new(x, bottom + openHeight / 2, near * (size.Z / 2 - reach / 2)),
 		size = Vector3.new(openWidth, openHeight, reach),
