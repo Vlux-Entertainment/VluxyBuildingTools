@@ -33,6 +33,53 @@ local CELL_HEIGHT = 104
 local CAMERA_ANGLE = Vector3.new(0.9, 0.7, -1.3).Unit
 local SPIN_SPEED = math.pi / 4
 
+type Source = { Props: typeof(Props), Data: typeof(PropData) }
+
+--[[ The prop code the pictures are drawn from; the code loaded with the plugin until Reload prop pictures is pressed. ]]
+local source: Source = { Props = Props, Data = PropData }
+local copy: Instance? = nil
+
+--[[
+	Copies the plugin's code and loads the copy, so the pictures come from the prop code as it is
+	now, not the version that was loaded when the plugin started. The copy before it is thrown away.
+]]
+local function reconstruct()
+	local root = script.Parent and script.Parent.Parent and script.Parent.Parent.Parent
+	local previous = copy
+
+	if not root then
+		return
+	end
+
+	local clone = root:Clone()
+	local core, pure = clone:FindFirstChild("Core"), clone:FindFirstChild("Pure")
+	local props = if core then core:FindFirstChild("Props") else nil
+	local data = if pure then pure:FindFirstChild("PropData") else nil
+
+	if not props or not data or not props:IsA("ModuleScript") or not data:IsA("ModuleScript") then
+		clone:Destroy()
+
+		return
+	end
+
+	local ok, loadedProps, loadedData = pcall(function()
+		return (require :: any)(props), (require :: any)(data)
+	end)
+
+	if not ok then
+		clone:Destroy()
+
+		return
+	end
+
+	source = { Props = loadedProps, Data = loadedData }
+	copy = clone
+
+	if previous then
+		previous:Destroy()
+	end
+end
+
 --[[ A prop picture's spin: how far it has turned, and how to turn its camera to an angle. ]]
 type Spin = { Angle: number, Turn: (angle: number) -> () }
 
@@ -57,7 +104,7 @@ local function picture(ui: Ui, prop: PropData.Prop): (ViewportFrame, (angle: num
 	holder:SetAttribute("VluxyBT_Prop", prop.Id)
 	holder.Parent = view
 
-	for _, spec in Props.Build(prop, CFrame.new(), 1) do
+	for _, spec in source.Props.Build(source.Data.Find(prop.Id) or prop, CFrame.new(), 1) do
 		local part = Instance.new("Part")
 		local reach = spec.size.Magnitude / 2
 
@@ -280,6 +327,7 @@ return function(ui: Ui): { Instance }
 		Controls.Card(ui, "PROPS", {
 			Controls.Switch(ui, { Title = "Collapse props after picking one", Key = "PropAutoCollapse" }),
 			Controls.Button(ui, "Reload prop pictures", function()
+				reconstruct()
 				pictures(pictures() + 1)
 			end),
 			new("Frame")({

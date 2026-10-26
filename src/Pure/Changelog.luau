@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.25",
+		Date = "2026-10-26",
+		Changes = {
+			"Reload prop pictures now loads a fresh copy of the plugin's prop code and redraws every picture from it, so pictures no longer stay on an older version after an update.",
+		},
+	},
+	{
 		Version = "1.7.24",
 		Date = "2026-10-26",
 		Changes = {
