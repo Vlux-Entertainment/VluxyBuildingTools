@@ -21,7 +21,7 @@ export type Part = {
 	accent: boolean,
 	glow: { number }?,
 	lamp: boolean?,
-	lights: boolean?,
+	lights: { Brightness: number, Range: number }?,
 }
 
 export type Prop = {
@@ -105,12 +105,14 @@ local function lamp(x: number, y: number, z: number): Part
 end
 
 --[[
+	@param brightness number -- of the point light; the spot light is a little weaker
+	@param range number -- of the point light; the spot light reaches a little further
 	@return Part -- a small hidden part, named Config, that holds the prop's point and spot lights
 ]]
-local function lights(x: number, y: number, z: number): Part
+local function lights(x: number, y: number, z: number, brightness: number, range: number): Part
 	local part = S(x, y, z, 0.1)
 
-	part.lights = true
+	part.lights = { Brightness = brightness, Range = range }
 
 	return part
 end
@@ -176,19 +178,74 @@ PropData.Props = {
 			C(0, -0.0455, 0, 1.06, 0.091),
 			glowing(C(0, -0.121, 0, 0.908, 0.061), 144 / 255, 135 / 255, 120 / 255),
 			lamp(0, -0.068, 0),
-			lights(0, 1.0501, 0),
+			lights(0, 1.0501, 0, 0.3, 10),
 		},
 	},
 	{
-		Id = "DomeLight",
-		Label = "Dome light",
+		Id = "GlobeLight",
+		Label = "Globe light",
 		Category = "Lighting",
 		Mount = "ceiling",
 		Parts = {
 			C(0, -0.05, 0, 2.6, 0.1),
 			glowing(S(0, 0.4, 0, 2.4), 0.94, 0.9, 0.8),
 			lamp(0, -0.2, 0),
-			lights(0, -0.2, 0),
+			lights(0, -0.2, 0, 0.6, 22),
+		},
+	},
+	{
+		Id = "DeskLamp",
+		Label = "Desk lamp",
+		Category = "Lighting",
+		Mount = "floor",
+		Parts = {
+			C(0, 0.1, 0, 1.2, 0.2),
+			C(0, 1.2, 0, 0.15, 2.2),
+			glowing(C(0, 2.5, 0, 1.2, 0.8), 1, 0.85, 0.55),
+			lamp(0, 2.5, 0),
+			lights(0, 2.5, 0, 0.4, 12),
+		},
+	},
+	{
+		Id = "TableLamp",
+		Label = "Table lamp",
+		Category = "Lighting",
+		Mount = "floor",
+		Parts = {
+			C(0, 0.6, 0, 1.2, 1.2),
+			C(0, 1.5, 0, 0.2, 0.6),
+			glowing(C(0, 2.1, 0, 1.8, 1.2), 1, 0.85, 0.55),
+			lamp(0, 2.1, 0),
+			lights(0, 2.1, 0, 0.4, 14),
+		},
+	},
+	{
+		Id = "Chandelier",
+		Label = "Chandelier",
+		Category = "Lighting",
+		Mount = "ceiling",
+		Parts = {
+			C(0, -0.1, 0, 0.8, 0.2),
+			C(0, -0.9, 0, 0.1, 1.4),
+			S(0, -1.75, 0, 0.4),
+			C(0, -2.1, 0, 0.2, 0.5),
+			S(0, -2.5, 0, 0.25, true),
+			B(0, -2.2, 0, 3.2, 0.08, 0.08, true),
+			B(0, -2.21, 0, 0.08, 0.08, 3.2, true),
+			C(1.6, -2.12, 0, 0.3, 0.08, true),
+			C(1.6, -1.92, 0, 0.14, 0.32),
+			glowing(S(1.6, -1.7, 0, 0.18), 1, 0.85, 0.55),
+			C(-1.6, -2.12, 0, 0.3, 0.08, true),
+			C(-1.6, -1.92, 0, 0.14, 0.32),
+			glowing(S(-1.6, -1.7, 0, 0.18), 1, 0.85, 0.55),
+			C(0, -2.12, 1.6, 0.3, 0.08, true),
+			C(0, -1.92, 1.6, 0.14, 0.32),
+			glowing(S(0, -1.7, 1.6, 0.18), 1, 0.85, 0.55),
+			C(0, -2.12, -1.6, 0.3, 0.08, true),
+			C(0, -1.92, -1.6, 0.14, 0.32),
+			glowing(S(0, -1.7, -1.6, 0.18), 1, 0.85, 0.55),
+			lamp(0, -1.9, 0),
+			lights(0, -1.9, 0, 0.8, 26),
 		},
 	},
 	{
@@ -209,7 +266,7 @@ PropData.Props = {
 			B(0, -1.175, -1.975, 0.8, 0.12, 2.45, true),
 			glowing(S(0, -1.537, 0, 0.372), 1, 208 / 255, 128 / 255),
 			lamp(0, -1.22, 0),
-			lights(0, -1.4, 0),
+			lights(0, -1.4, 0, 0.3, 10),
 		},
 	},
 	-- Bathroom
@@ -514,12 +571,14 @@ PropData.Props = {
 	{
 		Id = "FloorLamp",
 		Label = "Floor lamp",
-		Category = "Living",
+		Category = "Lighting",
 		Mount = "floor",
 		Parts = {
 			C(0, 0.15, 0, 1.4, 0.3),
 			C(0, 3.1, 0, 0.25, 6),
-			C(0, 6.4, 0, 1.9, 1.4, true),
+			glowing(C(0, 6.4, 0, 1.9, 1.4), 1, 0.85, 0.55),
+			lamp(0, 6.4, 0),
+			lights(0, 6.4, 0, 0.5, 18),
 		},
 	},
 
@@ -877,13 +936,15 @@ PropData.Props = {
 	{
 		Id = "TallLamp",
 		Label = "Tall lamp",
-		Category = "Living",
+		Category = "Lighting",
 		Mount = "floor",
 		Parts = {
 			C(0, 0.2, 0, 2, 0.4),
 			C(0, 4.5, 0, 0.3, 8.6),
 			C(0, 8.4, 0, 2.2, 1.6, true),
-			S(0, 9.4, 0, 1.2, true),
+			glowing(S(0, 9.4, 0, 1.2), 1, 0.85, 0.55),
+			lamp(0, 9.4, 0),
+			lights(0, 9.4, 0, 0.5, 18),
 		},
 	},
 	{
@@ -1367,14 +1428,16 @@ PropData.Props = {
 	{
 		Id = "Streetlamp",
 		Label = "Streetlamp",
-		Category = "Outdoor",
+		Category = "Lighting",
 		Mount = "floor",
 		Parts = {
 			C(0, 0.4, 0, 1.4, 0.8),
 			C(0, 6, 0, 0.4, 12),
 			B(0, 12.4, 0, 1.4, 0.5, 1.4),
-			B(0, 13.2, 0, 1.2, 1.2, 1.2, true),
+			glowing(B(0, 13.2, 0, 1.2, 1.2, 1.2), 1, 0.85, 0.55),
 			B(0, 14.1, 0, 1.6, 0.4, 1.6),
+			lamp(0, 13.2, 0),
+			lights(0, 13.2, 0, 1, 40),
 		},
 	},
 	{

@@ -19,10 +19,18 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.28",
+		Date = "2026-10-26",
+		Changes = {
+			"New Chandelier in Props > Lighting: a chain from the ceiling, a central column, two crossed arms and four candles with glowing flames, with point and spot lights.",
+			"Desk lamp and Table lamp added, and the Floor lamp, Tall lamp and Streetlamp moved to Props > Lighting; every lamp now glows and carries point and spot lights.",
+		},
+	},
+	{
 		Version = "1.7.27",
 		Date = "2026-10-26",
 		Changes = {
-			"New Dome light in Props > Lighting: a large round flush ceiling light, a glowing dome on a wide base plate, with the same point and spot lights as the ceiling light.",
+			"New Globe light in Props > Lighting: a large round flush ceiling light, a glowing globe on a wide base plate, with the same point and spot lights as the ceiling light.",
 		},
 	},
 	{
