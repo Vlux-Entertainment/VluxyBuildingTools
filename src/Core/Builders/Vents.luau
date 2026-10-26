@@ -358,19 +358,19 @@ function Vents.VentCap(settings: Settings, center: Vector3, normal: Vector3): { 
 end
 
 --[=[
-	A plain plate that seals the inside of a vent, its front face at the point and the rest reaching
-	back along the duct, so it fits behind a fan.
+	A plain plate that closes a vent end over a fan, its back face at the point and the rest reaching
+	out along the vent, a little wider than the fan so no face of theirs lines up.
 
 	@param settings Settings
-	@param center Vector3 -- the middle of the plate's front face
+	@param center Vector3 -- the middle of the plate's back face, where the fan's front is
 	@param normal Vector3 -- the way the opening faces
 	@return { Spec }
 ]=]
 function Vents.VentPlug(settings: Settings, center: Vector3, normal: Vector3): { Spec }
 	local out: { Spec } = {}
-	local size = settings.VentSize + 0.04
+	local size = Settings.VentOuter(settings) + END_FIT + 0.04
 
-	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, -0.1), "VentCap")
+	add(out, Vector3.new(size, size, 0.2), surfaceFrame(center, normal) * CFrame.new(0, 0, 0.1), "VentCap")
 
 	return out
 end
