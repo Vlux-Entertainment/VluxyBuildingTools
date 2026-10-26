@@ -18,6 +18,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local Actions = require("../../App/Actions")
 local Colors = require("../../Core/Colors")
 local Controls = require("../Controls")
+local Geometry = require("../../Core/Geometry")
 local Kit = require("../Kit")
 local PropData = require("../../Pure/PropData")
 local Props = require("../../Core/Props")
@@ -109,6 +110,10 @@ local function picture(ui: Ui, prop: PropData.Prop): (ViewportFrame, (angle: num
 	holder.Parent = view
 
 	for _, spec in source.Props.Build(source.Data.Find(prop.Id) or prop, CFrame.new(), 1) do
+		if spec.lamp or spec.lights then
+			continue
+		end
+
 		local part = Instance.new("Part")
 		local reach = spec.size.Magnitude / 2
 
@@ -120,10 +125,32 @@ local function picture(ui: Ui, prop: PropData.Prop): (ViewportFrame, (angle: num
 		part.Parent = holder
 		part.Color = Colors.Preview(ui.App.Display.Colors, part)
 
+		if spec.glow then
+			part.Material = Enum.Material.Neon
+			part.Color = Color3.new(spec.glow[1], spec.glow[2], spec.glow[3])
+		end
+
+		if spec.paint then
+			part.Material = (Enum.Material :: any)[spec.paint.Material]
+			part.Color = Color3.new(spec.paint.Color[1], spec.paint.Color[2], spec.paint.Color[3])
+			part.Transparency = spec.paint.Transparency
+		end
+
 		if spec.shape == "Cylinder" then
 			part.Shape = Enum.PartType.Cylinder
 		elseif spec.shape == "Ball" then
 			part.Shape = Enum.PartType.Ball
+		end
+
+		if spec.half then
+			task.spawn(function()
+				local carved = Geometry.Halve(part)
+
+				if carved ~= part then
+					carved.Parent = holder
+					part:Destroy()
+				end
+			end)
 		end
 
 		low = low:Min(spec.cf.Position - Vector3.one * reach)
@@ -171,6 +198,22 @@ return function(ui: Ui): { Instance }
 
 	local function picked(): boolean
 		return state.Mode() == "Prop" and state.Prop() ~= nil
+	end
+
+	--[[ Whether the picked prop has lights to switch. ]]
+	local function lit(): boolean
+		local id = current()
+		local def = if id then PropData.Find(id) else nil
+
+		local parts: { PropData.Part } = if def then def.Parts else {}
+
+		for _, part in parts do
+			if part.lights then
+				return true
+			end
+		end
+
+		return false
 	end
 
 	--[[ The row of the picked prop in the section on show, or nil when it is not in it. ]]
@@ -368,6 +411,11 @@ return function(ui: Ui): { Instance }
 				Max = 5,
 				Step = 0.1,
 				Visible = picked,
+			}),
+			Controls.Switch(ui, {
+				Title = "Light on",
+				Key = "PropLightOn",
+				Visible = lit,
 			}),
 			Controls.Switch(ui, {
 				Title = "Randomize prop rotation",

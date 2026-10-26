@@ -24,6 +24,11 @@ function Props.Build(prop: PropData.Prop, frame: CFrame, scale: number): { Geome
 
 	for _, part in prop.Parts do
 		local at = frame * CFrame.new(part.x * factor, part.y * factor, part.z * factor)
+
+		if part.yaw then
+			at *= CFrame.Angles(0, math.rad(part.yaw), 0)
+		end
+
 		local name = if part.lamp
 			then "PropLamp"
 			elseif part.lights then "Config"
@@ -35,7 +40,7 @@ function Props.Build(prop: PropData.Prop, frame: CFrame, scale: number): { Geome
 			Geometry.Add(
 				out,
 				Vector3.new(part.sy, part.sx, part.sz) * factor,
-				at * CFrame.Angles(0, 0, math.pi / 2),
+				if part.lay then at else at * CFrame.Angles(0, 0, math.pi / 2),
 				name,
 				nil,
 				"Part"
@@ -49,6 +54,7 @@ function Props.Build(prop: PropData.Prop, frame: CFrame, scale: number): { Geome
 		end
 
 		out[#out].glow, out[#out].lamp, out[#out].lights = part.glow, part.lamp, part.lights
+		out[#out].paint, out[#out].half = part.paint, part.half
 
 		if part.lights then
 			out[#out].cf = CFrame.new(at.Position)
@@ -56,6 +62,22 @@ function Props.Build(prop: PropData.Prop, frame: CFrame, scale: number): { Geome
 	end
 
 	return out
+end
+
+--[=[
+	Switches the lights of a placed prop on or off: its point and spot lights, and the glow of its bulbs.
+
+	@param model Instance -- a placed prop
+	@param lit boolean
+]=]
+function Props.SetLit(model: Instance, lit: boolean)
+	for _, object in model:GetDescendants() do
+		if object:IsA("Light") then
+			object.Enabled = lit
+		elseif object:IsA("BasePart") and object.Name == "PropGlow" then
+			object.Material = if lit then Enum.Material.Neon else Enum.Material.SmoothPlastic
+		end
+	end
 end
 
 return Props

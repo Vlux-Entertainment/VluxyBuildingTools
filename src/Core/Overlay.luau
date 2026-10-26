@@ -485,7 +485,7 @@ function Overlay.DrawGhosts(self: Overlay, specs: { Geometry.Spec })
 
 		ghost.Size = spec.size + Vector3.new(0.02, 0.02, 0.02)
 		ghost.CFrame = terrain:ToObjectSpace(spec.cf)
-		ghost.Visible = spec.class ~= "WedgePart"
+		ghost.Visible = spec.class ~= "WedgePart" and not spec.lamp and not spec.lights
 
 		if spec.class == "WedgePart" then
 			local h = spec.size / 2

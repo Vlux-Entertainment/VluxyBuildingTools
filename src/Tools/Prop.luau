@@ -152,11 +152,14 @@ local tool: Types.Tool = {
 		end
 
 		ctx.Edit("Place prop", function()
-			if def and frame and cloneModel(def, frame, settings.PropScale) then
-				return
-			end
+			local model = if def and frame then cloneModel(def, frame, settings.PropScale) else nil
+			local placed = model or Geometry.Materialize(specs, "Vlux_Prop_" .. id)
 
-			Geometry.Materialize(specs, "Vlux_Prop_" .. id):SetAttribute("VluxyBT_Prop", id)
+			placed:SetAttribute("VluxyBT_Prop", id)
+
+			if not settings.PropLightOn then
+				Props.SetLit(placed, false)
+			end
 		end)
 	end,
 }
