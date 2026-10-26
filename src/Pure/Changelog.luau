@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.13",
+		Date = "2026-10-25",
+		Changes = {
+			"Fan and cap ends no longer band against the vent: their frames are a little wider than the duct, so no face of theirs lies in the same plane as a face of the duct.",
+		},
+	},
+	{
 		Version = "1.7.12",
 		Date = "2026-10-25",
 		Changes = {
