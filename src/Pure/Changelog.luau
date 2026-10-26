@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.27",
+		Date = "2026-10-26",
+		Changes = {
+			"New Dome light in Props > Lighting: a large round flush ceiling light, a glowing dome on a wide base plate, with the same point and spot lights as the ceiling light.",
+		},
+	},
+	{
 		Version = "1.7.26",
 		Date = "2026-10-26",
 		Changes = {

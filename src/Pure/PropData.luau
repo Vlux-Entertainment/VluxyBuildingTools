@@ -180,6 +180,18 @@ PropData.Props = {
 		},
 	},
 	{
+		Id = "DomeLight",
+		Label = "Dome light",
+		Category = "Lighting",
+		Mount = "ceiling",
+		Parts = {
+			C(0, -0.05, 0, 2.6, 0.1),
+			glowing(S(0, 0.4, 0, 2.4), 0.94, 0.9, 0.8),
+			lamp(0, -0.2, 0),
+			lights(0, -0.2, 0),
+		},
+	},
+	{
 		Id = "CeilingFan",
 		Label = "Ceiling fan",
 		Category = "Lighting",
