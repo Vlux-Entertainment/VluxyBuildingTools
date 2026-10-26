@@ -22,6 +22,8 @@ export type Spec = {
 	collide: boolean?,
 }
 
+local GLOW_COLOR = Color3.new(1, 0.816, 0.502)
+
 local MAX_PART_SIZE = 2048
 local ORIGINAL_COLOR = "VluxGreybox_OriginalColor_v1"
 local COPIED_PROPERTIES = {
@@ -200,6 +202,18 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 			(part :: Part).Shape = Enum.PartType.Cylinder
 		elseif spec.shape == "Ball" then
 			(part :: Part).Shape = Enum.PartType.Ball
+		end
+
+		if spec.name == "PropGlow" then
+			part.Material = Enum.Material.Neon
+			part.Color = GLOW_COLOR
+
+			local light = Instance.new("PointLight")
+
+			light.Color = GLOW_COLOR
+			light.Brightness = 0.3
+			light.Range = 12
+			light.Parent = part
 		end
 
 		if spec.name == "Door_Panel" then

@@ -4,7 +4,8 @@
 	The built-in props, as plain data so the list can be tested under Lune. Each prop is a handful of
 	simple shapes. A prop is drawn around a point on the floor: X is across, Y is up from the floor
 	and Z is front (negative) to back (positive). A wall prop has its back on the wall at Z = 0 and
-	its front toward negative Z.
+	its front toward negative Z. A ceiling prop hangs from the ceiling at Y = 0, so its Y values are
+	negative.
 
 	@class PropData
 ]=]
@@ -18,6 +19,7 @@ export type Part = {
 	sz: number,
 	shape: string,
 	accent: boolean,
+	glow: boolean,
 }
 
 export type Prop = {
@@ -39,7 +41,7 @@ local PropData = {}
 	@return Part -- a box centred at x, y, z
 ]]
 local function B(x: number, y: number, z: number, sx: number, sy: number, sz: number, accent: boolean?): Part
-	return { x = x, y = y, z = z, sx = sx, sy = sy, sz = sz, shape = "Block", accent = accent == true }
+	return { x = x, y = y, z = z, sx = sx, sy = sy, sz = sz, shape = "Block", accent = accent == true, glow = false }
 end
 
 --[[
@@ -55,6 +57,7 @@ local function C(x: number, y: number, z: number, diameter: number, height: numb
 		sz = diameter,
 		shape = "Cylinder",
 		accent = accent == true,
+		glow = false,
 	}
 end
 
@@ -62,7 +65,27 @@ end
 	@return Part -- a ball centred at x, y, z
 ]]
 local function S(x: number, y: number, z: number, diameter: number, accent: boolean?): Part
-	return { x = x, y = y, z = z, sx = diameter, sy = diameter, sz = diameter, shape = "Ball", accent = accent == true }
+	return {
+		x = x,
+		y = y,
+		z = z,
+		sx = diameter,
+		sy = diameter,
+		sz = diameter,
+		shape = "Ball",
+		accent = accent == true,
+		glow = false,
+	}
+end
+
+--[[
+	@param part Part
+	@return Part -- the same shape, made to glow (neon, with a warm light)
+]]
+local function glowing(part: Part): Part
+	part.glow = true
+
+	return part
 end
 
 --[[
@@ -110,9 +133,38 @@ PropData.Categories = {
 	{ Id = "Outdoor", Label = "Outdoor" },
 	{ Id = "Kids", Label = "Kids" },
 	{ Id = "Shop", Label = "Shop and public" },
+	{ Id = "Lighting", Label = "Lighting" },
 } :: { Category }
 
 PropData.Props = {
+	-- Lighting
+	{
+		Id = "CeilingLight",
+		Label = "Ceiling light",
+		Category = "Lighting",
+		Mount = "ceiling",
+		Parts = {
+			C(0, -0.0455, 0, 1.06, 0.091),
+			glowing(C(0, -0.121, 0, 0.908, 0.061)),
+		},
+	},
+	{
+		Id = "CeilingFan",
+		Label = "Ceiling fan",
+		Category = "Lighting",
+		Mount = "ceiling",
+		Parts = {
+			C(0, -0.1, 0, 1, 0.2),
+			C(0, -0.55, 0, 0.18, 0.7),
+			C(0, -1.738, 0, 1.5, 0.55),
+			C(0, -2, 0, 0.9, 0.2),
+			B(1.975, -1.738, 0, 2.45, 0.12, 0.8, true),
+			B(-1.975, -1.738, 0, 2.45, 0.12, 0.8, true),
+			B(0, -1.738, 1.975, 0.8, 0.12, 2.45, true),
+			B(0, -1.738, -1.975, 0.8, 0.12, 2.45, true),
+			glowing(S(0, -2.1, 0, 0.372)),
+		},
+	},
 	-- Bathroom
 	{
 		Id = "BathTub",

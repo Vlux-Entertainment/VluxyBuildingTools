@@ -2,7 +2,8 @@
 
 --[=[
 	Prop: places the built-in prop picked in the Props tab. Floor props stand on flat tops and turn
-	with the rotation setting (R turns them 90 degrees); wall props hang flat against a wall.
+	with the rotation setting (R turns them 90 degrees); wall props hang flat against a wall; ceiling props
+	hang from the underside of a ceiling.
 
 	@class Prop
 ]=]
@@ -43,6 +44,16 @@ local function frameOn(ctx: Context, def: PropData.Prop, hit: RaycastResult): CF
 		return CFrame.lookAt(at, at + Vector3.new(normal.X, 0, normal.Z).Unit)
 	end
 
+	if def.Mount == "ceiling" then
+		if normal.Y > -0.7 then
+			return nil
+		end
+
+		local at = Vector3.new(round(hit.Position.X), hit.Position.Y, round(hit.Position.Z))
+
+		return CFrame.new(at) * CFrame.Angles(0, math.rad(ctx.Settings.Yaw), 0)
+	end
+
 	if normal.Y < 0.7 then
 		return nil
 	end
@@ -73,7 +84,10 @@ local tool: Types.Tool = {
 
 		if not frame then
 			return Common.Empty(
-				if def.Mount == "wall" then "Point at a wall." else "Point at a floor or other flat top."
+				if def.Mount == "wall"
+					then "Point at a wall."
+					elseif def.Mount == "ceiling" then "Point at the underside of a ceiling."
+					else "Point at a floor or other flat top."
 			)
 		end
 
@@ -95,7 +109,7 @@ local tool: Types.Tool = {
 		local settings = ctx.Settings
 		local def, frame, specs = PropData.Find(id), state.Frame, shown.Specs
 
-		if settings.PropRandomRotation and def and frame and def.Mount == "floor" then
+		if settings.PropRandomRotation and def and frame and def.Mount ~= "wall" then
 			local turn = (math.random() * 2 - 1) * settings.PropRandomAmount
 
 			specs = Props.Build(def, frame * CFrame.Angles(0, math.rad(turn), 0), settings.PropScale)
