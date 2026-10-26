@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.23",
+		Date = "2026-10-26",
+		Changes = {
+			"The ceiling light and ceiling fan are now exact copies of the Vlux_Prop_CeilingLight and Vlux_Prop_CeilingFan models: same parts, sizes, colors, hidden PropLamp parts, and the Config part with the Lights attachment, spot light and point light.",
+		},
+	},
+	{
 		Version = "1.7.22",
 		Date = "2026-10-26",
 		Changes = {
