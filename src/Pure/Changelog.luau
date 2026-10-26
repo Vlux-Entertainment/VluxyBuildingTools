@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.16",
+		Date = "2026-10-25",
+		Changes = {
+			"The fan is back to its original size; an end cap still sits against its front.",
+		},
+	},
+	{
 		Version = "1.7.15",
 		Date = "2026-10-25",
 		Changes = {
