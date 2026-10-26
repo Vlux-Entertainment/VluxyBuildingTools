@@ -19,7 +19,8 @@ export type Part = {
 	sz: number,
 	shape: string,
 	accent: boolean,
-	glow: boolean,
+	glow: { number }?,
+	lamp: { Point: number, Range: number }?,
 }
 
 export type Prop = {
@@ -41,7 +42,7 @@ local PropData = {}
 	@return Part -- a box centred at x, y, z
 ]]
 local function B(x: number, y: number, z: number, sx: number, sy: number, sz: number, accent: boolean?): Part
-	return { x = x, y = y, z = z, sx = sx, sy = sy, sz = sz, shape = "Block", accent = accent == true, glow = false }
+	return { x = x, y = y, z = z, sx = sx, sy = sy, sz = sz, shape = "Block", accent = accent == true }
 end
 
 --[[
@@ -57,7 +58,6 @@ local function C(x: number, y: number, z: number, diameter: number, height: numb
 		sz = diameter,
 		shape = "Cylinder",
 		accent = accent == true,
-		glow = false,
 	}
 end
 
@@ -74,16 +74,29 @@ local function S(x: number, y: number, z: number, diameter: number, accent: bool
 		sz = diameter,
 		shape = "Ball",
 		accent = accent == true,
-		glow = false,
 	}
 end
 
 --[[
 	@param part Part
-	@return Part -- the same shape, made to glow (neon, with a warm light)
+	@param r number -- the glow color, 0 to 1
+	@param g number
+	@param b number
+	@return Part -- the same shape, made neon in that color
 ]]
-local function glowing(part: Part): Part
-	part.glow = true
+local function glowing(part: Part, r: number, g: number, b: number): Part
+	part.glow = { r, g, b }
+
+	return part
+end
+
+--[[
+	@return Part -- a small hidden part that holds the prop's lights: a point light of the given brightness and range, and an upward spot light
+]]
+local function lamp(x: number, y: number, z: number, point: number, range: number): Part
+	local part = S(x, y, z, 0.1)
+
+	part.lamp = { Point = point, Range = range }
 
 	return part
 end
@@ -145,7 +158,8 @@ PropData.Props = {
 		Mount = "ceiling",
 		Parts = {
 			C(0, -0.0455, 0, 1.06, 0.091),
-			glowing(C(0, -0.121, 0, 0.908, 0.061)),
+			glowing(C(0, -0.121, 0, 0.908, 0.061), 0.565, 0.533, 0.471),
+			lamp(0, -0.068, 0, 0.2, 14),
 		},
 	},
 	{
@@ -162,7 +176,8 @@ PropData.Props = {
 			B(-1.975, -1.738, 0, 2.45, 0.12, 0.8, true),
 			B(0, -1.738, 1.975, 0.8, 0.12, 2.45, true),
 			B(0, -1.738, -1.975, 0.8, 0.12, 2.45, true),
-			glowing(S(0, -2.1, 0, 0.372)),
+			glowing(S(0, -2.1, 0, 0.372), 1, 0.816, 0.502),
+			lamp(0, -1.783, 0, 0.3, 10),
 		},
 	},
 	-- Bathroom
