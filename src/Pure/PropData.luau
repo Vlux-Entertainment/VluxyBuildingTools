@@ -2705,4 +2705,27 @@ function PropData.Search(query: string): { Prop }
 	return out
 end
 
+--[=[
+	Wall props that hang high, like a light or a whiteboard, are drawn at the height they hang. The
+	cursor holds the middle of such a prop, so the preview sits where the cursor points; a prop that
+	stands on the floor keeps its bottom at the cursor.
+
+	@param prop Prop
+	@return number -- how far above the cursor the prop is drawn, to take off its height when placing it
+]=]
+function PropData.WallLift(prop: Prop): number
+	if prop.Mount ~= "wall" then
+		return 0
+	end
+
+	local low, high = math.huge, -math.huge
+
+	for _, part in prop.Parts do
+		low = math.min(low, part.y - part.sy / 2)
+		high = math.max(high, part.y + part.sy / 2)
+	end
+
+	return if low > 1.5 then (low + high) / 2 else 0
+end
+
 return PropData

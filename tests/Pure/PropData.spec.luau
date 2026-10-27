@@ -57,4 +57,10 @@ return {
 		expect.equal(#PropData.Search("zzzz"), 0)
 		expect.equal(PropData.Search("arcade cab")[1].Id, "ArcadeCabinet")
 	end,
+
+	["a wall prop that hangs high is lifted by its middle, one on the floor is not"] = function(expect)
+		expect.truthy(PropData.WallLift(PropData.Find("PictureLight") :: PropData.Prop) > 5)
+		expect.equal(PropData.WallLift(PropData.Find("MirrorCabinet") :: PropData.Prop), 0)
+		expect.equal(PropData.WallLift(PropData.Find("Toilet") :: PropData.Prop), 0)
+	end,
 }
