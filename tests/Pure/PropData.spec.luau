@@ -49,4 +49,12 @@ return {
 		expect.equal((PropData.Find("Toilet") :: PropData.Prop).Label, "Toilet")
 		expect.falsy(PropData.Find("Nope"))
 	end,
+
+	["Search finds props by name, id or category, and an empty query finds all"] = function(expect)
+		expect.equal(#PropData.Search(""), #PropData.Props)
+		expect.equal(PropData.Search("pool")[1].Id, "PoolTable")
+		expect.truthy(#PropData.Search("DUNGEON") > 3)
+		expect.equal(#PropData.Search("zzzz"), 0)
+		expect.equal(PropData.Search("arcade cab")[1].Id, "ArcadeCabinet")
+	end,
 }
