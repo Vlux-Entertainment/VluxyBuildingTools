@@ -75,7 +75,7 @@ local function frameOn(ctx: Context, def: PropData.Prop, hit: RaycastResult): CF
 			return nil
 		end
 
-		local at = Common.SnapOnSurface(hit.Position, normal, round)
+		local at = Common.SnapOnSurface(hit.Position, normal, round) - Vector3.new(0, PropData.WallLift(def), 0)
 
 		return CFrame.lookAt(at, at + Vector3.new(normal.X, 0, normal.Z).Unit)
 	end

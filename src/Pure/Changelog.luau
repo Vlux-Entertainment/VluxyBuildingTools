@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.32",
+		Date = "2026-10-26",
+		Changes = {
+			"Props: wall props that hang high, like the picture light and sconces, now sit at the cursor instead of floating above it.",
+		},
+	},
+	{
 		Version = "1.7.31",
 		Date = "2026-10-26",
 		Changes = {
