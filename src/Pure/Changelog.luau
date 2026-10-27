@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.30",
+		Date = "2026-10-26",
+		Changes = {
+			"Props: room props for the map. New Game room, Library, Dungeon and secret room, Electrical room and Art room tabs, a closet set in Bedroom, a butchery and freezer set in Kitchen, an attic ladder, and pallets, lockers and a heavy rack in Basement.",
+			"Lighting: bare bulb, fluorescent light, wall sconce, uplight sconce, caged wall light, wall lantern, wall torch, picture light, candle stand and orb pedestal, all with a Light on switch.",
+		},
+	},
+	{
 		Version = "1.7.29",
 		Date = "2026-10-26",
 		Changes = {

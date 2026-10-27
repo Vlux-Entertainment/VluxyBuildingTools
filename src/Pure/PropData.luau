@@ -199,6 +199,127 @@ local function join(...: { Part }): { Part }
 	return out
 end
 
+--[[
+	@param part Part
+	@return Part -- the same shape in brushed steel that the color themes leave alone
+]]
+local function steel(part: Part): Part
+	return painted(part, 0.72, 0.74, 0.77, "Metal")
+end
+
+--[[
+	@param part Part
+	@return Part -- the same shape in dark iron that the color themes leave alone
+]]
+local function iron(part: Part): Part
+	return painted(part, 0.2, 0.2, 0.22, "Metal")
+end
+
+--[[
+	@param x number
+	@param z number
+	@param height number
+	@param width number
+	@return { Part } -- four steel legs in the corners of a rectangle centred on the origin
+]]
+local function steelLegs(x: number, z: number, height: number, width: number): { Part }
+	local out = legs(x, z, height, width)
+
+	for _, part in out do
+		steel(part)
+	end
+
+	return out
+end
+
+--[[
+	@param width number
+	@param height number
+	@param z number -- where the case is centred front to back; a wall case sits at -0.8 so its back is on the wall
+	@return { Part } -- a bookcase with shelves and a row of books on each
+]]
+local function bookcase(width: number, height: number, z: number): { Part }
+	local parts: { Part } = {
+		B(-width / 2 + 0.2, height / 2, z, 0.4, height, 1.6),
+		B(width / 2 - 0.2, height / 2, z, 0.4, height, 1.6),
+		B(0, height / 2, z + 0.7, width, height, 0.2),
+		B(0, height - 0.15, z, width, 0.3, 1.6),
+	}
+	local rows = math.floor(height / 2.4)
+	local gap = (height - 0.3) / rows
+
+	for row = 0, rows - 1 do
+		local shelf = 0.15 + row * gap
+
+		table.insert(parts, B(0, shelf, z, width, 0.3, 1.6))
+
+		local book = 0
+		local x = -width / 2 + 0.8
+
+		while x < width / 2 - 0.8 do
+			local tall = 1.4 + (book % 3) * 0.25
+
+			table.insert(parts, B(x, shelf + 0.15 + tall / 2, z - 0.1, 0.5, tall, 1.1, book % 2 == 0))
+
+			book += 1
+			x += 0.6
+		end
+	end
+
+	return parts
+end
+
+--[[
+	@return { Part } -- a floor cage of iron bars
+]]
+local function cage(): { Part }
+	local parts: { Part } = {
+		iron(B(0, 0.15, 0, 5, 0.3, 5)),
+		iron(B(0, 5.85, 0, 5, 0.3, 5)),
+	}
+
+	for index = 0, 6 do
+		local offset = -2.25 + index * 0.75
+
+		table.insert(parts, iron(B(offset, 3, -2.35, 0.2, 5.4, 0.2)))
+		table.insert(parts, iron(B(offset, 3, 2.35, 0.2, 5.4, 0.2)))
+
+		if index > 0 and index < 6 then
+			table.insert(parts, iron(B(-2.35, 3, offset, 0.2, 5.4, 0.2)))
+			table.insert(parts, iron(B(2.35, 3, offset, 0.2, 5.4, 0.2)))
+		end
+	end
+
+	return parts
+end
+
+--[[
+	@return { Part } -- three iron chains hanging from a ceiling plate, each ending in a hook
+]]
+local function hangingChains(): { Part }
+	local parts: { Part } = { iron(B(0, -0.1, 0, 6, 0.2, 1)) }
+
+	for _, x in { -2, 0, 2 } do
+		for link = 0, 7 do
+			table.insert(parts, iron(S(x, -0.35 - link * 0.55, 0, 0.3)))
+		end
+
+		table.insert(parts, iron(S(x, -4.8, 0, 0.5)))
+	end
+
+	return parts
+end
+
+--[[
+	@return { Part } -- a candle: a pale wax stick with a glowing flame, standing on y
+]]
+local function candle(x: number, y: number, z: number): { Part }
+	return {
+		painted(C(x, y + 0.45, z, 0.3, 0.9), 0.9, 0.85, 0.7, "SmoothPlastic"),
+		glowing(S(x, y + 1.05, z, 0.25), 1, 0.7, 0.3),
+	}
+end
+
 PropData.Categories = {
 	{ Id = "Bathroom", Label = "Bathroom" },
 	{ Id = "Bedroom", Label = "Bedroom" },
@@ -212,6 +333,11 @@ PropData.Categories = {
 	{ Id = "Outdoor", Label = "Outdoor" },
 	{ Id = "Kids", Label = "Kids" },
 	{ Id = "Shop", Label = "Shop and public" },
+	{ Id = "Game", Label = "Game room" },
+	{ Id = "Library", Label = "Library" },
+	{ Id = "Dungeon", Label = "Dungeon and secret room" },
+	{ Id = "Electrical", Label = "Electrical room" },
+	{ Id = "Art", Label = "Art room" },
 	{ Id = "Lighting", Label = "Lighting" },
 } :: { Category }
 
@@ -1593,6 +1719,899 @@ PropData.Props = {
 			B(-3, 1.8, 2, 1, 3.6, 2.4),
 			B(0, 3.7, 0, 7.4, 0.2, 2.4, true),
 			B(-3, 3.7, 2, 1.4, 0.2, 2.8, true),
+		},
+	},
+	-- Game room
+	{
+		Id = "PoolTable",
+		Label = "Pool table",
+		Category = "Game",
+		Mount = "floor",
+		Parts = join(legs(1.7, 3.2, 2.6, 0.6), {
+			B(0, 2.9, 0, 4.4, 0.6, 8.4),
+			B(0, 3.25, 0, 3.6, 0.1, 7.6, true),
+			B(0, 3.45, -4.1, 4.4, 0.5, 0.4),
+			B(0, 3.45, 4.1, 4.4, 0.5, 0.4),
+			B(-2, 3.45, 0, 0.4, 0.5, 7.8),
+			B(2, 3.45, 0, 0.4, 0.5, 7.8),
+			painted(S(0.3, 3.45, 1, 0.3), 0.95, 0.95, 0.95, "SmoothPlastic"),
+			painted(S(-0.4, 3.45, -1.6, 0.3), 0.8, 0.1, 0.1, "SmoothPlastic"),
+			painted(S(0.5, 3.45, -2, 0.3), 0.1, 0.1, 0.1, "SmoothPlastic"),
+		}),
+	},
+	{
+		Id = "ArcadeCabinet",
+		Label = "Arcade cabinet",
+		Category = "Game",
+		Mount = "floor",
+		Parts = {
+			B(0, 1.6, 0.2, 2.4, 3.2, 2.6),
+			B(0, 3.4, -1.5, 2.4, 0.3, 1, true),
+			B(0, 5, 0.4, 2.4, 3.2, 2),
+			glowing(B(0, 5.1, -0.65, 1.9, 1.8, 0.1), 0.3, 0.6, 1),
+			B(0, 6.9, 0.4, 2.4, 0.9, 2, true),
+			iron(C(-0.5, 3.8, -1.5, 0.18, 0.6)),
+			painted(S(-0.5, 4.15, -1.5, 0.4), 0.85, 0.1, 0.1, "SmoothPlastic"),
+			painted(S(0.3, 3.62, -1.5, 0.3), 0.9, 0.8, 0.1, "SmoothPlastic"),
+			painted(S(0.9, 3.62, -1.5, 0.3), 0.2, 0.5, 0.9, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "Dartboard",
+		Label = "Dartboard",
+		Category = "Game",
+		Mount = "wall",
+		Parts = {
+			B(0, 5.5, -0.2, 2.6, 2.6, 0.4),
+			B(0, 5.5, -0.45, 2, 2, 0.1, true),
+			painted(S(0, 5.5, -0.55, 0.4), 0.85, 0.1, 0.1, "SmoothPlastic"),
+			iron(B(0.5, 5.8, -0.75, 0.06, 0.06, 0.5)),
+			iron(B(-0.6, 5.2, -0.75, 0.06, 0.06, 0.5)),
+		},
+	},
+	{
+		Id = "Foosball",
+		Label = "Foosball table",
+		Category = "Game",
+		Mount = "floor",
+		Parts = join(legs(2, 1.2, 2.6, 0.4), {
+			B(0, 2.8, 0, 5.2, 0.5, 3.2),
+			B(0, 3.1, 0, 4.6, 0.15, 2.6, true),
+			B(0, 3.4, -1.65, 5.2, 0.5, 0.15),
+			B(0, 3.4, 1.65, 5.2, 0.5, 0.15),
+			B(-2.5, 3.4, 0, 0.15, 0.5, 3.2),
+			B(2.5, 3.4, 0, 0.15, 0.5, 3.2),
+			steel(B(0, 3.7, -0.9, 6, 0.12, 0.12)),
+			steel(B(0, 3.7, 0, 6, 0.12, 0.12)),
+			steel(B(0, 3.7, 0.9, 6, 0.12, 0.12)),
+			B(-3.1, 3.7, -0.9, 0.4, 0.3, 0.3, true),
+			B(3.1, 3.7, 0, 0.4, 0.3, 0.3, true),
+			B(-3.1, 3.7, 0.9, 0.4, 0.3, 0.3, true),
+		}),
+	},
+	{
+		Id = "PingPong",
+		Label = "Ping pong table",
+		Category = "Game",
+		Mount = "floor",
+		Parts = join(legs(2.2, 3.8, 2.8, 0.3), {
+			B(0, 2.9, 0, 5, 0.2, 9, true),
+			painted(B(0, 3.03, 0, 0.08, 0.05, 9), 0.95, 0.95, 0.95, "SmoothPlastic"),
+			B(0, 3.4, 0, 5.4, 0.6, 0.1),
+			iron(B(-2.6, 3.4, 0, 0.15, 0.8, 0.15)),
+			iron(B(2.6, 3.4, 0, 0.15, 0.8, 0.15)),
+		}),
+	},
+	-- Library
+	{
+		Id = "LibraryShelf",
+		Label = "Library shelf",
+		Category = "Library",
+		Mount = "floor",
+		Parts = bookcase(6, 12, 0),
+	},
+	{
+		Id = "LibraryLadder",
+		Label = "Library ladder",
+		Category = "Library",
+		Mount = "floor",
+		Parts = {
+			B(-1, 4, 0, 0.2, 8, 0.2),
+			B(1, 4, 0, 0.2, 8, 0.2),
+			B(0, 1.5, 0, 2, 0.2, 0.3),
+			B(0, 3, 0, 2, 0.2, 0.3),
+			B(0, 4.5, 0, 2, 0.2, 0.3),
+			B(0, 6, 0, 2, 0.2, 0.3),
+			B(0, 7.5, 0, 2, 0.2, 0.3),
+			B(0, 8.1, 0, 2.4, 0.2, 0.8, true),
+			iron(C(-1, 0.25, 0, 0.5, 0.2)),
+			iron(C(1, 0.25, 0, 0.5, 0.2)),
+		},
+	},
+	{
+		Id = "Lectern",
+		Label = "Reading lectern",
+		Category = "Library",
+		Mount = "floor",
+		Parts = {
+			B(0, 0.2, 0, 2, 0.4, 2),
+			C(0, 2.2, 0, 0.7, 3.6),
+			B(0, 4.3, 0, 2.2, 0.2, 1.6, true),
+			B(0, 4.5, -0.1, 1.6, 0.2, 1.2),
+			B(0, 4.55, 0.7, 2.2, 0.5, 0.15, true),
+		},
+	},
+	{
+		Id = "CardCatalog",
+		Label = "Card catalog",
+		Category = "Library",
+		Mount = "floor",
+		Parts = {
+			B(0, 2.2, 0, 3.8, 4.4, 1.8),
+			B(0, 4.5, 0, 4, 0.2, 2),
+			B(-1.2, 0.9, -0.95, 1.1, 1, 0.1, true),
+			B(0, 0.9, -0.95, 1.1, 1, 0.1, true),
+			B(1.2, 0.9, -0.95, 1.1, 1, 0.1, true),
+			B(-1.2, 2.2, -0.95, 1.1, 1, 0.1, true),
+			B(0, 2.2, -0.95, 1.1, 1, 0.1, true),
+			B(1.2, 2.2, -0.95, 1.1, 1, 0.1, true),
+			B(-1.2, 3.5, -0.95, 1.1, 1, 0.1, true),
+			B(0, 3.5, -0.95, 1.1, 1, 0.1, true),
+			B(1.2, 3.5, -0.95, 1.1, 1, 0.1, true),
+			painted(S(-1.2, 0.9, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(0, 0.9, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(1.2, 0.9, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(-1.2, 2.2, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(0, 2.2, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(1.2, 2.2, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(-1.2, 3.5, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(0, 3.5, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+			painted(S(1.2, 3.5, -1.05, 0.2), 0.8, 0.65, 0.2, "Metal"),
+		},
+	},
+	{
+		Id = "ReadingTable",
+		Label = "Reading table",
+		Category = "Library",
+		Mount = "floor",
+		Parts = join(legs(2.6, 1.2, 2.8, 0.4), {
+			B(0, 3, 0, 6.2, 0.4, 3.2, true),
+			B(0, 0.8, 0, 5, 0.2, 0.2),
+			B(-1.5, 3.3, 0, 1.2, 0.2, 0.9),
+			B(1.4, 3.3, 0.2, 1, 0.2, 0.8),
+		}),
+	},
+	-- Closet (bedroom)
+	{
+		Id = "ClosetRod",
+		Label = "Clothes rod",
+		Category = "Bedroom",
+		Mount = "wall",
+		Parts = {
+			B(0, 6.4, -0.6, 6, 0.2, 1.2),
+			steel(laid(C(0, 5.8, -0.6, 0.15, 6))),
+			B(-2.4, 4.6, -0.6, 0.5, 2.4, 1, true),
+			B(-1.6, 4.5, -0.6, 0.5, 2.6, 1),
+			B(-0.8, 4.7, -0.6, 0.5, 2.2, 1, true),
+			B(0, 4.5, -0.6, 0.5, 2.6, 1),
+			B(0.8, 4.6, -0.6, 0.5, 2.4, 1, true),
+			B(1.6, 4.5, -0.6, 0.5, 2.6, 1),
+			B(2.4, 4.7, -0.6, 0.5, 2.2, 1, true),
+		},
+	},
+	{
+		Id = "ShoeRack",
+		Label = "Shoe rack",
+		Category = "Bedroom",
+		Mount = "floor",
+		Parts = {
+			B(-2, 1.5, 0, 0.2, 3, 1.4),
+			B(2, 1.5, 0, 0.2, 3, 1.4),
+			B(0, 0.1, 0, 4.2, 0.2, 1.4),
+			B(0, 1, 0, 4, 0.15, 1.4),
+			B(0, 2, 0, 4, 0.15, 1.4),
+			B(0, 2.95, 0, 4.2, 0.2, 1.4),
+			B(-1.2, 0.4, 0, 0.8, 0.4, 0.5, true),
+			B(0, 0.4, 0, 0.8, 0.4, 0.5),
+			B(1.2, 0.4, 0, 0.8, 0.4, 0.5, true),
+			B(-1.2, 1.4, 0, 0.8, 0.4, 0.5),
+			B(0, 1.4, 0, 0.8, 0.4, 0.5, true),
+			B(1.2, 1.4, 0, 0.8, 0.4, 0.5),
+			B(-0.6, 2.4, 0, 0.8, 0.4, 0.5, true),
+			B(0.7, 2.4, 0, 0.8, 0.4, 0.5),
+		},
+	},
+	{
+		Id = "ClosetShelves",
+		Label = "Closet shelves",
+		Category = "Bedroom",
+		Mount = "floor",
+		Parts = {
+			B(-3, 3.5, 0, 0.3, 7, 1.6),
+			B(0, 3.5, 0, 0.3, 7, 1.6),
+			B(3, 3.5, 0, 0.3, 7, 1.6),
+			B(0, 0.1, 0, 6.3, 0.2, 1.6),
+			B(0, 1.9, 0, 6, 0.15, 1.6),
+			B(0, 3.7, 0, 6, 0.15, 1.6),
+			B(0, 5.5, 0, 6, 0.15, 1.6),
+			B(0, 6.9, 0, 6.3, 0.2, 1.6),
+			B(-1.5, 2.4, 0, 2.4, 0.8, 1.2, true),
+			B(1.5, 2.3, 0, 2.4, 0.6, 1.2),
+			B(-1.5, 4.2, 0, 2.4, 0.8, 1.2),
+			B(1.5, 4.3, 0, 2.4, 1, 1.2, true),
+			B(-1.5, 6.1, 0, 2.4, 0.8, 1.2, true),
+			B(1.5, 6, 0, 2.4, 0.6, 1.2),
+		},
+	},
+	{
+		Id = "Hamper",
+		Label = "Hamper",
+		Category = "Bedroom",
+		Mount = "floor",
+		Parts = {
+			C(0, 1.6, 0, 2, 3.2, true),
+			C(0, 3.3, 0, 2.2, 0.2),
+			S(0, 3.5, 0, 0.35),
+		},
+	},
+	-- Butchery (kitchen)
+	{
+		Id = "ChestFreezer",
+		Label = "Chest freezer",
+		Category = "Kitchen",
+		Mount = "floor",
+		Parts = {
+			B(0, 1.7, 0, 5, 3.4, 2.6),
+			B(0, 3.5, 0, 5.2, 0.3, 2.8, true),
+			iron(B(0, 3.4, -1.5, 2, 0.2, 0.2)),
+			iron(B(-2.2, 0.15, -1, 0.5, 0.3, 0.5)),
+			iron(B(2.2, 0.15, -1, 0.5, 0.3, 0.5)),
+		},
+	},
+	{
+		Id = "ButcherBlock",
+		Label = "Butcher block",
+		Category = "Kitchen",
+		Mount = "floor",
+		Parts = {
+			B(0, 1.8, 0, 3.2, 3.6, 3.2),
+			B(0, 3.75, 0, 3.4, 0.3, 3.4, true),
+			steel(B(0.6, 4.1, -0.3, 1, 0.5, 0.12)),
+			iron(B(-0.2, 4.1, -0.3, 0.7, 0.2, 0.2)),
+		},
+	},
+	{
+		Id = "HookRail",
+		Label = "Meat hook rail",
+		Category = "Kitchen",
+		Mount = "ceiling",
+		Parts = {
+			steel(B(0, -0.15, 0, 8, 0.3, 0.4)),
+			steel(C(-3, -0.9, 0, 0.12, 1.2)),
+			steel(C(-1.5, -0.9, 0, 0.12, 1.2)),
+			steel(C(0, -0.9, 0, 0.12, 1.2)),
+			steel(C(1.5, -0.9, 0, 0.12, 1.2)),
+			steel(C(3, -0.9, 0, 0.12, 1.2)),
+			steel(S(-3, -1.7, 0, 0.35)),
+			steel(S(-1.5, -1.7, 0, 0.35)),
+			steel(S(0, -1.7, 0, 0.35)),
+			steel(S(1.5, -1.7, 0, 0.35)),
+			steel(S(3, -1.7, 0, 0.35)),
+		},
+	},
+	{
+		Id = "StainlessTable",
+		Label = "Stainless table",
+		Category = "Kitchen",
+		Mount = "floor",
+		Parts = join(steelLegs(3, 1.2, 3, 0.3), {
+			steel(B(0, 3.1, 0, 7, 0.2, 3.2)),
+			steel(B(0, 1, 0, 6.6, 0.15, 2.8)),
+		}),
+	},
+	{
+		Id = "SteelRack",
+		Label = "Steel rack",
+		Category = "Kitchen",
+		Mount = "floor",
+		Parts = join(steelLegs(2.5, 1, 7, 0.3), {
+			steel(B(0, 0.4, 0, 5.3, 0.15, 2.3)),
+			steel(B(0, 2.5, 0, 5.3, 0.15, 2.3)),
+			steel(B(0, 4.6, 0, 5.3, 0.15, 2.3)),
+			steel(B(0, 6.7, 0, 5.3, 0.15, 2.3)),
+			B(-1.4, 1.2, 0, 1.8, 1.4, 1.6, true),
+			B(1.2, 1.1, 0, 2, 1.2, 1.6),
+			B(-1, 3.3, 0, 2.2, 1.2, 1.6),
+			B(1.4, 3.4, 0, 1.4, 1.4, 1.6, true),
+			B(0, 5.4, 0, 3, 1.2, 1.6, true),
+		}),
+	},
+	{
+		Id = "FreezerDoor",
+		Label = "Freezer door",
+		Category = "Kitchen",
+		Mount = "wall",
+		Parts = {
+			steel(B(0, 3.6, -0.4, 5, 7.2, 0.8)),
+			B(0, 3.5, -0.95, 4, 7, 0.2, true),
+			iron(B(1.4, 3.5, -1.2, 0.2, 1.4, 0.3)),
+			iron(B(-1.8, 5.5, -1.1, 0.15, 0.6, 0.2)),
+			iron(B(-1.8, 1.5, -1.1, 0.15, 0.6, 0.2)),
+			glowing(B(0, 5.4, -1.07, 1, 0.8, 0.05), 0.7, 0.85, 1),
+		},
+	},
+	-- Dungeon and cellar
+	{
+		Id = "RestraintChair",
+		Label = "Restraint chair",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join(legs(0.9, 0.9, 1.8, 0.3), {
+			B(0, 1.9, 0, 2.2, 0.3, 2.2),
+			B(0, 3.7, 0.95, 2.2, 3.5, 0.3),
+			B(-1.05, 2.6, 0, 0.2, 0.3, 2.1),
+			B(1.05, 2.6, 0, 0.2, 0.3, 2.1),
+			B(-1.05, 2.8, -0.2, 0.35, 0.15, 0.5, true),
+			B(1.05, 2.8, -0.2, 0.35, 0.15, 0.5, true),
+			B(0, 3.8, 0.75, 2.3, 0.4, 0.1, true),
+			B(0, 0.7, -0.9, 2, 0.15, 0.1, true),
+		}),
+	},
+	{
+		Id = "IronCage",
+		Label = "Iron cage",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = cage(),
+	},
+	{
+		Id = "WallShackles",
+		Label = "Wall shackles",
+		Category = "Dungeon",
+		Mount = "wall",
+		Parts = {
+			iron(B(0, 7, -0.2, 4, 0.6, 0.4)),
+			iron(S(-1.2, 6.4, -0.4, 0.3)),
+			iron(S(-1.2, 5.8, -0.4, 0.3)),
+			iron(S(-1.2, 5.2, -0.4, 0.3)),
+			iron(S(-1.2, 4.6, -0.4, 0.3)),
+			iron(S(1.2, 6.4, -0.4, 0.3)),
+			iron(S(1.2, 5.8, -0.4, 0.3)),
+			iron(S(1.2, 5.2, -0.4, 0.3)),
+			iron(S(1.2, 4.6, -0.4, 0.3)),
+			iron(B(-1.2, 4.1, -0.5, 0.7, 0.5, 0.5)),
+			iron(B(1.2, 4.1, -0.5, 0.7, 0.5, 0.5)),
+		},
+	},
+	{
+		Id = "ToolTable",
+		Label = "Tool table",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join(legs(2.4, 1.1, 2.8, 0.4), {
+			B(0, 3, 0, 5.6, 0.3, 2.8, true),
+			steel(B(-1.6, 3.2, -0.2, 1.6, 0.1, 0.25)),
+			steel(B(0.2, 3.2, 0.2, 0.3, 0.1, 1.4)),
+			iron(B(1.5, 3.2, -0.3, 0.9, 0.1, 0.9)),
+		}),
+	},
+	{
+		Id = "Bucket",
+		Label = "Bucket",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			steel(C(0, 0.9, 0, 1.4, 1.8)),
+			painted(C(0, 1.7, 0, 1.2, 0.1), 0.2, 0.3, 0.35, "SmoothPlastic"),
+			steel(B(0, 2.2, 0, 1.5, 0.1, 0.1)),
+		},
+	},
+	{
+		Id = "FloorDrain",
+		Label = "Floor drain",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			iron(B(0, 0.05, 0, 1.8, 0.1, 1.8)),
+			steel(B(0, 0.12, 0, 1.4, 0.05, 0.1)),
+			steel(B(0, 0.12, -0.35, 1.4, 0.05, 0.1)),
+			steel(B(0, 0.12, 0.35, 1.4, 0.05, 0.1)),
+		},
+	},
+	{
+		Id = "Stocks",
+		Label = "Stocks",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			B(-2.5, 3, 0, 0.5, 6, 0.5),
+			B(2.5, 3, 0, 0.5, 6, 0.5),
+			B(-2.5, 0.2, 0, 0.6, 0.4, 2),
+			B(2.5, 0.2, 0, 0.6, 0.4, 2),
+			B(0, 2.6, 0, 4.6, 0.8, 0.4),
+			B(0, 3.6, 0, 4.6, 0.8, 0.4, true),
+		},
+	},
+	{
+		Id = "HangingChains",
+		Label = "Hanging chains",
+		Category = "Dungeon",
+		Mount = "ceiling",
+		Parts = hangingChains(),
+	},
+	-- Secret room
+	{
+		Id = "BookshelfDoor",
+		Label = "Secret bookshelf",
+		Category = "Dungeon",
+		Mount = "wall",
+		Parts = join(bookcase(6.4, 10, -0.8), {
+			B(1.4, 4.5, -1.7, 0.3, 0.3, 0.3, true),
+		}),
+	},
+	{
+		Id = "Safe",
+		Label = "Safe",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			steel(B(0, 2, 0, 3, 4, 2.6)),
+			B(0, 2, -1.35, 2.6, 3.6, 0.15, true),
+			iron(S(0, 2.3, -1.45, 0.8)),
+			iron(B(0.8, 1.6, -1.5, 0.6, 0.15, 0.15)),
+			iron(B(-1.2, 0.15, -1, 0.5, 0.3, 0.5)),
+			iron(B(1.2, 0.15, -1, 0.5, 0.3, 0.5)),
+		},
+	},
+	{
+		Id = "Altar",
+		Label = "Altar",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join({
+			B(0, 1.5, 0, 5, 3, 2.6),
+			B(0, 3.05, 0, 5.2, 0.1, 2.8, true),
+			B(0, 3.25, 0, 1.4, 0.3, 1, true),
+		}, candle(-1.8, 3.1, 0), candle(1.8, 3.1, 0)),
+	},
+	{
+		Id = "MapTable",
+		Label = "Map table",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join(legs(3, 1.6, 3, 0.4), {
+			B(0, 3.15, 0, 7.2, 0.3, 4, false),
+			painted(B(0, 3.33, 0, 6, 0.05, 3.2), 0.85, 0.78, 0.6, "Fabric"),
+			painted(S(1, 3.5, 0.4, 0.25), 0.85, 0.1, 0.1, "SmoothPlastic"),
+			painted(S(-1.5, 3.5, -0.6, 0.25), 0.2, 0.4, 0.9, "SmoothPlastic"),
+			painted(S(0, 3.5, -0.2, 0.25), 0.2, 0.7, 0.3, "SmoothPlastic"),
+		}),
+	},
+	{
+		Id = "LockedChest",
+		Label = "Locked chest",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			B(0, 1, 0, 3.4, 2, 2.2),
+			B(0, 2.3, 0, 3.4, 0.6, 2.2, true),
+			painted(B(-1.2, 1.3, 0, 0.3, 2.6, 2.3), 0.8, 0.65, 0.2, "Metal"),
+			painted(B(1.2, 1.3, 0, 0.3, 2.6, 2.3), 0.8, 0.65, 0.2, "Metal"),
+			painted(B(0, 1.5, -1.15, 0.5, 0.6, 0.1), 0.8, 0.65, 0.2, "Metal"),
+		},
+	},
+	-- Electrical room
+	{
+		Id = "BreakerPanel",
+		Label = "Breaker panel",
+		Category = "Electrical",
+		Mount = "wall",
+		Parts = {
+			steel(B(0, 4.5, -0.4, 3, 4, 0.8)),
+			B(0, 4.5, -0.85, 2.6, 3.6, 0.1, true),
+			iron(B(-0.5, 5.6, -0.95, 0.5, 0.3, 0.1)),
+			iron(B(0.5, 5.6, -0.95, 0.5, 0.3, 0.1)),
+			iron(B(-0.5, 4.8, -0.95, 0.5, 0.3, 0.1)),
+			iron(B(0.5, 4.8, -0.95, 0.5, 0.3, 0.1)),
+			iron(B(-0.5, 4, -0.95, 0.5, 0.3, 0.1)),
+			iron(B(0.5, 4, -0.95, 0.5, 0.3, 0.1)),
+			glowing(S(0, 3.3, -0.95, 0.25), 1, 0.15, 0.1),
+		},
+	},
+	{
+		Id = "Generator",
+		Label = "Generator",
+		Category = "Electrical",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 2, 0, 6, 3.4, 3.4), 0.85, 0.45, 0.1, "Metal"),
+			iron(B(-2.5, 0.15, 0, 0.5, 0.3, 3.4)),
+			iron(B(2.5, 0.15, 0, 0.5, 0.3, 3.4)),
+			steel(laid(C(0, 4.2, 0, 1.8, 4.5))),
+			iron(C(2.3, 4.6, 0.8, 0.5, 2)),
+			iron(B(0, 2.4, -1.75, 3, 1.2, 0.1)),
+			glowing(B(-1, 2.4, -1.82, 0.3, 0.2, 0.05), 0.2, 1, 0.3),
+			glowing(B(0, 2.4, -1.82, 0.3, 0.2, 0.05), 1, 0.2, 0.1),
+		},
+	},
+	{
+		Id = "Transformer",
+		Label = "Transformer",
+		Category = "Electrical",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 0.4, 0, 4.4, 0.8, 4.4), 0.55, 0.55, 0.55, "Concrete"),
+			painted(C(0, 3.2, 0, 3.4, 4.8), 0.5, 0.55, 0.5, "Metal"),
+			painted(B(-2, 3.2, 0, 0.3, 4, 2.2), 0.5, 0.55, 0.5, "Metal"),
+			painted(B(2, 3.2, 0, 0.3, 4, 2.2), 0.5, 0.55, 0.5, "Metal"),
+			painted(C(-1, 6.2, 0, 0.5, 1.2), 0.9, 0.88, 0.8, "SmoothPlastic"),
+			painted(C(0, 6.2, 0, 0.5, 1.2), 0.9, 0.88, 0.8, "SmoothPlastic"),
+			painted(C(1, 6.2, 0, 0.5, 1.2), 0.9, 0.88, 0.8, "SmoothPlastic"),
+			iron(S(-1, 6.9, 0, 0.5)),
+			iron(S(0, 6.9, 0, 0.5)),
+			iron(S(1, 6.9, 0, 0.5)),
+		},
+	},
+	{
+		Id = "CableTray",
+		Label = "Cable tray",
+		Category = "Electrical",
+		Mount = "ceiling",
+		Parts = {
+			steel(B(0, -0.55, 0, 10, 0.1, 1.6)),
+			steel(B(0, -0.35, -0.75, 10, 0.4, 0.1)),
+			steel(B(0, -0.35, 0.75, 10, 0.4, 0.1)),
+			steel(B(-4, -0.2, 0, 0.15, 0.4, 1.8)),
+			steel(B(0, -0.2, 0, 0.15, 0.4, 1.8)),
+			steel(B(4, -0.2, 0, 0.15, 0.4, 1.8)),
+			painted(B(0, -0.4, -0.3, 10, 0.2, 0.3), 0.1, 0.1, 0.1, "SmoothPlastic"),
+			painted(B(0, -0.4, 0.2, 10, 0.2, 0.3), 0.8, 0.1, 0.1, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "ElectricalCabinet",
+		Label = "Electrical cabinet",
+		Category = "Electrical",
+		Mount = "floor",
+		Parts = {
+			steel(B(0, 4, 0, 3.2, 8, 1.6)),
+			B(-0.8, 4, -0.85, 1.5, 7.4, 0.1, true),
+			B(0.8, 4, -0.85, 1.5, 7.4, 0.1, true),
+			iron(B(-0.15, 4, -0.95, 0.1, 1, 0.1)),
+			iron(B(0.15, 4, -0.95, 0.1, 1, 0.1)),
+			painted(B(0.8, 5.5, -0.93, 0.8, 0.8, 0.05), 0.95, 0.8, 0.1, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "CableReel",
+		Label = "Cable reel",
+		Category = "Electrical",
+		Mount = "floor",
+		Parts = {
+			C(0, 0.1, 0, 3, 0.2, true),
+			C(0, 1.6, 0, 1.2, 2.8),
+			C(0, 3, 0, 3, 0.2, true),
+			painted(C(0, 1.6, 0, 2.2, 2.6), 0.1, 0.1, 0.1, "SmoothPlastic"),
+		},
+	},
+	-- Art room
+	{
+		Id = "Easel",
+		Label = "Easel",
+		Category = "Art",
+		Mount = "floor",
+		Parts = {
+			B(-1.4, 3.5, 0, 0.2, 7, 0.2),
+			B(1.4, 3.5, 0, 0.2, 7, 0.2),
+			B(0, 3, 0.8, 0.2, 6, 0.2),
+			B(0, 5.5, 0, 3, 0.2, 0.2),
+			B(0, 2.4, -0.3, 3, 0.15, 0.6),
+			B(0, 4.2, -0.2, 2.6, 3.4, 0.15, true),
+			painted(B(-0.5, 4.5, -0.3, 0.6, 0.5, 0.05), 0.8, 0.2, 0.2, "SmoothPlastic"),
+			painted(B(0.5, 3.8, -0.3, 0.8, 0.4, 0.05), 0.2, 0.4, 0.8, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "ArtTable",
+		Label = "Art table",
+		Category = "Art",
+		Mount = "floor",
+		Parts = join(legs(3, 1.4, 3, 0.4), {
+			B(0, 3.1, 0, 7.4, 0.3, 3.6, true),
+			painted(C(-2.4, 3.55, 0, 0.5, 0.6), 0.8, 0.2, 0.2, "Glass", 0.3),
+			painted(C(-1.6, 3.55, 0.4, 0.5, 0.6), 0.2, 0.4, 0.8, "Glass", 0.3),
+			painted(C(-0.8, 3.55, -0.3, 0.5, 0.6), 0.9, 0.8, 0.2, "Glass", 0.3),
+			B(1.5, 3.4, 0, 1.4, 0.3, 1),
+		}),
+	},
+	{
+		Id = "PaintCart",
+		Label = "Paint cart",
+		Category = "Art",
+		Mount = "floor",
+		Parts = join(legs(1.7, 0.9, 3.4, 0.2), {
+			B(0, 0.7, 0, 3.8, 0.15, 2.2, true),
+			B(0, 1.9, 0, 3.8, 0.15, 2.2),
+			B(0, 3.1, 0, 3.8, 0.15, 2.2, true),
+			iron(C(-1.5, 0.2, -0.9, 0.4, 0.4)),
+			iron(C(1.5, 0.2, -0.9, 0.4, 0.4)),
+			painted(C(-1.2, 2.25, 0, 0.7, 0.6), 0.8, 0.2, 0.2, "Metal"),
+			painted(C(0, 2.25, 0, 0.7, 0.6), 0.2, 0.4, 0.8, "Metal"),
+			painted(C(1.2, 2.25, 0, 0.7, 0.6), 0.9, 0.8, 0.2, "Metal"),
+			painted(C(-0.6, 3.45, 0, 0.7, 0.6), 0.2, 0.7, 0.3, "Metal"),
+			painted(C(0.6, 3.45, 0, 0.7, 0.6), 0.9, 0.9, 0.9, "Metal"),
+		}),
+	},
+	{
+		Id = "CanvasRack",
+		Label = "Canvas rack",
+		Category = "Art",
+		Mount = "floor",
+		Parts = {
+			B(-2.5, 3, 0, 0.3, 6, 2),
+			B(2.5, 3, 0, 0.3, 6, 2),
+			B(0, 0.1, 0, 5.3, 0.2, 2),
+			B(0, 5.9, 0, 5.3, 0.2, 2),
+			B(-1.5, 2.8, -0.4, 0.15, 5.2, 0.9, true),
+			B(-0.5, 2.8, -0.2, 0.15, 5.2, 0.9),
+			B(0.5, 2.8, 0, 0.15, 5.2, 0.9, true),
+			B(1.5, 2.8, -0.3, 0.15, 5.2, 0.9),
+		},
+	},
+	{
+		Id = "PotteryWheel",
+		Label = "Pottery wheel",
+		Category = "Art",
+		Mount = "floor",
+		Parts = {
+			C(0, 1, 0, 2, 2),
+			C(0, 2.1, 0, 2.4, 0.2, true),
+			painted(S(0, 2.5, 0, 0.9), 0.6, 0.38, 0.25, "Slate"),
+			C(0, 0.1, 0, 3, 0.2),
+			C(-3, 1.2, 0, 1.6, 0.2),
+			C(-3, 0.6, 0, 0.2, 1.2),
+		},
+	},
+	{
+		Id = "Sculpture",
+		Label = "Sculpture",
+		Category = "Art",
+		Mount = "floor",
+		Parts = {
+			B(0, 2, 0, 2, 4, 2),
+			painted(B(0, 5.2, 0, 1.2, 2, 1), 0.9, 0.9, 0.88, "Marble"),
+			painted(S(0, 6.6, 0, 0.9), 0.9, 0.9, 0.88, "Marble"),
+			painted(B(-0.85, 5.2, 0, 0.3, 1.8, 0.4), 0.9, 0.9, 0.88, "Marble"),
+			painted(B(0.85, 5.2, 0, 0.3, 1.8, 0.4), 0.9, 0.9, 0.88, "Marble"),
+		},
+	},
+	-- Storage and attic
+	{
+		Id = "AtticLadder",
+		Label = "Attic ladder",
+		Category = "Attic",
+		Mount = "ceiling",
+		Parts = {
+			B(0, -0.2, 0, 3, 0.4, 4.4, true),
+			B(-1, -4.9, 0, 0.25, 9, 0.3),
+			B(1, -4.9, 0, 0.25, 9, 0.3),
+			B(0, -1, 0, 1.8, 0.2, 0.3),
+			B(0, -2.4, 0, 1.8, 0.2, 0.3),
+			B(0, -3.8, 0, 1.8, 0.2, 0.3),
+			B(0, -5.2, 0, 1.8, 0.2, 0.3),
+			B(0, -6.6, 0, 1.8, 0.2, 0.3),
+			B(0, -8, 0, 1.8, 0.2, 0.3),
+			iron(B(0, -0.45, -1.6, 0.4, 0.1, 0.5)),
+		},
+	},
+	{
+		Id = "PalletLoad",
+		Label = "Pallet load",
+		Category = "Basement",
+		Mount = "floor",
+		Parts = {
+			B(-1.6, 0.25, -1.6, 0.6, 0.3, 0.6),
+			B(0, 0.25, -1.6, 0.6, 0.3, 0.6),
+			B(1.6, 0.25, -1.6, 0.6, 0.3, 0.6),
+			B(-1.6, 0.25, 0, 0.6, 0.3, 0.6),
+			B(0, 0.25, 0, 0.6, 0.3, 0.6),
+			B(1.6, 0.25, 0, 0.6, 0.3, 0.6),
+			B(-1.6, 0.25, 1.6, 0.6, 0.3, 0.6),
+			B(0, 0.25, 1.6, 0.6, 0.3, 0.6),
+			B(1.6, 0.25, 1.6, 0.6, 0.3, 0.6),
+			B(0, 0.5, -1.6, 4, 0.2, 0.7),
+			B(0, 0.5, 0, 4, 0.2, 0.7),
+			B(0, 0.5, 1.6, 4, 0.2, 0.7),
+			B(-0.7, 1.5, 0, 2.2, 1.8, 3, true),
+			B(1.1, 1.3, 0, 1.4, 1.4, 3),
+			B(0.3, 2.9, 0, 2, 1, 2.4, true),
+		},
+	},
+	{
+		Id = "Lockers",
+		Label = "Lockers",
+		Category = "Basement",
+		Mount = "floor",
+		Parts = {
+			steel(B(-1.7, 3.5, 0, 1.6, 7, 1.6)),
+			steel(B(0, 3.5, 0, 1.6, 7, 1.6)),
+			steel(B(1.7, 3.5, 0, 1.6, 7, 1.6)),
+			B(-1.7, 3.5, -0.85, 1.4, 6.6, 0.1, true),
+			B(0, 3.5, -0.85, 1.4, 6.6, 0.1, true),
+			B(1.7, 3.5, -0.85, 1.4, 6.6, 0.1, true),
+			iron(B(-1.3, 3.5, -0.95, 0.1, 0.8, 0.1)),
+			iron(B(0.4, 3.5, -0.95, 0.1, 0.8, 0.1)),
+			iron(B(2.1, 3.5, -0.95, 0.1, 0.8, 0.1)),
+		},
+	},
+	{
+		Id = "HeavyRack",
+		Label = "Heavy rack",
+		Category = "Basement",
+		Mount = "floor",
+		Parts = {
+			painted(B(-4, 5, -1.2, 0.4, 10, 0.4), 0.2, 0.35, 0.7, "Metal"),
+			painted(B(4, 5, -1.2, 0.4, 10, 0.4), 0.2, 0.35, 0.7, "Metal"),
+			painted(B(-4, 5, 1.2, 0.4, 10, 0.4), 0.2, 0.35, 0.7, "Metal"),
+			painted(B(4, 5, 1.2, 0.4, 10, 0.4), 0.2, 0.35, 0.7, "Metal"),
+			painted(B(0, 0.4, 0, 8.4, 0.3, 2.8), 0.85, 0.45, 0.1, "Metal"),
+			painted(B(0, 3.6, 0, 8.4, 0.3, 2.8), 0.85, 0.45, 0.1, "Metal"),
+			painted(B(0, 6.8, 0, 8.4, 0.3, 2.8), 0.85, 0.45, 0.1, "Metal"),
+			B(-2.5, 1.5, 0, 2.6, 1.8, 2.2, true),
+			B(1.5, 1.4, 0, 3.4, 1.6, 2.2),
+			B(-1, 4.7, 0, 3, 1.8, 2.2),
+			B(2.6, 4.6, 0, 2, 1.6, 2.2, true),
+			B(0, 7.9, 0, 5, 1.8, 2.2, true),
+		},
+	},
+	-- More lighting
+	{
+		Id = "BareBulb",
+		Label = "Bare bulb",
+		Category = "Lighting",
+		Mount = "ceiling",
+		Parts = {
+			C(0, -0.15, 0, 0.6, 0.3, true),
+			iron(C(0, -1.2, 0, 0.08, 1.8)),
+			iron(C(0, -2.2, 0, 0.4, 0.4)),
+			glowing(S(0, -2.7, 0, 0.8), 1, 0.9, 0.6),
+			lamp(0, -2.7, 0),
+			lights(0, -2.7, 0, 0.3, 10),
+		},
+	},
+	{
+		Id = "FluorescentLight",
+		Label = "Fluorescent light",
+		Category = "Lighting",
+		Mount = "ceiling",
+		Parts = {
+			B(0, -0.2, 0, 6, 0.4, 1.2, true),
+			glowing(B(0, -0.45, 0, 5.6, 0.12, 0.7), 0.9, 0.95, 1),
+			lamp(0, -0.6, 0),
+			lights(0, -0.6, 0, 0.3, 12),
+		},
+	},
+	{
+		Id = "WallSconce",
+		Label = "Wall sconce",
+		Category = "Lighting",
+		Mount = "wall",
+		Parts = {
+			B(0, 5.5, -0.1, 1, 1.6, 0.2),
+			B(0, 5.3, -0.6, 0.3, 0.3, 0.8, true),
+			glowing(S(0, 5.5, -1, 0.6), 1, 0.85, 0.55),
+			lamp(0, 5.5, -1),
+			lights(0, 5.5, -1, 0.2, 8),
+		},
+	},
+	{
+		Id = "WallTorch",
+		Label = "Wall torch",
+		Category = "Lighting",
+		Mount = "wall",
+		Parts = {
+			iron(B(0, 5, -0.15, 0.8, 1.6, 0.3)),
+			iron(C(0, 5.2, -0.7, 0.5, 1.4)),
+			B(0, 6.2, -0.7, 0.3, 1.2, 0.3),
+			glowing(S(0, 6.9, -0.7, 0.9), 1, 0.55, 0.15),
+			lamp(0, 6.9, -0.7),
+			lights(0, 6.9, -0.7, 0.3, 10),
+		},
+	},
+	{
+		Id = "CandleStand",
+		Label = "Candle stand",
+		Category = "Lighting",
+		Mount = "floor",
+		Parts = join(
+			{
+				iron(C(0, 0.15, 0, 1.8, 0.3)),
+				iron(C(0, 2.5, 0, 0.2, 4.6)),
+				iron(B(-1, 4.55, 0, 2, 0.12, 0.12)),
+				iron(B(1, 4.55, 0, 2, 0.12, 0.12)),
+			},
+			candle(-2, 4.61, 0),
+			candle(0, 4.61, 0),
+			candle(2, 4.61, 0),
+			{
+				lamp(0, 5.7, 0),
+				lights(0, 5.7, 0, 0.2, 8),
+			}
+		),
+	},
+	{
+		Id = "OrbPedestal",
+		Label = "Orb pedestal",
+		Category = "Lighting",
+		Mount = "floor",
+		Parts = {
+			C(0, 0.3, 0, 2.2, 0.6),
+			C(0, 2, 0, 1.2, 3),
+			C(0, 3.7, 0, 2, 0.4, true),
+			glowing(S(0, 4.7, 0, 1.4), 0.5, 0.7, 1),
+			lamp(0, 4.7, 0),
+			lights(0, 4.7, 0, 0.2, 8),
+		},
+	},
+	{
+		Id = "CagedWallLight",
+		Label = "Caged wall light",
+		Category = "Lighting",
+		Mount = "wall",
+		Parts = {
+			iron(B(0, 6, -0.15, 1.2, 1.2, 0.3)),
+			iron(B(0, 6, -0.7, 0.3, 0.3, 0.8)),
+			glowing(S(0, 6, -1.1, 0.6), 1, 0.9, 0.65),
+			iron(B(-0.45, 6, -1.1, 0.08, 1, 0.08)),
+			iron(B(0.45, 6, -1.1, 0.08, 1, 0.08)),
+			iron(B(0, 6.5, -1.1, 1, 0.08, 0.08)),
+			iron(B(0, 5.5, -1.1, 1, 0.08, 0.08)),
+			lamp(0, 6, -1.1),
+			lights(0, 6, -1.1, 0.3, 11),
+		},
+	},
+	{
+		Id = "WallLantern",
+		Label = "Wall lantern",
+		Category = "Lighting",
+		Mount = "wall",
+		Parts = {
+			iron(B(0, 6.2, -0.1, 0.6, 1.4, 0.2)),
+			iron(B(0, 6.7, -0.6, 0.15, 0.15, 1)),
+			iron(C(0, 6.2, -1.1, 0.12, 0.8)),
+			iron(C(0, 5.5, -1.1, 0.9, 0.15)),
+			painted(B(0, 5.05, -1.1, 0.7, 0.9, 0.7), 1, 0.85, 0.55, "Glass", 0.5),
+			glowing(S(0, 5.05, -1.1, 0.4), 1, 0.8, 0.4),
+			iron(C(0, 4.5, -1.1, 0.8, 0.15)),
+			lamp(0, 5.05, -1.1),
+			lights(0, 5.05, -1.1, 0.25, 9),
+		},
+	},
+	{
+		Id = "UplightSconce",
+		Label = "Uplight sconce",
+		Category = "Lighting",
+		Mount = "wall",
+		Parts = {
+			B(0, 5.5, -0.1, 0.8, 2.2, 0.2),
+			B(0, 5, -0.5, 1.6, 0.2, 0.8, true),
+			glowing(B(0, 5.15, -0.5, 1.2, 0.1, 0.5), 1, 0.85, 0.55),
+			B(0, 4.4, -0.5, 1, 0.8, 0.5, true),
+			lamp(0, 5.4, -0.5),
+			lights(0, 5.4, -0.5, 0.2, 8),
+		},
+	},
+	{
+		Id = "PictureLight",
+		Label = "Picture light",
+		Category = "Lighting",
+		Mount = "wall",
+		Parts = {
+			painted(B(0, 6.4, -0.15, 3, 0.3, 0.3), 0.8, 0.65, 0.2, "Metal"),
+			painted(B(0, 6.6, -0.5, 3, 0.2, 0.7), 0.8, 0.65, 0.2, "Metal"),
+			glowing(B(0, 6.45, -0.6, 2.6, 0.08, 0.3), 1, 0.9, 0.65),
+			lamp(0, 6.3, -0.6),
+			lights(0, 6.3, -0.6, 0.2, 8),
 		},
 	},
 } :: { Prop }
