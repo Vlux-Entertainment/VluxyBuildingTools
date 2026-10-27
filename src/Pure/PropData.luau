@@ -2666,4 +2666,43 @@ function PropData.Shown(section: string): { Prop }
 	return if section == "All" then table.clone(PropData.Props) else PropData.InCategory(section)
 end
 
+--[=[
+	@param query string -- words to look for; every word must be in the prop's name, id or category
+	@return { Prop } -- the props that match, in the order they are listed; all of them for an empty query
+]=]
+function PropData.Search(query: string): { Prop }
+	local words: { string } = {}
+
+	for word in string.gmatch(string.lower(query), "%S+") do
+		table.insert(words, word)
+	end
+
+	local labels: { [string]: string } = {}
+
+	for _, category in PropData.Categories do
+		labels[category.Id] = string.lower(category.Label)
+	end
+
+	local out: { Prop } = {}
+
+	for _, prop in PropData.Props do
+		local text = string.lower(prop.Label .. " " .. prop.Id .. " " .. (labels[prop.Category] or ""))
+		local all = true
+
+		for _, word in words do
+			if not string.find(text, word, 1, true) then
+				all = false
+
+				break
+			end
+		end
+
+		if all then
+			table.insert(out, prop)
+		end
+	end
+
+	return out
+end
+
 return PropData

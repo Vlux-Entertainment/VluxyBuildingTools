@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.31",
+		Date = "2026-10-26",
+		Changes = {
+			"Props: the grid always shows every prop in the section; the Collapse props setting and the Show all props button are gone.",
+			"Props: a search box above the grid finds props in every section by name, id or category.",
+		},
+	},
+	{
 		Version = "1.7.30",
 		Date = "2026-10-26",
 		Changes = {

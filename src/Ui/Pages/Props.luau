@@ -3,8 +3,7 @@
 
 --[=[
 	The Props tab: section buttons, a grid of prop pictures, and the options of the picked prop.
-	With Collapse props after picking one on, picking a prop folds the grid down to the row that
-	holds it, with a button to show all again.
+	A search box above the grid finds props in every section by name, id or category.
 
 	The pictures are drawn in ViewportFrames, so the parts only exist inside the panel and never
 	reach the place. They are colored by the color theme and redrawn when it changes.
@@ -181,16 +180,8 @@ end
 return function(ui: Ui): { Instance }
 	local app = ui.App
 	local state, store = app.State, app.Store
-	local collapsed = vide.source(false)
 	local pictures = vide.source(0)
-
-	--[[ Showing another section, by click or by wheel, shows all of it again. ]]
-	vide.effect(function()
-		state.PropSection()
-		vide.untrack(function()
-			collapsed(false)
-		end)
-	end)
+	local query = vide.source("")
 
 	local function current(): string?
 		return if state.Mode() == "Prop" then state.Prop() else nil
@@ -216,17 +207,11 @@ return function(ui: Ui): { Instance }
 		return false
 	end
 
-	--[[ The row of the picked prop in the section on show, or nil when it is not in it. ]]
-	local function pickedRow(): number?
-		local id = current()
+	--[[ The props the grid shows: the search results when something is typed, else the section on show. ]]
+	local function shown(): { PropData.Prop }
+		local text = query()
 
-		for index, prop in PropData.Shown(state.PropSection()) do
-			if prop.Id == id then
-				return (index - 1) // COLUMNS
-			end
-		end
-
-		return nil
+		return if text ~= "" then PropData.Search(text) else PropData.Shown(state.PropSection())
 	end
 
 	local sections = {}
@@ -251,7 +236,7 @@ return function(ui: Ui): { Instance }
 				MouseButton1Click = function()
 					app.Sound("Click")
 					state.PropSection(section.Id)
-					collapsed(false)
+					query("")
 				end,
 			})
 		)
@@ -291,18 +276,10 @@ return function(ui: Ui): { Instance }
 					return if current() == prop.Id then Theme.Accent() else Theme.Tile
 				end,
 				LayoutOrder = function()
-					return table.find(PropData.Shown(state.PropSection()), prop) or 0
+					return table.find(shown(), prop) or 0
 				end,
 				Visible = function()
-					local shown = PropData.Shown(state.PropSection())
-					local at = table.find(shown, prop)
-					local row = pickedRow()
-
-					if not at then
-						return false
-					end
-
-					return not collapsed() or row == nil or (at - 1) // COLUMNS == row
+					return table.find(shown(), prop) ~= nil
 				end,
 				Kit.Corner(6),
 				Kit.Stroke(),
@@ -360,7 +337,6 @@ return function(ui: Ui): { Instance }
 					end,
 					MouseButton1Click = function()
 						app.Sound("Click")
-						collapsed(app.Store.Values.PropAutoCollapse)
 						Actions.PickProp(app, prop.Id)
 					end,
 				}),
@@ -370,13 +346,39 @@ return function(ui: Ui): { Instance }
 		end
 	end
 
+	--[[ The search box, which sets `query` as it is typed in. ]]
+	local function searchField(): TextBox
+		local box = new("TextBox")({
+			Size = UDim2.new(1, 0, 0, 28),
+			BackgroundColor3 = Theme.Field,
+			BorderSizePixel = 0,
+			Text = "",
+			PlaceholderText = "Search props",
+			PlaceholderColor3 = Theme.Muted,
+			TextColor3 = Theme.Text,
+			Font = Enum.Font.GothamMedium,
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ClearTextOnFocus = false,
+			LayoutOrder = Kit.Next(),
+			Kit.Corner(5),
+			Kit.Stroke(),
+		}) :: TextBox
+
+		vide.cleanup(box:GetPropertyChangedSignal("Text"):Connect(function()
+			query(box.Text)
+		end))
+
+		return box
+	end
+
 	return {
 		Controls.Card(ui, "PROPS", {
-			Controls.Switch(ui, { Title = "Collapse props after picking one", Key = "PropAutoCollapse" }),
 			Controls.Button(ui, "Reload prop pictures", function()
 				reconstruct()
 				pictures(pictures() + 1)
 			end),
+			searchField(),
 			new("Frame")({
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
@@ -393,9 +395,6 @@ return function(ui: Ui): { Instance }
 				Kit.Grid(COLUMNS, CELL_HEIGHT, 4),
 				cells,
 			}),
-			Controls.Button(ui, "Show all props", function()
-				collapsed(false)
-			end, false, collapsed),
 			Controls.Number(ui, {
 				Key = "Yaw",
 				Title = "Rotation",
