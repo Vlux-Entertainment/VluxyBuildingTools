@@ -6,7 +6,7 @@
 	A search box above the grid finds props in every section by name, id or category.
 
 	The pictures are drawn in ViewportFrames, so the parts only exist inside the panel and never
-	reach the place. They are colored by the color theme and redrawn when it changes.
+	reach the place. They show their own colors, or the color theme when that setting is off, and are redrawn when either changes.
 
 	@class PropsPage
 ]=]
@@ -93,7 +93,7 @@ type Spin = { Angle: number, Turn: (angle: number) -> () }
 	@return ViewportFrame -- a picture of the prop, colored like the map
 	@return (angle: number) -> () -- turns the picture's camera around the prop; 0 is the starting view
 ]]
-local function picture(ui: Ui, prop: PropData.Prop): (ViewportFrame, (angle: number) -> ())
+local function picture(ui: Ui, prop: PropData.Prop, original: boolean): (ViewportFrame, (angle: number) -> ())
 	local view = new("ViewportFrame")({
 		Size = UDim2.new(1, -8, 1, -24),
 		Position = UDim2.fromOffset(4, 4),
@@ -122,14 +122,14 @@ local function picture(ui: Ui, prop: PropData.Prop): (ViewportFrame, (angle: num
 		part.CFrame = spec.cf
 		part.Material = Enum.Material.SmoothPlastic
 		part.Parent = holder
-		part.Color = Colors.Preview(ui.App.Display.Colors, part)
+		part.Color = if original then Color3.fromRGB(163, 162, 165) else Colors.Preview(ui.App.Display.Colors, part)
 
 		if spec.glow then
 			part.Material = Enum.Material.Neon
 			part.Color = Color3.new(spec.glow[1], spec.glow[2], spec.glow[3])
 		end
 
-		if spec.paint then
+		if spec.paint and (original or not spec.paint.Soft) then
 			part.Material = (Enum.Material :: any)[spec.paint.Material]
 			part.Color = Color3.new(spec.paint.Color[1], spec.paint.Color[2], spec.paint.Color[3])
 			part.Transparency = spec.paint.Transparency
@@ -287,8 +287,9 @@ return function(ui: Ui): { Instance }
 					pictures()
 					Store.Get(store, "ColorTheme")
 
+					local original = Store.Get(store, "PropShowOriginal") == true
 					local view = vide.untrack(function()
-						local made, turn = picture(ui, prop)
+						local made, turn = picture(ui, prop, original)
 						local spin = spins[prop.Id]
 
 						if spin then
@@ -410,6 +411,10 @@ return function(ui: Ui): { Instance }
 				Max = 5,
 				Step = 0.1,
 				Visible = picked,
+			}),
+			Controls.Switch(ui, {
+				Title = "Show original colors in the list",
+				Key = "PropShowOriginal",
 			}),
 			Controls.Switch(ui, {
 				Title = "Light on",

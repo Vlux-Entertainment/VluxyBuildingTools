@@ -25,7 +25,7 @@ export type Part = {
 	yaw: number?,
 	lay: boolean?,
 	half: boolean?,
-	paint: { Color: { number }, Material: string, Transparency: number }?,
+	paint: { Color: { number }, Material: string, Transparency: number, Soft: boolean? }?,
 }
 
 export type Prop = {
@@ -3191,7 +3191,7 @@ type Paint = { any } -- r, g, b, material, then transparency when it is not soli
 --[[
 	The natural colors of props that are not painted part by part. Each id gets a body paint for
 	its plain parts and an accent paint for its accent parts, so a toilet is white porcelain and
-	chrome, not a box in the theme color. Props or parts painted in their own data are left as they are.
+	chrome, not a box in the theme color. Props or parts painted in their own data are left as they are. A solid palette paint is soft: it shows in the picture list and a color theme may replace it on placement.
 ]]
 local WOOD: Paint = { 0.45, 0.3, 0.17, "Wood" }
 local WOODL: Paint = { 0.68, 0.52, 0.33, "WoodPlanks" }
@@ -3374,8 +3374,12 @@ for _, prop in PropData.Props do
 			if not part.paint and not part.lamp and not part.lights and not part.glow then
 				local paint = if part.accent then paints[2] else paints[1]
 
-				part.paint =
-					{ Color = { paint[1], paint[2], paint[3] }, Material = paint[4], Transparency = paint[5] or 0 }
+				part.paint = {
+					Color = { paint[1], paint[2], paint[3] },
+					Material = paint[4],
+					Transparency = paint[5] or 0,
+					Soft = paint[5] == nil,
+				}
 			end
 		end
 	end
