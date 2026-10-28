@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.41",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: a freezer room set in Kitchen. A hanging meat rail, cooler fan unit, stacked meat crates and a meat cart. The steel rack, freezer door, chest freezer, hook rail and floor drain were already there.",
+			"Props: the billiard table has turned legs, pockets and a cue, and the dartboard hangs on a wood backboard with a lit wall lamp. The 1.7.40 TV cabinet is gone.",
+		},
+	},
+	{
 		Version = "1.7.40",
 		Date = "2026-10-27",
 		Changes = {
