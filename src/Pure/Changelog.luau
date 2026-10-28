@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.40",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: five large pieces for the Game room. A lit billiard light, leather sofa and armchair, a cue rack and a TV cabinet.",
+		},
+	},
+	{
 		Version = "1.7.39",
 		Date = "2026-10-27",
 		Changes = {
