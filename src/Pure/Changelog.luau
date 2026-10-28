@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.45",
+		Date = "2026-10-28",
+		Changes = {
+			"Props: fifteen more for the Hallway tab. Trash can, recycling bin, wheelie bin and a bin row; hall runner and door mat; hall tree, sideboard, cubby wall, wall shelves and picture row; extinguisher case, water cooler, vending machine and exit sign.",
+		},
+	},
+	{
 		Version = "1.7.44",
 		Date = "2026-10-28",
 		Changes = {
