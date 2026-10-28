@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.39",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: every prop is smooth plastic. The colors stay, but wood, metal, fabric and the other materials no longer apply, in the list or when placed.",
+		},
+	},
+	{
 		Version = "1.7.38",
 		Date = "2026-10-27",
 		Changes = {
