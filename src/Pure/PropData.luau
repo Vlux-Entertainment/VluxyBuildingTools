@@ -320,6 +320,29 @@ local function candle(x: number, y: number, z: number): { Part }
 	}
 end
 
+--[[
+	@param width number
+	@param height number
+	@param y number -- where the bottom rail sits
+	@param z number
+	@return { Part } -- a panel of iron bars between a top and a bottom rail
+]]
+local function bars(width: number, height: number, y: number, z: number): { Part }
+	local parts: { Part } = {
+		iron(B(0, y + 0.15, z, width, 0.3, 0.4)),
+		iron(B(0, y + height - 0.15, z, width, 0.3, 0.4)),
+	}
+	local count = math.floor(width / 0.7)
+
+	for index = 0, count do
+		local x = -width / 2 + 0.15 + index * (width - 0.3) / count
+
+		table.insert(parts, iron(B(x, y + height / 2, z, 0.2, height - 0.4, 0.2)))
+	end
+
+	return parts
+end
+
 PropData.Categories = {
 	{ Id = "Bathroom", Label = "Bathroom" },
 	{ Id = "Bedroom", Label = "Bedroom" },
@@ -335,7 +358,7 @@ PropData.Categories = {
 	{ Id = "Shop", Label = "Shop and public" },
 	{ Id = "Game", Label = "Game room" },
 	{ Id = "Library", Label = "Library" },
-	{ Id = "Dungeon", Label = "Dungeon and secret room" },
+	{ Id = "Dungeon", Label = "Jail and dungeon" },
 	{ Id = "Electrical", Label = "Electrical room" },
 	{ Id = "Art", Label = "Art room" },
 	{ Id = "Lighting", Label = "Lighting" },
@@ -2138,6 +2161,184 @@ PropData.Props = {
 		Category = "Dungeon",
 		Mount = "ceiling",
 		Parts = hangingChains(),
+	},
+	-- Jail
+	{
+		Id = "JailBars",
+		Label = "Jail bars",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = bars(8, 9, 0, 0),
+	},
+	{
+		Id = "JailDoor",
+		Label = "Cell door",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join(bars(4.6, 8.4, 0, 0), {
+			iron(B(-2.5, 4.2, 0, 0.4, 8.4, 0.5)),
+			iron(B(2.5, 4.2, 0, 0.4, 8.4, 0.5)),
+			iron(B(0, 8.6, 0, 5.4, 0.4, 0.5)),
+			iron(B(0, 4.2, -0.3, 0.2, 8, 0.1)),
+			steel(B(1.9, 4, -0.35, 0.6, 0.9, 0.3)),
+			iron(S(1.9, 4, -0.55, 0.3)),
+			iron(B(-2.3, 1.5, -0.3, 0.3, 0.5, 0.3)),
+			iron(B(-2.3, 6.5, -0.3, 0.3, 0.5, 0.3)),
+		}),
+	},
+	{
+		Id = "BarredWindow",
+		Label = "Barred window",
+		Category = "Dungeon",
+		Mount = "wall",
+		Parts = {
+			iron(B(0, 7, -0.2, 3.4, 0.4, 0.4)),
+			iron(B(0, 4.6, -0.2, 3.4, 0.4, 0.4)),
+			iron(B(-1.5, 5.8, -0.2, 0.4, 2.4, 0.4)),
+			iron(B(1.5, 5.8, -0.2, 0.4, 2.4, 0.4)),
+			iron(B(-0.75, 5.8, -0.25, 0.2, 2.2, 0.2)),
+			iron(B(0, 5.8, -0.25, 0.2, 2.2, 0.2)),
+			iron(B(0.75, 5.8, -0.25, 0.2, 2.2, 0.2)),
+		},
+	},
+	{
+		Id = "JailBunk",
+		Label = "Jail bunk bed",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join(steelLegs(1.4, 2.9, 6.5, 0.3), {
+			steel(B(0, 1.6, 0, 3, 0.2, 6.2)),
+			steel(B(0, 4.4, 0, 3, 0.2, 6.2)),
+			painted(B(0, 1.95, 0, 2.8, 0.5, 6), 0.45, 0.47, 0.5, "Fabric"),
+			painted(B(0, 4.75, 0, 2.8, 0.5, 6), 0.45, 0.47, 0.5, "Fabric"),
+			painted(B(0, 2.3, 2.5, 2, 0.3, 1), 0.8, 0.8, 0.78, "Fabric"),
+			painted(B(0, 5.1, 2.5, 2, 0.3, 1), 0.8, 0.8, 0.78, "Fabric"),
+			steel(B(1.4, 6.2, 0, 0.15, 0.15, 6)),
+		}),
+	},
+	{
+		Id = "StrawBed",
+		Label = "Straw bed",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 0.25, 0, 3.6, 0.5, 6), 0.78, 0.65, 0.3, "Fabric"),
+			painted(B(-0.5, 0.65, -0.5, 2.4, 0.3, 4.6), 0.85, 0.72, 0.35, "Fabric"),
+			painted(B(0.7, 0.8, 2, 1.4, 0.3, 1.2), 0.7, 0.58, 0.3, "Fabric"),
+		},
+	},
+	{
+		Id = "CellToilet",
+		Label = "Cell toilet",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			steel(C(0, 1, -0.1, 1.5, 2)),
+			steel(B(0, 2.1, 0.5, 1.6, 0.3, 1.2)),
+			steel(B(0, 2.9, 0.85, 1.6, 1.6, 0.5)),
+			iron(S(0.5, 3.4, 0.55, 0.25)),
+		},
+	},
+	{
+		Id = "CellSink",
+		Label = "Cell sink",
+		Category = "Dungeon",
+		Mount = "wall",
+		Parts = {
+			steel(B(0, 3.2, -0.6, 2.2, 0.2, 1.2)),
+			steel(B(-1.0, 3.5, -0.6, 0.2, 0.4, 1.2)),
+			steel(B(1.0, 3.5, -0.6, 0.2, 0.4, 1.2)),
+			steel(B(0, 3.5, -1.1, 2.2, 0.4, 0.2)),
+			steel(B(0, 3.8, -0.2, 2.2, 0.4, 0.4)),
+			iron(C(0, 4.3, -0.3, 0.2, 0.6)),
+		},
+	},
+	{
+		Id = "KeyBoard",
+		Label = "Key board",
+		Category = "Dungeon",
+		Mount = "wall",
+		Parts = {
+			B(0, 5, -0.15, 2.6, 3, 0.3),
+			iron(B(0, 6.2, -0.35, 2.2, 0.15, 0.1)),
+			iron(B(0, 4.6, -0.35, 2.2, 0.15, 0.1)),
+			painted(B(-0.8, 5.6, -0.45, 0.15, 0.7, 0.1), 0.8, 0.65, 0.2, "Metal"),
+			painted(B(0, 5.6, -0.45, 0.15, 0.7, 0.1), 0.8, 0.65, 0.2, "Metal"),
+			painted(B(0.8, 5.6, -0.45, 0.15, 0.7, 0.1), 0.8, 0.65, 0.2, "Metal"),
+			painted(B(-0.4, 4.0, -0.45, 0.15, 0.7, 0.1), 0.8, 0.65, 0.2, "Metal"),
+			painted(B(0.4, 4.0, -0.45, 0.15, 0.7, 0.1), 0.8, 0.65, 0.2, "Metal"),
+		},
+	},
+	{
+		Id = "GuardDesk",
+		Label = "Guard desk",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join(legs(2.8, 1.1, 2.6, 0.4), {
+			B(0, 2.8, 0, 6.4, 0.3, 3),
+			B(-1.8, 1.2, 0.1, 2, 2.2, 2.4, true),
+			iron(B(-1.8, 1.9, -1.15, 0.8, 0.12, 0.1)),
+			iron(B(-1.8, 0.9, -1.15, 0.8, 0.12, 0.1)),
+			painted(B(1.4, 3.0, 0, 1.6, 0.1, 1.2), 0.85, 0.82, 0.7, "Fabric"),
+		}),
+	},
+	{
+		Id = "BallAndChain",
+		Label = "Ball and chain",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			iron(S(0, 1, 0, 2)),
+			iron(S(1.3, 0.2, 0, 0.4)),
+			iron(S(1.8, 0.2, 0, 0.4)),
+			iron(S(2.3, 0.2, 0, 0.4)),
+			iron(S(2.8, 0.2, 0.2, 0.4)),
+			iron(B(3.4, 0.15, 0.3, 0.8, 0.3, 0.8)),
+		},
+	},
+	{
+		Id = "BonePile",
+		Label = "Bone pile",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			painted(S(0, 0.55, 0, 1.1), 0.9, 0.88, 0.8, "SmoothPlastic"),
+			painted(B(0, 0.15, 0.4, 0.5, 0.3, 0.3), 0.9, 0.88, 0.8, "SmoothPlastic"),
+			turned(painted(B(1.1, 0.15, 0.2, 2.2, 0.3, 0.3), 0.9, 0.88, 0.8, "SmoothPlastic"), 20),
+			turned(painted(B(-1.2, 0.15, -0.3, 2, 0.3, 0.3), 0.9, 0.88, 0.8, "SmoothPlastic"), 35),
+			turned(painted(B(0.2, 0.15, -1, 1.8, 0.3, 0.3), 0.9, 0.88, 0.8, "SmoothPlastic"), -20),
+			painted(B(-0.4, 0.45, -0.7, 1.4, 0.2, 0.9), 0.85, 0.82, 0.74, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "IronMaiden",
+		Label = "Iron maiden",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = {
+			iron(B(0, 3.5, 0, 3, 7, 2.2)),
+			iron(B(-0.8, 3.5, -1.15, 1.4, 6.4, 0.2)),
+			iron(B(0.8, 3.5, -1.15, 1.4, 6.4, 0.2)),
+			painted(B(0, 6.2, -1.3, 1.2, 0.8, 0.1), 0.85, 0.82, 0.7, "SmoothPlastic"),
+			painted(B(0, 5.3, -1.3, 0.3, 0.8, 0.1), 0.7, 0.1, 0.1, "SmoothPlastic"),
+			iron(B(0, 0.2, -0.2, 3.4, 0.4, 2.6)),
+		},
+	},
+	{
+		Id = "StretchingRack",
+		Label = "Stretching rack",
+		Category = "Dungeon",
+		Mount = "floor",
+		Parts = join(legs(1.4, 3.6, 1.6, 0.4), {
+			B(0, 1.8, 0, 3.2, 0.3, 8.4),
+			B(0, 2.2, 0, 2.8, 0.15, 7.6, true),
+			laid(C(0, 2.4, 4.2, 0.7, 3.4)),
+			laid(C(0, 2.4, -4.2, 0.7, 3.4)),
+			iron(B(-1.6, 2.4, 4.2, 0.2, 1.8, 0.2)),
+			iron(B(1.6, 2.4, -4.2, 0.2, 1.8, 0.2)),
+			iron(S(0, 2.5, 3.4, 0.4)),
+			iron(S(0, 2.5, -3.4, 0.4)),
+		}),
 	},
 	-- Secret room
 	{

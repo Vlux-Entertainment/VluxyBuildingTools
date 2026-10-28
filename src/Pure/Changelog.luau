@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.33",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: jail set in the Jail and dungeon tab (renamed): jail bars, cell door, barred window, bunk bed, straw bed, cell toilet and sink, key board, guard desk, ball and chain, bone pile, iron maiden and stretching rack.",
+		},
+	},
+	{
 		Version = "1.7.32",
 		Date = "2026-10-26",
 		Changes = {
