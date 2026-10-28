@@ -405,6 +405,50 @@ local function paper(part: Part): Part
 	return painted(part, 0.92, 0.89, 0.78, "SmoothPlastic")
 end
 
+--[[
+	@param cx number
+	@param cz number
+	@param turn number -- quarter turns; 0 puts the back on +Z and the seat facing -Z
+	@param r number
+	@param g number
+	@param b number
+	@return { Part } -- a child's chair in painted wood, centred at cx, cz
+]]
+local function kidsChair(cx: number, cz: number, turn: number, r: number, g: number, bl: number): { Part }
+	local spec = {
+		{ 0, 1.2, 0, 1.5, 0.15, 1.5 },
+		{ -0.6, 0.55, -0.6, 0.18, 1.1, 0.18 },
+		{ 0.6, 0.55, -0.6, 0.18, 1.1, 0.18 },
+		{ -0.6, 0.55, 0.6, 0.18, 1.1, 0.18 },
+		{ 0.6, 0.55, 0.6, 0.18, 1.1, 0.18 },
+		{ -0.6, 2.1, 0.62, 0.18, 1.8, 0.18 },
+		{ 0.6, 2.1, 0.62, 0.18, 1.8, 0.18 },
+		{ 0, 2.5, 0.62, 1.1, 0.25, 0.12 },
+		{ 0, 1.9, 0.62, 1.1, 0.25, 0.12 },
+	}
+	local parts: { Part } = {}
+
+	for _, row in spec do
+		local x, z, sx, sz = row[1], row[3], row[4], row[6]
+
+		for _ = 1, turn % 4 do
+			x, z = z, -x
+			sx, sz = sz, sx
+		end
+
+		table.insert(parts, painted(B(cx + x, row[2], cz + z, sx, row[5], sz), r, g, bl, "Wood"))
+	end
+
+	return parts
+end
+
+--[[
+	@return { Part } -- a child's low table: a top on four legs
+]]
+local function kidsTable(): { Part }
+	return join(legs(1.9, 1.3, 2.1, 0.25), { B(0, 2.2, 0, 4.6, 0.2, 3.4) })
+end
+
 PropData.Categories = {
 	{ Id = "Bathroom", Label = "Bathroom" },
 	{ Id = "Bedroom", Label = "Bedroom" },
@@ -1875,6 +1919,213 @@ PropData.Props = {
 			B(0, 2.9, 0.9, 1.8, 0.8, 1.4, true),
 		},
 	},
+	{
+		Id = "KidsTableSet",
+		Label = "Kids table set",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = join(
+			kidsTable(),
+			kidsChair(0, 2.6, 0, 0.2, 0.35, 0.7),
+			kidsChair(0, -2.6, 2, 0.75, 0.15, 0.12),
+			kidsChair(-3.4, 0, 3, 0.9, 0.7, 0.15),
+			kidsChair(3.4, 0, 1, 0.9, 0.45, 0.12)
+		),
+	},
+	{
+		Id = "KidsTable",
+		Label = "Kids table",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = kidsTable(),
+	},
+	{
+		Id = "KidsChair",
+		Label = "Kids chair",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = kidsChair(0, 0, 0, 0.2, 0.35, 0.7),
+	},
+	{
+		Id = "ToyShelf",
+		Label = "Toy shelf",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			B(-3.9, 1.8, 0, 0.2, 3.6, 1.6),
+			B(3.9, 1.8, 0, 0.2, 3.6, 1.6),
+			B(-1.3, 1.8, 0, 0.2, 3.6, 1.6),
+			B(1.3, 1.8, 0, 0.2, 3.6, 1.6),
+			B(0, 1.8, 0.7, 8, 3.6, 0.2),
+			B(0, 0.1, 0, 8, 0.2, 1.6, true),
+			B(0, 1.8, 0, 8, 0.2, 1.6, true),
+			B(0, 3.5, 0, 8, 0.2, 1.6, true),
+		},
+	},
+	{
+		Id = "RockingHorse",
+		Label = "Rocking horse",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			B(-0.7, 0.2, 0, 0.15, 0.4, 4.2),
+			B(0.7, 0.2, 0, 0.15, 0.4, 4.2),
+			B(-0.45, 1.0, -0.9, 0.25, 1.2, 0.25),
+			B(0.45, 1.0, -0.9, 0.25, 1.2, 0.25),
+			B(-0.45, 1.0, 0.9, 0.25, 1.2, 0.25),
+			B(0.45, 1.0, 0.9, 0.25, 1.2, 0.25),
+			B(0, 2.1, 0, 1.2, 1.0, 2.6),
+			B(0, 3.1, -1.0, 0.7, 1.6, 0.8),
+			B(0, 3.8, -1.5, 0.6, 0.7, 1.2),
+			B(0, 3.5, -0.75, 0.2, 1.3, 0.3, true),
+			B(0, 2.3, 1.5, 0.2, 1.0, 0.2, true),
+			B(0, 2.7, 0, 1.3, 0.2, 1.0, true),
+		},
+	},
+	{
+		Id = "RoadMat",
+		Label = "Road play mat",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 0.05, 0, 10, 0.1, 7), 0.35, 0.55, 0.3, "Fabric"),
+			painted(B(0, 0.1, -2.2, 7.6, 0.1, 1), 0.3, 0.3, 0.32, "Fabric"),
+			painted(B(0, 0.1, 2.2, 7.6, 0.1, 1), 0.3, 0.3, 0.32, "Fabric"),
+			painted(B(-3.6, 0.1, 0, 1, 0.1, 4.4), 0.3, 0.3, 0.32, "Fabric"),
+			painted(B(3.6, 0.1, 0, 1, 0.1, 4.4), 0.3, 0.3, 0.32, "Fabric"),
+			painted(B(0, 0.1, 0, 1, 0.1, 4.4), 0.3, 0.3, 0.32, "Fabric"),
+			painted(B(-1.8, 0.1, -0.9, 1.4, 0.12, 1.2), 0.8, 0.25, 0.2, "Fabric"),
+			painted(B(1.8, 0.1, 0.9, 1.4, 0.12, 1.2), 0.9, 0.75, 0.2, "Fabric"),
+			painted(B(1.8, 0.1, -1.1, 1.4, 0.12, 1.2), 0.25, 0.4, 0.75, "Fabric"),
+			painted(B(-1.8, 0.1, 1.1, 1.4, 0.12, 1.2), 0.85, 0.85, 0.8, "Fabric"),
+		},
+	},
+	{
+		Id = "BraidedRug",
+		Label = "Braided round rug",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			painted(C(0, 0.05, 0, 9, 0.1), 0.6, 0.3, 0.25, "Fabric"),
+			painted(C(0, 0.07, 0, 7.8, 0.1), 0.85, 0.78, 0.6, "Fabric"),
+			painted(C(0, 0.09, 0, 6.6, 0.1), 0.25, 0.35, 0.55, "Fabric"),
+			painted(C(0, 0.11, 0, 5.2, 0.1), 0.7, 0.45, 0.3, "Fabric"),
+			painted(C(0, 0.13, 0, 3.6, 0.1), 0.85, 0.78, 0.6, "Fabric"),
+			painted(C(0, 0.15, 0, 2, 0.1), 0.25, 0.35, 0.55, "Fabric"),
+		},
+	},
+	{
+		Id = "KidsBed",
+		Label = "Kids bed",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			B(0, 1.2, 0, 3.4, 0.5, 6.6),
+			B(-1.6, 0.5, -3.1, 0.25, 1, 0.25),
+			B(1.6, 0.5, -3.1, 0.25, 1, 0.25),
+			B(-1.6, 0.5, 3.1, 0.25, 1, 0.25),
+			B(1.6, 0.5, 3.1, 0.25, 1, 0.25),
+			B(0, 3, 3.2, 3.4, 2.6, 0.3),
+			B(0, 2, -3.2, 3.4, 1.2, 0.3),
+			B(0, 1.75, -0.2, 3, 0.6, 6, true),
+			painted(B(0, 2.2, 2.4, 2, 0.3, 1.2), 0.95, 0.95, 0.93, "Fabric"),
+		},
+	},
+	{
+		Id = "KidsDresser",
+		Label = "Kids dresser",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			B(0, 2.1, 0, 4.4, 4.2, 2.2),
+			B(0, 0.65, -1.15, 4, 0.85, 0.1, true),
+			B(0, 1.65, -1.15, 4, 0.85, 0.1, true),
+			B(0, 2.65, -1.15, 4, 0.85, 0.1, true),
+			B(0, 3.65, -1.15, 4, 0.85, 0.1, true),
+			brass(B(0, 0.65, -1.25, 0.5, 0.1, 0.1)),
+			brass(B(0, 1.65, -1.25, 0.5, 0.1, 0.1)),
+			brass(B(0, 2.65, -1.25, 0.5, 0.1, 0.1)),
+			brass(B(0, 3.65, -1.25, 0.5, 0.1, 0.1)),
+		},
+	},
+	{
+		Id = "PlayKitchen",
+		Label = "Play kitchen",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			B(0, 1.5, 0, 5, 3, 1.8),
+			B(0, 3.05, 0, 5.2, 0.1, 2),
+			B(0, 4.4, 0.8, 5, 2.6, 0.2),
+			B(0, 4.7, 0.3, 4, 0.1, 0.8),
+			B(-1.2, 1.5, -0.95, 2.2, 1.8, 0.1, true),
+			B(1.2, 1.5, -0.95, 2.2, 1.8, 0.1, true),
+			steel(B(1.4, 3.15, -0.1, 1.6, 0.1, 1.1)),
+			painted(S(-1.5, 3.7, 0.65, 0.3), 0.8, 0.15, 0.15, "SmoothPlastic"),
+			painted(S(-0.8, 3.7, 0.65, 0.3), 0.15, 0.4, 0.8, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "Chalkboard",
+		Label = "Chalkboard",
+		Category = "Kids",
+		Mount = "wall",
+		Parts = {
+			B(0, 5.5, -0.15, 6.4, 3.8, 0.3),
+			B(0, 5.5, -0.32, 5.8, 3.2, 0.06, true),
+			B(0, 3.55, -0.4, 5.6, 0.15, 0.5),
+		},
+	},
+	{
+		Id = "PuppetTheater",
+		Label = "Puppet theater",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			B(-2, 3, 0, 0.3, 6, 1.4),
+			B(2, 3, 0, 0.3, 6, 1.4),
+			B(0, 5.7, 0, 4.3, 0.6, 1.4),
+			B(0, 3, 0.6, 4, 6, 0.15),
+			B(0, 1.6, -0.6, 4, 3.2, 0.2),
+			B(-1.5, 4.3, -0.7, 1, 2.2, 0.1, true),
+			B(1.5, 4.3, -0.7, 1, 2.2, 0.1, true),
+			B(0, 5.1, -0.7, 4, 0.5, 0.1, true),
+		},
+	},
+	{
+		Id = "GiantTeddy",
+		Label = "Giant teddy bear",
+		Category = "Kids",
+		Mount = "floor",
+		Parts = {
+			S(0, 1.7, 0, 3.4),
+			S(0, 4.0, -0.1, 2.3),
+			S(-0.95, 4.95, -0.1, 0.9),
+			S(0.95, 4.95, -0.1, 0.9),
+			S(-1.1, 0.75, -1.4, 1.5),
+			S(1.1, 0.75, -1.4, 1.5),
+			S(-1.9, 2.2, -0.6, 1.3),
+			S(1.9, 2.2, -0.6, 1.3),
+			S(0, 1.7, -1.35, 2, true),
+			S(0, 3.75, -1.0, 1, true),
+			iron(S(0, 3.95, -1.5, 0.35)),
+		},
+	},
+	{
+		Id = "FloralCurtains",
+		Label = "Floral curtains",
+		Category = "Kids",
+		Mount = "wall",
+		Parts = {
+			brass(laid(C(0, 9.5, -0.6, 0.15, 6.4))),
+			brass(S(-3.3, 9.5, -0.6, 0.3)),
+			brass(S(3.3, 9.5, -0.6, 0.3)),
+			B(-2.1, 4.9, -0.5, 1.8, 9, 0.5),
+			B(2.1, 4.9, -0.5, 1.8, 9, 0.5),
+			B(-2.1, 4.9, -0.78, 0.5, 8.8, 0.1, true),
+			B(2.1, 4.9, -0.78, 0.5, 8.8, 0.1, true),
+		},
+	},
 	-- Outdoor
 	{
 		Id = "PicnicTable",
@@ -3323,7 +3574,18 @@ local Palette: { [string]: { Paint } } = {
 	ToyChest = { { 0.2, 0.45, 0.8, "SmoothPlastic" }, { 0.95, 0.8, 0.15, "SmoothPlastic" } },
 	Slide = { { 0.85, 0.2, 0.2, "SmoothPlastic" }, { 0.2, 0.45, 0.85, "SmoothPlastic" } },
 	PlayTent = { { 0.85, 0.25, 0.25, "Fabric" }, { 0.95, 0.8, 0.2, "Fabric" } },
-	Dollhouse = { { 0.95, 0.75, 0.8, "SmoothPlastic" }, { 0.65, 0.2, 0.2, "SmoothPlastic" } },
+	Dollhouse = { { 0.9, 0.85, 0.7, "SmoothPlastic" }, { 0.3, 0.45, 0.4, "SmoothPlastic" } },
+	KidsTableSet = { WOOD, WOOD },
+	KidsTable = { WOOD, WOOD },
+	ToyShelf = { WOOD, WOODD },
+	RockingHorse = { WOODL, { 0.35, 0.22, 0.12, "Wood" } },
+	KidsBed = { WOODL, { 0.9, 0.6, 0.65, "Fabric" } },
+	KidsDresser = { WOODD, DRAWER },
+	PlayKitchen = { { 0.6, 0.8, 0.85, "SmoothPlastic" }, WHITE },
+	Chalkboard = { WOOD, { 0.12, 0.22, 0.16, "SmoothPlastic" } },
+	PuppetTheater = { WOODL, RED },
+	GiantTeddy = { { 0.55, 0.35, 0.2, "Fabric" }, { 0.75, 0.58, 0.38, "Fabric" } },
+	FloralCurtains = { { 0.85, 0.6, 0.58, "Fabric" }, { 0.7, 0.45, 0.45, "Fabric" } },
 	BeanBag = { { 0.3, 0.5, 0.85, "Fabric" }, { 0.4, 0.6, 0.9, "Fabric" } },
 	PicnicTable = { WOOD, WOODL },
 	GardenBench = { WOOD, IRONC },
