@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.38",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: a fuller Kids tab. Kids table set, kids table and chair, toy shelf, rocking horse, road play mat, braided round rug, kids bed and dresser, play kitchen, chalkboard, puppet theater, giant teddy bear and floral curtains. The dollhouse is now cream with a green roof.",
+		},
+	},
+	{
 		Version = "1.7.37",
 		Date = "2026-10-27",
 		Changes = {
