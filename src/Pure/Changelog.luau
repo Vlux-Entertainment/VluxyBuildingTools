@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.36",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: the older props now have natural colors and materials, like white porcelain and chrome in Bathroom, stainless steel in Kitchen, wood furniture, green plants and brown trunks, instead of one theme color.",
+		},
+	},
+	{
 		Version = "1.7.35",
 		Date = "2026-10-27",
 		Changes = {
