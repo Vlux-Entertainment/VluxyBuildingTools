@@ -3186,6 +3186,201 @@ PropData.Props = {
 	},
 } :: { Prop }
 
+type Paint = { any } -- r, g, b, material, then transparency when it is not solid
+
+--[[
+	The natural colors of props that are not painted part by part. Each id gets a body paint for
+	its plain parts and an accent paint for its accent parts, so a toilet is white porcelain and
+	chrome, not a box in the theme color. Props or parts painted in their own data are left as they are.
+]]
+local WOOD: Paint = { 0.45, 0.3, 0.17, "Wood" }
+local WOODL: Paint = { 0.68, 0.52, 0.33, "WoodPlanks" }
+local WOODD: Paint = { 0.33, 0.2, 0.11, "Wood" }
+local CARD: Paint = { 0.65, 0.52, 0.34, "Wood" }
+local WHITE: Paint = { 0.95, 0.95, 0.93, "SmoothPlastic" }
+local CHROME: Paint = { 0.78, 0.8, 0.82, "Metal" }
+local STEELC: Paint = { 0.72, 0.74, 0.77, "Metal" }
+local IRONC: Paint = { 0.2, 0.2, 0.22, "Metal" }
+local BRASSC: Paint = { 0.72, 0.55, 0.2, "Metal" }
+local CREAM: Paint = { 0.9, 0.85, 0.7, "SmoothPlastic" }
+local GRAN: Paint = { 0.35, 0.35, 0.37, "Granite" }
+local STONE: Paint = { 0.58, 0.58, 0.6, "Slate" }
+local ROCK: Paint = { 0.5, 0.5, 0.52, "Rock" }
+local LEAF: Paint = { 0.2, 0.5, 0.2, "Grass" }
+local HEDGE: Paint = { 0.15, 0.4, 0.15, "Grass" }
+local CLAY: Paint = { 0.7, 0.4, 0.25, "Concrete" }
+local FABRIC: Paint = { 0.42, 0.4, 0.45, "Fabric" }
+local CUSHION: Paint = { 0.55, 0.5, 0.45, "Fabric" }
+local LINEN: Paint = { 0.85, 0.85, 0.9, "Fabric" }
+local WICKER: Paint = { 0.72, 0.55, 0.32, "Fabric" }
+local RED: Paint = { 0.6, 0.15, 0.15, "Fabric" }
+local GLASSC: Paint = { 0.75, 0.88, 0.92, "Glass", 0.5 }
+local WATER: Paint = { 0.45, 0.7, 0.9, "Glass", 0.4 }
+local MIRROR: Paint = { 0.85, 0.88, 0.9, "Metal" }
+local BRICK: Paint = { 0.55, 0.3, 0.25, "Brick" }
+local FELT: Paint = { 0.1, 0.45, 0.25, "Fabric" }
+local ENAMEL: Paint = { 0.9, 0.88, 0.82, "Wood" }
+local SHEET: Paint = { 0.85, 0.85, 0.82, "Fabric" }
+local LOCKER: Paint = { 0.35, 0.45, 0.55, "Metal" }
+local DRAWER: Paint = { 0.52, 0.36, 0.2, "Wood" }
+
+local Palette: { [string]: { Paint } } = {
+	CeilingLight = { WHITE, CHROME },
+	CeilingFan = { WOOD, BRASSC },
+	FloorLamp = { BRASSC, CREAM },
+	Streetlamp = { IRONC, IRONC },
+	FluorescentLight = { WHITE, STEELC },
+	WallTorch = { WOODD, IRONC },
+	CandleStand = { IRONC, CREAM },
+	OrbPedestal = { STONE, STONE },
+	CagedWallLight = { IRONC, STEELC },
+	PictureLight = { BRASSC, BRASSC },
+	BathTub = { WHITE, CHROME },
+	Sink = { WHITE, CHROME },
+	Toilet = { WHITE, CHROME },
+	MirrorCabinet = { WHITE, MIRROR },
+	LaundryBasket = { WICKER, WICKER },
+	ShowerStall = { CHROME, GLASSC },
+	DoubleSink = { WHITE, CHROME },
+	TowelRack = { CHROME, LINEN },
+	ClawfootTub = { WHITE, BRASSC },
+	Bed = { WOOD, LINEN },
+	Nightstand = { WOOD, DRAWER },
+	Wardrobe = { WOOD, DRAWER },
+	Dresser = { WOOD, DRAWER },
+	BunkBed = { WOOD, { 0.3, 0.5, 0.8, "Fabric" } },
+	Crib = { { 0.9, 0.85, 0.75, "Wood" }, LINEN },
+	VanityTable = { WOODL, MIRROR },
+	HighCabinet = { WOOD, DRAWER },
+	ClosetRod = { CHROME, WOOD },
+	ShoeRack = { WOOD, IRONC },
+	ClosetShelves = { WOODL, WOOD },
+	Hamper = { WICKER, WICKER },
+	DiningTable = { WOOD, WOODD },
+	DiningChair = { WOOD, RED },
+	Sideboard = { WOOD, WOODD },
+	ChinaCabinet = { WOODD, GLASSC },
+	Counter = { ENAMEL, GRAN },
+	Fridge = { STEELC, IRONC },
+	Stove = { STEELC, IRONC },
+	Island = { WOOD, GRAN },
+	RangeHood = { STEELC, IRONC },
+	Pantry = { WOOD, WOODD },
+	BreakfastBar = { WOOD, GRAN },
+	Dishwasher = { STEELC, IRONC },
+	ChestFreezer = { WHITE, CHROME },
+	ButcherBlock = { { 0.75, 0.6, 0.4, "Wood" }, WOODD },
+	HookRail = { STEELC, IRONC },
+	StainlessTable = { STEELC, STEELC },
+	SteelRack = { STEELC, STEELC },
+	FreezerDoor = { STEELC, IRONC },
+	Sofa = { FABRIC, CUSHION },
+	Armchair = { FABRIC, CUSHION },
+	CoffeeTable = { WOOD, WOODD },
+	Bookshelf = { WOOD, WOODD },
+	TvStand = { WOODD, IRONC },
+	Desk = { WOOD, WOODD },
+	OfficeChair = { IRONC, { 0.28, 0.14, 0.08, "Leather" } },
+	Rug = { RED, CREAM },
+	Fireplace = { BRICK, { 0.3, 0.3, 0.32, "Slate" } },
+	Piano = { { 0.1, 0.1, 0.11, "SmoothPlastic" }, { 0.92, 0.9, 0.85, "SmoothPlastic" } },
+	GrandfatherClock = { WOODD, BRASSC },
+	Aquarium = { WOODD, WATER },
+	RecordCabinet = { WOOD, WOODD },
+	Ottoman = { FABRIC, CUSHION },
+	WindowSeat = { WOOD, CUSHION },
+	PottedPlant = { CLAY, LEAF },
+	TallPlant = { CLAY, LEAF },
+	ConsoleTable = { WOOD, WOODD },
+	CoatRack = { WOODD, BRASSC },
+	Bench = { WOOD, WOODD },
+	WallMirror = { WOODD, MIRROR },
+	ShoeBench = { WOOD, FABRIC },
+	UmbrellaStand = { IRONC, BRASSC },
+	Crate = { WOODL, WOOD },
+	CrateStack = { WOODL, WOOD },
+	Barrel = { WOOD, IRONC },
+	Shelving = { STEELC, WOODL },
+	WaterHeater = { WHITE, STEELC },
+	Workbench = { WOOD, IRONC },
+	Furnace = { STEELC, IRONC },
+	WasherDryer = { WHITE, CHROME },
+	ToolChest = { { 0.7, 0.12, 0.1, "Metal" }, STEELC },
+	Pegboard = { WOODL, IRONC },
+	PaintShelf = { WOOD, { 0.7, 0.7, 0.75, "Metal" } },
+	PalletLoad = { WOODL, CARD },
+	Lockers = { LOCKER, STEELC },
+	HeavyRack = { { 0.2, 0.3, 0.55, "Metal" }, { 0.85, 0.45, 0.1, "Metal" } },
+	Trunk = { WOODD, BRASSC },
+	BoxStack = { CARD, { 0.7, 0.58, 0.38, "Wood" } },
+	StandingMirror = { WOODD, MIRROR },
+	CoveredFurniture = { SHEET, SHEET },
+	DressForm = { { 0.85, 0.78, 0.65, "Fabric" }, WOODD },
+	RockingChair = { WOOD, WOODD },
+	RolledRugs = { RED, { 0.2, 0.3, 0.5, "Fabric" } },
+	ClothRail = { IRONC, FABRIC },
+	AtticLadder = { WOOD, WOODD },
+	ToyChest = { { 0.2, 0.45, 0.8, "SmoothPlastic" }, { 0.95, 0.8, 0.15, "SmoothPlastic" } },
+	Slide = { { 0.85, 0.2, 0.2, "SmoothPlastic" }, { 0.2, 0.45, 0.85, "SmoothPlastic" } },
+	PlayTent = { { 0.85, 0.25, 0.25, "Fabric" }, { 0.95, 0.8, 0.2, "Fabric" } },
+	Dollhouse = { { 0.95, 0.75, 0.8, "SmoothPlastic" }, { 0.65, 0.2, 0.2, "SmoothPlastic" } },
+	BeanBag = { { 0.3, 0.5, 0.85, "Fabric" }, { 0.4, 0.6, 0.9, "Fabric" } },
+	PicnicTable = { WOOD, WOODL },
+	GardenBench = { WOOD, IRONC },
+	Fountain = { STONE, WATER },
+	Mailbox = { WOOD, { 0.2, 0.3, 0.6, "Metal" } },
+	FencePanel = { { 0.92, 0.9, 0.85, "Wood" }, { 0.92, 0.9, 0.85, "Wood" } },
+	Grill = { IRONC, STEELC },
+	Hedge = { HEDGE, HEDGE },
+	Boulder = { ROCK, ROCK },
+	Well = { STONE, WOOD },
+	Planter = { WOOD, LEAF },
+	Tree = { { 0.4, 0.28, 0.17, "Wood" }, LEAF },
+	Statue = { STONE, ROCK },
+	ShopCounter = { WOODD, GRAN },
+	ShelvingAisle = { STEELC, WOODL },
+	BarCounter = { WOODD, GRAN },
+	Pew = { WOODD, WOOD },
+	ReceptionDesk = { WOOD, GRAN },
+	PoolTable = { WOODD, FELT },
+	ArcadeCabinet = { { 0.12, 0.12, 0.15, "SmoothPlastic" }, { 0.8, 0.15, 0.55, "SmoothPlastic" } },
+	Dartboard = { WOODD, { 0.1, 0.1, 0.1, "Fabric" } },
+	Foosball = { WOOD, FELT },
+	PingPong = { { 0.1, 0.2, 0.5, "SmoothPlastic" }, WHITE },
+	LibraryShelf = { WOODD, WOOD },
+	LibraryLadder = { WOOD, BRASSC },
+	Lectern = { WOODD, BRASSC },
+	CardCatalog = { WOOD, BRASSC },
+	ReadingTable = { WOODD, { 0.12, 0.3, 0.18, "Fabric" } },
+	BreakerPanel = { STEELC, IRONC },
+	Generator = { { 0.85, 0.65, 0.1, "Metal" }, IRONC },
+	Transformer = { { 0.45, 0.5, 0.45, "Metal" }, IRONC },
+	CableTray = { STEELC, STEELC },
+	ElectricalCabinet = { { 0.55, 0.58, 0.6, "Metal" }, IRONC },
+	CableReel = { WOODL, { 0.9, 0.55, 0.1, "Plastic" } },
+	Easel = { WOOD, { 0.9, 0.9, 0.88, "Fabric" } },
+	ArtTable = { WOODL, WOOD },
+	PaintCart = { WOODL, { 0.7, 0.7, 0.72, "Metal" } },
+	CanvasRack = { WOOD, { 0.9, 0.9, 0.88, "Fabric" } },
+	PotteryWheel = { { 0.5, 0.5, 0.52, "Metal" }, CLAY },
+	Sculpture = { STONE, STONE },
+}
+
+for _, prop in PropData.Props do
+	local paints = Palette[prop.Id]
+
+	if paints then
+		for _, part in prop.Parts do
+			if not part.paint and not part.lamp and not part.lights and not part.glow then
+				local paint = if part.accent then paints[2] else paints[1]
+
+				part.paint =
+					{ Color = { paint[1], paint[2], paint[3] }, Material = paint[4], Transparency = paint[5] or 0 }
+			end
+		end
+	end
+end
+
 --[=[
 	@param id string
 	@return Prop? -- the prop with that id, or nil
