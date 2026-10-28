@@ -19,6 +19,7 @@
 local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 
+local AxisLock = require("../Pure/AxisLock")
 local Common = require("./Common")
 local Cursor = require("../Services/Cursor")
 local Geometry = require("../Core/Geometry")
@@ -40,6 +41,7 @@ type Guide = Guides.Guide
 	.Shown { Guide: Guide, Text: string, At: Vector3 }? -- what the preview would keep
 	.Pressed { Mouse: Vector2, Root: Instance }? -- a press on a part that becomes a drag if the mouse moves
 	.Drag Transform.Session? -- the drag under way
+	.Lock AxisLock.Lock? -- the axis the line is held to, while a line is being measured
 ]=]
 type MeasureState = {
 	First: Vector3?,
@@ -48,6 +50,7 @@ type MeasureState = {
 	Shown: { Guide: Guide, Text: string, At: Vector3 }?,
 	Pressed: { Mouse: Vector2, Root: Instance }?,
 	Drag: Transform.Session?,
+	Lock: AxisLock.Lock?,
 }
 
 local SEGMENTS = 48
@@ -418,17 +421,18 @@ local function measureClick(ctx: Context, state: MeasureState)
 
 	Guides.Add(shown.Guide)
 	redraw(ctx)
-	state.First, state.Second = nil, nil
+	state.First, state.Second, state.Lock = nil, nil, nil
 	Overlay.ClearMeasurement(ctx.Overlay)
 	ctx.Say((string.gsub(shown.Text, "\n", "; ")) .. ". Kept as a guide; Esc clears guides.")
 end
 
 local tool: Types.Tool = {
 	Id = "Measure",
+	Locks = true,
 	Begin = function(ctx: Context): MeasureState
 		redraw(ctx)
 
-		return { First = nil, Second = nil, Current = nil, Shown = nil }
+		return { First = nil, Second = nil, Current = nil, Shown = nil, Lock = nil }
 	end,
 	Preview = function(ctx: Context, state: MeasureState): Types.Preview?
 		local held = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
@@ -459,6 +463,12 @@ local tool: Types.Tool = {
 
 		state.Current = pick(ctx)
 		state.Shown = nil
+
+		local lock, first = state.Lock, state.First
+
+		if lock and first then
+			state.Current = Cursor.Locked(ctx.Cursor, first, lock, nil) or state.Current
+		end
 
 		if not state.First then
 			Overlay.ClearMeasurement(ctx.Overlay)
@@ -498,6 +508,18 @@ local tool: Types.Tool = {
 			measureClick(ctx, state)
 		end
 	end,
+	Lock = function(ctx: Context, state: MeasureState, axis: AxisLock.Axis, plane: boolean)
+		if not state.First then
+			return ctx.Say("Click the first point, then press X, Y or Z to hold the line to that axis.")
+		end
+
+		if ctx.Settings.MeasureShape ~= "Line" then
+			return ctx.Say("Axis lock works with the line shape.")
+		end
+
+		state.Lock = AxisLock.Toggle(state.Lock, axis, plane)
+		ctx.Say(Common.LockMessage(state.Lock, axis, plane))
+	end,
 	Back = function(ctx: Context, state: MeasureState): string?
 		local drag = state.Drag
 
@@ -508,7 +530,7 @@ local tool: Types.Tool = {
 
 			return "Drag cancelled."
 		elseif state.First then
-			state.First, state.Second = nil, nil
+			state.First, state.Second, state.Lock = nil, nil, nil
 			Overlay.ClearMeasurement(ctx.Overlay)
 			Overlay.HideReadout(ctx.Overlay)
 

@@ -343,6 +343,36 @@ local function bars(width: number, height: number, y: number, z: number): { Part
 	return parts
 end
 
+--[[
+	@param width number
+	@return { Part } -- a wall radiator: a row of white fins on a top and bottom rail, with a valve and two pipes down to the floor
+]]
+local function radiator(width: number): { Part }
+	local white = { 0.93, 0.93, 0.92 }
+	local function fin(part: Part): Part
+		return painted(part, white[1], white[2], white[3], "SmoothPlastic")
+	end
+
+	local parts: { Part } = {
+		fin(B(0, 3.1, -0.35, width, 0.25, 0.6)),
+		fin(B(0, 1, -0.35, width, 0.25, 0.6)),
+	}
+	local count = math.floor(width / 0.6)
+
+	for index = 0, count - 1 do
+		local x = -width / 2 + 0.3 + index * (width - 0.6) / math.max(count - 1, 1)
+
+		table.insert(parts, fin(B(x, 2.05, -0.35, 0.45, 2.0, 0.5)))
+	end
+
+	table.insert(parts, iron(B(-width / 2 + 0.15, 0.5, -0.2, 0.2, 1, 0.2)))
+	table.insert(parts, iron(B(width / 2 - 0.15, 0.5, -0.2, 0.2, 1, 0.2)))
+	table.insert(parts, iron(B(width / 2 - 0.15, 1.1, -0.5, 0.4, 0.3, 0.3)))
+	table.insert(parts, iron(B(0, 1.9, -0.05, width - 0.8, 0.2, 0.1)))
+
+	return parts
+end
+
 PropData.Categories = {
 	{ Id = "Bathroom", Label = "Bathroom" },
 	{ Id = "Bedroom", Label = "Bedroom" },
@@ -1227,6 +1257,13 @@ PropData.Props = {
 			B(0, 2, 0, 6.2, 0.4, 1.8, true),
 			B(0, 3, 0.8, 6.2, 1.8, 0.4, true),
 		},
+	},
+	{
+		Id = "Radiator",
+		Label = "Radiator",
+		Category = "Living",
+		Mount = "wall",
+		Parts = radiator(4.2),
 	},
 	-- More hallway
 	{

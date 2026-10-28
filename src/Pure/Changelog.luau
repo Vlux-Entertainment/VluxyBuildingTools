@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.34",
+		Date = "2026-10-27",
+		Changes = {
+			"Measure: while measuring a line, X, Y or Z holds it to that axis (Alt for a plane), like the wall tools.",
+			"Props: a wall radiator in Living room.",
+		},
+	},
+	{
 		Version = "1.7.33",
 		Date = "2026-10-27",
 		Changes = {
