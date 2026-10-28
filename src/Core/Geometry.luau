@@ -23,7 +23,7 @@ export type Spec = {
 	glow: { number }?,
 	lamp: boolean?,
 	lights: { Brightness: number, Range: number }?,
-	paint: { Color: { number }, Material: string, Transparency: number }?,
+	paint: { Color: { number }, Material: string, Transparency: number, Soft: boolean? }?,
 	half: boolean?,
 }
 
@@ -258,7 +258,9 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 			part.Material = (Enum.Material :: any)[paint.Material]
 			part.Color = Color3.new(paint.Color[1], paint.Color[2], paint.Color[3])
 			part.Transparency = paint.Transparency
-			part:SetAttribute("VluxyBT_Fixed", true)
+			if not paint.Soft then
+				part:SetAttribute("VluxyBT_Fixed", true)
+			end
 		end
 
 		if spec.lamp then

@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.37",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: the list shows each prop in its own colors (a switch can show the color theme instead). The theme is applied when you place a prop, as before.",
+		},
+	},
+	{
 		Version = "1.7.36",
 		Date = "2026-10-27",
 		Changes = {

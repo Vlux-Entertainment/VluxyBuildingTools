@@ -135,6 +135,9 @@ Tips.Entries = {
 	GhostTransparency = { Text = "How see-through ghosted parts are." },
 	PropRandomAmount = { Text = "The most a prop is randomly turned, in degrees." },
 	["Collapse props after picking one"] = { Text = "Fold the prop list after you pick one." },
+	PropShowOriginal = {
+		Text = "Show props in the list with their own colors. Off shows them in the color theme. A theme is applied when you place a prop either way.",
+	},
 	PropLightOn = { Text = "Place the light switched on. Off places it dark: no light, and the bulb does not glow." },
 	PropScale = { Text = "Prop size; 1 is normal." },
 	["Door frame"] = { Text = "Add a frame around the door." },
