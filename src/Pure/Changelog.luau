@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.43",
+		Date = "2026-10-28",
+		Changes = {
+			"Props: a big kid bed in Kids, low and sized for a five year old, with a side rail, pillow and blanket.",
+		},
+	},
+	{
 		Version = "1.7.42",
 		Date = "2026-10-27",
 		Changes = {
