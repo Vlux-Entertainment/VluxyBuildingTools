@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.47",
+		Date = "2026-10-28",
+		Changes = {
+			"Props: Bathroom gets a towel bar, a towel stand, a toilet roll holder, a bath mat and a shower curtain.",
+		},
+	},
+	{
 		Version = "1.7.46",
 		Date = "2026-10-28",
 		Changes = {
