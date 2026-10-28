@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.35",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: a fuller Office with an old study feel. Typewriter, writing desk, leather swivel chair, brass desk lamp, paper stack, pencil cup, desk photo, letter tray, rotary phone, archive boxes, green filing cabinet, cork board, study bookcase, reading armchair, round side table, wall clock, curtains, framed landscape and a Persian rug.",
+		},
+	},
+	{
 		Version = "1.7.34",
 		Date = "2026-10-27",
 		Changes = {

@@ -373,6 +373,38 @@ local function radiator(width: number): { Part }
 	return parts
 end
 
+--[[
+	@param part Part
+	@return Part -- the same shape in dark walnut that the color themes leave alone
+]]
+local function walnut(part: Part): Part
+	return painted(part, 0.33, 0.2, 0.11, "Wood")
+end
+
+--[[
+	@param part Part
+	@return Part -- the same shape in aged brass that the color themes leave alone
+]]
+local function brass(part: Part): Part
+	return painted(part, 0.72, 0.55, 0.2, "Metal")
+end
+
+--[[
+	@param part Part
+	@return Part -- the same shape in worn brown leather that the color themes leave alone
+]]
+local function leather(part: Part): Part
+	return painted(part, 0.28, 0.14, 0.08, "Leather")
+end
+
+--[[
+	@param part Part
+	@return Part -- the same shape in cream paper
+]]
+local function paper(part: Part): Part
+	return painted(part, 0.92, 0.89, 0.78, "SmoothPlastic")
+end
+
 PropData.Categories = {
 	{ Id = "Bathroom", Label = "Bathroom" },
 	{ Id = "Bedroom", Label = "Bedroom" },
@@ -1355,6 +1387,306 @@ PropData.Props = {
 		Parts = {
 			B(0, 4.5, -0.15, 7.4, 4.2, 0.3),
 			B(0, 4.5, -0.35, 7, 3.8, 0.1, true),
+		},
+	},
+	-- Study (office)
+	{
+		Id = "Typewriter",
+		Label = "Typewriter",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			iron(B(0, 0.3, 0, 1.7, 0.6, 1.6)),
+			iron(B(0, 0.7, 0.3, 1.5, 0.4, 0.9)),
+			paper(B(0, 0.62, -0.55, 1.4, 0.1, 0.35)),
+			paper(B(0, 0.75, -0.2, 1.4, 0.1, 0.35)),
+			iron(laid(C(0, 1.0, 0.5, 0.3, 1.9))),
+			brass(S(-1.0, 1.0, 0.5, 0.3)),
+			brass(S(1.0, 1.0, 0.5, 0.3)),
+			paper(B(0, 1.5, 0.62, 1.1, 1, 0.03)),
+			iron(B(0, 1.12, 0.2, 1.6, 0.08, 0.1)),
+		},
+	},
+	{
+		Id = "WritingDesk",
+		Label = "Writing desk",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			walnut(B(0, 3, 0, 7.4, 0.3, 3.4)),
+			walnut(B(-2.75, 1.4, 0, 1.7, 2.8, 3)),
+			walnut(B(2.75, 1.4, 0, 1.7, 2.8, 3)),
+			walnut(B(0, 1.8, 1.35, 3.8, 2, 0.2)),
+			B(-2.75, 2.35, -1.55, 1.5, 0.75, 0.08, true),
+			B(-2.75, 1.4, -1.55, 1.5, 0.75, 0.08, true),
+			B(-2.75, 0.45, -1.55, 1.5, 0.75, 0.08, true),
+			B(2.75, 2.35, -1.55, 1.5, 0.75, 0.08, true),
+			B(2.75, 1.4, -1.55, 1.5, 0.75, 0.08, true),
+			B(2.75, 0.45, -1.55, 1.5, 0.75, 0.08, true),
+			B(0, 2.6, -1.5, 3.4, 0.45, 0.08, true),
+			brass(B(-2.75, 2.35, -1.65, 0.5, 0.1, 0.1)),
+			brass(B(-2.75, 1.4, -1.65, 0.5, 0.1, 0.1)),
+			brass(B(-2.75, 0.45, -1.65, 0.5, 0.1, 0.1)),
+			brass(B(2.75, 2.35, -1.65, 0.5, 0.1, 0.1)),
+			brass(B(2.75, 1.4, -1.65, 0.5, 0.1, 0.1)),
+			brass(B(2.75, 0.45, -1.65, 0.5, 0.1, 0.1)),
+			brass(B(0, 2.6, -1.6, 0.6, 0.1, 0.1)),
+			painted(B(0, 3.17, 0, 4.4, 0.04, 2.4), 0.12, 0.2, 0.14, "Fabric"),
+		},
+	},
+	{
+		Id = "LeatherChair",
+		Label = "Leather swivel chair",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			iron(C(0, 0.95, 0, 0.3, 1.5)),
+			iron(turned(B(0, 0.3, 0, 2.2, 0.15, 0.3), 0)),
+			iron(turned(B(0, 0.3, 0, 2.2, 0.15, 0.3), 60)),
+			iron(turned(B(0, 0.3, 0, 2.2, 0.15, 0.3), 120)),
+			iron(S(-1.1, 0.15, 0, 0.3)),
+			iron(S(1.1, 0.15, 0, 0.3)),
+			iron(S(-0.55, 0.15, 0.95, 0.3)),
+			iron(S(0.55, 0.15, 0.95, 0.3)),
+			iron(S(-0.55, 0.15, -0.95, 0.3)),
+			iron(S(0.55, 0.15, -0.95, 0.3)),
+			leather(B(0, 1.9, 0, 2.4, 0.55, 2.4)),
+			leather(B(0, 3.4, 1.0, 2.3, 2.6, 0.55)),
+			walnut(B(-1.3, 2.55, 0, 0.3, 0.2, 2)),
+			walnut(B(1.3, 2.55, 0, 0.3, 0.2, 2)),
+			walnut(B(-1.3, 2.2, -0.7, 0.2, 0.7, 0.2)),
+			walnut(B(1.3, 2.2, -0.7, 0.2, 0.7, 0.2)),
+			brass(B(0, 4.6, 0.7, 1.4, 0.1, 0.1)),
+		},
+	},
+	{
+		Id = "BrassLamp",
+		Label = "Brass desk lamp",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			brass(C(0, 0.1, 0.4, 1.2, 0.2)),
+			brass(B(0, 1.3, 0.4, 0.12, 2.2, 0.12)),
+			brass(B(0, 2.4, -0.2, 0.1, 0.1, 1.3)),
+			painted(C(0, 2.15, -0.85, 1.1, 0.5), 0.1, 0.35, 0.2, "Metal"),
+			glowing(S(0, 1.95, -0.85, 0.4), 1, 0.85, 0.55),
+			lamp(0, 1.95, -0.85),
+			lights(0, 1.95, -0.85, 0.25, 8),
+		},
+	},
+	{
+		Id = "PaperStack",
+		Label = "Paper stack",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			paper(B(0, 0.1, 0, 1.8, 0.2, 2.4)),
+			painted(B(0.1, 0.3, 0.05, 1.7, 0.2, 2.3), 0.9, 0.82, 0.55, "SmoothPlastic"),
+			paper(B(-0.1, 0.5, -0.05, 1.7, 0.2, 2.3)),
+			paper(B(0.05, 0.65, 0.1, 1.6, 0.1, 2.2)),
+		},
+	},
+	{
+		Id = "PencilCup",
+		Label = "Pencil cup",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			painted(C(0, 0.4, 0, 0.7, 0.8), 0.15, 0.15, 0.17, "Metal"),
+			painted(C(-0.1, 0.9, 0, 0.1, 0.9), 0.85, 0.7, 0.15, "SmoothPlastic"),
+			painted(C(0.12, 0.85, 0.05, 0.1, 0.8), 0.7, 0.15, 0.15, "SmoothPlastic"),
+			painted(C(0, 0.8, -0.12, 0.1, 0.7), 0.15, 0.2, 0.6, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "DeskPhoto",
+		Label = "Framed desk photo",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			brass(B(0, 0.6, 0, 1, 1.2, 0.1)),
+			painted(B(0, 0.6, -0.06, 0.8, 1, 0.04), 0.5, 0.48, 0.45, "SmoothPlastic"),
+			brass(B(0, 0.4, 0.2, 0.1, 0.8, 0.1)),
+		},
+	},
+	{
+		Id = "InTray",
+		Label = "Letter tray",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			walnut(B(0, 0.1, 0, 2, 0.2, 2.6)),
+			walnut(B(0, 0.5, 0, 2, 0.1, 2.6)),
+			walnut(B(-0.95, 0.35, 0, 0.1, 0.7, 2.6)),
+			walnut(B(0.95, 0.35, 0, 0.1, 0.7, 2.6)),
+			paper(B(0, 0.25, 0, 1.7, 0.1, 2.2)),
+			paper(B(0, 0.6, 0, 1.7, 0.1, 2.2)),
+		},
+	},
+	{
+		Id = "RotaryPhone",
+		Label = "Rotary phone",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			iron(B(0, 0.3, 0, 1.3, 0.6, 1.3)),
+			painted(C(0, 0.65, -0.1, 0.7, 0.1), 0.85, 0.82, 0.7, "SmoothPlastic"),
+			iron(B(0, 0.85, 0.35, 1.5, 0.2, 0.3)),
+			iron(B(-0.65, 0.7, 0.35, 0.3, 0.4, 0.3)),
+			iron(B(0.65, 0.7, 0.35, 0.3, 0.4, 0.3)),
+		},
+	},
+	{
+		Id = "ArchiveBoxes",
+		Label = "Archive boxes",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 0.7, 0, 2.4, 1.4, 3.2), 0.65, 0.52, 0.34, "Wood"),
+			painted(B(0, 0.1, 0, 2.5, 0.1, 3.3), 0.55, 0.43, 0.27, "Wood"),
+			painted(B(0.1, 1.9, 0, 2.4, 1, 3.2), 0.68, 0.55, 0.36, "Wood"),
+			paper(B(0, 1.0, -1.62, 1.2, 0.5, 0.03)),
+			paper(B(0.1, 1.95, -1.62, 1.2, 0.4, 0.03)),
+			painted(B(-0.1, 2.55, 0.1, 2.2, 0.3, 3), 0.62, 0.5, 0.32, "Wood"),
+		},
+	},
+	{
+		Id = "GreenFileCabinet",
+		Label = "Green filing cabinet",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 2.6, 0, 2.4, 5.2, 2.6), 0.42, 0.52, 0.45, "Metal"),
+			painted(B(0, 0.95, -1.33, 2.1, 1, 0.08), 0.46, 0.56, 0.49, "Metal"),
+			painted(B(0, 2.05, -1.33, 2.1, 1, 0.08), 0.46, 0.56, 0.49, "Metal"),
+			painted(B(0, 3.15, -1.33, 2.1, 1, 0.08), 0.46, 0.56, 0.49, "Metal"),
+			painted(B(0, 4.25, -1.33, 2.1, 1, 0.08), 0.46, 0.56, 0.49, "Metal"),
+			brass(B(0, 0.95, -1.42, 0.8, 0.12, 0.1)),
+			brass(B(0, 2.05, -1.42, 0.8, 0.12, 0.1)),
+			brass(B(0, 3.15, -1.42, 0.8, 0.12, 0.1)),
+			brass(B(0, 4.25, -1.42, 0.8, 0.12, 0.1)),
+			paper(B(0, 1.25, -1.4, 0.7, 0.25, 0.03)),
+			paper(B(0, 2.35, -1.4, 0.7, 0.25, 0.03)),
+			paper(B(0, 3.45, -1.4, 0.7, 0.25, 0.03)),
+			paper(B(0, 4.55, -1.4, 0.7, 0.25, 0.03)),
+		},
+	},
+	{
+		Id = "CorkBoard",
+		Label = "Cork board",
+		Category = "Office",
+		Mount = "wall",
+		Parts = {
+			walnut(B(0, 5.5, -0.15, 4.4, 3.2, 0.3)),
+			painted(B(0, 5.5, -0.32, 4, 2.8, 0.06), 0.72, 0.52, 0.3, "Wood"),
+			paper(B(-1.3, 6.0, -0.38, 0.9, 1, 0.03)),
+			paper(B(0, 5.1, -0.38, 1.1, 0.8, 0.03)),
+			painted(B(1.25, 6.0, -0.38, 0.9, 1.1, 0.03), 0.45, 0.45, 0.42, "SmoothPlastic"),
+			painted(B(-1.2, 4.8, -0.38, 0.8, 0.6, 0.03), 0.9, 0.82, 0.55, "SmoothPlastic"),
+			painted(S(-1.3, 6.4, -0.42, 0.18), 0.75, 0.1, 0.1, "SmoothPlastic"),
+			painted(S(0, 5.4, -0.42, 0.18), 0.1, 0.3, 0.7, "SmoothPlastic"),
+			painted(S(1.25, 6.45, -0.42, 0.18), 0.75, 0.1, 0.1, "SmoothPlastic"),
+		},
+	},
+	{
+		Id = "StudyBookcase",
+		Label = "Study bookcase",
+		Category = "Office",
+		Mount = "wall",
+		Parts = join(bookcase(8, 10, -0.8), {
+			walnut(B(0, 1.5, -1.65, 7.6, 2.6, 0.1)),
+			B(-1.3, 1.5, -1.72, 0.1, 2.4, 0.05, true),
+			B(1.3, 1.5, -1.72, 0.1, 2.4, 0.05, true),
+			brass(B(-0.5, 1.5, -1.8, 0.15, 0.5, 0.1)),
+			brass(B(0.5, 1.5, -1.8, 0.15, 0.5, 0.1)),
+			walnut(B(0, 10.3, -0.9, 8.6, 0.5, 2)),
+		}),
+	},
+	{
+		Id = "ReadingArmchair",
+		Label = "Reading armchair",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 1.0, 0, 3.6, 2, 3.2), 0.3, 0.38, 0.22, "Fabric"),
+			painted(B(0, 3.4, 1.3, 3.6, 3, 0.6), 0.3, 0.38, 0.22, "Fabric"),
+			painted(B(0, 2.3, -0.3, 2.6, 0.6, 2.4), 0.34, 0.42, 0.25, "Fabric"),
+			painted(B(-1.75, 2.4, 0, 0.5, 2.8, 3.2), 0.3, 0.38, 0.22, "Fabric"),
+			painted(B(1.75, 2.4, 0, 0.5, 2.8, 3.2), 0.3, 0.38, 0.22, "Fabric"),
+			painted(B(-0.9, 3.9, 0.95, 1.7, 2.2, 0.15), 0.55, 0.15, 0.12, "Fabric"),
+			painted(B(0.8, 3.0, 0.7, 1.1, 1.1, 0.4), 0.78, 0.68, 0.5, "Fabric"),
+			walnut(B(-1.5, 0.1, -1.4, 0.3, 0.2, 0.3)),
+			walnut(B(1.5, 0.1, -1.4, 0.3, 0.2, 0.3)),
+		},
+	},
+	{
+		Id = "SideTable",
+		Label = "Round side table",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			walnut(C(0, 2.3, 0, 2, 0.2)),
+			walnut(C(0, 1.1, 0, 0.3, 2.2)),
+			walnut(turned(B(0, 0.1, 0, 1.8, 0.2, 0.3), 0)),
+			walnut(turned(B(0, 0.1, 0, 1.8, 0.2, 0.3), 60)),
+			walnut(turned(B(0, 0.1, 0, 1.8, 0.2, 0.3), 120)),
+		},
+	},
+	{
+		Id = "WallClock",
+		Label = "Wall clock",
+		Category = "Office",
+		Mount = "wall",
+		Parts = {
+			walnut(B(0, 8, -0.2, 2.2, 2.2, 0.4)),
+			paper(B(0, 8, -0.45, 1.8, 1.8, 0.06)),
+			iron(B(0, 8.3, -0.5, 0.1, 0.7, 0.04)),
+			iron(B(0.3, 8, -0.5, 0.6, 0.1, 0.04)),
+			iron(S(0, 8, -0.52, 0.2)),
+		},
+	},
+	{
+		Id = "Curtains",
+		Label = "Curtains",
+		Category = "Office",
+		Mount = "wall",
+		Parts = {
+			brass(laid(C(0, 9.5, -0.6, 0.15, 6.4))),
+			brass(S(-3.3, 9.5, -0.6, 0.3)),
+			brass(S(3.3, 9.5, -0.6, 0.3)),
+			painted(B(-2.1, 4.9, -0.5, 1.8, 9, 0.5), 0.5, 0.38, 0.32, "Fabric"),
+			painted(B(2.1, 4.9, -0.5, 1.8, 9, 0.5), 0.5, 0.38, 0.32, "Fabric"),
+			painted(B(-2.1, 4.9, -0.78, 0.5, 8.8, 0.1), 0.3, 0.38, 0.4, "Fabric"),
+			painted(B(2.1, 4.9, -0.78, 0.5, 8.8, 0.1), 0.3, 0.38, 0.4, "Fabric"),
+			painted(B(-1.5, 4.5, -0.78, 0.3, 0.3, 0.1), 0.72, 0.55, 0.2, "Fabric"),
+			painted(B(1.5, 4.5, -0.78, 0.3, 0.3, 0.1), 0.72, 0.55, 0.2, "Fabric"),
+		},
+	},
+	{
+		Id = "FramedLandscape",
+		Label = "Framed landscape",
+		Category = "Office",
+		Mount = "wall",
+		Parts = {
+			walnut(B(0, 6, -0.12, 3.6, 2.8, 0.24)),
+			painted(B(0, 6.45, -0.27, 3.1, 1.2, 0.05), 0.62, 0.68, 0.72, "SmoothPlastic"),
+			painted(B(0, 5.55, -0.27, 3.1, 1.0, 0.05), 0.3, 0.42, 0.25, "SmoothPlastic"),
+			painted(B(0.6, 5.95, -0.29, 1.1, 0.5, 0.05), 0.2, 0.3, 0.2, "SmoothPlastic"),
+			brass(B(0, 4.7, -0.27, 0.8, 0.1, 0.05)),
+		},
+	},
+	{
+		Id = "PersianRug",
+		Label = "Persian rug",
+		Category = "Office",
+		Mount = "floor",
+		Parts = {
+			painted(B(0, 0.05, 0, 10, 0.1, 7), 0.45, 0.14, 0.14, "Fabric"),
+			painted(B(0, 0.07, 0, 9.2, 0.1, 6.2), 0.12, 0.15, 0.3, "Fabric"),
+			painted(B(0, 0.09, 0, 8.6, 0.1, 5.6), 0.78, 0.68, 0.48, "Fabric"),
+			painted(B(0, 0.11, 0, 8, 0.1, 5), 0.45, 0.14, 0.14, "Fabric"),
+			painted(B(0, 0.13, 0, 5, 0.1, 2.8), 0.12, 0.15, 0.3, "Fabric"),
+			painted(B(0, 0.15, 0, 3.2, 0.1, 1.6), 0.78, 0.68, 0.48, "Fabric"),
 		},
 	},
 	-- More basement
