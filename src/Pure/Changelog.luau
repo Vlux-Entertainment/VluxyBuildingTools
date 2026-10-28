@@ -19,6 +19,14 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.46",
+		Date = "2026-10-28",
+		Changes = {
+			"Props: the 1.7.45 hallway props are gone (vending machine, water cooler and the other modern ones). The Hallway tab now suits a 1915 mansion: dresser, tallboy chest, hall stand, telephone table, curio cabinet, hall chairs, bust on a pedestal, suit of armor, portrait row and a hall runner.",
+			"Props: period trash cans, a wicker wastepaper basket, a galvanized bin and an enamel pedal bin.",
+		},
+	},
+	{
 		Version = "1.7.45",
 		Date = "2026-10-28",
 		Changes = {
