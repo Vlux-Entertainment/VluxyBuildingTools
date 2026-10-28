@@ -69,6 +69,7 @@ export type Preview = {
 	@within ToolTypes
 	.Id string -- the mode, such as `Room`
 	.Draws boolean? -- a point-to-point tool: the bar shows Alt and axis-lock hints
+	.Locks boolean? -- takes X / Y / Z axis locks without drawing: the bar shows only the axis-lock hint
 	.Turns boolean? -- R turns what it places by 90 degrees instead of rotating the selection
 	.Begin (ctx) -> any -- makes the tool's state when it is picked; returns nil to refuse, after saying why
 	.Preview (ctx, state) -> Preview? -- what to draw now; nil draws nothing
@@ -85,6 +86,7 @@ export type Preview = {
 export type Tool = {
 	Id: string,
 	Draws: boolean?,
+	Locks: boolean?,
 	Turns: boolean?,
 	Begin: (ctx: Context) -> any,
 	Preview: (ctx: Context, state: any) -> Preview?,

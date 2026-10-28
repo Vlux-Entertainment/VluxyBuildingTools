@@ -46,6 +46,7 @@ export type Runner = {
 }
 
 local DRAW_HINTS = { { "Alt", "Straight line" }, { "X Y Z", "Axis lock" }, { "Esc", "Exit tool" } }
+local LOCK_HINTS = { { "X Y Z", "Axis lock" }, { "Esc", "Exit tool" } }
 local PLAIN_HINTS = { { "Esc", "Exit tool" } }
 
 local Runner = {}
@@ -513,7 +514,7 @@ function Runner.Describe(self: Runner): Status.Activity?
 	return {
 		Glyph = if info then info.Glyph else "◆",
 		Name = if info then info.Label else "",
-		Hints = if tool.Draws then DRAW_HINTS else PLAIN_HINTS,
+		Hints = if tool.Draws then DRAW_HINTS elseif tool.Locks then LOCK_HINTS else PLAIN_HINTS,
 	}
 end
 
