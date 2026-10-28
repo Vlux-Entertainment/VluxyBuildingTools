@@ -106,6 +106,28 @@ local function wallReach(part: BasePart, point: Vector3, outward: Vector3): numb
 end
 
 --[[
+	@param model Model -- the vent just built
+	@param point Vector3 -- one end of the duct
+	@param outward Vector3 -- the way the vent points out of that end
+
+	Pulls every sheet that ends on this end back into the wall by a hair, so its end face does not share a plane with the wall face and band against it.
+]]
+local function tuck(model: Model, point: Vector3, outward: Vector3)
+	local reach = point:Dot(outward)
+
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") and math.abs(part.CFrame.LookVector:Dot(outward)) > 0.99 then
+			local tip = part.Position:Dot(outward) + part.Size.Z / 2
+
+			if math.abs(tip - reach) < 0.02 then
+				part.Size -= Vector3.new(0, 0, 0.03)
+				part.Position -= outward * 0.015
+			end
+		end
+	end
+end
+
+--[[
 	@param ctx Context
 	@param settings Settings.Settings -- the sizes the vent was built at
 	@param model Model -- the vent just built
@@ -142,12 +164,19 @@ local function finish(
 	local reach = { 0, 0 }
 
 	for index, point in { a, b } do
+		local walled = false
+
 		for part in
 			touched({ cutters[index + 1] }, function(candidate)
 				return not inVent(candidate) and not candidate:IsA("Terrain")
 			end)
 		do
 			reach[index] = math.max(reach[index], wallReach(part, point, ends[index]))
+			walled = true
+		end
+
+		if walled then
+			tuck(model, point, ends[index])
 		end
 	end
 
