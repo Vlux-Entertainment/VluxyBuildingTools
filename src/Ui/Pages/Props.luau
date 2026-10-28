@@ -130,7 +130,6 @@ local function picture(ui: Ui, prop: PropData.Prop, original: boolean): (Viewpor
 		end
 
 		if spec.paint and (original or not spec.paint.Soft) then
-			part.Material = (Enum.Material :: any)[spec.paint.Material]
 			part.Color = Color3.new(spec.paint.Color[1], spec.paint.Color[2], spec.paint.Color[3])
 			part.Transparency = spec.paint.Transparency
 		end

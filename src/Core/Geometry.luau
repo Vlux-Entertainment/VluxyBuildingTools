@@ -255,7 +255,6 @@ function Geometry.Materialize(specs: { Spec }, title: string): Model
 		local paint = spec.paint
 
 		if paint then
-			part.Material = (Enum.Material :: any)[paint.Material]
 			part.Color = Color3.new(paint.Color[1], paint.Color[2], paint.Color[3])
 			part.Transparency = paint.Transparency
 			if not paint.Soft then
