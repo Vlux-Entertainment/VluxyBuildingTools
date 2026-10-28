@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.42",
+		Date = "2026-10-27",
+		Changes = {
+			"Props: the billiard light is the older style, three small lamps in a row looking down.",
+		},
+	},
+	{
 		Version = "1.7.41",
 		Date = "2026-10-27",
 		Changes = {
