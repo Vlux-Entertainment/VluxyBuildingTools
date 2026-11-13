@@ -88,7 +88,7 @@ AppState.Pages = { "Build", "Props", "Arrange", "Display", "Hotkeys", "Settings"
 	@prop Locked { [string]: boolean }
 	@within AppState
 ]=]
-AppState.Locked = { Build = true, Arrange = true, Props = true, Display = true } :: { [string]: boolean }
+AppState.Locked = { Build = true, Arrange = true, Props = true } :: { [string]: boolean }
 
 --[=[
 	@return AppState -- every value at its starting state

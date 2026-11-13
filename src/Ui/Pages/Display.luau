@@ -41,9 +41,9 @@ return function(ui: Ui): { Instance }
 		end
 	end
 
-	--[[ True while someone else is the admin, which locks the shared controls. ]]
+	--[[ True while no working folder is set or someone else is the admin, which locks the shared controls. ]]
 	local function adminOnly(): boolean
-		return not state.IsAdmin()
+		return state.Folder() == nil or not state.IsAdmin()
 	end
 
 	local themes: { Controls.Option } = {}
@@ -53,6 +53,9 @@ return function(ui: Ui): { Instance }
 	end
 
 	return {
+		Controls.Text(ui, "Pick a working folder to use themes, the grid and hidden parts.", Theme.Accent, function()
+			return state.Folder() == nil
+		end),
 		Controls.Card(ui, "VIEW", {
 			Controls.Switch(ui, { Title = "Camera light", Key = "CameraLight" }),
 			Controls.Number(ui, {
@@ -119,6 +122,9 @@ return function(ui: Ui): { Instance }
 				Get = state.HiddenView,
 				Set = function()
 					Actions.ToggleHiddenView(app)
+				end,
+				Locked = function()
+					return state.Folder() == nil
 				end,
 			}),
 			Controls.Number(ui, {

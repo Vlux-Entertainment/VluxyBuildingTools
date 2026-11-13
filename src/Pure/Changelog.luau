@@ -19,6 +19,13 @@ export type Release = { Version: string, Date: string, Changes: { string } }
 
 local Changelog: { Release } = {
 	{
+		Version = "1.7.48",
+		Date = "2026-11-13",
+		Changes = {
+			"The Display tab opens without a working folder, so the camera light (Alt+L) works anywhere.",
+		},
+	},
+	{
 		Version = "1.7.47",
 		Date = "2026-10-28",
 		Changes = {
